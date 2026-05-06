@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "Subscription": {
+      "title": "Subscription",
+      "description": "Subscription details for a shop",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "shop_id": { "type": "string", "format": "uuid" },
+        "owner_id": { "type": "string", "format": "uuid" },
+        "plan": { "type": "string", "enum": ["solo", "full"] },
+        "billing_cycle": { "type": "string", "enum": ["monthly", "annual"] },
+        "status": { "type": "string", "enum": ["active", "cancelled", "expired", "trial"] },
+        "amount_paid": { "type": "number" },
+        "currency": { "type": "string" },
+        "current_period_start": { "type": "string", "format": "date-time" },
+        "current_period_end": { "type": "string", "format": "date-time" },
+        "payment_method": { "type": "string", "enum": ["ecocash", "free"] },
+        "ecocash_number": { "type": "string" },
+        "payment_status": { "type": "string", "enum": ["pending", "processing", "paid", "failed", "cancelled"] },
+        "zuripay_transaction_id": { "type": "string" },
+        "zuripay_poll_url": { "type": "string" }
+      },
+      "required": ["shop_id", "owner_id", "plan", "billing_cycle"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Payment transaction history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "format": "uuid" },
+        "subscription_id": { "type": "string", "format": "uuid" },
+        "shop_id": { "type": "string", "format": "uuid" },
+        "owner_id": { "type": "string", "format": "uuid" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "processing", "paid", "failed", "cancelled"] },
+        "payment_method": { "type": "string" },
+        "ecocash_number": { "type": "string" },
+        "zuripay_transaction_id": { "type": "string" },
+        "paynow_reference": { "type": "string" }
+      },
+      "required": ["amount", "status"]
+    }
+  },
+  "firestore": {
+    "/subscriptions/{id}": {
+      "schema": { "$ref": "Subscription" },
+      "description": "User subscriptions"
+    },
+    "/payments/{id}": {
+      "schema": { "$ref": "Payment" },
+      "description": "Payment transactions"
+    }
+  }
+}

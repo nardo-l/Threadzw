@@ -1,0 +1,189 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Store, Search, Heart, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { useInventory } from '../context/InventoryContext';
+import { useSubscription } from '../context/SubscriptionContext';
+import { useAuth } from '../context/AuthContext';
+
+export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { 
+    onboardingComplete, 
+    sellerFlowState, 
+    buyerFlowState, 
+    setBuyerFlowState, 
+    communityScreen, 
+    setCommunityScreen,
+  } = useInventory();
+  const { session, isGuest } = useAuth();
+  const { showRenewalPaywall, paywallType } = useSubscription();
+  const [isPillVisible, setIsPillVisible] = useState(true);
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  const isAuthScreen = ['/auth', '/login', '/signup', '/verify'].includes(location.pathname);
+  const isPaywallScreen = location.pathname.startsWith('/paywall');
+  const isShopCentre = location.pathname.startsWith('/shop-centre');
+  
+  // Buyer Flow nav logic:
+  const isBuyerHidden = ['productDetail', 'shopProfile', 'quiz', 'quizResult', 'bestDresserEntry'].includes(buyerFlowState);
+  
+  // Community Flow nav logic:
+  const isCommunityHidden = ['quiz', 'quizResult', 'shareCard', 'bestDresserEntry', 'entrySuccess', 'bracket'].includes(communityScreen);
+  const isCommunityVisibleRoute = location.pathname.startsWith('/best-dresser') || location.pathname.startsWith('/community') || location.pathname.startsWith('/quiz');
+
+  // Show nav only if authenticated OR guest, 
+  // AND it's not an auth screen
+  // AND NOT on the expired paywall (hidden on State 2, visible on State 1)
+  const isExpiredPaywallActive = (showRenewalPaywall && paywallType === 'expired') || (isPaywallScreen && paywallType === 'expired');
+
+  // Seller Flow nav logic:
+  const hiddenOnSellerStates = ['shopCentre_pendingCode', 'paywall_plan', 'paywall_payment', 'paywall_code', 'pending_code', 'enter_code', 'payment_received'].includes(sellerFlowState);
+  const isSellerHidden = isShopCentre && hiddenOnSellerStates;
+
+  // Main routes should generally ALWAYS show nav if on main tabs
+  const isMainRoute = ['/', '/shops', '/search', '/saved-items', '/profile', '/notifications'].includes(location.pathname);
+
+  const showNav = (session || isGuest) && 
+                 !isAuthScreen && 
+                 !isExpiredPaywallActive &&
+                 !isSellerHidden &&
+                 (isMainRoute || (!isBuyerHidden && !isCommunityHidden)) &&
+                 !location.pathname.startsWith('/new-listing');
+
+  const hideNav = !showNav;
+
+  useEffect(() => {
+    const handleInteraction = () => {
+      setIsPillVisible(true);
+    };
+
+    window.addEventListener('touchstart', handleInteraction);
+    window.addEventListener('mousedown', handleInteraction);
+
+    return () => {
+      window.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener('mousedown', handleInteraction);
+    };
+  }, []);
+
+  return (
+    <div className="flex justify-center min-h-screen bg-[#050505]">
+      <div className="w-full max-w-[430px] bg-background h-screen relative flex flex-col shadow-2xl overflow-hidden">
+        
+        <main 
+          ref={mainRef}
+          className={`flex-1 overflow-y-auto no-scrollbar ${!hideNav ? 'pb-24' : ''}`}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="min-h-full flex flex-col"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Floating Shop Centre Button on Home Screen */}
+          {location.pathname === '/' && session && (
+            <motion.button
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/shop-centre')}
+              className="fixed bottom-[96px] right-5 z-50 flex items-center gap-2 px-[18px] py-[10px] bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-full shadow-[0_4px_20px_rgba(255,45,120,0.4)] transition-all"
+            >
+              <span className="text-[14px]">🏪</span>
+              <span className="text-white font-bold text-[13px]">Shop Centre</span>
+            </motion.button>
+          )}
+        </main>
+
+        {!hideNav && (
+          <motion.div 
+            initial={{ y: 0, opacity: 1 }}
+            animate={{ 
+              y: isPillVisible ? 0 : 100,
+              opacity: isPillVisible ? 1 : 0
+            }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="fixed bottom-[24px] left-5 right-5 z-50 text-center"
+          >
+            <nav className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[100px] px-2 py-[10px] flex items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-[400px] mx-auto overflow-hidden">
+              <NavItem to="/" icon={<Home size={22} />} label="Home" />
+              <NavItem to="/shops" icon={<Store size={22} />} label="Shops" />
+              <NavItem to="/search" icon={<Search size={22} />} label="Search" />
+              <NavItem to="/profile" icon={<User size={22} />} label="Profile" />
+            </nav>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { setBuyerFlowState } = useInventory();
+  
+  const getIsActive = () => {
+    if (to === '/') return location.pathname === '/';
+    if (to === '/shops') return location.pathname === '/shops' || location.pathname.startsWith('/shop/');
+    if (to === '/shop-centre') {
+      return location.pathname.startsWith('/shop-centre') || 
+             location.pathname.startsWith('/dashboard') ||
+             location.pathname.startsWith('/new-listing') ||
+             location.pathname.startsWith('/orders') ||
+             location.pathname.startsWith('/subscription-management');
+    }
+    if (to === '/search') return location.pathname === '/search';
+    if (to === '/profile') {
+      return location.pathname === '/profile' || 
+             location.pathname.startsWith('/profile/') || 
+             location.pathname === '/saved-items' || 
+             location.pathname === '/notifications' ||
+             location.pathname === '/settings';
+    }
+    return false;
+  };
+
+  const isActive = getIsActive();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Direct state setting as requested by user
+    if (to === '/') {
+      setBuyerFlowState('home');
+    } else if (to === '/shops') {
+      setBuyerFlowState('shops');
+    } else if (to === '/search') {
+      setBuyerFlowState('search');
+    } else if (to === '/profile') {
+      // Profile is a separate screen, not handled by BuyerJourney state-switcher
+    }
+    
+    navigate(to);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`
+        flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 relative
+        ${isActive ? 'text-[#FF2D78]' : 'text-[#888888] hover:text-white'}
+      `}
+    >
+      {icon}
+      {isActive && (
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#FF2D78] rounded-full" />
+      )}
+    </button>
+  );
+};
