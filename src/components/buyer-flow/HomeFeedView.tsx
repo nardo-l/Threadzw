@@ -67,8 +67,8 @@ export const HomeFeedView: React.FC = () => {
 
   return (
     <div className="flex flex-col bg-black min-h-screen pb-[100px]">
-      {/* Top Bar */}
-      <div className="px-5 py-4 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-30">
+      {/* Top Bar (Mobile Only) */}
+      <div className="lg:hidden px-5 py-4 flex items-center justify-between sticky top-0 bg-black/80 backdrop-blur-md z-30">
         <div className="flex flex-col">
           <h1 className="font-pacifico text-[22px] text-[#FF2D78]">thread</h1>
           <button 
@@ -89,6 +89,32 @@ export const HomeFeedView: React.FC = () => {
                 <span className="text-white text-[9px] font-bold">
                   {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
                 </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Top Header (Integrated) */}
+      <div className="hidden lg:flex px-8 py-10 items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-white">Daily Discover</h2>
+          <button 
+            onClick={() => setShowTownPicker(true)}
+            className="flex items-center gap-2 text-sm font-bold text-white/40 uppercase tracking-[0.2em] mt-3 hover:text-white transition-colors"
+          >
+            <MapPin size={14} className="text-[#FF2D78]" /> {selectedTown} <ChevronDown size={14} />
+          </button>
+        </div>
+        <div className="flex items-center gap-6">
+          <div className="relative group">
+            <Search className="text-white/40 group-hover:text-white transition-colors" size={24} onClick={() => navigate('/search')} />
+          </div>
+          <div className="relative cursor-pointer" onClick={() => navigate('/notifications')}>
+            <Bell className="text-white/40 hover:text-white transition-colors" size={26} />
+            {unreadNotificationCount > 0 && (
+              <div className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF2D78] rounded-full border-2 border-black flex items-center justify-center">
+                <span className="text-white text-[10px] font-bold">{unreadNotificationCount}</span>
               </div>
             )}
           </div>
@@ -259,22 +285,22 @@ export const HomeFeedView: React.FC = () => {
       </div>
 
       {/* Shops to Follow */}
-      <div className="mt-6">
-        <h2 className="text-white font-bold text-[16px] px-5 mb-3">Shops to Follow</h2>
-        <div className="flex overflow-x-auto no-scrollbar gap-3 px-5 pb-4">
-          {shops.slice(0, 8).map(shop => (
-            <div key={shop.id} className="w-[140px] bg-[#111111] border border-[#222] rounded-[14px] p-3.5 flex flex-col items-center shrink-0">
-               <div className="w-12 h-12 rounded-full border-2 border-[#FF2D78] p-0.5 mb-2 overflow-hidden">
+      <div className="mt-8 lg:mt-12">
+        <h2 className="text-white font-bold text-[16px] lg:text-[20px] px-5 lg:px-8 mb-4">Shops to Follow</h2>
+        <div className="flex lg:grid lg:grid-cols-4 xl:grid-cols-6 overflow-x-auto no-scrollbar gap-3 px-5 lg:px-8 pb-4">
+          {shops.slice(0, 12).map(shop => (
+            <div key={shop.id} className="w-[140px] lg:w-full bg-[#111111] border border-[#222] rounded-[14px] lg:rounded-[20px] p-4 flex flex-col items-center shrink-0 hover:border-[#FF2D7850] transition-colors group">
+               <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-full border-2 border-[#FF2D78] p-0.5 mb-3 overflow-hidden group-hover:scale-105 transition-transform">
                  {shop.logo_url ? (
                    <img src={shop.logo_url} className="w-full h-full rounded-full object-cover" referrerPolicy="no-referrer" />
                  ) : (
                    <div className="w-full h-full bg-linear-to-br from-[#FF2D78] to-[#9B27AF] flex items-center justify-center text-xs">🏪</div>
                  )}
                </div>
-               <span className="text-white font-bold text-[13px] truncate w-full text-center">{shop.name}</span>
+               <span className="text-white font-bold text-[14px] truncate w-full text-center">{shop.name}</span>
                <span className="text-[#888] text-[11px] mt-0.5 truncate w-full text-center">{shop.category}</span>
-               <span className="text-[#888] text-[11px] mt-0.5">{shop.product_count} products</span>
-               <button className="mt-2 w-full h-8 rounded-full border border-[#FF2D78] text-[#FF2D78] text-[12px] font-bold active:bg-[#FF2D7811]">
+               <span className="text-[#666] text-[11px] mt-2 font-medium">{shop.product_count} products</span>
+               <button className="mt-4 w-full h-9 rounded-full bg-white/5 border border-[#222] text-white text-[12px] font-bold hover:bg-[#FF2D78] hover:border-[#FF2D78] transition-all">
                  Follow
                </button>
             </div>
