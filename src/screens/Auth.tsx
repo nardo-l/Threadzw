@@ -6,16 +6,14 @@ import { supabase } from '../lib/supabase';
 import { mapError } from '../lib/utils';
 
 interface AuthProps {
-  onGuest?: () => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ onGuest }) => {
+export const Auth: React.FC<AuthProps> = () => {
   const mounted = React.useRef(true);
   useEffect(() => {
     return () => { mounted.current = false; };
   }, []);
 
-  const { setIsGuest } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -206,30 +204,6 @@ export const Auth: React.FC<AuthProps> = ({ onGuest }) => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/auth/callback'
-        }
-      });
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-      }
-      // Note: Oauth will redirect away, so we don't necessarily call setLoading(false)
-      // but in case redirect is blocked/fails:
-      setTimeout(() => {
-        if (mounted.current) setLoading(false);
-      }, 5000);
-    } catch (err: any) {
-      setError(mapError(err));
-      setLoading(false);
-    }
-  };
 
   const isFormFilled = mode === 'signin' 
     ? email && password 
@@ -364,29 +338,6 @@ export const Auth: React.FC<AuthProps> = ({ onGuest }) => {
             )}
           </button>
 
-          <div className="flex items-center gap-4 my-2">
-            <div className="flex-1 h-px bg-[#222]" />
-            <span className="text-[#444] text-[11px] font-bold uppercase tracking-widest">or</span>
-            <div className="flex-1 h-px bg-[#222]" />
-          </div>
-
-          <button 
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className={`w-full h-[52px] rounded-full bg-white text-black font-bold text-[15px] flex items-center justify-center gap-3 transition-all ${
-              loading ? 'opacity-70 cursor-not-allowed' : 'active:scale-[0.98]'
-            }`}
-          >
-            {loading ? (
-              <div className="spinner-20 !border-[#eee]" />
-            ) : (
-              <>
-                <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-                Continue with Google
-              </>
-            )}
-          </button>
 
           {mode === 'signin' && (
             <button 
@@ -403,20 +354,6 @@ export const Auth: React.FC<AuthProps> = ({ onGuest }) => {
               By signing up you agree to our <span className="text-[#888] underline">Terms of Service</span>
             </p>
           )}
-
-          <button 
-            type="button"
-            onClick={() => {
-              if (onGuest) {
-                onGuest();
-              } else {
-                setIsGuest(true);
-              }
-            }}
-            className="w-full text-[#888] text-[13px] font-bold text-center mt-6 uppercase tracking-widest"
-          >
-            Continue as Guest
-          </button>
         </form>
       </div>
 

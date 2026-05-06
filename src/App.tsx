@@ -297,11 +297,11 @@ function AppContent() {
       );
     }
     
-    return <Auth onGuest={() => setIsGuest(true)} />;
+    return <Auth />;
   }
 
   // Fallback
-  return <Auth onGuest={() => setIsGuest(true)} />;
+  return <Auth />;
 }
 
 function MainApp({ session, profile, isGuest, supabase }: any) {

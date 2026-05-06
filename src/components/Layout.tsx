@@ -98,14 +98,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 Shop Centre
               </button>
             )}
-            {!session && isGuest && (
-              <button 
-                onClick={() => navigate('/auth')}
-                className="w-full h-12 border border-[#2a2a2a] rounded-xl flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/5 transition-all"
-              >
-                Sign In / Sign Up
-              </button>
-            )}
           </div>
         </aside>
       )}
