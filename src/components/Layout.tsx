@@ -69,34 +69,76 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <div className="flex justify-center min-h-screen bg-[#050505]">
-      <div className="w-full max-w-[430px] bg-background h-screen relative flex flex-col shadow-2xl overflow-hidden">
-        
+    <div className="flex min-h-screen bg-[#050505]">
+      {/* Desktop Sidebar */}
+      {showNav && (
+        <aside className="hidden lg:flex w-[280px] border-r border-[#1a1a1a] flex-col sticky top-0 h-screen p-6">
+          <div 
+            onClick={() => navigate('/')}
+            className="mb-10 cursor-pointer"
+          >
+            <h1 className="text-[28px] font-pacifico text-[#FF2D78] leading-none">thread</h1>
+            <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1 font-bold">The Marketplace</p>
+          </div>
+
+          <nav className="flex flex-col gap-2">
+            <SidebarNavItem to="/" icon={<Home size={22} />} label="Home" />
+            <SidebarNavItem to="/shops" icon={<Store size={22} />} label="Shops" />
+            <SidebarNavItem to="/search" icon={<Search size={22} />} label="Search" />
+            <SidebarNavItem to="/profile" icon={<User size={22} />} label="Profile" />
+          </nav>
+
+          <div className="mt-auto pt-6 border-t border-[#1a1a1a]">
+            {session && (
+              <button 
+                onClick={() => navigate('/shop-centre')}
+                className="w-full h-12 bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-[#FF2D78]/20 transition-all active:scale-95"
+              >
+                <span>🏪</span>
+                Shop Centre
+              </button>
+            )}
+            {!session && isGuest && (
+              <button 
+                onClick={() => navigate('/auth')}
+                className="w-full h-12 border border-[#2a2a2a] rounded-xl flex items-center justify-center gap-2 font-bold text-sm hover:bg-white/5 transition-all"
+              >
+                Sign In / Sign Up
+              </button>
+            )}
+          </div>
+        </aside>
+      )}
+
+      {/* Main Container */}
+      <div className="flex-1 flex flex-col min-w-0">
         <main 
           ref={mainRef}
-          className={`flex-1 overflow-y-auto no-scrollbar ${!hideNav ? 'pb-24' : ''}`}
+          className={`relative max-w-[1400px] mx-auto w-full flex-1 no-scrollbar lg:overflow-y-auto ${!hideNav ? 'pb-24 lg:pb-0' : ''}`}
         >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="min-h-full flex flex-col"
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          <div className={`mx-auto w-full h-full ${!location.pathname.startsWith('/shop-centre') && !location.pathname.startsWith('/new-listing') && !location.pathname.startsWith('/product/') ? 'max-w-[430px] lg:max-w-none' : ''}`}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="min-h-full flex flex-col"
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-          {/* Floating Shop Centre Button on Home Screen */}
+          {/* Floating Shop Centre Button (Mobile Only) */}
           {location.pathname === '/' && session && (
             <motion.button
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/shop-centre')}
-              className="fixed bottom-[96px] right-5 z-50 flex items-center gap-2 px-[18px] py-[10px] bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-full shadow-[0_4px_20px_rgba(255,45,120,0.4)] transition-all"
+              className="lg:hidden fixed bottom-[96px] right-5 z-50 flex items-center gap-2 px-[18px] py-[10px] bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-full shadow-[0_4px_20px_rgba(255,45,120,0.4)] transition-all"
             >
               <span className="text-[14px]">🏪</span>
               <span className="text-white font-bold text-[13px]">Shop Centre</span>
@@ -104,6 +146,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           )}
         </main>
 
+        {/* Bottom Nav (Mobile/Tablet Only) */}
         {!hideNav && (
           <motion.div 
             initial={{ y: 0, opacity: 1 }}
@@ -112,9 +155,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               opacity: isPillVisible ? 1 : 0
             }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed bottom-[24px] left-5 right-5 z-50 text-center"
+            className="lg:hidden fixed bottom-[24px] left-5 right-5 z-[50] text-center"
           >
-            <nav className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-[100px] px-2 py-[10px] flex items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-[400px] mx-auto overflow-hidden">
+            <nav className="bg-[#1a1a1a]/90 backdrop-blur-xl border border-[#2a2a2a] rounded-[100px] px-2 py-[10px] flex items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-[400px] mx-auto overflow-hidden">
               <NavItem to="/" icon={<Home size={22} />} label="Home" />
               <NavItem to="/shops" icon={<Store size={22} />} label="Shops" />
               <NavItem to="/search" icon={<Search size={22} />} label="Search" />
@@ -124,6 +167,58 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         )}
       </div>
     </div>
+  );
+};
+
+const SidebarNavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { setBuyerFlowState } = useInventory();
+  
+  const getIsActive = () => {
+    if (to === '/') return location.pathname === '/';
+    if (to === '/shops') return location.pathname === '/shops' || location.pathname.startsWith('/shop/');
+    if (to === '/search') return location.pathname === '/search';
+    if (to === '/profile') {
+      return location.pathname === '/profile' || 
+             location.pathname.startsWith('/profile/') || 
+             location.pathname === '/saved-items' || 
+             location.pathname === '/notifications';
+    }
+    return false;
+  };
+
+  const isActive = getIsActive();
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (to === '/') setBuyerFlowState('home');
+    else if (to === '/shops') setBuyerFlowState('shops');
+    else if (to === '/search') setBuyerFlowState('search');
+    navigate(to);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`
+        w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300
+        ${isActive 
+          ? 'bg-[#FF2D78]/10 text-[#FF2D78] font-bold shadow-[inset_0_0_20px_rgba(255,45,120,0.05)]' 
+          : 'text-[#888888] hover:text-white hover:bg-white/5'}
+      `}
+    >
+      <div className={`${isActive ? 'scale-110' : 'scale-100'} transition-transform duration-300`}>
+        {icon}
+      </div>
+      <span className="text-[15px]">{label}</span>
+      {isActive && (
+        <motion.div 
+          layoutId="sidebar-active"
+          className="ml-auto w-1.5 h-1.5 bg-[#FF2D78] rounded-full"
+        />
+      )}
+    </button>
   );
 };
 

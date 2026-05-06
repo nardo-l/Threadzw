@@ -446,8 +446,8 @@ export const ProductDetail: React.FC = () => {
       </div>
 
       {/* Sticky Bottom Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-[#1a1a1a] px-5 pt-4 pb-[env(safe-area-inset-bottom,32px)] max-w-[430px] mx-auto shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <div className="flex gap-3">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-[#1a1a1a] px-5 pt-4 pb-[env(safe-area-inset-bottom,32px)] lg:max-w-none mx-auto shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <div className="flex gap-3 max-w-[800px] mx-auto">
           <button 
             onClick={handleLikeClick}
             className="flex-1 h-[56px] rounded-full gradient-pink-purple text-white font-bold text-[16px] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
@@ -487,7 +487,7 @@ export const ProductDetail: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[70] bg-[#111111] rounded-t-[20px] pb-10 max-w-[430px] mx-auto max-h-[85vh] overflow-y-auto no-scrollbar"
+              className="fixed bottom-0 left-0 right-0 z-[70] bg-[#111111] rounded-t-[20px] pb-10 lg:max-w-[500px] mx-auto max-h-[85vh] overflow-y-auto no-scrollbar"
             >
               <div className="p-6">
                 {/* Drag Handle */}

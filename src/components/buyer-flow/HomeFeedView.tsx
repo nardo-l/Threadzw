@@ -227,11 +227,11 @@ export const HomeFeedView: React.FC = () => {
           <h2 className="text-white font-bold text-[16px]">New In</h2>
           <button className="text-[#FF2D78] text-[13px] font-medium">See All</button>
         </div>
-        <div className="flex overflow-x-auto no-scrollbar gap-2 px-5 pb-4">
-          {products.slice(0, 10).map(p => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-6 px-5 pb-4 overflow-x-auto no-scrollbar flex-nowrap lg:flex-wrap lg:grid">
+          {products.slice(0, 20).map(p => (
             <div 
               key={p.id} 
-              className="w-[160px] bg-[#111111] border border-[#222] rounded-[14px] overflow-hidden shrink-0"
+              className="w-[160px] lg:w-full bg-[#111111] border border-[#222] rounded-[14px] lg:rounded-[20px] overflow-hidden shrink-0 lg:shrink"
               onClick={() => handleProductTap(p.id)}
             >
               <div className="w-full h-[160px] bg-card relative flex items-center justify-center text-[48px] overflow-hidden">

@@ -185,6 +185,31 @@ function AppContent() {
     return <LocalSplashScreen />;
   }
 
+  // VALIDATION: If credentials are missing, stop here and show help
+  const credentialErrors = validateCredentials();
+  if (credentialErrors.length > 0) {
+    return (
+      <div className="min-h-screen bg-black text-white p-8 flex flex-col items-center justify-center text-center">
+        <h2 className="text-2xl font-bold mb-4 text-[#FF2D78]">Configuration Missing</h2>
+        <p className="text-white/60 mb-8 max-w-md">
+          Thread ZW requires Supabase to run. Please check that your environment variables 
+          (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) are correctly set.
+        </p>
+        <div className="bg-white/5 p-4 rounded-xl text-left font-mono text-xs space-y-2 border border-white/10">
+          {credentialErrors.map((err, i) => (
+            <div key={i} className="text-red-400">• {err}</div>
+          ))}
+        </div>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-8 px-6 py-3 bg-white/10 rounded-full font-bold hover:bg-white/20 transition-all"
+        >
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
+
   // Check if user has an account
   const hasAccount = localStorage.getItem('thread_has_account') === 'true';
 

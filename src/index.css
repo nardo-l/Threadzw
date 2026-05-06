@@ -48,7 +48,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   #root {
-    @apply min-h-screen bg-background max-w-[430px] mx-auto relative shadow-2xl shadow-black overflow-x-hidden;
+    @apply min-h-screen bg-background relative overflow-x-hidden;
   }
 }
 
