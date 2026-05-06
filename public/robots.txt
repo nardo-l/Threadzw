@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
+Allow: /shops
+Allow: /quiz
+Allow: /search
+
+Disallow: /admin
 
 Sitemap: https://threadzw.com/sitemap.xml
+
+# Zimbabwe ThreadZW
+# Zimbabwe's Fashion Marketplace
+# threadzw.com

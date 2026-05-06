@@ -1,7 +1,7 @@
 {
-  "name": "Thread ZW",
-  "short_name": "Thread ZW",
-  "description": "Zimbabwe's Fashion Marketplace",
+  "name": "Zimbabwe ThreadZW",
+  "short_name": "ThreadZW",
+  "description": "Zimbabwe's Fashion Marketplace — Zimbabwe ThreadZW",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
@@ -26,5 +26,12 @@
     "lifestyle"
   ],
   "lang": "en",
-  "dir": "ltr"
+  "dir": "ltr",
+  "keywords": [
+    "Zimbabwe ThreadZW",
+    "Zimbabwe fashion",
+    "threadzw",
+    "Zimbabwe clothing",
+    "Zimbabwe marketplace"
+  ]
 }

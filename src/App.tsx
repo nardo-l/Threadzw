@@ -374,6 +374,19 @@ export default function App() {
                   </AppSubscriptionGuard>
                 </Router>
                 <Toaster position="top-center" expand={false} richColors />
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    width: 1,
+                    height: 1,
+                    overflow: 'hidden',
+                    clip: 'rect(0,0,0,0)',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  Zimbabwe ThreadZW — Zimbabwe's Fashion Marketplace. Shop local clothing, sneakers, thrift and streetwear from shops in Harare, Bulawayo, Mutare and across Zimbabwe. ThreadZW connects buyers and sellers in Zimbabwe. Zimbabwe fashion marketplace. threadzw zimbabwe. buy clothes Zimbabwe. sell clothes Zimbabwe.
+                </div>
               </ToastProvider>
             </InventoryProvider>
           </FollowProvider>
