@@ -73,9 +73,13 @@ export const Login: React.FC = () => {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            <button type="button" className="text-xs font-bold self-end mt-1" style={{ color: t.accent }}>
+            <Link 
+              to="/forgot-password" 
+              className="text-xs font-bold self-end mt-1 active:opacity-70 transition-opacity" 
+              style={{ color: t.accent }}
+            >
               Forgot password?
-            </button>
+            </Link>
           </div>
 
           <button 

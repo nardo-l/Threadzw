@@ -47,9 +47,8 @@ import { SplashScreen } from './screens/SplashScreen';
 import { SellerOnboarding } from './screens/SellerOnboarding';
 import { Paywall } from './screens/Paywall';
 import { SubscriptionManagement } from './screens/SubscriptionManagement';
-import { RequestReset } from './screens/Auth/PasswordReset/RequestReset';
-import { CheckEmail } from './screens/Auth/PasswordReset/CheckEmail';
-import { SetNewPassword } from './screens/Auth/PasswordReset/SetNewPassword';
+import { ForgotPassword } from './screens/ForgotPassword';
+import { ResetPassword } from './screens/ResetPassword';
 import { StoriesViewer } from './components/StoriesViewer';
 import { BuyerJourney } from './screens/BuyerJourney';
 import { InventoryProvider, useInventory } from './context/InventoryContext';
@@ -316,6 +315,17 @@ function AppContent() {
   
   const [onboardingStep, setOnboardingStep] = useState(initializeOnboardingStep);
 
+  // AUTH EVENT HANDLING (for Password Recovery)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   // DEEP LINK HANDLING
   useEffect(() => {
     const handleDeepLink = async () => {
@@ -484,6 +494,22 @@ function AppContent() {
 
   // Signed out user - Decide between Onboarding and Auth
   if (!session && !isGuest) {
+    // Pass Reset routes MUST bypass the global auth gate to be accessible
+    const isPassResetRoute = location.pathname.startsWith('/forgot-password') || 
+                            location.pathname.startsWith('/reset-password') ||
+                            location.pathname.startsWith('/auth/callback');
+
+    if (isPassResetRoute) {
+      return (
+        <MainApp
+          session={session}
+          profile={profile}
+          isGuest={isGuest}
+          supabase={supabase}
+        />
+      );
+    }
+
     if (onboardingStep !== 'done') {
       return (
         <Routes>
@@ -539,7 +565,15 @@ function AppContent() {
       );
     }
     
-    return <Auth />;
+    return (
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="*" element={<Navigate to="/auth" replace />} />
+      </Routes>
+    );
   }
 
   // Fallback
@@ -558,10 +592,10 @@ function MainApp({ session, profile, isGuest, supabase }: any) {
       {/* Auth Only Routes (Redirect if logged in) */}
       <Route element={<AuthRoute />}>
         <Route path="/auth" element={<Auth />} />
-        <Route path="/forgot-password" element={<RequestReset />} />
-        <Route path="/forgot-password/sent" element={<CheckEmail />} />
-        <Route path="/reset-password" element={<SetNewPassword />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Route>
+
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Protected Routes (Require Auth or Guest) */}
       <Route element={<ProtectedRoute />}>

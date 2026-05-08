@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +12,7 @@ interface AuthProps {
 
 export const Auth: React.FC<AuthProps> = () => {
   const t = useTheme();
+  const navigate = useNavigate();
   const mounted = React.useRef(true);
   useEffect(() => {
     return () => { mounted.current = false; };
@@ -27,9 +29,6 @@ export const Auth: React.FC<AuthProps> = () => {
   const [handle, setHandle] = useState('');
   
   const [showPassword, setShowPassword] = useState(false);
-  const [showForgotSheet, setShowForgotSheet] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetSent, setResetSent] = useState(false);
 
   // Validations
   const isHandleValid = (h: string) => {
@@ -190,23 +189,6 @@ export const Auth: React.FC<AuthProps> = () => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail.trim());
-    
-    if (error) {
-      setError(mapError(error));
-      setLoading(false);
-    } else {
-      setResetSent(true);
-      setLoading(false);
-    }
-  };
-
-
   const isFormFilled = mode === 'signin' 
     ? email && password 
     : email && password && displayName && handle;
@@ -353,14 +335,13 @@ export const Auth: React.FC<AuthProps> = () => {
 
 
           {mode === 'signin' && (
-            <button 
-              type="button"
-              onClick={() => { setShowForgotSheet(true); setError(null); }}
-              className="w-full text-[13px] font-bold text-center mt-3"
+            <Link 
+              to="/forgot-password"
+              className="w-full text-[13px] font-bold text-center mt-3 block"
               style={{ color: t.accent }}
             >
               Forgot Password?
-            </button>
+            </Link>
           )}
 
           {mode === 'signup' && (
@@ -370,94 +351,6 @@ export const Auth: React.FC<AuthProps> = () => {
           )}
         </form>
       </div>
-
-      {/* Forgot Password Bottom Sheet */}
-      <AnimatePresence>
-        {showForgotSheet && (
-          <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowForgotSheet(false)}
-              className="fixed inset-0 bg-black/60 z-[100]"
-            />
-            <motion.div 
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[101] rounded-t-[32px] p-8 pb-12"
-              style={{ background: t.bg_elevated }}
-            >
-              <div className="w-12 h-1 rounded-full mx-auto mb-6" style={{ background: t.border_primary }} />
-              
-              {!resetSent ? (
-                <>
-                  <h2 className="text-[18px] font-bold" style={{ color: t.text_primary }}>Reset Password</h2>
-                  <p className="text-[13px] mt-2 mb-6" style={{ color: t.text_tertiary }}>Enter your email and we'll send you a link to reset your password.</p>
-                  
-                  <div className="space-y-4">
-                    <input 
-                      type="email"
-                      value={resetEmail}
-                      onChange={e => setResetEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
-                      style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
-                    />
-                    
-                    {error && (
-                      <div className="border rounded-[10px] p-3 flex items-start gap-3" style={{ background: t.red + '14', borderColor: t.red + '40' }}>
-                        <span className="text-[13px] mt-0.5">⚠️</span>
-                        <p className="text-[13px]" style={{ color: t.red }}>{error}</p>
-                      </div>
-                    )}
-
-                    <button 
-                      onClick={handleResetPassword}
-                      disabled={loading || !resetEmail}
-                      className={`w-full h-[52px] rounded-full font-bold text-[15px] flex items-center justify-center ${
-                        resetEmail 
-                          ? 'text-white shadow-lg' 
-                          : 'cursor-not-allowed'
-                      }`}
-                      style={{ 
-                        background: resetEmail ? t.accent : t.bg_card_2,
-                        color: resetEmail ? 'white' : t.text_tertiary
-                      }}
-                    >
-                      {loading ? <div className="spinner-20" style={{ borderTopColor: 'white' }} /> : 'Send Reset Link'}
-                    </button>
-                    
-                    <button 
-                      onClick={() => setShowForgotSheet(false)}
-                      className="w-full text-[13px] font-medium text-center"
-                      style={{ color: t.text_tertiary }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-4">
-                  <span className="text-[40px] mb-4 block">✉️</span>
-                  <h2 className="text-[18px] font-bold" style={{ color: t.text_primary }}>Check Your Email</h2>
-                  <p className="text-[13px] mt-2 mb-8" style={{ color: t.text_tertiary }}>We sent a reset link to <span className="font-bold" style={{ color: t.text_primary }}>{resetEmail}</span>. Check your inbox.</p>
-                  
-                  <button 
-                    onClick={() => setShowForgotSheet(false)}
-                    className="w-full h-[52px] bg-transparent border rounded-full font-bold text-[15px]"
-                    style={{ borderColor: t.border_primary, color: t.text_primary }}
-                  >
-                    Got It
-                  </button>
-                </div>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
 
       <style>{`
         .spinner-20 {

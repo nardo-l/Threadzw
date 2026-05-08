@@ -6,8 +6,8 @@ Allow: /search
 
 Disallow: /admin
 
-Sitemap: https://threadzw.com/sitemap.xml
+Sitemap: https://threadzw.vercel.app/sitemap.xml
 
 # Zimbabwe ThreadZW
 # Zimbabwe's Fashion Marketplace
-# threadzw.com
+# threadzw.vercel.app
