@@ -1,21 +1,28 @@
 import React, { useState } from 'react';
 
+import { useTheme } from '../App';
+
 interface AvatarProps {
   url?: string | null;
   size?: number;
   ring?: boolean;
   ringColor?: string;
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const Avatar: React.FC<AvatarProps> = ({ 
   url, 
   size = 52,
   ring = false,
-  ringColor = '#FF2D78',
-  className = ''
+  ringColor,
+  className = '',
+  style = {}
 }) => {
+  const t = useTheme();
   const [error, setError] = useState(false);
+  
+  const resolvedRingColor = ringColor || t.accent;
   
   return (
     <div 
@@ -27,12 +34,13 @@ export const Avatar: React.FC<AvatarProps> = ({
         overflow: 'hidden',
         flexShrink: 0,
         border: ring 
-          ? `2px solid ${ringColor}` 
-          : '2px solid #222',
+          ? `2px solid ${resolvedRingColor}` 
+          : `2px solid ${t.border_secondary}`,
         boxShadow: ring 
-          ? `0 0 0 2px rgba(255,45,120,0.2)`
+          ? `0 0 0 2px ${t.accent_bg}`
           : 'none',
-        background: 'linear-gradient(135deg, #9B27AF, #FF2D78)'
+        background: t.gradient,
+        ...style
       }}
     >
       {url && !error ? (
@@ -50,7 +58,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         <div style={{
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #9B27AF, #FF2D78)'
+          background: t.gradient
         }} />
       )}
     </div>

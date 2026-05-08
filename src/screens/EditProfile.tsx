@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Camera, Check, Eye, EyeOff, Lock, User, AtSign, Loader2, Pencil, X, HelpCircle, Info, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme, useThemeControl } from '../App';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { mapError } from '../lib/utils';
+import { Sun, Moon, Monitor } from 'lucide-react';
 
 /*
 RUN THIS IN SUPABASE SQL EDITOR
@@ -63,6 +65,8 @@ create policy
 */
 
 export const EditProfile: React.FC = () => {
+  const t = useTheme();
+  const { themeMode, setThemeMode } = useThemeControl();
   const navigate = useNavigate();
   const { session, user, profile, updateProfile, updatePassword, uploadAvatar, checkHandleAvailability } = useAuth();
   
@@ -322,13 +326,16 @@ export const EditProfile: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen" style={{ background: t.bg_primary }}>
       {/* Header */}
-      <header className="p-6 flex items-center gap-4 border-b border-white/5 sticky top-0 bg-background/80 backdrop-blur-xl z-10">
-        <button onClick={() => navigate(-1)} className="text-white/70">
+      <header 
+        className="p-6 flex items-center gap-4 border-b sticky top-0 backdrop-blur-xl z-10"
+        style={{ background: `${t.bg_primary}CC`, borderColor: t.border_secondary }}
+      >
+        <button onClick={() => navigate(-1)} style={{ color: t.text_tertiary }}>
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-xl font-syne font-bold">Edit Profile</h1>
+        <h1 className="text-xl font-syne font-bold" style={{ color: t.text_primary }}>Edit Profile</h1>
       </header>
 
       <main className="flex-1 flex flex-col p-6 gap-8 overflow-y-auto no-scrollbar">
@@ -342,11 +349,15 @@ export const EditProfile: React.FC = () => {
               }}
               style={{ 
                 cursor: 'pointer',
-                boxShadow: showAvatarPicker ? '0 0 0 3px rgba(255,45,120,0.4)' : 'none'
+                boxShadow: showAvatarPicker ? `0 0 0 3px ${t.accent}66` : 'none',
+                background: t.accent
               }}
-              className="w-32 h-32 rounded-full p-1 bg-primary relative active:scale-95 transition-all"
+              className="w-32 h-32 rounded-full p-1 relative active:scale-95 transition-all"
             >
-              <div className="w-full h-full rounded-full bg-card flex items-center justify-center text-5xl border-4 border-background overflow-hidden relative">
+              <div 
+                className="w-full h-full rounded-full flex items-center justify-center text-5xl border-4 overflow-hidden relative"
+                style={{ background: t.bg_card, borderColor: t.bg_primary }}
+              >
                 {avatarUrl && !imgError ? (
                   <img
                     src={avatarUrl || undefined}
@@ -364,7 +375,7 @@ export const EditProfile: React.FC = () => {
                     width: '100%',
                     height: '100%',
                     borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #9B27AF, #FF2D78)',
+                    background: t.gradient,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -379,21 +390,21 @@ export const EditProfile: React.FC = () => {
                 position: 'absolute',
                 bottom: 0,
                 right: 0,
-                background: 'linear-gradient(135deg, #9B27AF, #FF2D78)',
+                background: t.gradient,
                 width: '28px',
                 height: '28px',
                 borderRadius: '50%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                border: '2px solid #000',
+                border: `2px solid ${t.bg_primary}`,
                 zIndex: 5
               }}>
                 <Pencil size={14} className="text-white" />
               </div>
             </div>
           </div>
-          <p className="text-[10px] font-mono text-muted uppercase tracking-widest">Tap photo to change</p>
+          <p className="text-[10px] font-mono uppercase tracking-widest" style={{ color: t.text_tertiary }}>Tap photo to change</p>
         </div>
 
         <style>{`
@@ -405,39 +416,41 @@ export const EditProfile: React.FC = () => {
         {/* Form */}
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-mono text-muted uppercase tracking-widest ml-1">Full Name</label>
+            <label className="text-[10px] font-mono uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Full Name</label>
             <div className="relative">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2" style={{ color: t.text_tertiary }}>
                 <User size={18} />
               </div>
               <input 
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Your Name"
-                className="w-full bg-card border-2 border-white/5 rounded-2xl p-5 pl-12 text-white outline-none focus:border-primary transition-all"
+                className="w-full border-2 rounded-2xl p-5 pl-12 outline-none focus:border-primary transition-all"
+                style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-mono text-muted uppercase tracking-widest ml-1">@handle</label>
+            <label className="text-[10px] font-mono uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>@handle</label>
             <div className="relative">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2" style={{ color: t.text_tertiary }}>
                 <AtSign size={18} />
               </div>
               <input 
                 value={handle}
                 onChange={e => setHandle(e.target.value.toLowerCase().replace(/\s+/g, ''))}
                 placeholder="your_handle"
-                className="w-full bg-card border-2 border-white/5 rounded-2xl p-5 pl-12 text-white outline-none focus:border-primary transition-all"
+                className="w-full border-2 rounded-2xl p-5 pl-12 outline-none focus:border-primary transition-all"
+                style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] font-mono text-muted uppercase tracking-widest ml-1">Password</label>
+            <label className="text-[10px] font-mono uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Password</label>
             <div className="relative">
-              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-muted">
+              <div className="absolute left-5 top-1/2 -translate-y-1/2" style={{ color: t.text_tertiary }}>
                 <Lock size={18} />
               </div>
               <input 
@@ -445,25 +458,31 @@ export const EditProfile: React.FC = () => {
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-card border-2 border-white/5 rounded-2xl p-5 pl-12 text-white outline-none focus:border-primary transition-all"
+                className="w-full border-2 rounded-2xl p-5 pl-12 outline-none focus:border-primary transition-all"
+                style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
               />
               <button 
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-muted hover:text-white"
+                className="absolute right-5 top-1/2 -translate-y-1/2 hover:text-white"
+                style={{ color: t.text_tertiary }}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            <p className="text-[10px] font-mono text-muted/50 uppercase tracking-tighter ml-1">Leave blank to keep current password</p>
+            <p className="text-[10px] font-mono uppercase tracking-tighter ml-1 opacity-50" style={{ color: t.text_tertiary }}>Leave blank to keep current password</p>
           </div>
         </div>
 
         <button 
           onClick={handleSave}
           disabled={isSaving || !name || !handle}
-          className={`mt-auto w-full py-5 rounded-pill font-bold text-lg flex items-center justify-center gap-2 transition-all ${
-            isSaving ? 'bg-white/10 text-white/30 cursor-not-allowed' : 'bg-primary text-white shadow-lg shadow-primary/30 active:scale-95'
+          className={`mt-6 w-full py-5 rounded-pill font-bold text-lg flex items-center justify-center gap-2 transition-all ${
+            isSaving ? 'opacity-50 cursor-not-allowed' : 'active:scale-95 text-white'
           }`}
+          style={{ 
+            background: isSaving ? t.bg_card : t.accent,
+            boxShadow: isSaving ? 'none' : t.shadow
+          }}
         >
           {isSaving ? (
             <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -474,29 +493,64 @@ export const EditProfile: React.FC = () => {
           )}
         </button>
 
+        {/* Appearance Section */}
+        <div className="mt-8 flex flex-col gap-4">
+          <p className="text-[10px] font-mono uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Appearance</p>
+          <div className="rounded-[24px] border p-1 grid grid-cols-3 gap-1 shadow-sm" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
+            {[
+              { id: 'light', label: 'Light', icon: <Sun size={16} /> },
+              { id: 'dark', label: 'Dark', icon: <Moon size={16} /> },
+              { id: 'system', label: 'System', icon: <Monitor size={16} /> }
+            ].map((mode) => (
+              <button
+                key={mode.id}
+                onClick={() => setThemeMode(mode.id as any)}
+                className="flex items-center justify-center gap-2 py-3 rounded-2xl text-[11px] font-bold transition-all relative overflow-hidden"
+                style={{ 
+                  background: themeMode === mode.id ? t.bg_primary : 'transparent',
+                  color: themeMode === mode.id ? t.text_primary : t.text_tertiary,
+                  border: themeMode === mode.id ? `1px solid ${t.border_secondary}` : '1px solid transparent'
+                }}
+              >
+                {mode.icon}
+                {mode.label}
+                {themeMode === mode.id && (
+                  <motion.div 
+                    layoutId="theme-pill"
+                    className="absolute inset-0 z-[-1]"
+                    style={{ background: t.bg_primary }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Support Section */}
         <div className="mt-8 flex flex-col gap-4">
-          <p className="text-[10px] font-mono text-muted uppercase tracking-widest ml-1">Support & Help</p>
-          <div className="bg-card rounded-[24px] border border-white/5 overflow-hidden">
+          <p className="text-[10px] font-mono uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Support & Help</p>
+          <div className="rounded-[24px] border overflow-hidden" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
             <button
               onClick={() => {}}
-              className="w-full flex items-center gap-4 p-5 hover:bg-white/5 transition-all text-left border-b border-white/5 group"
+              className="w-full flex items-center gap-4 p-5 hover:bg-white/5 transition-all text-left border-b group"
+              style={{ borderColor: t.border_secondary }}
             >
-              <div className="p-2 rounded-lg bg-white/5 text-muted group-hover:text-white transition-colors">
+              <div className="p-2 rounded-lg group-hover:text-white transition-colors" style={{ background: t.bg_primary, color: t.text_tertiary }}>
                 <Info size={18} />
               </div>
-              <span className="flex-1 text-sm font-medium text-white">Help & Support</span>
-              <ChevronRight size={18} className="text-muted/50" />
+              <span className="flex-1 text-sm font-medium" style={{ color: t.text_primary }}>Help & Support</span>
+              <ChevronRight size={18} style={{ color: `${t.text_tertiary}80` }} />
             </button>
             <button
               onClick={() => navigate('/how-to-use')}
-              className="w-full flex items-center gap-4 p-5 hover:bg-white/5 transition-all text-left group"
+              className="w-full flex items-center gap-4 p-5 transition-all text-left group"
+              style={{ background: t.bg_card }}
             >
-              <div className="p-2 rounded-lg bg-white/5 text-muted group-hover:text-white transition-colors">
+              <div className="p-2 rounded-lg group-hover:text-white transition-colors" style={{ background: t.bg_primary, color: t.text_tertiary }}>
                 <HelpCircle size={18} />
               </div>
-              <span className="flex-1 text-sm font-medium text-white">How to Use Thread ZW</span>
-              <ChevronRight size={18} className="text-muted/50" />
+              <span className="flex-1 text-sm font-medium" style={{ color: t.text_primary }}>How to Use Thread ZW</span>
+              <ChevronRight size={18} style={{ color: `${t.text_tertiary}80` }} />
             </button>
           </div>
         </div>
@@ -514,7 +568,8 @@ export const EditProfile: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={handleCloseAvatarPicker}
-              className="fixed inset-0 bg-black/75 z-[300]"
+              className="fixed inset-0 z-[300] backdrop-blur-sm"
+              style={{ background: t.overlay }}
             />
             
             {/* Sheet */}
@@ -523,19 +578,21 @@ export const EditProfile: React.FC = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed bottom-0 left-0 right-0 max-h-[85vh] bg-[#111111] rounded-t-[20px] z-[301] flex flex-col overflow-hidden"
+              className="fixed bottom-0 left-0 right-0 max-h-[85vh] rounded-t-[20px] z-[301] flex flex-col overflow-hidden border-t shadow-2xl"
+              style={{ background: t.bg_primary, borderColor: t.border_secondary }}
             >
               {/* Drag Handle */}
               <div className="flex justify-center pt-3 pb-1">
-                <div className="w-10 h-1 bg-[#333] rounded-full" />
+                <div className="w-10 h-1 rounded-full" style={{ background: t.border_secondary }} />
               </div>
               
               {/* Header */}
               <div className="flex items-center justify-between px-6 pt-2 pb-1">
-                <h3 className="text-lg font-bold text-white">Choose Your Avatar</h3>
+                <h3 className="text-lg font-bold" style={{ color: t.text_primary }}>Choose Your Avatar</h3>
                 <button 
                   onClick={handleCloseAvatarPicker}
-                  className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white"
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: t.bg_card, color: t.text_primary }}
                 >
                   <X size={14} />
                 </button>
@@ -545,7 +602,8 @@ export const EditProfile: React.FC = () => {
                 <button 
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
-                  className="flex-shrink-0 flex items-center gap-2 bg-primary/10 border border-primary/20 text-primary px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
+                  className="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 disabled:opacity-50 border"
+                  style={{ background: `${t.accent}15`, borderColor: `${t.accent}30`, color: t.accent }}
                 >
                   {uploading ? <Loader2 size={14} className="animate-spin" /> : <Camera size={14} />}
                   Upload Custom
@@ -559,7 +617,7 @@ export const EditProfile: React.FC = () => {
                 />
               </div>
 
-              <p className="px-6 text-[10px] uppercase font-bold tracking-widest text-[#444] mb-3">Or pick a preset:</p>
+              <p className="px-6 text-[10px] uppercase font-bold tracking-widest mb-3" style={{ color: t.text_tertiary }}>Or pick a preset:</p>
               
               {/* Scrollable Grid */}
               <div className="flex-1 overflow-y-auto px-6 pb-32 no-scrollbar">
@@ -567,17 +625,18 @@ export const EditProfile: React.FC = () => {
                 {(selectedAvatar && selectedAvatar !== avatarUrl) && (
                   <div className="flex items-center justify-center gap-4 mb-6">
                     <div className="flex flex-col items-center gap-1">
-                      <div className="w-12 h-12 rounded-full border-2 border-primary/30 p-0.5">
+                      <div className="w-12 h-12 rounded-full border-2 p-0.5" style={{ borderColor: `${t.accent}4D` }}>
                         <img 
                           src={avatarUrl || undefined} 
-                          className="w-full h-full rounded-full object-cover bg-[#1a1a1a]" 
+                          className="w-full h-full rounded-full object-cover" 
+                          style={{ background: t.bg_card }}
                           alt="current"
                         />
                       </div>
-                      <span className="text-[8px] text-[#444] uppercase font-bold">Current</span>
+                      <span className="text-[8px] uppercase font-bold" style={{ color: t.text_tertiary }}>Current</span>
                     </div>
                     
-                    <div className="flex items-center text-[#333]">
+                    <div className="flex items-center" style={{ color: t.text_tertiary }}>
                       <ArrowLeft size={14} className="rotate-180" />
                     </div>
                     
@@ -585,15 +644,17 @@ export const EditProfile: React.FC = () => {
                       <motion.div 
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="w-12 h-12 rounded-full border-2 border-primary p-0.5"
+                        className="w-12 h-12 rounded-full border-2 p-0.5"
+                        style={{ borderColor: t.accent }}
                       >
                         <img 
                           src={selectedAvatar || undefined} 
-                          className="w-full h-full rounded-full object-cover bg-[#1a1a1a]" 
+                          className="w-full h-full rounded-full object-cover" 
+                          style={{ background: t.bg_card }}
                           alt="selected"
                         />
                       </motion.div>
-                      <span className="text-[8px] text-primary uppercase font-bold">New</span>
+                      <span className="text-[8px] uppercase font-bold" style={{ color: t.accent }}>New</span>
                     </div>
                   </div>
                 )}
@@ -603,17 +664,19 @@ export const EditProfile: React.FC = () => {
                     {[...Array(12)].map((_, i) => (
                       <div 
                         key={i} 
-                        className="aspect-square rounded-full bg-[#1a1a1a] animate-pulse"
+                        className="aspect-square rounded-full animate-pulse"
+                        style={{ background: t.bg_card }}
                       />
                     ))}
                   </div>
                 ) : presetAvatars.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <span className="text-4xl mb-3">😶</span>
-                    <p className="text-sm font-bold text-white">No avatars available yet</p>
+                    <p className="text-sm font-bold" style={{ color: t.text_primary }}>No avatars available yet</p>
                     <button 
                       onClick={() => fetchPresetAvatars(true)}
-                      className="mt-4 px-4 py-2 bg-white/5 rounded-full text-[10px] font-bold text-white uppercase tracking-widest border border-white/10"
+                      className="mt-4 px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all"
+                      style={{ background: t.bg_card, color: t.text_primary, borderColor: t.border_secondary }}
                     >
                       Tap to Retry
                     </button>
@@ -628,22 +691,25 @@ export const EditProfile: React.FC = () => {
                         <div key={i} className="relative flex flex-col items-center">
                           <button
                             onClick={() => setSelectedAvatar(avatar.url)}
-                            className={`relative aspect-square w-full rounded-full overflow-hidden transition-all duration-150 active:scale-95 ${
-                              isSelected || (isCurrent && !selectedAvatar)
-                                ? 'border-[3px] border-primary shadow-[0_0_0_2px_rgba(255,45,120,0.3)]' 
-                                : 'border-2 border-[#222]'
-                            }`}
+                            className={`relative aspect-square w-full rounded-full overflow-hidden transition-all duration-150 active:scale-95 border-2`}
+                            style={{ 
+                              borderColor: isSelected || (isCurrent && !selectedAvatar) ? t.accent : t.border_secondary,
+                              boxShadow: (isSelected || (isCurrent && !selectedAvatar)) ? `0 0 0 2px ${t.accent}4D` : 'none'
+                            }}
                           >
                             <img 
                               src={avatar.url || undefined} 
-                              className="w-full h-full object-cover bg-[#1a1a1a]"
+                              className="w-full h-full object-cover"
+                              style={{ background: t.bg_card, opacity: 0, transition: 'opacity 0.2s' }}
                               onLoad={(e) => (e.currentTarget.style.opacity = '1')}
-                              style={{ opacity: 0, transition: 'opacity 0.2s' }}
                               alt={avatar.name}
                             />
                           </button>
                           {(isSelected || (isCurrent && !selectedAvatar)) && (
-                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full border-2 border-[#111] flex items-center justify-center">
+                            <div 
+                              className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                              style={{ background: t.accent, borderColor: t.bg_primary }}
+                            >
                               <Check size={10} className="text-white" />
                             </div>
                           )}
@@ -655,15 +721,23 @@ export const EditProfile: React.FC = () => {
               </div>
               
               {/* Footer Button */}
-              <div className="absolute bottom-0 left-0 right-0 p-5 bg-[#111111] border-t border-white/5 pb-10">
+              <div 
+                className="absolute bottom-0 left-0 right-0 p-5 border-t pb-10"
+                style={{ background: t.bg_primary, borderColor: t.border_secondary }}
+              >
                 <button
                   disabled={!selectedAvatar || selectedAvatar === avatarUrl || savingAvatar}
                   onClick={handleSaveAvatar}
                   className={`w-full py-4 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                     !selectedAvatar || selectedAvatar === avatarUrl
-                      ? 'bg-[#1a1a1a] border border-[#222] text-[#555]'
-                      : 'bg-gradient-to-r from-primary to-purple text-white shadow-lg shadow-primary/20 active:scale-95'
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'text-white'
                   }`}
+                  style={{ 
+                    background: (!selectedAvatar || selectedAvatar === avatarUrl) ? t.bg_card : t.gradient,
+                    color: (!selectedAvatar || selectedAvatar === avatarUrl) ? t.text_tertiary : 'white',
+                    boxShadow: (!selectedAvatar || selectedAvatar === avatarUrl) ? 'none' : t.shadow
+                  }}
                 >
                   {savingAvatar ? (
                     <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
@@ -674,7 +748,8 @@ export const EditProfile: React.FC = () => {
                 
                 <button 
                   onClick={handleCloseAvatarPicker}
-                  className="w-full mt-4 text-[10px] text-[#444] font-bold uppercase tracking-widest text-center"
+                  className="w-full mt-4 text-[10px] font-bold uppercase tracking-widest text-center"
+                  style={{ color: t.text_tertiary }}
                 >
                   Maybe Later
                 </button>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Share2, MapPin, Clock, MessageCircle, Star, Check } from 'lucide-react';
+import { ArrowLeft, Share2, MapPin, Clock, MessageCircle, Star, Check, Link } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useInventory } from '../../context/InventoryContext';
 import { supabase } from '../../lib/supabase';
 import { isShopOpen } from '../../lib/utils';
+import { ShareSheet } from '../ShareSheet';
 
 export const ShopProfileView: React.FC = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export const ShopProfileView: React.FC = () => {
   } = useInventory();
   const [activeTab, setActiveTab] = useState<'products' | 'reviews'>('products');
   const [followerCount, setFollowerCount] = useState(0);
+  const [showShareSheet, setShowShareSheet] = useState(false);
 
   const shop = shops.find(s => s.id === currentShopId);
   const shopProducts = products.filter(p => p.shop_id === shop?.id);
@@ -40,6 +42,37 @@ export const ShopProfileView: React.FC = () => {
        fetchFollowers();
     }
   }, [shop?.id, increaseShopViewCount]);
+
+  const trackShareEvent = async () => {
+    if (!shop?.id) return;
+    try {
+      await supabase.rpc('increment_shop_shares', { p_shop_id: shop.id });
+    } catch (err) {
+      console.error('Share tracking error:', err);
+    }
+  };
+
+  const handleShareShopProfile = async () => {
+    if (!shop) return;
+    const link = 'https://threadzw.vercel.app/shop/@' + shop.handle.toLowerCase();
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shop.name + ' on Zimbabwe ThreadZW',
+          text: `Check out ${shop.name} on Zimbabwe ThreadZW 🧵`,
+          url: link
+        });
+        trackShareEvent();
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          setShowShareSheet(true);
+        }
+      }
+    } else {
+      setShowShareSheet(true);
+    }
+  };
 
   if (!shop) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-black p-8 text-center text-white">
@@ -83,9 +116,7 @@ export const ShopProfileView: React.FC = () => {
           </div>
           <div className="flex gap-2 mt-[44px]">
              <button 
-              onClick={() => toast.info("Coming soon....", {
-                style: { background: '#111', color: 'white', border: '1px solid #222' }
-              })}
+              onClick={handleShareShopProfile}
               className="w-9 h-9 rounded-full bg-[#111] border border-[#222] flex items-center justify-center transition-transform active:scale-90"
              >
                 <Share2 className="text-white" size={16} />
@@ -262,6 +293,13 @@ export const ShopProfileView: React.FC = () => {
           </div>
         )}
       </div>
+      
+      <ShareSheet 
+        isOpen={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        shop={shop}
+        onTrackShare={trackShareEvent}
+      />
     </div>
   );
 };

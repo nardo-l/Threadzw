@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff, X, Check, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { mapError } from '../lib/utils';
+import { useTheme } from '../App';
 
 interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = () => {
+  const t = useTheme();
   const mounted = React.useRef(true);
   useEffect(() => {
     return () => { mounted.current = false; };
@@ -210,32 +212,34 @@ export const Auth: React.FC<AuthProps> = () => {
     : email && password && displayName && handle;
 
   return (
-    <div className="flex-1 flex flex-col bg-black min-h-screen relative font-sans overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-screen relative font-sans overflow-hidden" style={{ background: t.bg_primary }}>
       {/* Header */}
       <div className="pt-20 pb-12 flex flex-col items-center">
-        <h1 className="text-[52px] font-pacifico text-[#FF2D78]">thread</h1>
-        <p className="text-[#888] text-[13px] mt-1">Zimbabwe's Closet</p>
+        <h1 className="text-[52px] font-pacifico" style={{ color: t.accent }}>thread</h1>
+        <p className="text-[13px] mt-1" style={{ color: t.text_tertiary }}>Zimbabwe's Closet</p>
       </div>
 
       {/* Tabs */}
       <div className="px-8 mb-8">
-        <div className="flex border-b border-[#222]">
+        <div className="flex border-b" style={{ borderColor: t.border_secondary }}>
           <button 
             onClick={() => { setMode('signin'); setError(null); }}
             className={`flex-1 py-4 text-[15px] font-bold transition-all relative ${mode === 'signin' ? 'text-white' : 'text-[#888]'}`}
+            style={{ color: mode === 'signin' ? t.text_primary : t.text_tertiary }}
           >
             Sign In
             {mode === 'signin' && (
-              <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF2D78]" />
+              <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: t.accent }} />
             )}
           </button>
           <button 
             onClick={() => { setMode('signup'); setError(null); }}
             className={`flex-1 py-4 text-[15px] font-bold transition-all relative ${mode === 'signup' ? 'text-white' : 'text-[#888]'}`}
+            style={{ color: mode === 'signup' ? t.text_primary : t.text_tertiary }}
           >
             Sign Up
             {mode === 'signup' && (
-              <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF2D78]" />
+              <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: t.accent }} />
             )}
           </button>
         </div>
@@ -246,53 +250,56 @@ export const Auth: React.FC<AuthProps> = () => {
           {mode === 'signup' && (
             <>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#888] uppercase tracking-widest ml-1">Full Name</label>
+                <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Full Name</label>
                 <input 
                   type="text"
                   required
                   value={displayName}
                   onChange={e => setDisplayName(e.target.value)}
                   placeholder="Simba Makoni"
-                  className="w-full h-14 bg-[#111] border border-[#222] rounded-[16px] px-4 text-white text-[15px] focus:border-[#FF2D78] outline-none transition-all"
+                  className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
+                  style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[11px] font-bold text-[#888] uppercase tracking-widest ml-1">Username</label>
+                <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Username</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF2D78] font-bold">@</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold" style={{ color: t.accent }}>@</span>
                   <input 
                     type="text"
                     required
                     value={handle}
                     onChange={e => setHandle(e.target.value)}
                     placeholder="handle"
-                    className="w-full h-14 bg-[#111] border border-[#222] rounded-[16px] pl-9 pr-4 text-white text-[15px] focus:border-[#FF2D78] outline-none transition-all"
+                    className="w-full h-14 border rounded-[16px] pl-9 pr-4 text-[15px] focus:border-primary outline-none transition-all"
+                    style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
                   />
                 </div>
                 {handle && !isHandleValid(handle) && (
-                  <p className="text-[#ef4444] text-[11px] mt-1 ml-1">Handle can only contain letters, numbers and underscores. Min 3 characters.</p>
+                  <p className="text-[11px] mt-1 ml-1" style={{ color: t.red }}>Handle can only contain letters, numbers and underscores. Min 3 characters.</p>
                 )}
               </div>
             </>
           )}
 
           <div className="space-y-2">
-            <label className="text-[11px] font-bold text-[#888] uppercase tracking-widest ml-1">Email</label>
+            <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Email</label>
             <input 
               type="email"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@email.com"
-              className="w-full h-14 bg-[#111] border border-[#222] rounded-[16px] px-4 text-white text-[15px] focus:border-[#FF2D78] outline-none transition-all"
+              className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
+              style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
             />
             {email && !isEmailValid(email) && (
-              <p className="text-[#ef4444] text-[11px] mt-1 ml-1">Please enter a valid email address.</p>
+              <p className="text-[11px] mt-1 ml-1" style={{ color: t.red }}>Please enter a valid email address.</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label className="text-[11px] font-bold text-[#888] uppercase tracking-widest ml-1">Password</label>
+            <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Password</label>
             <div className="relative">
               <input 
                 type={showPassword ? "text" : "password"}
@@ -300,25 +307,27 @@ export const Auth: React.FC<AuthProps> = () => {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full h-14 bg-[#111] border border-[#222] rounded-[16px] px-4 text-white text-[15px] focus:border-[#FF2D78] outline-none transition-all"
+                className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
+                style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
               />
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#888]"
+                className="absolute right-4 top-1/2 -translate-y-1/2"
+                style={{ color: t.text_tertiary }}
               >
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             {password && password.length < 6 && (
-              <p className="text-[#ef4444] text-[11px] mt-1 ml-1">Password must be at least 6 characters.</p>
+              <p className="text-[11px] mt-1 ml-1" style={{ color: t.red }}>Password must be at least 6 characters.</p>
             )}
           </div>
 
           {error && (
-            <div className="bg-[#ef444414] border border-[#ef444440] rounded-[10px] p-3 flex items-start gap-3">
+            <div className="border rounded-[10px] p-3 flex items-start gap-3" style={{ background: t.red + '14', borderColor: t.red + '40' }}>
               <span className="text-[13px] mt-0.5">⚠️</span>
-              <p className="text-[#ef4444] text-[13px]">{error}</p>
+              <p className="text-[13px]" style={{ color: t.red }}>{error}</p>
             </div>
           )}
 
@@ -327,12 +336,16 @@ export const Auth: React.FC<AuthProps> = () => {
             disabled={loading || !isFormFilled}
             className={`w-full h-[52px] rounded-full font-bold text-[15px] transition-all flex items-center justify-center ${
               isFormFilled 
-                ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white shadow-lg' 
-                : 'bg-[#111] text-[#444] cursor-not-allowed'
+                ? 'text-white shadow-lg' 
+                : 'cursor-not-allowed'
             }`}
+            style={{ 
+              background: isFormFilled ? (t.accent) : t.bg_card_2,
+              color: isFormFilled ? 'white' : t.text_tertiary
+            }}
           >
             {loading ? (
-              <div className="spinner-20" />
+              <div className="spinner-20" style={{ borderTopColor: 'white' }} />
             ) : (
               mode === 'signin' ? 'Sign In' : 'Create Account'
             )}
@@ -343,15 +356,16 @@ export const Auth: React.FC<AuthProps> = () => {
             <button 
               type="button"
               onClick={() => { setShowForgotSheet(true); setError(null); }}
-              className="w-full text-[#FF2D78] text-[13px] font-bold text-center mt-3"
+              className="w-full text-[13px] font-bold text-center mt-3"
+              style={{ color: t.accent }}
             >
               Forgot Password?
             </button>
           )}
 
           {mode === 'signup' && (
-            <p className="text-[#666] text-[11px] text-center mt-3">
-              By signing up you agree to our <span className="text-[#888] underline">Terms of Service</span>
+            <p className="text-[11px] text-center mt-3" style={{ color: t.text_tertiary }}>
+              By signing up you agree to our <span className="underline" style={{ color: t.text_secondary }}>Terms of Service</span>
             </p>
           )}
         </form>
@@ -373,14 +387,15 @@ export const Auth: React.FC<AuthProps> = () => {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[101] bg-[#0d0d0d] rounded-t-[32px] p-8 pb-12"
+              className="fixed bottom-0 left-0 right-0 z-[101] rounded-t-[32px] p-8 pb-12"
+              style={{ background: t.bg_elevated }}
             >
-              <div className="w-12 h-1 bg-[#333] rounded-full mx-auto mb-6" />
+              <div className="w-12 h-1 rounded-full mx-auto mb-6" style={{ background: t.border_primary }} />
               
               {!resetSent ? (
                 <>
-                  <h2 className="text-white text-[18px] font-bold">Reset Password</h2>
-                  <p className="text-[#888] text-[13px] mt-2 mb-6">Enter your email and we'll send you a link to reset your password.</p>
+                  <h2 className="text-[18px] font-bold" style={{ color: t.text_primary }}>Reset Password</h2>
+                  <p className="text-[13px] mt-2 mb-6" style={{ color: t.text_tertiary }}>Enter your email and we'll send you a link to reset your password.</p>
                   
                   <div className="space-y-4">
                     <input 
@@ -388,13 +403,14 @@ export const Auth: React.FC<AuthProps> = () => {
                       value={resetEmail}
                       onChange={e => setResetEmail(e.target.value)}
                       placeholder="your@email.com"
-                      className="w-full h-14 bg-[#111] border border-[#222] rounded-[16px] px-4 text-white text-[15px] focus:border-[#FF2D78] outline-none transition-all"
+                      className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
+                      style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
                     />
                     
                     {error && (
-                      <div className="bg-[#ef444414] border border-[#ef444440] rounded-[10px] p-3 flex items-start gap-3">
+                      <div className="border rounded-[10px] p-3 flex items-start gap-3" style={{ background: t.red + '14', borderColor: t.red + '40' }}>
                         <span className="text-[13px] mt-0.5">⚠️</span>
-                        <p className="text-[#ef4444] text-[13px]">{error}</p>
+                        <p className="text-[13px]" style={{ color: t.red }}>{error}</p>
                       </div>
                     )}
 
@@ -403,16 +419,21 @@ export const Auth: React.FC<AuthProps> = () => {
                       disabled={loading || !resetEmail}
                       className={`w-full h-[52px] rounded-full font-bold text-[15px] flex items-center justify-center ${
                         resetEmail 
-                          ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white shadow-lg' 
-                          : 'bg-[#111] text-[#444]'
+                          ? 'text-white shadow-lg' 
+                          : 'cursor-not-allowed'
                       }`}
+                      style={{ 
+                        background: resetEmail ? t.accent : t.bg_card_2,
+                        color: resetEmail ? 'white' : t.text_tertiary
+                      }}
                     >
-                      {loading ? <div className="spinner-20" /> : 'Send Reset Link'}
+                      {loading ? <div className="spinner-20" style={{ borderTopColor: 'white' }} /> : 'Send Reset Link'}
                     </button>
                     
                     <button 
                       onClick={() => setShowForgotSheet(false)}
-                      className="w-full text-[#888] text-[13px] font-medium text-center"
+                      className="w-full text-[13px] font-medium text-center"
+                      style={{ color: t.text_tertiary }}
                     >
                       Cancel
                     </button>
@@ -421,12 +442,13 @@ export const Auth: React.FC<AuthProps> = () => {
               ) : (
                 <div className="text-center py-4">
                   <span className="text-[40px] mb-4 block">✉️</span>
-                  <h2 className="text-white text-[18px] font-bold">Check Your Email</h2>
-                  <p className="text-[#888] text-[13px] mt-2 mb-8">We sent a reset link to <span className="text-white font-bold">{resetEmail}</span>. Check your inbox.</p>
+                  <h2 className="text-[18px] font-bold" style={{ color: t.text_primary }}>Check Your Email</h2>
+                  <p className="text-[13px] mt-2 mb-8" style={{ color: t.text_tertiary }}>We sent a reset link to <span className="font-bold" style={{ color: t.text_primary }}>{resetEmail}</span>. Check your inbox.</p>
                   
                   <button 
                     onClick={() => setShowForgotSheet(false)}
-                    className="w-full h-[52px] bg-transparent border border-[#333] rounded-full text-white font-bold text-[15px]"
+                    className="w-full h-[52px] bg-transparent border rounded-full font-bold text-[15px]"
+                    style={{ borderColor: t.border_primary, color: t.text_primary }}
                   >
                     Got It
                   </button>
@@ -441,8 +463,8 @@ export const Auth: React.FC<AuthProps> = () => {
         .spinner-20 {
           width: 20px;
           height: 20px;
-          border: 2px solid #222;
-          border-top-color: #FF2D78;
+          border: 2px solid ${t.border_secondary};
+          border-top-color: ${t.accent};
           border-radius: 50%;
           animation: spin 0.7s linear infinite;
         }

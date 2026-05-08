@@ -17,8 +17,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useInventory, CartItem } from '../context/InventoryContext';
 import { toast } from 'sonner';
+import { useTheme } from '../App';
 
 export const Enquiries: React.FC = () => {
+  const t = useTheme();
   const navigate = useNavigate();
   const { cart, removeFromCart, updateCartQuantity, clearCart, isShopOpen, shops, createOrder } = useInventory();
   const [expandedShopDirections, setExpandedShopDirections] = useState<Record<string, boolean>>({});
@@ -75,23 +77,27 @@ export const Enquiries: React.FC = () => {
 
   if (cart.length === 0) {
     return (
-      <div className="flex flex-col min-h-screen bg-background pb-20">
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between max-w-[430px] mx-auto">
-          <h1 className="text-2xl font-pacifico text-white">Enquiries</h1>
+      <div className="flex flex-col min-h-screen pb-20" style={{ background: t.bg_primary }}>
+        <header 
+          className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b px-6 py-4 flex items-center justify-between max-w-[430px] mx-auto"
+          style={{ background: `${t.bg_primary}CC`, borderColor: t.border_secondary }}
+        >
+          <h1 className="text-2xl font-pacifico" style={{ color: t.text_primary }}>Enquiries</h1>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-6">
-          <div className="w-24 h-24 rounded-full bg-card flex items-center justify-center text-muted">
+          <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ background: t.bg_card, color: t.text_tertiary }}>
             <ShoppingBag size={48} />
           </div>
           <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-syne font-bold text-white">No enquiries yet</h2>
-            <p className="text-sm text-muted font-sans max-w-[280px]">
+            <h2 className="text-2xl font-syne font-bold" style={{ color: t.text_primary }}>No enquiries yet</h2>
+            <p className="text-sm font-sans max-w-[280px]" style={{ color: t.text_tertiary }}>
               Save products you're interested in and contact sellers here
             </p>
           </div>
           <button 
             onClick={() => navigate('/')}
-            className="w-full py-4 bg-primary text-white font-sans font-bold rounded-button shadow-lg shadow-primary/20"
+            className="w-full py-4 font-sans font-bold rounded-button shadow-lg text-white"
+            style={{ background: t.accent, boxShadow: t.shadow }}
           >
             Browse the Feed
           </button>
@@ -101,18 +107,25 @@ export const Enquiries: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-32">
+    <div className="flex flex-col min-h-screen pb-32" style={{ background: t.bg_primary }}>
       {/* Top Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between max-w-[430px] mx-auto">
+      <header 
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b px-6 py-4 flex items-center justify-between max-w-[430px] mx-auto"
+        style={{ background: `${t.bg_primary}CC`, borderColor: t.border_secondary }}
+      >
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-pacifico text-white">Enquiries</h1>
-          <span className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-mono font-bold rounded-pill uppercase tracking-wider">
+          <h1 className="text-2xl font-pacifico" style={{ color: t.text_primary }}>Enquiries</h1>
+          <span 
+            className="px-3 py-1 text-[10px] font-mono font-bold rounded-pill uppercase tracking-wider"
+            style={{ background: `${t.accent}20`, color: t.accent }}
+          >
             {totalItems} {totalItems === 1 ? 'item' : 'items'}
           </span>
         </div>
         <button 
           onClick={() => setShowClearConfirm(true)}
-          className="text-xs font-mono text-muted uppercase tracking-widest hover:text-white transition-colors"
+          className="text-xs font-mono uppercase tracking-widest transition-colors"
+          style={{ color: t.text_tertiary }}
         >
           Clear all
         </button>
@@ -121,24 +134,30 @@ export const Enquiries: React.FC = () => {
       <main className="pt-20 px-6 flex flex-col gap-6">
         {/* Plan Your Visit Banner */}
         {shopNames.length >= 2 && (
-          <div className="bg-elevated border-l-4 border-primary rounded-xl p-5 flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+          <div 
+            className="border-l-4 rounded-xl p-5 flex gap-4"
+            style={{ background: t.bg_card, borderLeftColor: t.accent }}
+          >
+            <div 
+              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: `${t.accent}15`, color: t.accent }}
+            >
               <Navigation size={20} />
             </div>
             <div className="flex flex-col gap-3">
-              <h3 className="text-lg font-syne font-bold text-white">Visiting {shopNames.length} shops</h3>
+              <h3 className="text-lg font-syne font-bold" style={{ color: t.text_primary }}>Visiting {shopNames.length} shops</h3>
               <div className="flex flex-col gap-2">
                 {shopNames.map((name, idx) => {
                   const shop = shops.find(s => s.name === name);
                   return (
-                    <div key={name} className="flex gap-2 text-sm font-sans text-light">
-                      <span className="text-primary font-mono">{idx + 1}.</span>
+                    <div key={name} className="flex gap-2 text-sm font-sans" style={{ color: t.text_secondary }}>
+                      <span className="font-mono" style={{ color: t.accent }}>{idx + 1}.</span>
                       <span>{name} — {shop?.area}{shop?.landmark ? `, ${shop.landmark}` : ''}</span>
                     </div>
                   );
                 })}
               </div>
-              <p className="text-[10px] font-sans text-muted">
+              <p className="text-[10px] font-sans" style={{ color: t.text_tertiary }}>
                 Plan the most efficient route — visit closest shops first
               </p>
             </div>
@@ -154,29 +173,42 @@ export const Enquiries: React.FC = () => {
           const isExpanded = expandedShopDirections[shopName];
 
           return (
-            <div key={shopName} className="bg-card rounded-card border border-white/5 overflow-hidden flex flex-col">
+            <div 
+              key={shopName} 
+              className="rounded-card border overflow-hidden flex flex-col shadow-sm"
+              style={{ background: t.bg_card, borderColor: t.border_secondary }}
+            >
               {/* Shop Header */}
-              <div className="p-5 border-b border-white/5 flex flex-col gap-3">
+              <div className="p-5 border-b flex flex-col gap-3" style={{ borderColor: t.border_secondary }}>
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-full bg-elevated flex items-center justify-center text-2xl border-2 ${isOpen ? 'border-primary' : 'border-white/10'} overflow-hidden`}>
+                  <div 
+                    className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl border-2 overflow-hidden`}
+                    style={{ background: t.bg_secondary, borderColor: isOpen ? t.accent : t.border_secondary }}
+                  >
                     {shop?.logo_url ? <img src={shop.logo_url || undefined} className="w-full h-full object-cover" /> : '🏪'}
                   </div>
                   <div className="flex-1 flex flex-col">
-                    <h3 className="text-lg font-syne font-bold text-white">{shopName}</h3>
-                    <span className="text-xs font-sans text-muted">{shop?.area}{shop?.landmark ? ` • ${shop.landmark}` : ''}</span>
+                    <h3 className="text-lg font-syne font-bold" style={{ color: t.text_primary }}>{shopName}</h3>
+                    <span className="text-xs font-sans" style={{ color: t.text_tertiary }}>{shop?.area}{shop?.landmark ? ` • ${shop.landmark}` : ''}</span>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <span className={`px-2 py-0.5 rounded-pill text-[8px] font-mono font-bold uppercase tracking-wider ${isOpen ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    <span 
+                      className={`px-2 py-0.5 rounded-pill text-[8px] font-mono font-bold uppercase tracking-wider`}
+                      style={{ 
+                        background: isOpen ? `${t.green}20` : `${t.red}20`,
+                        color: isOpen ? t.green : t.red 
+                      }}
+                    >
                       {isOpen ? 'Open now' : 'Closed'}
                     </span>
-                    <div className="flex items-center gap-1 text-[10px] font-mono text-muted">
+                    <div className="flex items-center gap-1 text-[10px] font-mono" style={{ color: t.text_tertiary }}>
                       <Clock size={10} />
                       <span>8am – 6pm</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-mono text-muted uppercase tracking-widest">{items.length} {items.length === 1 ? 'item' : 'items'}</span>
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: t.text_tertiary }}>{items.length} {items.length === 1 ? 'item' : 'items'}</span>
                 </div>
               </div>
 
@@ -194,10 +226,11 @@ export const Enquiries: React.FC = () => {
               </div>
 
               {/* Directions Card */}
-              <div className="px-5 py-3 border-t border-white/5">
+              <div className="px-5 py-3 border-t" style={{ borderColor: t.border_secondary }}>
                 <button 
                   onClick={() => toggleDirections(shopName)}
-                  className="flex items-center gap-2 text-[10px] font-mono text-primary uppercase tracking-widest"
+                  className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-widest"
+                  style={{ color: t.accent }}
                 >
                   {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   How to get there
@@ -210,11 +243,11 @@ export const Enquiries: React.FC = () => {
                       exit={{ height: 0, opacity: 0 }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-4 p-4 bg-background rounded-xl flex gap-3">
-                        <MapPin size={18} className="text-primary flex-shrink-0" />
+                      <div className="mt-4 p-4 rounded-xl flex gap-3" style={{ background: t.bg_secondary }}>
+                        <MapPin size={18} className="shrink-0" style={{ color: t.accent }} />
                         <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-mono text-primary uppercase tracking-widest">Directions</span>
-                          <p className="text-sm font-sans text-white leading-relaxed">
+                          <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: t.accent }}>Directions</span>
+                          <p className="text-sm font-sans leading-relaxed" style={{ color: t.text_primary }}>
                             {shop?.directions || 'Contact seller for exact directions.'}
                           </p>
                         </div>
@@ -225,17 +258,18 @@ export const Enquiries: React.FC = () => {
               </div>
 
               {/* Shop Actions */}
-              <div className="p-5 bg-elevated flex flex-col gap-4">
+              <div className="p-5 flex flex-col gap-4" style={{ background: t.bg_card_2 }}>
                 <button 
                   onClick={() => handleWhatsAppShop(shopName, items)}
-                  className="w-full py-4 bg-primary text-white font-sans font-bold rounded-button flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+                  className="w-full py-4 text-white font-sans font-bold rounded-pill flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
+                  style={{ background: t.accent, boxShadow: t.shadow }}
                 >
                   <MessageCircle size={20} />
                   WhatsApp All Items
                 </button>
                 <div className="flex justify-end">
-                  <span className="text-sm font-mono text-muted uppercase tracking-widest">
-                    Subtotal: <span className="text-white font-syne font-bold ml-1">${subtotal}</span>
+                  <span className="text-sm font-mono uppercase tracking-widest" style={{ color: t.text_tertiary }}>
+                    Subtotal: <span className="font-syne font-bold ml-1" style={{ color: t.text_primary }}>${subtotal}</span>
                   </span>
                 </div>
               </div>
@@ -245,17 +279,21 @@ export const Enquiries: React.FC = () => {
       </main>
 
       {/* Grand Summary */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-t border-white/5 p-6 max-w-[430px] mx-auto">
+      <div 
+        className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t p-6 max-w-[430px] mx-auto"
+        style={{ background: `${t.bg_primary}E6`, borderColor: t.border_secondary }}
+      >
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-end">
             <div className="flex flex-col">
-              <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Total across {shopNames.length} shops</span>
-              <span className="text-3xl font-syne font-bold text-white">${totalValue}</span>
+              <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: t.text_tertiary }}>Total across {shopNames.length} shops</span>
+              <span className="text-3xl font-syne font-bold" style={{ color: t.text_primary }}>${totalValue}</span>
             </div>
           </div>
           <button 
             onClick={() => toast.info("Contact each shop separately using the buttons above")}
-            className="w-full py-4 bg-primary text-white font-sans font-bold rounded-button flex items-center justify-center gap-2 shadow-lg shadow-primary/20 active:scale-[0.98] transition-all"
+            className="w-full py-4 text-white font-sans font-bold rounded-pill flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
+            style={{ background: t.gradient, boxShadow: t.shadow }}
           >
             WhatsApp All Shops
           </button>
@@ -299,6 +337,7 @@ const ProductRow: React.FC<{
   onUpdateQuantity: (delta: number) => void;
   onWhatsApp: () => void;
 }> = ({ item, onRemove, onUpdateQuantity, onWhatsApp }) => {
+  const t = useTheme();
   const [swipeX, setSwipeX] = useState(0);
   const [startX, setStartX] = useState(0);
 
@@ -333,48 +372,61 @@ const ProductRow: React.FC<{
 
       {/* Main Content */}
       <motion.div 
-        style={{ x: swipeX }}
+        style={{ x: swipeX, background: t.bg_card, borderColor: t.border_secondary }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="bg-card p-5 border-b border-white/5 flex items-center gap-4 relative z-10"
+        className="p-5 border-b flex items-center gap-4 relative z-10"
       >
-        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-purple/20 flex items-center justify-center text-2xl flex-shrink-0">
-          {item.imageEmoji}
+        <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl flex-shrink-0 relative overflow-hidden" style={{ background: t.bg_secondary }}>
+          {item.imageEmoji?.startsWith('http') ? (
+            <img src={item.imageEmoji} className="w-full h-full object-cover" />
+          ) : (
+            item.imageEmoji || '📦'
+          )}
         </div>
-        <div className="flex-1 flex flex-col gap-0.5">
-          <h4 className="text-sm font-sans font-bold text-white truncate">{item.name}</h4>
-          <span className="text-[10px] font-mono text-muted uppercase tracking-wider">Size {item.size}</span>
+        <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+          <h4 className="text-sm font-sans font-bold truncate" style={{ color: t.text_primary }}>{item.name}</h4>
+          <span className="text-[10px] font-mono uppercase tracking-wider" style={{ color: t.text_tertiary }}>Size {item.size}</span>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm font-syne font-bold text-primary">${item.price}</span>
-            <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[8px] font-mono font-bold rounded-pill uppercase">In Stock</span>
+            <span className="text-sm font-syne font-bold" style={{ color: t.accent }}>${item.price}</span>
+            <span 
+              className="px-1.5 py-0.5 text-[8px] font-mono font-bold rounded-pill uppercase"
+              style={{ background: `${t.green}20`, color: t.green }}
+            >
+              In Stock
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-elevated rounded-lg p-1">
+          <div className="flex items-center rounded-lg p-1" style={{ background: t.bg_secondary }}>
             <button 
               onClick={() => onUpdateQuantity(-1)}
-              className="p-1 text-muted hover:text-white transition-colors"
+              className="p-1 transition-colors"
+              style={{ color: t.text_tertiary }}
             >
               <Minus size={14} />
             </button>
-            <span className="w-6 text-center text-xs font-mono text-white">{item.quantity}</span>
+            <span className="w-6 text-center text-xs font-mono" style={{ color: t.text_primary }}>{item.quantity}</span>
             <button 
               onClick={() => onUpdateQuantity(1)}
-              className="p-1 text-muted hover:text-white transition-colors"
+              className="p-1 transition-colors"
+              style={{ color: t.text_tertiary }}
             >
               <Plus size={14} />
             </button>
           </div>
           <button 
             onClick={onWhatsApp}
-            className="p-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-all"
+            className="p-2 rounded-lg transition-all"
+            style={{ background: `${t.accent}15`, color: t.accent }}
           >
             <MessageCircle size={18} />
           </button>
           <button 
             onClick={onRemove}
-            className="p-1 text-muted hover:text-red-400 transition-colors"
+            className="p-1 transition-colors"
+            style={{ color: t.text_tertiary }}
           >
             <X size={18} />
           </button>
@@ -390,39 +442,47 @@ const Modal: React.FC<{
   confirmLabel: string; 
   onConfirm: () => void; 
   onCancel: () => void;
-}> = ({ title, message, confirmLabel, onConfirm, onCancel }) => (
-  <motion.div 
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-6"
-    onClick={onCancel}
-  >
+}> = ({ title, message, confirmLabel, onConfirm, onCancel }) => {
+  const t = useTheme();
+  return (
     <motion.div 
-      initial={{ scale: 0.9, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.9, opacity: 0 }}
-      className="bg-elevated border border-white/10 rounded-[32px] p-8 w-full max-w-[320px] flex flex-col gap-6"
-      onClick={e => e.stopPropagation()}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] backdrop-blur-sm flex items-center justify-center p-6"
+      onClick={onCancel}
+      style={{ background: t.overlay }}
     >
-      <div className="flex flex-col gap-2 text-center">
-        <h3 className="text-xl font-syne font-bold text-white">{title}</h3>
-        <p className="text-sm font-sans text-muted">{message}</p>
-      </div>
-      <div className="flex flex-col gap-3">
-        <button 
-          onClick={onConfirm}
-          className="w-full py-4 bg-red-500 text-white font-sans font-bold rounded-button shadow-lg shadow-red-500/20"
-        >
-          {confirmLabel}
-        </button>
-        <button 
-          onClick={onCancel}
-          className="w-full py-4 bg-card text-white font-sans font-bold rounded-button border border-white/5"
-        >
-          Cancel
-        </button>
-      </div>
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="border rounded-[32px] p-8 w-full max-w-[320px] flex flex-col gap-6 shadow-2xl"
+        style={{ background: t.bg_primary, borderColor: t.border_secondary }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex flex-col gap-2 text-center">
+          <h3 className="text-xl font-syne font-bold" style={{ color: t.text_primary }}>{title}</h3>
+          <p className="text-sm font-sans" style={{ color: t.text_tertiary }}>{message}</p>
+        </div>
+        <div className="flex flex-col gap-3">
+          <button 
+            onClick={onConfirm}
+            className="w-full py-4 text-white font-sans font-bold rounded-pill shadow-lg"
+            style={{ background: t.red, boxShadow: t.shadow }}
+          >
+            {confirmLabel}
+          </button>
+          <button 
+            onClick={onCancel}
+            className="w-full py-4 font-sans font-bold rounded-pill border"
+            style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary }}
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.div>
     </motion.div>
-  </motion.div>
-);
+  );
+};
+

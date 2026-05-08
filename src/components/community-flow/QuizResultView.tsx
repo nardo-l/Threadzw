@@ -7,8 +7,10 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { PERSONALITY_RESULTS } from '../../data/mockData';
 import { toast } from 'sonner';
+import { useTheme } from '../../App';
 
 export const QuizResultView: React.FC = () => {
+  const t = useTheme();
   const { setCommunityScreen } = useInventory();
   const { profile } = useAuth();
   
@@ -88,7 +90,6 @@ export const QuizResultView: React.FC = () => {
           setReceiptLoading(false);
         };
       } catch (err) {
-        console.error('Receipt error:', err);
         setReceiptError(true);
         setReceiptLoading(false);
       }
@@ -139,11 +140,12 @@ export const QuizResultView: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col overflow-y-auto no-scrollbar">
+    <div className="fixed inset-0 z-[100] flex flex-col overflow-y-auto no-scrollbar" style={{ background: t.bg_primary }}>
       {/* Top Bar */}
       <button 
         onClick={handleDone}
-        className="absolute top-5 right-5 z-20 w-9 h-9 bg-black/40 rounded-full flex items-center justify-center text-white backdrop-blur-md"
+        className="absolute top-5 right-5 z-20 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md"
+        style={{ background: `${t.bg_primary}66`, color: t.text_primary }}
       >
         <X size={16} />
       </button>
@@ -156,14 +158,14 @@ export const QuizResultView: React.FC = () => {
           transition={{ duration: 0.4 }}
           className="px-7 pt-14"
         >
-          <span className="text-white/55 text-[15px] font-mono tracking-[0.2em] uppercase mb-1.5 block">
+          <span className="text-[15px] font-mono tracking-[0.2em] uppercase mb-1.5 block" style={{ color: t.text_tertiary }}>
             YOU ARE...
           </span>
           <div className="flex flex-col leading-none">
-            <span className="text-white text-[38px] font-black font-bebas tracking-tight">
+            <span className="text-[38px] font-black font-bebas tracking-tight" style={{ color: t.text_primary }}>
               {result.prefix}
             </span>
-            <span className="text-[42px] font-black font-bebas tracking-tight bg-linear-to-br from-[#9B27AF] to-[#FF2D78] bg-clip-text text-transparent italic">
+            <span className="text-[42px] font-black font-bebas tracking-tight bg-clip-text text-transparent italic" style={{ backgroundImage: t.gradient }}>
               {result.name}
             </span>
           </div>
@@ -180,21 +182,25 @@ export const QuizResultView: React.FC = () => {
           }}
           className="mt-8 px-5 relative"
         >
-          <div className="relative shadow-[8px_12px_24px_rgba(0,0,0,0.6),-2px_-2px_8px_rgba(0,0,0,0.3)] rounded-[12px] overflow-hidden">
-            <div className="bg-[#f5f0e8] min-h-[320px] w-full flex flex-col items-center justify-center">
+          <div 
+            className="relative shadow-2xl rounded-[12px] overflow-hidden border"
+            style={{ borderColor: t.border_secondary }}
+          >
+            <div className="min-h-[320px] w-full flex flex-col items-center justify-center" style={{ background: t.bg_secondary }}>
               {receiptLoading ? (
                 <div className="flex flex-col items-center gap-2.5">
                   <motion.div 
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                    className="w-6 h-6 border-[2.5px] border-[#ddd] border-t-[#555] rounded-full"
+                    className="w-6 h-6 border-[2.5px] rounded-full"
+                    style={{ borderColor: t.border_subtle, borderTopColor: t.text_secondary }}
                   />
-                  <span className="text-[#888] text-[12px] font-mono">Preparing your receipt...</span>
+                  <span className="text-[12px] font-mono" style={{ color: t.text_tertiary }}>Preparing your receipt...</span>
                 </div>
               ) : receiptError || !receiptUrl ? (
                 <div className="flex flex-col items-center gap-2.5">
                   <span className="text-[36px]">🧾</span>
-                  <span className="text-[#777] text-[13px] font-mono">Receipt coming soon</span>
+                  <span className="text-[13px] font-mono" style={{ color: t.text_tertiary }}>Receipt coming soon</span>
                 </div>
               ) : (
                 <img 
@@ -206,7 +212,7 @@ export const QuizResultView: React.FC = () => {
             </div>
             
             {/* Curled Corner Effect */}
-            <div className="absolute bottom-[-4px] right-[12px] w-10 h-10 bg-radial-[circle_at_bottom_right] from-black/40 to-transparent rounded-br-[4px] pointer-events-none" />
+            <div className="absolute bottom-[-4px] right-[12px] w-10 h-10 bg-radial-[circle_at_bottom_right] from-black/20 to-transparent rounded-br-[4px] pointer-events-none" />
           </div>
         </motion.div>
 
@@ -217,8 +223,8 @@ export const QuizResultView: React.FC = () => {
           transition={{ duration: 0.4, delay: 0.35 }}
           className="mt-8 px-6"
         >
-          <span className="text-[#FF2D78] text-[40px] font-serif leading-[0.6] block mb-1.5">"</span>
-          <p className="text-white text-[15px] leading-[1.8] italic font-light">
+          <span className="text-[40px] font-serif leading-[0.6] block mb-1.5" style={{ color: t.accent }}>"</span>
+          <p className="text-[15px] leading-[1.8] italic font-light" style={{ color: t.text_primary }}>
             {result.message}
           </p>
         </motion.div>
@@ -233,13 +239,15 @@ export const QuizResultView: React.FC = () => {
           <div className="flex gap-2.5">
             <button 
               onClick={handleShare}
-              className="flex-1 h-[52px] bg-linear-to-r from-[#9B27AF] to-[#FF2D78] rounded-[12px] text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="flex-1 h-[52px] rounded-[12px] text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
+              style={{ background: t.gradient }}
             >
               Share 📸
             </button>
             <button 
               onClick={handleDone}
-              className="flex-1 h-[52px] bg-[#111] border border-[#222] rounded-[12px] text-white font-bold text-[14px] active:scale-[0.98] transition-transform"
+              className="flex-1 h-[52px] border rounded-[12px] font-bold text-[14px] active:scale-[0.98] transition-transform"
+              style={{ background: t.bg_secondary, borderColor: t.border_secondary, color: t.text_primary }}
             >
               Done
             </button>
@@ -249,14 +257,16 @@ export const QuizResultView: React.FC = () => {
             <button 
               onClick={handleDownload}
               disabled={downloading}
-              className="text-[#FF2D78] text-[13px] font-medium flex items-center gap-1.5"
+              className="text-[13px] font-medium flex items-center gap-1.5"
+              style={{ color: t.accent }}
             >
               {downloading ? <Loader2 size={14} className="animate-spin" /> : '⬇️'} Save Receipt
             </button>
             
             <button 
               onClick={() => setCommunityScreen('quiz')}
-              className="text-[#888] text-[12px] mt-2 underline"
+              className="text-[12px] mt-2 underline"
+              style={{ color: t.text_tertiary }}
             >
               Retake Quiz
             </button>

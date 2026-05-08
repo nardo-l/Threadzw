@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
+import { useTheme } from '../App';
 
 const SLIDES = [
   {
@@ -53,6 +54,7 @@ interface Props {
 }
 
 export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
+  const t = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const handleNextSlide = () => {
@@ -68,12 +70,13 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-[200] flex flex-col overflow-hidden select-none font-sans">
+    <div className="fixed inset-0 z-[200] flex flex-col overflow-hidden select-none font-sans" style={{ background: t.bg_primary }}>
       {/* Skip Button */}
       <div className="absolute top-8 right-8 z-50">
         <button 
           onClick={handleSkip}
-          className="text-[#888] text-[13px] font-medium px-2 py-1 hover:text-white transition-colors"
+          className="text-[13px] font-medium px-2 py-1 transition-colors"
+          style={{ color: t.text_tertiary }}
         >
           Skip
         </button>
@@ -103,17 +106,17 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <h2 className="text-[32px] font-bold text-white leading-tight">
+              <h2 className="text-[32px] font-bold leading-tight" style={{ color: t.text_primary }}>
                 {SLIDES[currentSlide].title}
               </h2>
               
-              <p className="mt-4 text-[#888] text-[15px] leading-relaxed">
+              <p className="mt-4 text-[15px] leading-relaxed" style={{ color: t.text_tertiary }}>
                 {SLIDES[currentSlide].body}
               </p>
 
               {SLIDES[currentSlide].comingSoon && (
                 <div className="mt-6 flex justify-center">
-                  <div className="bg-linear-to-r from-[#9B27AF] to-[#FF2D78] px-[14px] py-[5px] rounded-full">
+                  <div className="px-[14px] py-[5px] rounded-full" style={{ background: t.gradient }}>
                     <span className="text-white text-[11px] font-bold uppercase tracking-wider">COMING SOON</span>
                   </div>
                 </div>
@@ -124,7 +127,7 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
           {/* Footer Controls */}
           <div className="p-8 pb-12 flex flex-col items-center gap-6">
             <div className="flex flex-col items-center gap-3">
-              <span className="text-[#555] text-[11px] font-bold uppercase tracking-widest">
+              <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: t.text_tertiary }}>
                 Step {currentSlide + 1} of {SLIDES.length}
               </span>
               <div className="flex gap-2">
@@ -132,8 +135,9 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
                   <div 
                     key={i} 
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === currentSlide ? 'bg-[#FF2D78] w-6' : 'bg-[#222] w-1.5'
+                      i === currentSlide ? 'w-6' : 'w-1.5'
                     }`} 
+                    style={{ background: i === currentSlide ? t.accent : t.border_secondary }}
                   />
                 ))}
               </div>
@@ -141,7 +145,8 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
 
             <button 
               onClick={handleNextSlide} 
-              className="w-full h-[52px] rounded-full font-bold text-[14px] bg-[#FF2D78] text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="w-full h-[52px] rounded-full font-bold text-[14px] text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+              style={{ background: t.accent, boxShadow: t.shadow }}
             >
               {currentSlide === SLIDES.length - 1 ? 'Continue' : 'Next'} <ArrowRight size={18} />
             </button>

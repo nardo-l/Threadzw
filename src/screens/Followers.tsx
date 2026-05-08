@@ -6,11 +6,13 @@ import {
   Search
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTheme } from '../App';
 import { useInventory } from '../context/InventoryContext';
 import { MOCK_SHOPS } from '../data/mockData';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export const Followers: React.FC = () => {
+  const t = useTheme();
   const { id } = useParams();
   const navigate = useNavigate();
   const { followers } = useInventory();
@@ -21,16 +23,22 @@ export const Followers: React.FC = () => {
   if (!shop) return null;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background pb-20">
+    <div className="flex flex-col min-h-screen pb-20" style={{ background: t.bg_primary }}>
       {/* Top Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex items-center justify-between max-w-[430px] mx-auto">
+      <header 
+        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b px-6 py-4 flex items-center justify-between max-w-[430px] mx-auto"
+        style={{ background: `${t.bg_primary}CC`, borderColor: t.border_secondary }}
+      >
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-primary">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2" style={{ color: t.accent }}>
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-pacifico text-white">Followers</h1>
+          <h1 className="text-2xl font-pacifico" style={{ color: t.text_primary }}>Followers</h1>
         </div>
-        <span className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-mono font-bold rounded-pill uppercase tracking-wider">
+        <span 
+          className="px-3 py-1 text-[10px] font-mono font-bold rounded-pill uppercase tracking-wider"
+          style={{ background: `${t.accent}33`, color: t.accent }}
+        >
           {shopFollowers.length}
         </span>
       </header>
@@ -38,22 +46,23 @@ export const Followers: React.FC = () => {
       <main className="pt-24 px-6 flex flex-col gap-6">
         {/* Search Bar */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={16} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: t.text_tertiary }} size={16} />
           <input 
             type="text"
             placeholder="Search followers..."
-            className="w-full bg-card border border-white/10 rounded-pill py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-primary transition-all"
+            className="w-full border rounded-pill py-3 pl-12 pr-4 text-sm focus:outline-none transition-all"
+            style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary }}
           />
         </div>
 
         {shopFollowers.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-40 text-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-card flex items-center justify-center text-muted">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: t.bg_card, color: t.text_tertiary }}>
               <Users size={40} />
             </div>
             <div>
-              <h3 className="text-xl font-syne font-bold text-white">No followers yet</h3>
-              <p className="text-sm text-muted font-sans mt-1">Be the first to follow {shop.name}</p>
+              <h3 className="text-xl font-syne font-bold" style={{ color: t.text_primary }}>No followers yet</h3>
+              <p className="text-sm font-sans mt-1" style={{ color: t.text_tertiary }}>Be the first to follow {shop.name}</p>
             </div>
           </div>
         ) : (
@@ -66,14 +75,14 @@ export const Followers: React.FC = () => {
                 transition={{ delay: i * 0.05 }}
                 className="flex items-center gap-4 py-2"
               >
-                <div className="w-12 h-12 rounded-full bg-elevated flex items-center justify-center text-2xl border border-white/10">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-2xl border" style={{ background: t.bg_secondary, borderColor: t.border_secondary }}>
                   {follower.avatar}
                 </div>
                 <div className="flex-1 flex flex-col">
-                  <h4 className="text-sm font-syne font-bold text-white leading-tight">{follower.name}</h4>
-                  <span className="text-[10px] font-mono text-muted uppercase tracking-widest">{follower.handle}</span>
+                  <h4 className="text-sm font-syne font-bold leading-tight" style={{ color: t.text_primary }}>{follower.name}</h4>
+                  <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: t.text_tertiary }}>{follower.handle}</span>
                 </div>
-                <span className="text-[10px] font-mono text-muted uppercase tracking-widest">
+                <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: t.text_tertiary }}>
                   Followed {formatDistanceToNow(parseISO(follower.followedAt), { addSuffix: true })}
                 </span>
               </motion.div>

@@ -193,8 +193,53 @@
     ✓ Mobile friendly (viewport set)
     ✓ HTTPS enabled on domain
   -->
+  <style>
+    :root {
+      color-scheme: light dark;
+    }
+
+    @media (prefers-color-scheme: light) {
+      body {
+        background: #F5F5F5;
+        color: #1a1a1a;
+      }
+      
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: #EFEFEF;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: #BDBDBD;
+        border-radius: 999px;
+      }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #000000;
+        color: #ffffff;
+      }
+      
+      ::-webkit-scrollbar {
+        width: 4px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: #111111;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: #333333;
+        border-radius: 999px;
+      }
+    }
+  </style>
 </head>
-<body class="bg-[#050505]">
+<body>
   <div id="root"></div>
   <script type="module"
     src="/src/main.tsx">

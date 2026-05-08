@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useInventory } from '../context/InventoryContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../App';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const t = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { 
@@ -69,16 +71,19 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#050505]">
+    <div className="flex min-h-screen" style={{ background: t.bg_primary }}>
       {/* Desktop Sidebar */}
       {showNav && (
-        <aside className="hidden lg:flex w-[280px] border-r border-[#1a1a1a] flex-col sticky top-0 h-screen p-6">
+        <aside 
+          className="hidden lg:flex w-[280px] flex-col sticky top-0 h-screen p-6"
+          style={{ borderRight: `1px solid ${t.border_secondary}` }}
+        >
           <div 
             onClick={() => navigate('/')}
             className="mb-10 cursor-pointer"
           >
-            <h1 className="text-[28px] font-pacifico text-[#FF2D78] leading-none">thread</h1>
-            <p className="text-[10px] text-white/30 uppercase tracking-[0.2em] mt-1 font-bold">The Marketplace</p>
+            <h1 className="text-[28px] font-pacifico leading-none" style={{ color: t.accent }}>thread</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] mt-1 font-bold" style={{ color: `${t.text_primary}4D` }}>The Marketplace</p>
           </div>
 
           <nav className="flex flex-col gap-2">
@@ -88,11 +93,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <SidebarNavItem to="/profile" icon={<User size={22} />} label="Profile" />
           </nav>
 
-          <div className="mt-auto pt-6 border-t border-[#1a1a1a]">
+          <div className="mt-auto pt-6 border-t" style={{ borderColor: t.border_secondary }}>
             {session && (
               <button 
                 onClick={() => navigate('/shop-centre')}
-                className="w-full h-12 bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-xl flex items-center justify-center gap-2 font-bold text-sm shadow-lg shadow-[#FF2D78]/20 transition-all active:scale-95"
+                className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all active:scale-95"
+                style={{ background: t.gradient, color: 'white', boxShadow: t.shadow }}
               >
                 <span>🏪</span>
                 Shop Centre
@@ -130,7 +136,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               animate={{ scale: 1, opacity: 1 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/shop-centre')}
-              className="lg:hidden fixed bottom-[96px] right-5 z-50 flex items-center gap-2 px-[18px] py-[10px] bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-full shadow-[0_4px_20px_rgba(255,45,120,0.4)] transition-all"
+              className="lg:hidden fixed bottom-[96px] right-5 z-50 flex items-center gap-2 px-[18px] py-[10px] rounded-full transition-all"
+              style={{ background: t.gradient, boxShadow: t.shadow_lg }}
             >
               <span className="text-[14px]">🏪</span>
               <span className="text-white font-bold text-[13px]">Shop Centre</span>
@@ -149,7 +156,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             transition={{ duration: 0.3, ease: "easeInOut" }}
             className="lg:hidden fixed bottom-[24px] left-5 right-5 z-[50] text-center"
           >
-            <nav className="bg-[#1a1a1a]/90 backdrop-blur-xl border border-[#2a2a2a] rounded-[100px] px-2 py-[10px] flex items-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] w-full max-w-[400px] mx-auto overflow-hidden">
+            <nav 
+              className="backdrop-blur-xl rounded-[100px] px-2 py-[10px] flex items-center w-full max-w-[400px] mx-auto overflow-hidden border"
+              style={{ background: `${t.nav_bg}E6`, borderColor: t.nav_border, boxShadow: t.shadow_lg }}
+            >
               <NavItem to="/" icon={<Home size={22} />} label="Home" />
               <NavItem to="/shops" icon={<Store size={22} />} label="Shops" />
               <NavItem to="/search" icon={<Search size={22} />} label="Search" />
@@ -163,6 +173,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 };
 
 const SidebarNavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
+  const t = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { setBuyerFlowState } = useInventory();
@@ -196,9 +207,13 @@ const SidebarNavItem: React.FC<{ to: string; icon: React.ReactNode; label: strin
       className={`
         w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300
         ${isActive 
-          ? 'bg-[#FF2D78]/10 text-[#FF2D78] font-bold shadow-[inset_0_0_20px_rgba(255,45,120,0.05)]' 
-          : 'text-[#888888] hover:text-white hover:bg-white/5'}
+          ? 'font-bold' 
+          : 'hover:bg-white/5'}
       `}
+      style={{
+        background: isActive ? t.accent_bg : 'transparent',
+        color: isActive ? t.accent : t.text_secondary
+      }}
     >
       <div className={`${isActive ? 'scale-110' : 'scale-100'} transition-transform duration-300`}>
         {icon}
@@ -207,7 +222,8 @@ const SidebarNavItem: React.FC<{ to: string; icon: React.ReactNode; label: strin
       {isActive && (
         <motion.div 
           layoutId="sidebar-active"
-          className="ml-auto w-1.5 h-1.5 bg-[#FF2D78] rounded-full"
+          className="ml-auto w-1.5 h-1.5 rounded-full"
+          style={{ background: t.accent }}
         />
       )}
     </button>
@@ -215,6 +231,7 @@ const SidebarNavItem: React.FC<{ to: string; icon: React.ReactNode; label: strin
 };
 
 const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
+  const t = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const { setBuyerFlowState } = useInventory();
@@ -264,12 +281,13 @@ const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = 
       onClick={handleClick}
       className={`
         flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 relative
-        ${isActive ? 'text-[#FF2D78]' : 'text-[#888888] hover:text-white'}
+        ${isActive ? '' : 'hover:scale-110'}
       `}
+      style={{ color: isActive ? t.nav_active : t.nav_inactive }}
     >
       {icon}
       {isActive && (
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-[#FF2D78] rounded-full" />
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ background: t.nav_active }} />
       )}
     </button>
   );

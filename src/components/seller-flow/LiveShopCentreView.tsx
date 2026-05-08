@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Bell, Edit3, MoreHorizontal, Plus, BarChart3, Package, ArrowLeft, Camera, Trash2, Settings } from 'lucide-react';
+import { Bell, Edit3, MoreHorizontal, Plus, BarChart3, Package, ArrowLeft, Camera, Trash2, Settings, Link, Share2, Copy, Check } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { supabase } from '../../lib/supabase';
 import { AppBrandingView } from './AppBrandingView';
 import { toast as sonnerToast } from 'sonner';
 import { Avatar } from '../Avatar';
+import { ShareSheet } from '../ShareSheet';
+import { useTheme } from '../../App';
 
 export const LiveShopCentreView: React.FC<{ myShop: any; onUpdate: () => void | Promise<void> }> = ({ myShop, onUpdate }) => {
   const { setSellerFlowState, products, postStory, unreadNotificationCount, setBuyerFlowState, deleteProduct } = useInventory();
+  const t = useTheme();
   const navigate = useNavigate();
   const [showSaleSheet, setShowSaleSheet] = useState(false);
   const [saleProduct, setSaleProduct] = useState<any>(null);
@@ -21,6 +24,70 @@ export const LiveShopCentreView: React.FC<{ myShop: any; onUpdate: () => void | 
   const [isPostingStory, setIsPostingStory] = useState(false);
   const [showBranding, setShowBranding] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
+
+  const getShopLink = (handle: string) => {
+    return 'https://threadzw.vercel.app/shop/@' + handle.toLowerCase();
+  };
+
+  const trackShareEvent = async () => {
+    if (!myShop?.id) return;
+    try {
+      await supabase.rpc('increment_shop_shares', { p_shop_id: myShop.id });
+    } catch (err) {
+      console.error('Share tracking error:', err);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    const link = getShopLink(myShop.handle);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(link);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = link;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopied(true);
+      sonnerToast.success('Link copied to clipboard ✓');
+      trackShareEvent();
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      sonnerToast.error('Could not copy link.');
+    }
+  };
+
+  const handleShareLink = async () => {
+    const link = getShopLink(myShop.handle);
+    const shareData = {
+      title: myShop.name + ' on Thread ZW',
+      text: `Check out ${myShop.name} on Thread ZW — Zimbabwe's fashion marketplace 🧵\n\n${link}`,
+      url: link
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        sonnerToast.success('Shop link shared ✓');
+        trackShareEvent();
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          console.error('Share failed:', err);
+          setShowShareSheet(true);
+        }
+      }
+    } else {
+      setShowShareSheet(true);
+    }
+  };
 
   const handleDeleteListing = async (productId: string, name: string) => {
     if (!window.confirm(`Delete "${name}" forever?`)) return;
@@ -284,6 +351,7 @@ export const LiveShopCentreView: React.FC<{ myShop: any; onUpdate: () => void | 
   const stats = [
     { label: 'Products listed', value: products.length },
     { label: 'Units in stock', value: products.reduce((sum, p) => sum + (p.total_stock || 0), 0) },
+    { label: 'Links Shared', value: myShop?.share_count || 0 },
     { label: 'Followers', value: myShop?.follower_count || '0' },
   ];
 
@@ -631,6 +699,45 @@ export const LiveShopCentreView: React.FC<{ myShop: any; onUpdate: () => void | 
         </button>
       </div>
 
+      {/* SHOP LINK ROW */}
+      <div 
+        className="mx-5 mt-4 flex items-center justify-between p-3 px-3.5 rounded-[12px] border"
+        style={{ background: t.bg_card_2, borderColor: t.border_primary }}
+      >
+        <div className="flex items-center flex-1 min-w-0 mr-4">
+          <Link size={16} style={{ color: t.text_secondary }} />
+          <span 
+            className="ml-2 text-[12px] font-mono truncate max-w-[60%]" 
+            style={{ color: t.text_secondary }}
+          >
+            threadzw.vercel.app/shop/@{myShop?.handle}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handleCopyLink}
+            className="h-[34px] px-3.5 rounded-[8px] border flex items-center justify-center transition-all active:scale-[0.95]"
+            style={{ 
+              background: copied ? t.green_bg : t.accent_bg, 
+              borderColor: copied ? t.green_border : t.accent_border 
+            }}
+          >
+            {copied ? (
+              <span className="font-bold text-[12px]" style={{ color: t.green }}>Copied ✓</span>
+            ) : (
+              <span className="font-bold text-[12px]" style={{ color: t.accent }}>Copy</span>
+            )}
+          </button>
+          <button 
+            onClick={handleShareLink}
+            className="h-[34px] px-3.5 rounded-[8px] flex items-center justify-center font-bold text-[12px] text-white active:scale-[0.95] transition-all"
+            style={{ background: t.gradient }}
+          >
+            Share →
+          </button>
+        </div>
+      </div>
+
       {/* Stats Row */}
       <div className="mx-5 mt-5 flex gap-2">
         {stats.map((s, i) => (
@@ -787,6 +894,14 @@ export const LiveShopCentreView: React.FC<{ myShop: any; onUpdate: () => void | 
           </div>
         )}
       </div>
+
+      {/* Share Sheet */}
+      <ShareSheet 
+        isOpen={showShareSheet}
+        onClose={() => setShowShareSheet(false)}
+        shop={myShop}
+        onTrackShare={trackShareEvent}
+      />
 
       {/* Record a Sale Bottom Sheet */}
       <AnimatePresence>

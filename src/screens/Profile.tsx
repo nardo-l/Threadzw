@@ -7,6 +7,7 @@ import { useSubscription } from '../context/SubscriptionContext';
 import { supabase } from '../lib/supabase';
 import { PERSONALITY_RESULTS } from '../data/mockData';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTheme } from '../App';
 
 import { Avatar } from '../components/Avatar';
 
@@ -17,19 +18,28 @@ const QuickAccessButton: React.FC<{
   label: string; 
   onClick: () => void;
   isPrimary?: boolean;
-}> = ({ icon, label, onClick, isPrimary }) => (
-  <button 
-    onClick={onClick}
-    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all ${
-      isPrimary ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white'
-    }`}
-  >
-    {icon}
-    <span className="text-[10px] font-mono uppercase tracking-tighter font-bold">{label}</span>
-  </button>
-);
+}> = ({ icon, label, onClick, isPrimary }) => {
+  const t = useTheme();
+  return (
+    <button 
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all ${
+        isPrimary ? 'text-white shadow-lg' : 'hover:bg-white/5'
+      }`}
+      style={{ 
+        background: isPrimary ? t.accent : t.bg_card_2, 
+        color: isPrimary ? 'white' : t.text_tertiary,
+        boxShadow: isPrimary ? t.shadow : 'none'
+      }}
+    >
+      {icon}
+      <span className="text-[10px] font-mono uppercase tracking-tighter font-bold">{label}</span>
+    </button>
+  );
+};
 
 export const Profile: React.FC = () => {
+  const t = useTheme();
   const navigate = useNavigate();
   const { profile, signOut, session, loading: loadingAuth } = useAuth();
   const { userShop, loading: loadingInventory, setBuyerFlowState, unreadNotificationCount, handleOpenShopCentre } = useInventory();
@@ -60,15 +70,15 @@ export const Profile: React.FC = () => {
 
   if ((loadingAuth || loadingInventory) && !forceShow) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[60vh] gap-4" style={{ background: t.bg_primary }}>
         <div className="spinner-32" />
-        <p className="text-[10px] font-mono text-muted uppercase tracking-widest animate-pulse">Loading Profile...</p>
+        <p className="text-[10px] font-mono uppercase tracking-widest animate-pulse" style={{ color: t.text_tertiary }}>Loading Profile...</p>
         <style>{`
           .spinner-32 {
             width: 32px;
             height: 32px;
-            border: 3px solid #111;
-            border-top-color: #FF2D78;
+            border: 3px solid ${t.bg_card};
+            border-top-color: ${t.accent};
             border-radius: 50%;
             animation: spin 0.7s linear infinite;
           }
@@ -82,15 +92,16 @@ export const Profile: React.FC = () => {
 
   if (!session) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-6 min-h-[60vh]">
-        <div className="w-20 h-20 bg-[#111] border border-[#222] rounded-full flex items-center justify-center text-4xl shadow-xl">👤</div>
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-6 min-h-[60vh]" style={{ background: t.bg_primary }}>
+        <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-xl border" style={{ background: t.bg_card, borderColor: t.border_secondary }}>👤</div>
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold text-white">Not signed in</h1>
-          <p className="text-sm text-[#888]">Sign in to view and manage your profile</p>
+          <h1 className="text-2xl font-bold" style={{ color: t.text_primary }}>Not signed in</h1>
+          <p className="text-sm font-sans" style={{ color: t.text_tertiary }}>Sign in to view and manage your profile</p>
         </div>
         <button 
           onClick={() => window.location.href = '/auth'}
-          className="px-10 py-4 bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold rounded-full shadow-lg shadow-[#FF2D78]/20 active:scale-95 transition-all"
+          className="px-10 py-4 text-white font-bold rounded-full shadow-lg active:scale-95 transition-all"
+          style={{ background: t.gradient, boxShadow: t.shadow }}
         >
           Sign In
         </button>
@@ -111,18 +122,18 @@ export const Profile: React.FC = () => {
       <div className="relative">
         <Bell size={18} />
         {unreadNotificationCount > 0 && (
-          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#FF2D78] rounded-full border border-black" />
+          <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border" style={{ background: t.accent, borderColor: t.bg_primary }} />
         )}
       </div>
-    ), color: 'text-blue-400', onClick: () => navigate('/notifications') },
-    { label: 'Affiliate Earnings', icon: <Share2 size={18} />, color: 'text-purple-400', onClick: () => {} },
-    { label: 'Saved Items', icon: <Bookmark size={18} />, color: 'text-[#FF2D78]', onClick: () => navigate('/saved-items') },
-    { label: 'Paynow Wallet', icon: <CreditCard size={18} />, color: 'text-secondary', onClick: () => {} },
-    { label: 'Settings', icon: <Settings size={18} />, color: 'text-[#888]', onClick: () => navigate('/profile/edit') },
+    ), color: '#3b82f6', onClick: () => navigate('/notifications') },
+    { label: 'Affiliate Earnings', icon: <Share2 size={18} />, color: t.accent, onClick: () => {} },
+    { label: 'Saved Items', icon: <Bookmark size={18} />, color: t.accent, onClick: () => navigate('/saved-items') },
+    { label: 'Paynow Wallet', icon: <CreditCard size={18} />, color: t.text_secondary, onClick: () => {} },
+    { label: 'Settings', icon: <Settings size={18} />, color: t.text_tertiary, onClick: () => navigate('/profile/edit') },
   ];
 
   return (
-    <div className="flex-1 flex flex-col bg-black min-h-screen relative font-sans">
+    <div className="flex-1 flex flex-col min-h-screen relative font-sans" style={{ background: t.bg_primary }}>
       {/* Header */}
       <div className="p-6 pt-12 flex flex-col items-center gap-4">
         <div className="relative group">
@@ -130,11 +141,13 @@ export const Profile: React.FC = () => {
             url={profile?.avatar_url} 
             size={112} 
             ring 
-            className="border-4 border-black" 
+            className="border-4" 
+            style={{ borderColor: t.bg_primary }}
           />
           <button 
             onClick={() => navigate('/profile/edit')}
-            className="absolute bottom-1 right-1 w-8 h-8 bg-[#FF2D78] rounded-full flex items-center justify-center border-2 border-black shadow-lg"
+            className="absolute bottom-1 right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 shadow-lg"
+            style={{ background: t.accent, borderColor: t.bg_primary }}
           >
             <Settings size={14} className="text-white" />
           </button>
@@ -143,21 +156,21 @@ export const Profile: React.FC = () => {
         <div className="text-center w-full max-w-[280px]">
           <div className="h-8 flex items-center justify-center">
             {profile ? (
-              <h1 className="text-2xl font-bold text-white">{profile.display_name}</h1>
+              <h1 className="text-2xl font-bold" style={{ color: t.text_primary }}>{profile.display_name}</h1>
             ) : (
-              <div className="w-32 h-4 bg-white/5 rounded-full animate-pulse" />
+              <div className="w-32 h-4 rounded-full animate-pulse" style={{ background: t.bg_card }} />
             )}
           </div>
           <div className="h-5 flex items-center justify-center mt-1 px-4">
             {profile ? (
               <div className="flex flex-col items-center">
-                <p className="text-[12px] font-bold text-[#888] uppercase tracking-widest leading-tight">
+                <p className="text-[12px] font-bold uppercase tracking-widest leading-tight" style={{ color: t.text_secondary }}>
                   @{profile.handle} • Member since {formatDate(profile.created_at)}
                 </p>
-                <p className="text-[10px] text-[#555] font-mono mt-0.5">{profile.email}</p>
+                <p className="text-[10px] font-mono mt-0.5" style={{ color: t.text_tertiary }}>{profile.email}</p>
               </div>
             ) : (
-              <div className="w-48 h-3 bg-white/5 rounded-full animate-pulse" />
+              <div className="w-48 h-3 rounded-full animate-pulse" style={{ background: t.bg_card }} />
             )}
           </div>
         </div>
@@ -165,7 +178,7 @@ export const Profile: React.FC = () => {
 
       <div className="p-6 space-y-8 pb-32">
         {/* Personality Card */}
-        <div className="bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] rounded-[24px] p-6 relative overflow-hidden shadow-xl">
+        <div className="rounded-[24px] p-6 relative overflow-hidden shadow-xl" style={{ background: t.gradient }}>
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full -mr-16 -mt-16" />
           <div className="flex justify-between items-start mb-4">
             <div>
@@ -189,7 +202,8 @@ export const Profile: React.FC = () => {
         {session && (
           <button 
             onClick={() => handleOpenShopCentre(navigate)}
-            className="w-full h-[52px] bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-full flex items-center justify-center gap-2 shadow-lg shadow-[#FF2D78]/20 active:scale-[0.98] transition-all"
+            className="w-full h-[52px] rounded-full flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all"
+            style={{ background: t.gradient, boxShadow: t.shadow }}
           >
             <span className="text-[18px]">🏪</span>
             <span className="text-white font-bold text-[15px]">Shop Centre</span>
@@ -198,20 +212,20 @@ export const Profile: React.FC = () => {
 
         {/* Shop Section */}
         {profile?.has_shop ? (
-          <div className="bg-[#111] rounded-[24px] border border-[#222] p-6 space-y-6 shadow-xl">
+          <div className="rounded-[24px] border p-6 space-y-6 shadow-xl" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-[#FF2D7815] flex items-center justify-center text-2xl border border-[#FF2D7830]">
+                <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl border" style={{ background: `${t.accent}15`, borderColor: `${t.accent}30` }}>
                   🏪
                 </div>
                 <div className="flex flex-col">
-                  <h3 className="text-[17px] font-bold text-white">{profile.shop_name}</h3>
-                  <span className="text-[10px] font-bold text-[#FF2D78] uppercase tracking-widest">thread.zw/{profile.handle}</span>
+                  <h3 className="text-[17px] font-bold" style={{ color: t.text_primary }}>{profile.shop_name}</h3>
+                  <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.accent }}>thread.zw/{profile.handle}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#22c55e10] rounded-full border border-[#22c55e20]">
-                <div className="w-1.5 h-1.5 bg-[#22c55e] rounded-full animate-pulse" />
-                <span className="text-[10px] font-bold text-[#22c55e] uppercase tracking-widest">Active</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border" style={{ background: `${t.green}10`, borderColor: `${t.green}20` }}>
+                <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: t.green }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: t.green }}>Active</span>
               </div>
             </div>
 
@@ -241,7 +255,8 @@ export const Profile: React.FC = () => {
 
             <button 
               onClick={() => handleOpenShopCentre(navigate)}
-              className="w-full py-4 border border-[#222] rounded-xl text-[14px] font-bold text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 border rounded-xl text-[14px] font-bold transition-all flex items-center justify-center gap-2"
+              style={{ borderColor: t.border_secondary, color: t.text_primary }}
             >
               Shop Control Centre <ChevronRight size={16} />
             </button>
@@ -249,7 +264,8 @@ export const Profile: React.FC = () => {
         ) : (
           <button 
             onClick={() => setShowShopPopup(true)}
-            className="w-full bg-gradient-to-r from-[#111] to-[#1a1a1a] border border-[#222] text-white font-bold py-6 rounded-[24px] shadow-xl flex items-center justify-center gap-3 text-[17px] active:scale-[0.98] transition-all"
+            className="w-full border font-bold py-6 rounded-[24px] shadow-xl flex items-center justify-center gap-3 text-[17px] active:scale-[0.98] transition-all"
+            style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary }}
           >
             <span className="text-2xl">🏪</span> Start Selling on Thread
           </button>
@@ -258,10 +274,10 @@ export const Profile: React.FC = () => {
         {/* You Might Like Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-2 px-1">
-            <div className="w-5 h-5 rounded-full bg-linear-to-tr from-[#FF2D78] to-[#9C27B0] flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: t.gradient }}>
               <Users size={10} className="text-white" />
             </div>
-            <span className="text-white font-bold text-sm tracking-tight font-syne uppercase tracking-wider">You might like</span>
+            <span className="font-bold text-sm tracking-tight font-syne uppercase tracking-wider" style={{ color: t.text_primary }}>You might like</span>
           </div>
           
           <div className="flex overflow-x-auto no-scrollbar gap-3 pb-2 -mx-6 px-6">
@@ -269,18 +285,19 @@ export const Profile: React.FC = () => {
             <motion.div 
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate('/quiz')}
-              className="w-[240px] aspect-[4/3] rounded-[20px] overflow-hidden shrink-0 relative bg-[#111] border border-white/5 active:scale-95 transition-all cursor-pointer"
+              className="w-[240px] aspect-[4/3] rounded-[20px] overflow-hidden shrink-0 relative border active:scale-95 transition-all cursor-pointer"
+              style={{ background: t.bg_card, borderColor: t.border_secondary }}
             >
               <div className="absolute inset-0">
                  {getCardImage('how_fly') ? (
-                   <img src={getCardImage('how_fly')} className="w-full h-full object-cover blur-[2px] brightness-[0.5] scale-105" />
+                    <img src={getCardImage('how_fly')} className="w-full h-full object-cover blur-[2px] brightness-[0.5] scale-105 shadow-2l" />
                  ) : (
-                   <div className="w-full h-full bg-linear-to-br from-[#1a0a2a] to-[#2a0a1a]" />
+                    <div className="w-full h-full" style={{ background: t.gradient, opacity: 0.2 }} />
                  )}
               </div>
               <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h3 className="text-white font-bold text-[15px]">How Fly Are You?</h3>
+                <h2 className="text-white font-bold text-[15px]">How Fly Are You?</h2>
                 <p className="text-white/70 text-[11px] mt-0.5">Discover your fashion persona</p>
               </div>
             </motion.div>
@@ -289,13 +306,14 @@ export const Profile: React.FC = () => {
             <motion.div 
               whileTap={{ scale: 0.97 }}
               onClick={() => window.open(MUSIFY_URL, '_blank')}
-              className="w-[240px] aspect-[4/3] rounded-[20px] overflow-hidden shrink-0 relative bg-[#111] border border-white/5 active:scale-95 transition-all cursor-pointer"
+              className="w-[240px] aspect-[4/3] rounded-[20px] overflow-hidden shrink-0 relative border active:scale-95 transition-all cursor-pointer"
+              style={{ background: t.bg_card, borderColor: t.border_secondary }}
             >
                <div className="absolute inset-0">
                  {getCardImage('musify') ? (
-                   <img src={getCardImage('musify')} className="w-full h-full object-cover blur-[2px] brightness-[0.5] scale-105" />
+                    <img src={getCardImage('musify')} className="w-full h-full object-cover blur-[2px] brightness-[0.5] scale-105" />
                  ) : (
-                   <div className="w-full h-full bg-linear-to-br from-[#0a1a0a] to-[#0a0a1a]" />
+                    <div className="w-full h-full" style={{ background: t.gradient, opacity: 0.2 }} />
                  )}
               </div>
               <div className="absolute inset-0 bg-linear-to-t from-black/80 to-transparent" />
@@ -306,7 +324,7 @@ export const Profile: React.FC = () => {
                     </div>
                     <Music size={12} className="text-white" />
                  </div>
-                 <h3 className="text-white font-bold text-[15px]">Musify</h3>
+                 <h2 className="text-white font-bold text-[15px]">Musify</h2>
                  <p className="text-white/70 text-[11px] mt-0.5">Quick song quiz for your personality</p>
               </div>
             </motion.div>
@@ -314,39 +332,44 @@ export const Profile: React.FC = () => {
         </div>
 
         {/* Menu */}
-        <div className="bg-[#111] rounded-[24px] overflow-hidden border border-[#222]">
+        <div className="rounded-[24px] overflow-hidden border" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
           {menuItems.map((item, i) => (
             <button
               key={item.label}
               onClick={item.onClick}
-              className={`w-full flex items-center gap-4 p-5 hover:bg-white/5 transition-all active:bg-white/10 group ${
-                i !== menuItems.length - 1 ? 'border-b border-[#222]' : ''
+              className={`w-full flex items-center gap-4 p-5 transition-all active:bg-white/5 group ${
+                i !== menuItems.length - 1 ? 'border-b' : ''
               }`}
+              style={{ borderColor: t.border_secondary }}
             >
-              <div className={`p-2.5 rounded-xl bg-black/50 ${item.color} border border-white/5`}>
+              <div 
+                className={`p-2.5 rounded-xl border`} 
+                style={{ background: t.bg_primary, borderColor: t.border_secondary, color: typeof item.color === 'string' && item.color.startsWith('#') ? item.color : undefined }}
+              >
                 {item.icon}
               </div>
-              <span className="flex-1 text-left text-[15px] font-bold text-[#eee]">{item.label}</span>
-              <ChevronRight size={18} className="text-[#444] group-hover:text-white transition-all" />
+              <span className="flex-1 text-left text-[15px] font-bold" style={{ color: t.text_primary }}>{item.label}</span>
+              <ChevronRight size={18} className="transition-all" style={{ color: t.text_tertiary }} />
             </button>
           ))}
         </div>
 
         <button 
           onClick={() => setShowSignOutConfirm(true)}
-          className="w-full flex items-center justify-center gap-3 bg-[#ef444410] hover:bg-[#ef444420] text-[#ef4444] transition-all py-5 rounded-[24px] border border-[#ef444420] font-bold"
+          className="w-full flex items-center justify-center gap-3 transition-all py-5 rounded-[24px] border font-bold"
+          style={{ background: t.red_bg, borderColor: t.red_bg, color: t.red }}
         >
           <LogOut size={20} />
           <span className="uppercase tracking-widest text-[13px]">Sign Out</span>
         </button>
 
-        <p className="text-center text-[10px] text-[#444] font-bold uppercase tracking-widest pb-4">
+        <p className="text-center text-[10px] font-bold uppercase tracking-widest pb-4" style={{ color: t.text_tertiary }}>
           Thread ZW v2.0 • Proudly Zimbabwean 🇿🇼
         </p>
 
         {/* Auth Debug Panel (Hidden/Small) */}
-        <div className="mt-8 border-t border-white/5 pt-8 flex flex-col items-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
-          <p className="text-[10px] font-mono text-[#444] uppercase tracking-[0.2em]">Auth Debug Centre</p>
+        <div className="mt-8 border-t pt-8 flex flex-col items-center gap-4 opacity-50 hover:opacity-100 transition-opacity" style={{ borderColor: t.border_secondary }}>
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: t.text_tertiary }}>Auth Debug Centre</p>
           
           <button
             onClick={() => {
@@ -377,7 +400,7 @@ export const Profile: React.FC = () => {
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#333',
+              color: t.text_tertiary,
               fontSize: 11,
               fontFamily: 'monospace',
               cursor: 'pointer',
@@ -392,9 +415,9 @@ export const Profile: React.FC = () => {
           <div className="flex flex-col items-center gap-1">
             <div className="flex items-center gap-2">
               <div className={`w-1.5 h-1.5 rounded-full ${session ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-[9px] font-mono text-[#555] uppercase">{session ? 'Supabase ACTIVE' : 'Supabase INACTIVE'}</span>
+              <span className="text-[9px] font-mono uppercase" style={{ color: t.text_tertiary }}>{session ? 'Supabase ACTIVE' : 'Supabase INACTIVE'}</span>
             </div>
-            <p className="text-[8px] font-mono text-[#333] uppercase">UID: {session?.user?.id || 'null'}</p>
+            <p className="text-[8px] font-mono uppercase" style={{ color: t.text_tertiary }}>UID: {session?.user?.id || 'null'}</p>
           </div>
         </div>
       </div>
@@ -408,34 +431,38 @@ export const Profile: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowSignOutConfirm(false)}
-              className="fixed inset-0 bg-black/80 z-[200] backdrop-blur-md"
+              className="fixed inset-0 z-[200] backdrop-blur-md"
+              style={{ background: t.overlay }}
             />
             <motion.div 
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[201] bg-[#0d0d0d] rounded-t-[32px] p-8 pb-12 border-t border-[#222]"
+              className="fixed bottom-0 left-0 right-0 z-[201] rounded-t-[32px] p-8 pb-12 border-t shadow-2xl"
+              style={{ background: t.bg_primary, borderColor: t.border_secondary }}
             >
-              <div className="w-12 h-1 bg-[#333] rounded-full mx-auto mb-8" />
+              <div className="w-12 h-1 rounded-full mx-auto mb-8" style={{ background: t.border_secondary }} />
               <div className="text-center space-y-4 mb-8">
-                <div className="w-20 h-20 bg-[#ef444415] rounded-full flex items-center justify-center mx-auto mb-2">
-                  <LogOut size={32} className="text-[#ef4444]" />
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-2" style={{ background: t.red_bg }}>
+                  <LogOut size={32} style={{ color: t.red }} />
                 </div>
-                <h2 className="text-white text-2xl font-bold">Sign Out?</h2>
-                <p className="text-[#888] text-[15px]">You'll need to sign back in to access your shop and saved items.</p>
+                <h2 className="text-2xl font-bold" style={{ color: t.text_primary }}>Sign Out?</h2>
+                <p className="text-[15px]" style={{ color: t.text_tertiary }}>You'll need to sign back in to access your shop and saved items.</p>
               </div>
               
               <div className="flex flex-col gap-3">
                 <button 
                   onClick={() => signOut()}
-                  className="w-full h-14 bg-[#ef4444] text-white font-bold rounded-full text-[16px] active:scale-95 transition-all shadow-lg shadow-[#ef4444]/20"
+                  className="w-full h-14 text-white font-bold rounded-full text-[16px] active:scale-95 transition-all shadow-lg"
+                  style={{ background: t.red, boxShadow: t.shadow }}
                 >
                   Yes, Sign Out
                 </button>
                 <button 
                   onClick={() => setShowSignOutConfirm(false)}
-                  className="w-full h-14 bg-[#111] text-white font-bold rounded-full text-[16px] border border-[#222]"
+                  className="w-full h-14 font-bold rounded-full text-[16px] border"
+                  style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary }}
                 >
                   Cancel
                 </button>
@@ -454,20 +481,22 @@ export const Profile: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowShopPopup(false)}
-              className="fixed inset-0 bg-black/80 z-[200] backdrop-blur-sm"
+              className="fixed inset-0 z-[200] backdrop-blur-sm"
+              style={{ background: t.overlay }}
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-[380px] bg-[#0d0d0d] border border-[#222] rounded-[32px] p-8 z-[201] flex flex-col items-center text-center gap-6 shadow-2xl"
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-[380px] border rounded-[32px] p-8 z-[201] flex flex-col items-center text-center gap-6 shadow-2xl"
+              style={{ background: t.bg_primary, borderColor: t.border_secondary }}
             >
-              <div className="w-20 h-20 bg-[#FF2D7815] rounded-full flex items-center justify-center text-4xl mb-2 border border-[#FF2D7830]">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-2 border" style={{ background: `${t.accent}15`, borderColor: `${t.accent}30` }}>
                 🏪
               </div>
               <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-white italic">Open Your Shop</h3>
-                <p className="text-sm text-[#888] leading-relaxed">
+                <h3 className="text-2xl font-bold italic" style={{ color: t.text_primary }}>Open Your Shop</h3>
+                <p className="text-sm font-sans leading-relaxed" style={{ color: t.text_secondary }}>
                   Start selling your drip to thousands of buyers across Zimbabwe today.
                 </p>
               </div>
@@ -477,13 +506,15 @@ export const Profile: React.FC = () => {
                     setShowShopPopup(false);
                     handleOpenShopCentre(navigate);
                   }}
-                  className="w-full h-14 bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold rounded-full shadow-lg shadow-[#FF2D78]/20 flex items-center justify-center gap-2"
+                  className="w-full h-14 text-white font-bold rounded-full shadow-lg flex items-center justify-center gap-2"
+                  style={{ background: t.gradient, boxShadow: t.shadow }}
                 >
                   Launch Shop →
                 </button>
                 <button 
                   onClick={() => setShowShopPopup(false)}
-                  className="w-full h-14 bg-[#111] text-[#666] font-bold rounded-full border border-[#222]"
+                  className="w-full h-14 font-bold rounded-full border"
+                  style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_tertiary }}
                 >
                   Maybe Later
                 </button>

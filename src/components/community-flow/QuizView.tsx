@@ -5,8 +5,10 @@ import { X } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useTheme, useThemeControl } from '../../App';
 
 const FALLBACK_QUESTIONS = [
+  // ... (keeping FALLBACK_QUESTIONS as is)
   {
     id: 'q1',
     question_number: 1,
@@ -130,6 +132,7 @@ const FALLBACK_QUESTIONS = [
 ];
 
 const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+  const t = useTheme();
   const [ballState, setBallState] = useState<{ x: number; y: number; trail: { x: number; y: number }[] }>({
     x: -16,
     y: 60,
@@ -156,17 +159,14 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
       const elapsed = timestamp - startTimeRef.current;
       const progress = Math.min(elapsed / DURATION, 1);
       
-      // Ball X: left to right
       const containerWidth = window.innerWidth;
       const ballX = progress * (containerWidth + 32) - 16;
       
-      // Ball Y: sine wave oscillation
       const centerY = 60;
       const amplitude = 22;
       const frequency = 6;
       const ballY = centerY + amplitude * Math.sin(progress * Math.PI * 2 * frequency);
       
-      // Add to trail
       trailRef.current.push({
         x: ballX + 8,
         y: ballY
@@ -207,7 +207,7 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
     <div style={{
       position: 'fixed',
       inset: 0,
-      background: '#000',
+      background: t.bg_primary,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -230,7 +230,7 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
           <polyline
             points={ballState.trail.map(p => `${p.x},${p.y}`).join(' ')}
             fill="none"
-            stroke="rgba(155,39,175,0.3)"
+            stroke={`${t.accent}4D`}
             strokeWidth="6"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -238,7 +238,7 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
           <polyline
             points={ballState.trail.map(p => `${p.x},${p.y}`).join(' ')}
             fill="none"
-            stroke="#FF2D78"
+            stroke={t.accent}
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -251,8 +251,8 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
           width: 16,
           height: 16,
           borderRadius: '50%',
-          background: 'linear-gradient(135deg, #FF2D78, #9B27AF)',
-          boxShadow: '0 0 16px rgba(255,45,120,0.9), 0 0 32px rgba(255,45,120,0.4)',
+          background: t.gradient,
+          boxShadow: `0 0 16px ${t.accent}, 0 0 32px ${t.accent}66`,
           left: ballState.x,
           top: ballState.y - 8,
           transform: 'none',
@@ -261,7 +261,7 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
       </div>
       
       <p style={{
-        color: 'rgba(255,255,255,0.4)',
+        color: t.text_tertiary,
         fontSize: 11,
         fontFamily: 'monospace',
         marginTop: 24,
@@ -275,6 +275,7 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 };
 
 export const QuizView: React.FC = () => {
+  const t = useTheme();
   const { setCommunityScreen, updateUserData, setBuyerFlowState } = useInventory();
   const { session, updateProfile } = useAuth();
   const navigate = useNavigate();
@@ -295,7 +296,6 @@ export const QuizView: React.FC = () => {
   }, []);
 
   const fetchQuizData = useCallback(async () => {
-    console.log('QuizView: Starting fetchQuizData');
     setLoadingQuiz(true);
     try {
       const { data: questions, error } = await supabase
@@ -314,12 +314,7 @@ export const QuizView: React.FC = () => {
         .eq('is_active', true)
         .order('display_order', { ascending: true });
 
-      if (error) {
-        console.error('Quiz fetch error from Supabase:', error);
-        throw error;
-      }
-
-      console.log('QuizView: Fetch successful, count:', questions?.length);
+      if (error) throw error;
 
       const sorted = (questions || []).map(q => ({
         ...q,
@@ -329,14 +324,12 @@ export const QuizView: React.FC = () => {
       if (sorted.length > 0) {
         setQuizQuestions(sorted);
       } else {
-        console.warn('QuizView: No active questions in DB, using fallback');
         setQuizQuestions(FALLBACK_QUESTIONS);
       }
     } catch (err) {
       console.error('Quiz critical fetch error:', err);
       setQuizQuestions(FALLBACK_QUESTIONS);
     } finally {
-      console.log('QuizView: Setting loadingQuiz to false');
       setLoadingQuiz(false);
     }
   }, []);
@@ -379,18 +372,11 @@ export const QuizView: React.FC = () => {
   }, [quizQuestions]);
 
   const handleBallComplete = useCallback(async () => {
-    console.log('--- BALL ANIMATION COMPLETE ---');
     try {
-      // Calculate personality
-      console.log('Calculating personality from answers:', answers);
       const result = calculatePersonality(answers);
-      console.log('Result calculated:', result);
-      
-      // Update local storage and context immediately to avoid race conditions with DB
       updateUserData({ personality: result });
       
       if (session) {
-        // Sync in background - do not await
         (async () => {
           try {
             await updateProfile({ personality_type: result });
@@ -407,7 +393,6 @@ export const QuizView: React.FC = () => {
         })();
       }
       
-      console.log('Final step: update screens');
       if (isMounted.current) {
         setCommunityScreen('quizResult');
         setBuyerFlowState('quizResult');
@@ -424,18 +409,13 @@ export const QuizView: React.FC = () => {
   useEffect(() => {
     if (quizScreen !== 'loading') return;
     
-    console.log('BALL ANIMATION MOUNTED (quizScreen === loading)');
-    
-    // Safety net — extreme fallback if animation totally fails to call onComplete
     const safetyTimer = setTimeout(() => {
-      console.warn('BALL ANIMATION SAFETY TIMEOUT - FORCING RESULT');
       if (isMounted.current) {
         handleBallComplete();
       }
     }, 6000);
     
     return () => {
-      console.log('Cleaning up loading safety timer');
       clearTimeout(safetyTimer);
     };
   }, [quizScreen, handleBallComplete]);
@@ -452,9 +432,6 @@ export const QuizView: React.FC = () => {
           setSelectedAnswerKey(null);
         }
       } else {
-        console.log('Quiz screen changing to loading');
-        console.log('Answers:', newAnswers);
-        console.log('Questions:', quizQuestions?.length);
         if (isMounted.current) {
           setQuizScreen('loading');
         }
@@ -478,20 +455,21 @@ export const QuizView: React.FC = () => {
 
   if (loadingQuiz) {
     return (
-      <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#FF2D78]/20 border-t-[#FF2D78] rounded-full animate-spin" />
-        <p className="mt-4 text-[#888] font-mono text-[13px] tracking-widest uppercase">Reading your vibe...</p>
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center" style={{ background: t.bg_primary }}>
+        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: `${t.accent}33`, borderTopColor: t.accent }} />
+        <p className="mt-4 font-mono text-[13px] tracking-widest uppercase" style={{ color: t.text_tertiary }}>Reading your vibe...</p>
       </div>
     );
   }
 
   if (quizQuestions.length === 0) {
     return (
-      <div className="fixed inset-0 bg-black z-[100] flex flex-col items-center justify-center p-8 text-center">
-        <p className="text-white font-bold">Something went wrong loading the quiz.</p>
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center" style={{ background: t.bg_primary }}>
+        <p className="font-bold" style={{ color: t.text_primary }}>Something went wrong loading the quiz.</p>
         <button 
           onClick={handleClose}
-          className="mt-4 px-6 h-12 bg-[#FF2D78] rounded-full text-white font-bold"
+          className="mt-4 px-6 h-12 rounded-full text-white font-bold"
+          style={{ background: t.accent }}
         >
           Go Back
         </button>
@@ -509,7 +487,13 @@ export const QuizView: React.FC = () => {
     return 'text-[18px]';
   };
 
-  const gradients = [
+  const { activeTheme } = useThemeControl();
+  const gradients = activeTheme === 'light' ? [
+    'from-[#E3F2FD] to-[#BBDEFB]',
+    'from-[#E8F5E9] to-[#C8E6C9]',
+    'from-[#FFF3E0] to-[#FFE0B2]',
+    'from-[#F3E5F5] to-[#E1BEE7]'
+  ] : [
     'from-[#1a1a2a] to-[#2a1a3a]',
     'from-[#1a2a1a] to-[#0a1a0a]',
     'from-[#2a1a1a] to-[#3a0a0a]',
@@ -517,16 +501,17 @@ export const QuizView: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 bg-black z-[100] flex flex-col font-sans">
+    <div className="fixed inset-0 z-[100] flex flex-col font-sans" style={{ background: t.bg_primary }}>
       {/* Top Bar */}
       <div className="px-5 pt-12 pb-2 flex items-center justify-between">
         <button 
           onClick={handleClose}
-          className="w-9 h-9 rounded-full bg-[#111] flex items-center justify-center text-white active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+          style={{ background: t.bg_secondary, color: t.text_primary }}
         >
           <X size={18} />
         </button>
-        <span className="text-white font-mono font-bold text-[14px]">
+        <span className="font-mono font-bold text-[14px]" style={{ color: t.text_primary }}>
           {currentStep + 1}/{quizQuestions.length}
         </span>
       </div>
@@ -534,14 +519,15 @@ export const QuizView: React.FC = () => {
       {/* Progress Bars */}
       <div className="px-5 mt-2 flex gap-[3px]">
         {quizQuestions.map((_, idx) => (
-          <div key={idx} className="flex-1 h-0.5 bg-white/20 rounded-full overflow-hidden">
+          <div key={idx} className="flex-1 h-0.5 rounded-full overflow-hidden" style={{ background: `${t.text_primary}33` }}>
             <motion.div 
               initial={{ width: '0%' }}
               animate={{ 
                 width: idx < currentStep ? '100%' : (idx === currentStep ? '100%' : '0%') 
               }}
               transition={{ duration: idx === currentStep ? 0.4 : 0 }}
-              className="h-full bg-[#FF2D78]"
+              className="h-full"
+              style={{ background: t.accent }}
             />
           </div>
         ))}
@@ -561,7 +547,7 @@ export const QuizView: React.FC = () => {
             {/* Question Section */}
             <div className="px-5 mb-8">
               <span className="text-[28px] mb-2 block">{currentQuestion?.question_emoji}</span>
-              <h2 className={`text-white font-bold leading-tight uppercase ${getQuestionFontSize(currentQuestion?.question_text || '')}`} style={{ fontFamily: "'Bebas Neue', 'Arial Black', sans-serif", letterSpacing: '0.02em' }}>
+              <h2 className={`font-bold leading-tight uppercase ${getQuestionFontSize(currentQuestion?.question_text || '')}`} style={{ color: t.text_primary, fontFamily: "'Bebas Neue', 'Arial Black', sans-serif", letterSpacing: '0.02em' }}>
                 {currentQuestion?.question_text}
               </h2>
             </div>
@@ -579,10 +565,14 @@ export const QuizView: React.FC = () => {
                       whileTap={{ scale: 0.97 }}
                       onClick={() => !isAnySelected && handleSelect(currentQuestion.id, answer.answer_key)}
                       className={`
-                        relative aspect-[4/5] rounded-[16px] overflow-hidden transition-all duration-300
-                        ${isSelected ? 'border-[3px] border-[#FF2D78] scale-[0.97] brightness-75' : 'border-2 border-transparent'}
-                        ${isAnySelected && !isSelected ? 'opacity-40' : 'opacity-100'}
+                        relative aspect-[4/5] rounded-[16px] overflow-hidden transition-all duration-300 border-2
                       `}
+                      style={{ 
+                        borderColor: isSelected ? t.accent : 'transparent',
+                        opacity: isAnySelected && !isSelected ? 0.4 : 1,
+                        transform: isSelected ? 'scale(0.97)' : 'scale(1)',
+                        filter: isSelected ? 'brightness(0.75)' : 'none'
+                      }}
                     >
                       {answer.image_url ? (
                         <>
@@ -591,15 +581,15 @@ export const QuizView: React.FC = () => {
                             alt={answer.answer_text} 
                             className="absolute inset-0 w-full h-full object-cover"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                          <span className="absolute bottom-3 left-3 right-3 text-white font-bold text-[13px] leading-tight text-left shadow-black" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+                          <span className="absolute bottom-3 left-3 right-3 text-white font-bold text-[13px] leading-tight text-left" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
                             {answer.answer_text}
                           </span>
                         </>
                       ) : (
                         <div className={`w-full h-full bg-gradient-to-br ${gradients[idx % gradients.length]} flex flex-col items-center justify-center p-4 text-center`}>
                           <span className="text-[24px] mb-2 opacity-80">{currentQuestion.question_emoji}</span>
-                          <span className="text-white font-bold text-[14px]">
+                          <span className="font-bold text-[14px]" style={{ color: activeTheme === 'light' ? '#1a1a1a' : '#ffffff' }}>
                             {answer.answer_text}
                           </span>
                         </div>
@@ -611,7 +601,8 @@ export const QuizView: React.FC = () => {
                           <motion.div 
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="absolute top-2.5 right-2.5 w-7 h-7 bg-[#FF2D78] rounded-full border-2 border-white flex items-center justify-center shadow-lg"
+                            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-lg"
+                            style={{ background: t.accent }}
                           >
                             <span className="text-white font-bold text-[14px]">✓</span>
                           </motion.div>

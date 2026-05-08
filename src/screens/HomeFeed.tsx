@@ -7,27 +7,36 @@ import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { toast } from 'sonner';
+import { useTheme } from '../App';
 
 import { Avatar } from '../components/Avatar';
 
 // Reusable Skeleton Pulse
-const Pulse = ({ className }: { className: string }) => (
-  <div className={`bg-[#222] animate-pulse ${className}`} />
-);
+const Pulse = ({ className }: { className: string }) => {
+  const t = useTheme();
+  return (
+    <div className={`animate-pulse ${className}`} style={{ background: t.border_primary }} />
+  );
+};
 
 // Section Error Wrapper
-const SectionError = ({ onRetry }: { onRetry: () => void }) => (
-  <div 
-    onClick={onRetry}
-    className="bg-[#111111] border border-[#222] rounded-[14px] p-4 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all"
-  >
-    <span className="text-lg">⚠️</span>
-    <p className="text-[#888] text-[12px]">Could not load</p>
-    <p className="text-[#FF2D78] text-[12px] font-bold">Tap to retry</p>
-  </div>
-);
+const SectionError = ({ onRetry }: { onRetry: () => void }) => {
+  const t = useTheme();
+  return (
+    <div 
+      onClick={onRetry}
+      className="rounded-[14px] p-4 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all border"
+      style={{ background: t.bg_card, borderColor: t.border_primary }}
+    >
+      <span className="text-lg">⚠️</span>
+      <p style={{ color: t.text_secondary, fontSize: '12px' }}>Could not load</p>
+      <p style={{ color: t.accent, fontSize: '12px', fontWeight: 'bold' }}>Tap to retry</p>
+    </div>
+  );
+};
 
 export const HomeFeed: React.FC = () => {
+  const t = useTheme();
   const navigate = useNavigate();
   const { session, profile, loading: authLoading } = useAuth();
   const { cart, toggleSave, stories: activeStories, setStoriesViewerOpen } = useInventory();
@@ -334,7 +343,7 @@ export const HomeFeed: React.FC = () => {
           : p
       ));
       toast.error(isSaved ? "Could not remove. Try again." : "Could not save product. Try again.", {
-        style: { background: '#ef4444', color: 'white' }
+        style: { background: t.red, color: 'white' }
       });
     }
   };
@@ -365,9 +374,9 @@ export const HomeFeed: React.FC = () => {
   };
 
   const getStockBadge = (stock: number) => {
-    if (stock === 0) return <span className="bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full text-[9px] font-bold">Out of Stock</span>;
-    if (stock <= 3) return <span className="bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full text-[9px] font-bold">Only {stock} left</span>;
-    return <span className="bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full text-[9px] font-bold">In Stock</span>;
+    if (stock === 0) return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: t.red_bg, color: t.red }}>Out of Stock</span>;
+    if (stock <= 3) return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: t.amber_bg, color: t.amber }}>Only {stock} left</span>;
+    return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: t.green_bg, color: t.green }}>In Stock</span>;
   };
 
   const formatFollowers = (count: number) => {
@@ -376,41 +385,52 @@ export const HomeFeed: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-black pb-24">
+    <div className="flex flex-col min-h-screen pb-24" style={{ background: t.bg_primary }}>
       {/* Top Bar */}
-      <header className="sticky top-0 bg-black/80 backdrop-blur-md z-40 px-6 py-4 flex justify-between items-center border-b border-white/5">
+      <header 
+        className="sticky top-0 backdrop-blur-md z-40 px-6 py-4 flex justify-between items-center border-b"
+        style={{ background: `${t.bg_primary}80`, borderColor: t.border_secondary }}
+      >
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-white">
+            <h1 className="text-xl font-bold" style={{ color: t.text_primary }}>
               Welcome, 
             </h1>
             {authLoading ? (
               <Pulse className="w-[120px] h-[16px] rounded-full" />
             ) : (
-              <span className="text-xl font-bold text-white">
+              <span className="text-xl font-bold" style={{ color: t.text_primary }}>
                 {profile?.display_name?.split(' ')[0] || "Champ"}
               </span>
             )}
           </div>
-          <p className="text-[10px] text-primary font-mono uppercase tracking-[0.2em] font-bold mt-0.5">Explore the closet</p>
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] font-bold mt-0.5" style={{ color: t.accent }}>Explore the closet</p>
         </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={() => navigate('/notifications')}
-            className="p-2.5 rounded-full bg-white/5 text-white relative active:scale-95 transition-transform"
+            className="p-2.5 rounded-full relative active:scale-95 transition-transform"
+            style={{ background: t.bg_card_2, color: t.text_primary }}
           >
             <Bell size={20} />
             {unreadCount > 0 && (
-              <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-[#FF2D78] rounded-full border-2 border-black animate-pulse" />
+              <span 
+                className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full border-2 animate-pulse" 
+                style={{ background: t.accent, borderColor: t.bg_primary }}
+              />
             )}
           </button>
           <button 
             onClick={() => navigate('/enquiries')}
-            className="p-2.5 rounded-full bg-white/5 text-white relative active:scale-95 transition-transform"
+            className="p-2.5 rounded-full relative active:scale-95 transition-transform"
+            style={{ background: t.bg_card_2, color: t.text_primary }}
           >
             <ShoppingCart size={20} />
             {cart.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF2D78] text-[10px] font-bold flex items-center justify-center rounded-full text-white border-2 border-black">
+              <span 
+                className="absolute -top-1 -right-1 w-5 h-5 text-[10px] font-bold flex items-center justify-center rounded-full border-2"
+                style={{ background: t.accent, color: 'white', borderColor: t.bg_primary }}
+              >
                 {cart.length}
               </span>
             )}
@@ -421,7 +441,10 @@ export const HomeFeed: React.FC = () => {
       {/* Pull to Refresh Spinner placeholder */}
       {refreshing && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50">
-          <div className="w-8 h-8 border-2 border-[#FF2D78] border-t-transparent rounded-full animate-spin" />
+          <div 
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" 
+            style={{ borderColor: t.accent }}
+          />
         </div>
       )}
 
@@ -429,10 +452,11 @@ export const HomeFeed: React.FC = () => {
         {/* Prominent Search Bar */}
         <div 
           onClick={() => navigate('/search')}
-          className="relative bg-white/5 border border-white/10 rounded-[18px] py-4 pl-12 pr-6 cursor-pointer hover:bg-white/[0.08] transition-colors"
+          className="relative border rounded-[18px] py-4 pl-12 pr-6 cursor-pointer transition-colors"
+          style={{ background: t.bg_card, borderColor: t.border_primary }}
         >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF2D78]" size={20} />
-          <span className="text-[#888] text-sm">Search for drip...</span>
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: t.accent }} size={20} />
+          <span style={{ color: t.text_secondary, fontSize: '14px' }}>Search for drip...</span>
         </div>
 
         {/* 1. Stories Row */}
@@ -449,15 +473,15 @@ export const HomeFeed: React.FC = () => {
             <div className="flex gap-4 overflow-x-auto no-scrollbar">
               {stories.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 flex-shrink-0 opacity-50 px-4">
-                  <div className="w-16 h-16 rounded-full bg-[#111] border border-white/5" />
-                  <span className="text-[10px] text-[#888] font-mono">Loading...</span>
+                  <div className="w-16 h-16 rounded-full border" style={{ background: t.bg_secondary, borderColor: t.border_secondary }} />
+                  <span className="text-[10px] font-mono" style={{ color: t.text_tertiary }}>Loading...</span>
                 </div>
               ) : (
                 stories.map(item => {
                   const isViewed = viewedStories.includes(item.id);
-                  const ringColorClass = item.hasStory 
-                    ? (isViewed ? 'bg-[#333]' : 'bg-linear-to-tr from-[#9B27AF] to-[#FF2D78] shadow-[0_0_15px_rgba(255,45,120,0.3)]')
-                    : 'bg-white/10';
+                  const ringColorStyle = item.hasStory 
+                    ? (isViewed ? { borderColor: t.border_secondary } : { background: t.gradient, boxShadow: t.shadow })
+                    : { borderColor: t.border_subtle };
 
                   return (
                     <button 
@@ -476,14 +500,18 @@ export const HomeFeed: React.FC = () => {
                       }}
                       className="flex flex-col items-center gap-2 flex-shrink-0"
                     >
-                      <div className={`w-16 h-16 rounded-full p-[2.5px] transition-all ${ringColorClass}`}>
+                      <div 
+                        className={`w-16 h-16 rounded-full p-[2.5px] transition-all ${item.hasStory && !isViewed ? '' : 'border'}`}
+                        style={item.hasStory && !isViewed ? { background: t.gradient } : { borderColor: t.border_subtle }}
+                      >
                         <Avatar 
                           url={item.avatar_url} 
                           size={60}
-                          className="border-2 border-black"
+                          className="border-2"
+                          style={{ borderColor: t.bg_primary }}
                         />
                       </div>
-                      <span className="text-[10px] text-white font-mono w-16 text-center leading-tight truncate">
+                      <span className="text-[10px] font-mono w-16 text-center leading-tight truncate" style={{ color: t.text_primary }}>
                         {item.name.length > 8 ? item.name.substring(0, 8) + '...' : item.name}
                       </span>
                     </button>
@@ -512,7 +540,7 @@ export const HomeFeed: React.FC = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               <div className="absolute bottom-5 left-5 right-5 flex justify-between items-end">
                 <div>
-                  <span className="bg-[#FF2D78] text-white text-[9px] font-bold px-2 py-1 rounded-full uppercase tracking-widest">Featured Drop</span>
+                  <span className="text-white text-[9px] font-bold px-2 py-1 rounded-full uppercase tracking-widest" style={{ background: t.accent }}>Featured Drop</span>
                   <h3 className="text-white text-xl font-bold mt-2 leading-tight">{featured.name}</h3>
                   <p className="text-white/60 text-xs mt-0.5">by {featured.shops?.name}</p>
                 </div>
@@ -525,8 +553,8 @@ export const HomeFeed: React.FC = () => {
         {/* 3. New In Section */}
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <h2 className="text-white font-bold tracking-tight">New In</h2>
-            <button className="text-[#FF2D78] text-xs font-bold" onClick={() => navigate('/search')}>See All</button>
+            <h2 className="font-bold tracking-tight" style={{ color: t.text_primary }}>New In</h2>
+            <button style={{ color: t.accent, fontSize: '12px', fontWeight: 'bold' }} onClick={() => navigate('/search')}>See All</button>
           </div>
           {newInLoading ? (
             <div className="flex gap-4 overflow-x-auto no-scrollbar">
@@ -563,20 +591,21 @@ export const HomeFeed: React.FC = () => {
                           e.stopPropagation();
                           handleSaveToggle(product);
                         }}
-                        className="absolute top-3 right-3 p-2.5 rounded-full bg-black/40 backdrop-blur-md text-white hover:text-[#FF2D78] transition-colors"
+                        className="absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-md transition-colors"
+                        style={{ background: `${t.bg_primary}66`, color: isSaved ? t.accent : 'white' }}
                       >
-                        <Heart size={14} fill={isSaved ? '#FF2D78' : 'none'} className={isSaved ? 'text-[#FF2D78]' : ''} />
+                        <Heart size={14} fill={isSaved ? t.accent : 'none'} />
                       </button>
                       <div className="absolute bottom-3 left-3">
                         {getStockBadge(product.total_stock)}
                       </div>
                     </div>
                     <div className="flex flex-col px-1">
-                      <p className="text-[#888] text-[10px] font-mono uppercase tracking-wider truncate">{product.shops?.name}</p>
-                      <h4 className="text-white text-sm font-bold truncate mt-0.5">{product.name}</h4>
+                      <p className="text-[10px] font-mono uppercase tracking-wider truncate" style={{ color: t.text_secondary }}>{product.shops?.name}</p>
+                      <h4 className="text-sm font-bold truncate mt-0.5" style={{ color: t.text_primary }}>{product.name}</h4>
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-[#FF2D78] font-bold font-syne">${product.price}</span>
-                        <div className="flex items-center gap-1 text-[#888] text-[10px]">
+                        <span className="font-bold font-syne" style={{ color: t.accent }}>${product.price}</span>
+                        <div className="flex items-center gap-1 text-[10px]" style={{ color: t.text_tertiary }}>
                           <Bookmark size={10} />
                           {product.save_count || 0}
                         </div>
@@ -589,11 +618,12 @@ export const HomeFeed: React.FC = () => {
           ) : (
             <div className="col-span-full">
               {/* Fallback to EmptyFeedDiscovery if no products */}
-              <div className="bg-[#111] rounded-[24px] p-8 text-center border border-white/5">
-                <p className="text-white font-bold opacity-80 mb-4">Thread ZW is starting up.</p>
+              <div className="rounded-[24px] p-8 text-center border" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
+                <p className="font-bold opacity-80 mb-4" style={{ color: t.text_primary }}>Thread ZW is starting up.</p>
                 <button 
                   onClick={() => navigate('/shops')}
-                  className="w-full py-3 bg-[#FF2D78] text-white rounded-full font-bold text-sm shadow-lg shadow-[#FF2D78]/20"
+                  className="w-full py-3 text-white rounded-full font-bold text-sm shadow-lg"
+                  style={{ background: t.accent, boxShadow: t.shadow }}
                 >
                   Browse Shops
                 </button>
@@ -605,32 +635,34 @@ export const HomeFeed: React.FC = () => {
         {/* 4. Shops to Follow */}
         {shopsToFollow.length > 0 && !shopsLoading && (
           <div className="flex flex-col gap-4">
-            <h2 className="text-white font-bold tracking-tight">Shops to Follow</h2>
+            <h2 className="font-bold tracking-tight" style={{ color: t.text_primary }}>Shops to Follow</h2>
             <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6">
-              {shopsToFollow.map(shop => (
+          {shopsToFollow.map(shop => (
                 <div 
                   key={shop.id}
                   onClick={() => navigate(`/shop/${shop.id}`)}
-                  className="w-[180px] flex-shrink-0 bg-white/5 border border-white/10 rounded-[24px] p-5 flex flex-col items-center text-center gap-3 cursor-pointer hover:bg-white/[0.08] transition-colors"
+                  className="w-[180px] flex-shrink-0 border rounded-[24px] p-5 flex flex-col items-center text-center gap-3 cursor-pointer transition-colors"
+                  style={{ background: t.bg_card, borderColor: t.border_primary, boxShadow: t.shadow }}
                 >
                   <Avatar 
                     url={shop.avatar_url} 
                     size={64}
-                    className="bg-black/40"
+                    style={{ background: t.bg_secondary }}
                   />
                   <div>
-                    <h4 className="text-white font-bold truncate w-full">{shop.name}</h4>
-                    <p className="text-[#888] text-[10px] uppercase font-mono tracking-widest mt-0.5">{shop.category || 'Boutique'}</p>
+                    <h4 className="font-bold truncate w-full" style={{ color: t.text_primary }}>{shop.name}</h4>
+                    <p className="text-[10px] uppercase font-mono tracking-widest mt-0.5" style={{ color: t.text_secondary }}>{shop.category || 'Boutique'}</p>
                   </div>
-                  <div className="bg-white/5 px-3 py-1 rounded-full">
-                    <span className="text-[10px] text-[#888]">{formatFollowers(shop.follower_count)}</span>
+                  <div className="px-3 py-1 rounded-full" style={{ background: t.bg_secondary }}>
+                    <span className="text-[10px]" style={{ color: t.text_secondary }}>{formatFollowers(shop.follower_count)}</span>
                   </div>
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();
                       handleFollow(shop);
                     }}
-                    className="w-full py-2.5 rounded-full border border-[#FF2D78] text-[#FF2D78] text-xs font-bold hover:bg-[#FF2D78] hover:text-white transition-all"
+                    className="w-full py-2.5 rounded-full border text-xs font-bold transition-all"
+                    style={{ borderColor: t.accent, color: t.accent }}
                   >
                     Follow
                   </button>
@@ -650,12 +682,16 @@ export const HomeFeed: React.FC = () => {
         {/* 5. How Fly Are You Card */}
         <div 
           onClick={() => navigate('/quiz')}
-          className="relative bg-gradient-to-br from-[#FF2D78] to-[#9C27B0] rounded-[28px] p-8 flex flex-col items-center text-center gap-4 overflow-hidden shadow-2xl shadow-[#FF2D78]/20 group cursor-pointer"
+          className="relative rounded-[28px] p-8 flex flex-col items-center text-center gap-4 overflow-hidden shadow-2xl group cursor-pointer"
+          style={{ background: t.gradient, boxShadow: t.shadow }}
         >
           <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 blur-3xl rounded-full -mr-24 -mt-12 group-hover:scale-125 transition-transform duration-700" />
           <h2 className="text-4xl font-pacifico text-white shadow-sm">How Fly Are You?</h2>
           <p className="text-white/80 text-sm max-w-[200px] leading-relaxed">Discover your fashion personality in 10 questions.</p>
-          <button className="mt-2 bg-white text-[#FF2D78] font-bold px-8 py-3 rounded-full flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl font-syne">
+          <button 
+            className="mt-2 bg-white font-bold px-8 py-3 rounded-full flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl font-syne"
+            style={{ color: t.accent }}
+          >
             Find Out <ArrowRight size={18} />
           </button>
         </div>
@@ -663,22 +699,26 @@ export const HomeFeed: React.FC = () => {
         {/* 6. Best Dresser Card */}
         <div 
           onClick={() => navigate('/best-dresser')}
-          className="bg-white/5 border border-white/10 rounded-[28px] p-6 flex items-center gap-5 group hover:border-[#FF2D78]/40 transition-all cursor-pointer"
+          className="border rounded-[28px] p-6 flex items-center gap-5 group transition-all cursor-pointer"
+          style={{ background: t.bg_card, borderColor: t.border_primary, boxShadow: t.shadow }}
         >
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#FFD700] to-[#FFA500] flex items-center justify-center shadow-lg shadow-yellow-500/10">
+          <div 
+            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}
+          >
             <Trophy size={28} className="text-black" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-pacifico text-white">Best Dresser</h3>
-            <p className="text-[#888] text-[10px] font-mono tracking-widest uppercase mt-1">
+            <h3 className="text-lg font-pacifico" style={{ color: t.text_primary }}>Best Dresser</h3>
+            <p className="text-[10px] font-mono tracking-widest uppercase mt-1" style={{ color: t.text_secondary }}>
               {bestDresser.nominee_count === 0 
                 ? 'Be the first to enter' 
                 : `${bestDresser.nominee_count} nominees competing`}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span className="text-white font-bold font-syne tracking-tight">$30</span>
-            <ArrowRight size={18} className="text-[#FF2D78] group-hover:translate-x-1 transition-transform" />
+            <span className="font-bold font-syne tracking-tight" style={{ color: t.text_primary }}>$30</span>
+            <ArrowRight size={18} style={{ color: t.accent }} className="group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
       </div>

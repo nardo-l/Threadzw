@@ -116,8 +116,12 @@ export const BestDresser: React.FC = () => {
                     <div className={`flex-1 bg-card rounded-2xl p-4 border-2 transition-all relative overflow-hidden ${
                       match.live ? 'border-primary animate-pulse' : match.winner?.id === match.p1?.id ? 'border-primary shadow-lg shadow-primary/20' : 'border-white/5 opacity-50'
                     }`}>
-                      <div className="aspect-square bg-black rounded-xl mb-3 flex items-center justify-center text-4xl">
-                        {match.p1?.imageEmoji || '👤'}
+                      <div className="aspect-square bg-black rounded-xl mb-3 flex items-center justify-center text-4xl relative overflow-hidden">
+                        {match.p1?.image_url ? (
+                          <img src={match.p1.image_url} alt={match.p1.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          match.p1?.imageEmoji || '👤'
+                        )}
                       </div>
                       <h4 className="text-sm font-bold text-white truncate">{match.p1?.name || 'Nominee'}</h4>
                       <span className="text-[8px] font-mono text-primary uppercase">{match.p1?.personality || 'Style Icon'}</span>
@@ -139,8 +143,12 @@ export const BestDresser: React.FC = () => {
                     <div className={`flex-1 bg-card rounded-2xl p-4 border-2 transition-all relative overflow-hidden ${
                       match.live ? 'border-primary animate-pulse' : match.winner?.id === match.p2?.id ? 'border-primary shadow-lg shadow-primary/20' : 'border-white/5 opacity-50'
                     }`}>
-                      <div className="aspect-square bg-black rounded-xl mb-3 flex items-center justify-center text-4xl">
-                        {match.p2?.imageEmoji || '👤'}
+                      <div className="aspect-square bg-black rounded-xl mb-3 flex items-center justify-center text-4xl relative overflow-hidden">
+                        {match.p2?.image_url ? (
+                          <img src={match.p2.image_url} alt={match.p2.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          match.p2?.imageEmoji || '👤'
+                        )}
                       </div>
                       <h4 className="text-sm font-bold text-white truncate">{match.p2?.name || 'Nominee'}</h4>
                       <span className="text-[8px] font-mono text-primary uppercase">{match.p2?.personality || 'Style Icon'}</span>
@@ -173,8 +181,12 @@ export const BestDresser: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             {nominees.map((nominee, i) => (
               <div key={nominee.id || i} className="bg-card rounded-card p-4 border border-white/5 flex flex-col gap-3 relative overflow-hidden">
-                <div className="aspect-square bg-black rounded-xl flex items-center justify-center text-5xl">
-                  {nominee.imageEmoji || '👤'}
+                <div className="aspect-square bg-black rounded-xl flex items-center justify-center text-5xl relative overflow-hidden">
+                  {nominee.image_url ? (
+                    <img src={nominee.image_url} alt={nominee.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    nominee.imageEmoji || '👤'
+                  )}
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-white">{nominee.name || nominee.display_name}</h4>

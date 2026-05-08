@@ -17,6 +17,7 @@ export interface Shop {
   rating: number;
   product_count: number;
   follower_count: number;
+  share_count?: number;
   is_verified: boolean;
   is_live: boolean;
   trial_ends_at?: string;

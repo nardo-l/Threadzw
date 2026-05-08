@@ -1,9 +1,11 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useTheme } from '../App';
 
 export const SplashScreen: React.FC<{ onRetry?: () => void; onSignOut?: () => void }> = ({ onRetry, onSignOut }) => {
+  const t = useTheme();
   return (
-    <div className="fixed inset-0 bg-[#0d0d0d] z-[9999] flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center transition-colors duration-500" style={{ background: t.bg_primary }}>
       <div className="flex flex-col items-center gap-8">
         {/* Logo */}
         <motion.div 
@@ -12,7 +14,7 @@ export const SplashScreen: React.FC<{ onRetry?: () => void; onSignOut?: () => vo
           transition={{ duration: 0.6 }}
           className="relative flex flex-col items-center"
         >
-          <h1 className="text-[52px] font-pacifico text-primary">
+          <h1 className="text-[52px] font-pacifico" style={{ color: t.accent }}>
             thread
           </h1>
           
@@ -21,7 +23,8 @@ export const SplashScreen: React.FC<{ onRetry?: () => void; onSignOut?: () => vo
             initial={{ width: 0 }}
             animate={{ width: '100%' }}
             transition={{ delay: 0.2, duration: 0.4 }}
-            className="h-1 gradient-pink-purple mt-2" 
+            className="h-1 mt-2" 
+            style={{ background: t.gradient }}
           />
         </motion.div>
 
@@ -30,7 +33,8 @@ export const SplashScreen: React.FC<{ onRetry?: () => void; onSignOut?: () => vo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-sm font-sans text-muted"
+          className="text-sm font-sans"
+          style={{ color: t.text_tertiary }}
         >
           Zimbabwe's Closet
         </motion.p>
@@ -39,9 +43,9 @@ export const SplashScreen: React.FC<{ onRetry?: () => void; onSignOut?: () => vo
       {/* Loading Indicator */}
       <div className="absolute bottom-24 flex flex-col items-center gap-4">
         <div className="flex gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary dot-pulse" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary dot-pulse" />
-          <div className="w-1.5 h-1.5 rounded-full bg-primary dot-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full dot-pulse" style={{ background: t.accent }} />
+          <div className="w-1.5 h-1.5 rounded-full dot-pulse" style={{ background: t.accent }} />
+          <div className="w-1.5 h-1.5 rounded-full dot-pulse" style={{ background: t.accent }} />
         </div>
 
         {(onRetry || onSignOut) && (
@@ -54,7 +58,8 @@ export const SplashScreen: React.FC<{ onRetry?: () => void; onSignOut?: () => vo
              {onRetry && (
                <button 
                  onClick={onRetry}
-                 className="px-6 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-bold text-white uppercase tracking-widest hover:bg-white/10"
+                 className="px-6 py-2 border rounded-full text-xs font-bold uppercase tracking-widest transition-all"
+                 style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary }}
                >
                  Retry Connection
                </button>
@@ -62,7 +67,8 @@ export const SplashScreen: React.FC<{ onRetry?: () => void; onSignOut?: () => vo
              {onSignOut && (
                <button 
                  onClick={onSignOut}
-                 className="px-6 py-2 bg-transparent text-muted text-xs font-bold uppercase tracking-widest hover:text-white"
+                 className="px-6 py-2 bg-transparent text-xs font-bold uppercase tracking-widest hover:brightness-125 transition-all"
+                 style={{ color: t.text_tertiary }}
                >
                  Wipe & Sign Out
                </button>
