@@ -16,10 +16,10 @@ export const PLANS: Record<string, PlanDetails> = {
     name: 'Thread ZW Shop',
     monthly: {
       firstMonth: 0.00,    // Trial
-      recurring: 6.00,     // $6/month after
+      recurring: 9.00,     // $9/month after
     },
     annual: {
-      amount: 18.00,       // Keeping annual for now or removing? User said $6/month.
+      amount: 27.00,       // $9/month x 3 months
     },
     maxProducts: Infinity,
     featuredDays: 5,

@@ -12,6 +12,10 @@ import { CommunityFlow } from '../components/community-flow/CommunityFlow';
 import { BestDresserEntryView } from '../components/community-flow/BestDresserEntryView';
 import { QuizView } from '../components/community-flow/QuizView';
 import { QuizResultView } from '../components/community-flow/QuizResultView';
+import { MusifyView } from '../components/musify/MusifyView';
+import { EventsView } from '../components/culture-flow/EventsView';
+import { FashionFeedView } from '../components/culture-flow/FashionFeedView';
+import { BuildAFitView } from '../components/culture-flow/BuildAFitView';
 import { ProductDetail } from './ProductDetail';
 import { Search } from './Search';
 
@@ -50,6 +54,21 @@ export const BuyerJourney: React.FC = () => {
     else if (location.pathname === '/notifications' && buyerFlowState !== 'notifications') {
       setBuyerFlowState('notifications');
     }
+    else if (location.pathname === '/musify') {
+      if (buyerFlowState !== 'musify') setBuyerFlowState('musify');
+    }
+    else if (location.pathname === '/culture') {
+      if (buyerFlowState !== 'feed') setBuyerFlowState('feed');
+    }
+    else if (location.pathname === '/feed') {
+      if (buyerFlowState !== 'feed') setBuyerFlowState('feed');
+    }
+    else if (location.pathname === '/events') {
+      if (buyerFlowState !== 'events') setBuyerFlowState('events');
+    }
+    else if (location.pathname === '/build-a-fit') {
+      if (buyerFlowState !== 'build-a-fit') setBuyerFlowState('build-a-fit');
+    }
     else if (location.pathname === '/quiz') {
        if (buyerFlowState !== 'quiz' && buyerFlowState !== 'quizResult') {
          setBuyerFlowState('quiz');
@@ -84,6 +103,14 @@ export const BuyerJourney: React.FC = () => {
       return <QuizView />;
     case 'quizResult':
       return <QuizResultView />;
+    case 'musify':
+      return <MusifyView />;
+    case 'events':
+      return <EventsView />;
+    case 'feed':
+      return <FashionFeedView />;
+    case 'build-a-fit':
+      return <BuildAFitView />;
     case 'notifications':
       return <NotificationsView />;
     case 'search':

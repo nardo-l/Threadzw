@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { Search, ShoppingCart, Heart, ArrowRight, Trophy, Bell, Radio, Plus, Bookmark, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -7,36 +7,31 @@ import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { toast } from 'sonner';
-import { useTheme } from '../App';
 
 import { Avatar } from '../components/Avatar';
 
 // Reusable Skeleton Pulse
 const Pulse = ({ className }: { className: string }) => {
-  const t = useTheme();
   return (
-    <div className={`animate-pulse ${className}`} style={{ background: t.border_primary }} />
+    <div className={`animate-pulse ${className} bg-[#222222]`} />
   );
 };
 
 // Section Error Wrapper
 const SectionError = ({ onRetry }: { onRetry: () => void }) => {
-  const t = useTheme();
   return (
     <div 
       onClick={onRetry}
-      className="rounded-[14px] p-4 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all border"
-      style={{ background: t.bg_card, borderColor: t.border_primary }}
+      className="rounded-[14px] p-4 flex flex-col items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all border bg-card border-white/5"
     >
       <span className="text-lg">⚠️</span>
-      <p style={{ color: t.text_secondary, fontSize: '12px' }}>Could not load</p>
-      <p style={{ color: t.accent, fontSize: '12px', fontWeight: 'bold' }}>Tap to retry</p>
+      <p className="text-[12px] text-text-secondary">Could not load</p>
+      <p className="text-[12px] text-primary font-bold">Tap to retry</p>
     </div>
   );
 };
 
 export const HomeFeed: React.FC = () => {
-  const t = useTheme();
   const navigate = useNavigate();
   const { session, profile, loading: authLoading } = useAuth();
   const { cart, toggleSave, stories: activeStories, setStoriesViewerOpen } = useInventory();
@@ -71,7 +66,7 @@ export const HomeFeed: React.FC = () => {
       const { data: shops, error: shopsError } = await supabase
         .from('shops')
         .select(`
-          id, name, handle, avatar_url, follower_count
+          id, name, handle, logo_url, follower_count
         `)
         .eq('is_live', true)
         .order('follower_count', { ascending: false })
@@ -201,7 +196,7 @@ export const HomeFeed: React.FC = () => {
       
       let query = supabase
         .from('shops')
-        .select('id, name, handle, avatar_url, category, follower_count, is_live')
+        .select('id, name, handle, logo_url, category, follower_count, is_live')
         .eq('is_live', true);
 
       if (session?.user?.id) {
@@ -297,6 +292,7 @@ export const HomeFeed: React.FC = () => {
 
   const fetchAll = async () => {
     if (!session && !isGuest) return;
+    // FETCH IN PARALLEL - FIX 2 IMPROVEMENT
     await Promise.all([
       fetchStories(),
       fetchFeaturedDrop(),
@@ -343,7 +339,7 @@ export const HomeFeed: React.FC = () => {
           : p
       ));
       toast.error(isSaved ? "Could not remove. Try again." : "Could not save product. Try again.", {
-        style: { background: t.red, color: 'white' }
+        style: { background: '#ef4444', color: 'white' }
       });
     }
   };
@@ -374,9 +370,9 @@ export const HomeFeed: React.FC = () => {
   };
 
   const getStockBadge = (stock: number) => {
-    if (stock === 0) return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: t.red_bg, color: t.red }}>Out of Stock</span>;
-    if (stock <= 3) return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: t.amber_bg, color: t.amber }}>Only {stock} left</span>;
-    return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold" style={{ background: t.green_bg, color: t.green }}>In Stock</span>;
+    if (stock === 0) return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#ef44441a] text-[#ef4444]">Out of Stock</span>;
+    if (stock <= 3) return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#f59e0b1a] text-[#f59e0b]">Only {stock} left</span>;
+    return <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-[#22c55e1a] text-[#22c55e]">In Stock</span>;
   };
 
   const formatFollowers = (count: number) => {
@@ -385,54 +381,36 @@ export const HomeFeed: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen pb-24" style={{ background: t.bg_primary }}>
+    <div className="flex flex-col min-h-screen pb-24 bg-background">
       {/* Top Bar */}
       <header 
-        className="sticky top-0 backdrop-blur-md z-40 px-6 py-4 flex justify-between items-center border-b"
-        style={{ background: `${t.bg_primary}80`, borderColor: t.border_secondary }}
+        className="sticky top-0 backdrop-blur-md z-40 px-6 py-4 flex justify-between items-center border-b bg-background/50 border-white/5"
       >
         <div className="flex flex-col">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold" style={{ color: t.text_primary }}>
-              Welcome, 
+            <h1 className="text-xl font-bold text-white">
+              Hello, 
             </h1>
             {authLoading ? (
               <Pulse className="w-[120px] h-[16px] rounded-full" />
             ) : (
-              <span className="text-xl font-bold" style={{ color: t.text_primary }}>
-                {profile?.display_name?.split(' ')[0] || "Champ"}
+              <span className="text-xl font-bold text-white">
+                {profile?.display_name?.split(' ')[0] || "Entrepreneur"}
               </span>
             )}
           </div>
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] font-bold mt-0.5" style={{ color: t.accent }}>Explore the closet</p>
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] font-bold mt-0.5 text-primary italic">ThreadZW Hub</p>
         </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={() => navigate('/notifications')}
-            className="p-2.5 rounded-full relative active:scale-95 transition-transform"
-            style={{ background: t.bg_card_2, color: t.text_primary }}
+            className="p-2.5 rounded-xl relative active:scale-[0.98] transition-all bg-card text-white border border-white/5"
           >
             <Bell size={20} />
             {unreadCount > 0 && (
               <span 
-                className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full border-2 animate-pulse" 
-                style={{ background: t.accent, borderColor: t.bg_primary }}
+                className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full border-2 animate-pulse bg-primary border-background" 
               />
-            )}
-          </button>
-          <button 
-            onClick={() => navigate('/enquiries')}
-            className="p-2.5 rounded-full relative active:scale-95 transition-transform"
-            style={{ background: t.bg_card_2, color: t.text_primary }}
-          >
-            <ShoppingCart size={20} />
-            {cart.length > 0 && (
-              <span 
-                className="absolute -top-1 -right-1 w-5 h-5 text-[10px] font-bold flex items-center justify-center rounded-full border-2"
-                style={{ background: t.accent, color: 'white', borderColor: t.bg_primary }}
-              >
-                {cart.length}
-              </span>
             )}
           </button>
         </div>
@@ -442,8 +420,7 @@ export const HomeFeed: React.FC = () => {
       {refreshing && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50">
           <div 
-            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" 
-            style={{ borderColor: t.accent }}
+            className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin border-primary" 
           />
         </div>
       )}
@@ -452,11 +429,10 @@ export const HomeFeed: React.FC = () => {
         {/* Prominent Search Bar */}
         <div 
           onClick={() => navigate('/search')}
-          className="relative border rounded-[18px] py-4 pl-12 pr-6 cursor-pointer transition-colors"
-          style={{ background: t.bg_card, borderColor: t.border_primary }}
+          className="relative border border-white/5 rounded-2xl py-4 pl-12 pr-6 cursor-pointer bg-card"
         >
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: t.accent }} size={20} />
-          <span style={{ color: t.text_secondary, fontSize: '14px' }}>Search for drip...</span>
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={20} />
+          <span className="text-text-secondary text-[14px]">Search stores and items...</span>
         </div>
 
         {/* 1. Stories Row */}
@@ -464,7 +440,7 @@ export const HomeFeed: React.FC = () => {
           {storiesLoading ? (
             <div className="flex gap-4 overflow-x-auto no-scrollbar">
               {Array.from({ length: 6 }).map((_, i) => (
-                <Pulse key={i} className="w-16 h-16 rounded-full flex-shrink-0" />
+                <Pulse key={`story-pulse-${i}`} className="w-16 h-16 rounded-full flex-shrink-0" />
               ))}
             </div>
           ) : storiesError ? (
@@ -473,54 +449,29 @@ export const HomeFeed: React.FC = () => {
             <div className="flex gap-4 overflow-x-auto no-scrollbar">
               {stories.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 flex-shrink-0 opacity-50 px-4">
-                  <div className="w-16 h-16 rounded-full border" style={{ background: t.bg_secondary, borderColor: t.border_secondary }} />
-                  <span className="text-[10px] font-mono" style={{ color: t.text_tertiary }}>Loading...</span>
+                  <div className="w-16 h-16 rounded-full border border-[#1a1a1a] bg-[#0a0a0a]" />
+                  <span className="text-[10px] font-mono text-[#555555]">Loading...</span>
                 </div>
               ) : (
-                stories.map(item => {
-                  const isViewed = viewedStories.includes(item.id);
-                  const ringColorStyle = item.hasStory 
-                    ? (isViewed ? { borderColor: t.border_secondary } : { background: t.gradient, boxShadow: t.shadow })
-                    : { borderColor: t.border_subtle };
-
-                  return (
-                    <button 
-                      key={item.id} 
-                      onClick={() => {
-                        if (item.hasStory) {
-                          setStoriesViewerOpen(true, item.id);
-                          if (!isViewed) {
-                            const updated = [...viewedStories, item.id];
-                            setViewedStories(updated);
-                            localStorage.setItem('thread_viewed_stories', JSON.stringify(updated));
-                          }
-                        } else {
-                          navigate(`/shop/${item.id}`);
-                        }
-                      }}
-                      className="flex flex-col items-center gap-2 flex-shrink-0"
-                    >
-                      <div 
-                        className={`w-16 h-16 rounded-full p-[2.5px] transition-all ${item.hasStory && !isViewed ? '' : 'border'}`}
-                        style={item.hasStory && !isViewed ? { background: t.gradient } : { borderColor: t.border_subtle }}
-                      >
-                        <Avatar 
-                          url={item.avatar_url} 
-                          size={60}
-                          className="border-2"
-                          style={{ borderColor: t.bg_primary }}
-                        />
-                      </div>
-                      <span className="text-[10px] font-mono w-16 text-center leading-tight truncate" style={{ color: t.text_primary }}>
-                        {item.name.length > 8 ? item.name.substring(0, 8) + '...' : item.name}
-                      </span>
-                    </button>
-                  );
-                })
+                stories.map(item => (
+                  <StoryItem 
+                    key={item.id} 
+                    item={item} 
+                    viewedStories={viewedStories}
+                    onView={(id) => {
+                      const updated = [...viewedStories, id];
+                      setViewedStories(updated);
+                      localStorage.setItem('thread_viewed_stories', JSON.stringify(updated));
+                    }}
+                  />
+                ))
               )}
             </div>
           )}
         </div>
+
+        {/* Create Your Shop Button - WITH BLURRED BG (Fix 5) */}
+        <BuildShopBanner />
 
         {/* 2. Featured Drop Banner */}
         <div className="section-container">
@@ -531,7 +482,7 @@ export const HomeFeed: React.FC = () => {
           ) : featured && (
             <div 
               onClick={() => navigate(`/product/${featured.id}`)}
-              className="relative w-full h-44 rounded-[24px] overflow-hidden group cursor-pointer"
+              className="relative w-full h-44 rounded-[24px] overflow-hidden group cursor-pointer border border-white/5"
             >
               <ImageWithFallback 
                 src={featured.images?.[0]} 
@@ -540,11 +491,11 @@ export const HomeFeed: React.FC = () => {
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               <div className="absolute bottom-5 left-5 right-5 flex justify-between items-end">
                 <div>
-                  <span className="text-white text-[9px] font-bold px-2 py-1 rounded-full uppercase tracking-widest" style={{ background: t.accent }}>Featured Drop</span>
+                  <span className="text-black text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest bg-primary">Featured Business</span>
                   <h3 className="text-white text-xl font-bold mt-2 leading-tight">{featured.name}</h3>
                   <p className="text-white/60 text-xs mt-0.5">by {featured.shops?.name}</p>
                 </div>
-                <div className="text-white text-xl font-bold font-syne">${featured.price}</div>
+                <div className="text-primary text-xl font-bold font-syne">${featured.price}</div>
               </div>
             </div>
           )}
@@ -553,13 +504,13 @@ export const HomeFeed: React.FC = () => {
         {/* 3. New In Section */}
         <div className="flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <h2 className="font-bold tracking-tight" style={{ color: t.text_primary }}>New In</h2>
-            <button style={{ color: t.accent, fontSize: '12px', fontWeight: 'bold' }} onClick={() => navigate('/search')}>See All</button>
+            <h2 className="font-bold tracking-tight text-white">Latest from Malls</h2>
+            <button className="text-primary text-[12px] font-bold" onClick={() => navigate('/search')}>See All</button>
           </div>
           {newInLoading ? (
             <div className="flex gap-4 overflow-x-auto no-scrollbar">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="w-[160px] flex-shrink-0 flex flex-col gap-3">
+                <div key={`new-in-skeleton-${i}`} className="w-[160px] flex-shrink-0 flex flex-col gap-3">
                   <Pulse className="w-full aspect-[4/5] rounded-[20px]" />
                   <div className="space-y-2">
                     <Pulse className="w-2/3 h-3 rounded-full" />
@@ -573,59 +524,25 @@ export const HomeFeed: React.FC = () => {
             <SectionError onRetry={fetchNewIn} />
           ) : newIn.length > 0 ? (
             <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6">
-              {newIn.map(product => {
-                const isSaved = product.is_saved_by_user > 0;
-                return (
-                  <div 
-                    key={product.id} 
-                    onClick={() => navigate(`/product/${product.id}`)}
-                    className="w-[160px] flex-shrink-0 flex flex-col gap-3 group cursor-pointer"
-                  >
-                    <div className="relative aspect-[4/5] rounded-[20px] overflow-hidden">
-                      <ImageWithFallback 
-                        src={product.images?.[0]} 
-                        className="w-full h-full object-cover"
-                      />
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSaveToggle(product);
-                        }}
-                        className="absolute top-3 right-3 p-2.5 rounded-full backdrop-blur-md transition-colors"
-                        style={{ background: `${t.bg_primary}66`, color: isSaved ? t.accent : 'white' }}
-                      >
-                        <Heart size={14} fill={isSaved ? t.accent : 'none'} />
-                      </button>
-                      <div className="absolute bottom-3 left-3">
-                        {getStockBadge(product.total_stock)}
-                      </div>
-                    </div>
-                    <div className="flex flex-col px-1">
-                      <p className="text-[10px] font-mono uppercase tracking-wider truncate" style={{ color: t.text_secondary }}>{product.shops?.name}</p>
-                      <h4 className="text-sm font-bold truncate mt-0.5" style={{ color: t.text_primary }}>{product.name}</h4>
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="font-bold font-syne" style={{ color: t.accent }}>${product.price}</span>
-                        <div className="flex items-center gap-1 text-[10px]" style={{ color: t.text_tertiary }}>
-                          <Bookmark size={10} />
-                          {product.save_count || 0}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {newIn.map(product => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  onSave={handleSaveToggle}
+                  getStockBadge={getStockBadge}
+                />
+              ))}
             </div>
           ) : (
             <div className="col-span-full">
               {/* Fallback to EmptyFeedDiscovery if no products */}
-              <div className="rounded-[24px] p-8 text-center border" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
-                <p className="font-bold opacity-80 mb-4" style={{ color: t.text_primary }}>Thread ZW is starting up.</p>
+              <div className="rounded-[24px] p-8 text-center border bg-card border-white/5">
+                <p className="font-bold opacity-80 mb-4 text-white">ThreadZW is building up.</p>
                 <button 
                   onClick={() => navigate('/shops')}
-                  className="w-full py-3 text-white rounded-full font-bold text-sm shadow-lg"
-                  style={{ background: t.accent, boxShadow: t.shadow }}
+                  className="w-full py-3 text-black rounded-xl font-bold text-sm bg-primary shadow-xl shadow-primary/20"
                 >
-                  Browse Shops
+                  Explore Malls
                 </button>
               </div>
             </div>
@@ -635,38 +552,15 @@ export const HomeFeed: React.FC = () => {
         {/* 4. Shops to Follow */}
         {shopsToFollow.length > 0 && !shopsLoading && (
           <div className="flex flex-col gap-4">
-            <h2 className="font-bold tracking-tight" style={{ color: t.text_primary }}>Shops to Follow</h2>
+            <h2 className="font-bold tracking-tight text-white">Shops to Follow</h2>
             <div className="flex gap-4 overflow-x-auto no-scrollbar -mx-6 px-6">
-          {shopsToFollow.map(shop => (
-                <div 
-                  key={shop.id}
-                  onClick={() => navigate(`/shop/${shop.id}`)}
-                  className="w-[180px] flex-shrink-0 border rounded-[24px] p-5 flex flex-col items-center text-center gap-3 cursor-pointer transition-colors"
-                  style={{ background: t.bg_card, borderColor: t.border_primary, boxShadow: t.shadow }}
-                >
-                  <Avatar 
-                    url={shop.avatar_url} 
-                    size={64}
-                    style={{ background: t.bg_secondary }}
-                  />
-                  <div>
-                    <h4 className="font-bold truncate w-full" style={{ color: t.text_primary }}>{shop.name}</h4>
-                    <p className="text-[10px] uppercase font-mono tracking-widest mt-0.5" style={{ color: t.text_secondary }}>{shop.category || 'Boutique'}</p>
-                  </div>
-                  <div className="px-3 py-1 rounded-full" style={{ background: t.bg_secondary }}>
-                    <span className="text-[10px]" style={{ color: t.text_secondary }}>{formatFollowers(shop.follower_count)}</span>
-                  </div>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFollow(shop);
-                    }}
-                    className="w-full py-2.5 rounded-full border text-xs font-bold transition-all"
-                    style={{ borderColor: t.accent, color: t.accent }}
-                  >
-                    Follow
-                  </button>
-                </div>
+              {shopsToFollow.map(shop => (
+                <ShopCard 
+                  key={shop.id} 
+                  shop={shop} 
+                  onFollow={handleFollow}
+                  formatFollowers={formatFollowers}
+                />
               ))}
             </div>
           </div>
@@ -674,54 +568,212 @@ export const HomeFeed: React.FC = () => {
         {shopsLoading && (
           <div className="flex gap-4 overflow-x-auto no-scrollbar">
             {Array.from({ length: 4 }).map((_, i) => (
-              <Pulse key={i} className="w-[180px] h-[220px] rounded-[24px] flex-shrink-0" />
+              <Pulse key={`shop-pulse-${i}`} className="w-[180px] h-[220px] rounded-[24px] flex-shrink-0" />
             ))}
           </div>
         )}
 
-        {/* 5. How Fly Are You Card */}
+        {/* 5. How Fly Are You Card -> Business Quiz */}
         <div 
           onClick={() => navigate('/quiz')}
-          className="relative rounded-[28px] p-8 flex flex-col items-center text-center gap-4 overflow-hidden shadow-2xl group cursor-pointer"
-          style={{ background: t.gradient, boxShadow: t.shadow }}
+          className="relative rounded-[28px] p-8 flex flex-col items-center text-center gap-4 overflow-hidden shadow-2xl group cursor-pointer border border-primary/20 bg-card"
         >
-          <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 blur-3xl rounded-full -mr-24 -mt-12 group-hover:scale-125 transition-transform duration-700" />
-          <h2 className="text-4xl font-pacifico text-white shadow-sm">How Fly Are You?</h2>
-          <p className="text-white/80 text-sm max-w-[200px] leading-relaxed">Discover your fashion personality in 10 questions.</p>
+          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 blur-3xl rounded-full -mr-24 -mt-12 group-hover:scale-125 transition-transform duration-700" />
+          <h2 className="text-3xl font-syne font-black text-white italic">Business IQ Tool</h2>
+          <p className="text-text-secondary text-sm max-w-[220px] leading-relaxed">Discover your brand type and unlock growth insights.</p>
           <button 
-            className="mt-2 bg-white font-bold px-8 py-3 rounded-full flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl font-syne"
-            style={{ color: t.accent }}
+            className="mt-2 bg-primary font-bold px-8 py-3 rounded-xl flex items-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl font-syne text-black"
           >
-            Find Out <ArrowRight size={18} />
+            Take the Quiz <ArrowRight size={18} />
           </button>
         </div>
 
-        {/* 6. Best Dresser Card */}
+        {/* 6. Best Dresser Card -> Top Store */}
         <div 
           onClick={() => navigate('/best-dresser')}
-          className="border rounded-[28px] p-6 flex items-center gap-5 group transition-all cursor-pointer"
-          style={{ background: t.bg_card, borderColor: t.border_primary, boxShadow: t.shadow }}
+          className="border border-white/5 rounded-[28px] p-6 flex items-center gap-5 group transition-all cursor-pointer bg-card shadow-heavy"
         >
           <div 
-            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"
-            style={{ background: 'linear-gradient(135deg, #FFD700, #FFA500)' }}
+            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg bg-primary"
           >
             <Trophy size={28} className="text-black" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-pacifico" style={{ color: t.text_primary }}>Best Dresser</h3>
-            <p className="text-[10px] font-mono tracking-widest uppercase mt-1" style={{ color: t.text_secondary }}>
+            <h3 className="text-lg font-syne font-bold text-white uppercase tracking-tighter">Gold Star Seller</h3>
+            <p className="text-[10px] font-mono tracking-widest uppercase mt-1 text-primary">
               {bestDresser.nominee_count === 0 
-                ? 'Be the first to enter' 
-                : `${bestDresser.nominee_count} nominees competing`}
+                ? 'Join the ranking' 
+                : `${bestDresser.nominee_count} stores competing`}
             </p>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <span className="font-bold font-syne tracking-tight" style={{ color: t.text_primary }}>$30</span>
-            <ArrowRight size={18} style={{ color: t.accent }} className="group-hover:translate-x-1 transition-transform" />
+            <span className="font-bold font-syne tracking-tight text-white">Award</span>
+            <ArrowRight size={18} className="text-primary group-hover:translate-x-1 transition-transform" />
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// --- MEMOIZED COMPONENTS (FIX 2) ---
+
+const StoryItem = memo(({ item, viewedStories, onView }: { item: any; viewedStories: string[]; onView: (id: string) => void }) => {
+  const navigate = useNavigate();
+  const { setStoriesViewerOpen } = useInventory();
+  const isViewed = viewedStories.includes(item.id);
+
+  return (
+    <button 
+      onClick={() => {
+        if (item.hasStory) {
+          setStoriesViewerOpen(true, item.id);
+          if (!isViewed) onView(item.id);
+        } else {
+          navigate(`/shop/${item.id}`);
+        }
+      }}
+      className="flex flex-col items-center gap-3 flex-shrink-0 group"
+    >
+      <div 
+        className={`w-20 h-20 rounded-2xl p-[2px] transition-all duration-500 ${item.hasStory && !isViewed ? 'bg-primary' : 'bg-white/5 border border-white/5'}`}
+        style={item.hasStory && !isViewed ? { boxShadow: '0 0 15px rgba(198,255,0,0.3)' } : {}}
+      >
+        <Avatar 
+          url={item.logo_url || item.avatar_url} 
+          size={74}
+          className="rounded-2xl border-[3px] border-background transition-transform group-active:scale-95 duration-200"
+        />
+      </div>
+      <span className="text-[11px] font-bold w-20 text-center leading-tight truncate text-text-secondary tracking-tight group-hover:text-primary transition-colors">
+        {item.name}
+      </span>
+    </button>
+  );
+});
+
+const ProductCard = memo(({ product, onSave, getStockBadge }: { product: any; onSave: (p: any) => void; getStockBadge: (s: number) => React.ReactNode }) => {
+  const navigate = useNavigate();
+  const isSaved = product.is_saved_by_user > 0;
+
+  return (
+    <div 
+      onClick={() => navigate(`/product/${product.id}`)}
+      className="w-[160px] flex-shrink-0 flex flex-col gap-3 group cursor-pointer"
+    >
+      <div className="relative aspect-[4/5] rounded-[20px] overflow-hidden">
+        <ImageWithFallback 
+          src={product.images?.[0]} 
+          className="w-full h-full object-cover"
+        />
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            onSave(product);
+          }}
+          className="absolute top-3 right-3 p-2.5 rounded-xl backdrop-blur-md transition-all active:scale-90 bg-black/40 hover:bg-black/60 border border-white/10"
+          style={{ color: isSaved ? '#C6FF00' : 'white' }}
+        >
+          <Heart size={14} fill={isSaved ? '#C6FF00' : 'none'} />
+        </button>
+        <div className="absolute bottom-3 left-3">
+          {getStockBadge(product.total_stock)}
+        </div>
+      </div>
+      <div className="flex flex-col px-1">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] truncate text-white/20">STORE</p>
+        <h4 className="text-[15px] font-bold truncate mt-1 text-white tracking-tight">{product.name}</h4>
+        <div className="flex justify-between items-center mt-2">
+          <span className="font-bold font-syne text-primary text-[16px]">${product.price}</span>
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 text-[10px] font-bold text-white/40">
+            <Bookmark size={10} />
+            {product.save_count || 0}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+const ShopCard = memo(({ shop, onFollow, formatFollowers }: { shop: any; onFollow: (s: any) => void; formatFollowers: (c: number) => string }) => {
+  const navigate = useNavigate();
+
+  return (
+    <div 
+      onClick={() => navigate(`/shop/${shop.id}`)}
+      className="w-[200px] flex-shrink-0 border border-white/5 rounded-[32px] p-6 flex flex-col items-center text-center gap-4 cursor-pointer transition-all hover:bg-white/5 bg-card shadow-heavy group"
+    >
+      <div className="relative p-1.5 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent">
+        <Avatar 
+          url={shop.logo_url || shop.avatar_url} 
+          size={72}
+          className="rounded-2xl border-[3px] border-background transition-transform group-hover:scale-105"
+        />
+      </div>
+      <div>
+        <h4 className="font-bold text-[16px] truncate w-full text-white tracking-tight">{shop.name}</h4>
+        <p className="text-[10px] uppercase font-black tracking-[0.2em] mt-1 text-white/20">{shop.category || 'Retailer'}</p>
+      </div>
+      <div className="px-3 py-1 rounded-full bg-white/5 border border-white/5">
+        <span className="text-[10px] font-bold text-white/40">{formatFollowers(shop.follower_count)}</span>
+      </div>
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          onFollow(shop);
+        }}
+        className="w-full py-3 rounded-xl border border-primary text-primary text-xs font-bold transition-all hover:bg-primary hover:text-black active:scale-95"
+      >
+        Follow Business
+      </button>
+    </div>
+  );
+});
+
+const BuildShopBanner = () => {
+  const navigate = useNavigate();
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchBranding = async () => {
+      const { data } = await supabase.from('app_settings').select('value').eq('key', 'shop_banner_image_url').single();
+      if (data) setImageUrl(data.value);
+    };
+    fetchBranding();
+  }, []);
+
+  return (
+    <div 
+      onClick={() => navigate('/seller-onboarding')}
+      className="relative w-full h-40 rounded-[32px] overflow-hidden group cursor-pointer border border-primary/30 shadow-[0_0_30px_#C6FF0033] active:scale-[0.98] transition-all bg-card"
+    >
+      {imageUrl ? (
+        <img 
+          src={imageUrl} 
+          className="absolute inset-0 w-full h-full object-cover brightness-[0.3] group-hover:scale-110 transition-transform duration-1000"
+          alt=""
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-[#111] to-black" />
+      )}
+      <div className="absolute inset-0 bg-linear-to-r from-black via-black/40 to-transparent" />
+      
+      <div className="absolute inset-0 flex items-center px-10 z-10">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-black text-[16px] shadow-lg shadow-primary/40 text-black">🏪</div>
+            <span className="text-white/40 text-[10px] font-black uppercase tracking-[0.2em]">Business Program</span>
+          </div>
+          <h3 className="text-2xl font-bold text-white tracking-tighter">Your Store, Our Magic.</h3>
+          <p className="text-white/60 text-[13px] mt-1.5 max-w-[200px] leading-tight">Get your professional WhatsApp store live in 48 hours.</p>
+          <div className="mt-4 flex items-center gap-2 text-primary font-bold text-sm">
+            Build Now <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
+          </div>
+        </div>
+      </div>
+
+      {/* Glowing border animation */}
+      <div className="absolute inset-0 rounded-[32px] border border-primary/20 group-hover:border-primary/50 transition-colors" />
     </div>
   );
 };

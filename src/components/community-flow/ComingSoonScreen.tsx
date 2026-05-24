@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useInventory } from '../../context/InventoryContext';
-import { useTheme } from '../../App';
 
 interface ComingSoonScreenProps {
   feature: 'bestDresser' | 'hallOfFame' | 'community';
@@ -27,7 +26,6 @@ const FEATURE_CONFIG = {
 };
 
 export const ComingSoonScreen: React.FC<ComingSoonScreenProps> = ({ feature }) => {
-  const t = useTheme();
   const navigate = useNavigate();
   const { setCommunityScreen } = useInventory();
   const config = FEATURE_CONFIG[feature];
@@ -37,46 +35,44 @@ export const ComingSoonScreen: React.FC<ComingSoonScreenProps> = ({ feature }) =
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-8 text-center" style={{ background: t.bg_primary }}>
+    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center px-8 text-center bg-[#F5F5F5]">
       {/* Animated Icon */}
       <motion.div
-        animate={{ translateY: [0, -8, 0] }}
+        animate={{ translateY: [0, -10, 0] }}
         transition={{ 
           duration: 3, 
           ease: "easeInOut", 
           repeat: Infinity 
         }}
-        className="text-[56px]"
+        className="text-[64px]"
       >
         {config.emoji}
       </motion.div>
 
       {/* Coming Soon Label */}
-      <h1 className="mt-[20px] text-[28px] font-bold bg-clip-text text-transparent" style={{ backgroundImage: t.gradient }}>
+      <h1 className="mt-[24px] text-[32px] font-bold bg-clip-text text-transparent bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]">
         Coming Soon
       </h1>
 
       {/* Feature Name */}
-      <h2 className="mt-[8px] text-[16px] font-medium" style={{ color: t.text_primary }}>
+      <h2 className="mt-[8px] text-[18px] font-bold text-[#111111]">
         {config.title}
       </h2>
 
       {/* Description */}
-      <p className="mt-[12px] text-[14px] leading-[1.6] max-w-[260px]" style={{ color: t.text_secondary }}>
+      <p className="mt-[12px] text-[14px] leading-[1.6] max-w-[260px] text-[#888888]">
         This feature is currently in the fitting room. It will be ready soon! ❤️
       </p>
 
       {/* Notify Me Card */}
-      <div className="mt-[28px] w-full max-w-[320px] border rounded-[16px] p-[20px]" 
-        style={{ background: t.bg_card, borderColor: t.border_secondary }}>
-        <h3 className="text-[15px] font-bold mb-[8px]" style={{ color: t.text_primary }}>🔔 Get Notified</h3>
-        <p className="text-[12px] leading-[1.5] mb-[14px]" style={{ color: t.text_tertiary }}>
+      <div className="mt-[32px] w-full max-w-[320px] border border-[#EFEFEF] rounded-[32px] p-[24px] bg-white shadow-sm">
+        <h3 className="text-[16px] font-bold mb-[8px] text-[#111111]">🔔 Get Notified</h3>
+        <p className="text-[13px] leading-[1.6] mb-[20px] text-[#888888]">
           {config.description}
         </p>
         <button
           onClick={() => window.open('https://instagram.com/threadzw', '_blank')}
-          className="w-full h-[46px] rounded-full border font-bold text-[13px] active:scale-[0.98] transition-transform"
-          style={{ background: t.bg_secondary, borderColor: t.border_secondary, color: t.text_primary }}
+          className="w-full h-[52px] rounded-full border border-[#EFEFEF] font-bold text-[14px] active:scale-[0.98] transition-all bg-[#F5F5F5] text-[#111111]"
         >
           Follow @threadzw →
         </button>
@@ -85,8 +81,7 @@ export const ComingSoonScreen: React.FC<ComingSoonScreenProps> = ({ feature }) =
       {/* Back Button */}
       <button
         onClick={handleBack}
-        className="mt-[32px] w-full max-w-[320px] h-[52px] rounded-full font-bold text-[14px] active:scale-[0.98] transition-all"
-        style={{ background: t.text_primary, color: t.bg_primary }}
+        className="mt-[24px] w-full max-w-[320px] h-[60px] rounded-full font-bold text-[16px] active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] text-white shadow-xl"
       >
         Go Back
       </button>

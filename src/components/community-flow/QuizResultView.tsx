@@ -7,10 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { PERSONALITY_RESULTS } from '../../data/mockData';
 import { toast } from 'sonner';
-import { useTheme } from '../../App';
 
 export const QuizResultView: React.FC = () => {
-  const t = useTheme();
   const { setCommunityScreen } = useInventory();
   const { profile } = useAuth();
   
@@ -140,14 +138,13 @@ export const QuizResultView: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col overflow-y-auto no-scrollbar" style={{ background: t.bg_primary }}>
+    <div className="fixed inset-0 z-[100] flex flex-col overflow-y-auto no-scrollbar bg-[#F5F5F5]">
       {/* Top Bar */}
       <button 
         onClick={handleDone}
-        className="absolute top-5 right-5 z-20 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md"
-        style={{ background: `${t.bg_primary}66`, color: t.text_primary }}
+        className="absolute top-5 right-5 z-20 w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md bg-white/60 shadow-sm text-[#111111]"
       >
-        <X size={16} />
+        <X size={20} />
       </button>
 
       <div className="flex-1 flex flex-col pt-14 pb-12">
@@ -156,16 +153,16 @@ export const QuizResultView: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="px-7 pt-14"
+          className="px-8 pt-14"
         >
-          <span className="text-[15px] font-mono tracking-[0.2em] uppercase mb-1.5 block" style={{ color: t.text_tertiary }}>
-            YOU ARE...
+          <span className="text-[13px] font-bold tracking-[0.2em] uppercase mb-2 block text-[#888888]">
+            DRIP PROFILE...
           </span>
-          <div className="flex flex-col leading-none">
-            <span className="text-[38px] font-black font-bebas tracking-tight" style={{ color: t.text_primary }}>
+          <div className="flex flex-col leading-tight">
+            <span className="text-[36px] font-bold tracking-tight text-[#111111]">
               {result.prefix}
             </span>
-            <span className="text-[42px] font-black font-bebas tracking-tight bg-clip-text text-transparent italic" style={{ backgroundImage: t.gradient }}>
+            <span className="text-[48px] font-black tracking-tight bg-clip-text text-transparent italic bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]">
               {result.name}
             </span>
           </div>
@@ -180,39 +177,36 @@ export const QuizResultView: React.FC = () => {
             delay: 0.15,
             ease: [0.34, 1.56, 0.64, 1]
           }}
-          className="mt-8 px-5 relative"
+          className="mt-10 px-6 relative"
         >
           <div 
-            className="relative shadow-2xl rounded-[12px] overflow-hidden border"
-            style={{ borderColor: t.border_secondary }}
+            className="relative shadow-2xl rounded-[16px] overflow-hidden border border-[#EFEFEF] bg-white p-1"
           >
-            <div className="min-h-[320px] w-full flex flex-col items-center justify-center" style={{ background: t.bg_secondary }}>
+            <div className="min-h-[340px] w-full flex flex-col items-center justify-center bg-[#F9FAFB] rounded-[12px]">
               {receiptLoading ? (
-                <div className="flex flex-col items-center gap-2.5">
+                <div className="flex flex-col items-center gap-3">
                   <motion.div 
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                    className="w-6 h-6 border-[2.5px] rounded-full"
-                    style={{ borderColor: t.border_subtle, borderTopColor: t.text_secondary }}
+                    className="w-8 h-8 border-[3px] rounded-full border-[#FF2D78]/20 border-t-[#FF2D78]"
                   />
-                  <span className="text-[12px] font-mono" style={{ color: t.text_tertiary }}>Preparing your receipt...</span>
+                  <span className="text-[12px] font-bold text-[#888888]">Printing receipt...</span>
                 </div>
               ) : receiptError || !receiptUrl ? (
-                <div className="flex flex-col items-center gap-2.5">
-                  <span className="text-[36px]">🧾</span>
-                  <span className="text-[13px] font-mono" style={{ color: t.text_tertiary }}>Receipt coming soon</span>
+                <div className="flex flex-col items-center gap-3">
+                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
+                      <span className="text-[32px]">🧾</span>
+                   </div>
+                  <span className="text-[13px] font-bold text-[#888888]">Receipt coming soon</span>
                 </div>
               ) : (
                 <img 
                   src={receiptUrl} 
                   alt="Personality Receipt" 
-                  className="w-full h-auto block"
+                  className="w-full h-auto block rounded-[10px]"
                 />
               )}
             </div>
-            
-            {/* Curled Corner Effect */}
-            <div className="absolute bottom-[-4px] right-[12px] w-10 h-10 bg-radial-[circle_at_bottom_right] from-black/20 to-transparent rounded-br-[4px] pointer-events-none" />
           </div>
         </motion.div>
 
@@ -221,10 +215,10 @@ export const QuizResultView: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.35 }}
-          className="mt-8 px-6"
+          className="mt-12 px-8"
         >
-          <span className="text-[40px] font-serif leading-[0.6] block mb-1.5" style={{ color: t.accent }}>"</span>
-          <p className="text-[15px] leading-[1.8] italic font-light" style={{ color: t.text_primary }}>
+          <span className="text-[44px] font-serif leading-[0.6] block mb-2 text-[#FF2D78]">"</span>
+          <p className="text-[16px] leading-[1.8] font-medium text-[#111111]/80 italic">
             {result.message}
           </p>
         </motion.div>
@@ -234,39 +228,35 @@ export const QuizResultView: React.FC = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.5 }}
-          className="mt-7 px-6 space-y-4"
+          className="mt-10 px-8 space-y-4"
         >
-          <div className="flex gap-2.5">
+          <div className="flex gap-3">
             <button 
               onClick={handleShare}
-              className="flex-1 h-[52px] rounded-[12px] text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform shadow-lg"
-              style={{ background: t.gradient }}
+              className="flex-1 h-[56px] rounded-full text-white font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xl bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]"
             >
-              Share 📸
+              Share Drip 📸
             </button>
             <button 
               onClick={handleDone}
-              className="flex-1 h-[52px] border rounded-[12px] font-bold text-[14px] active:scale-[0.98] transition-transform"
-              style={{ background: t.bg_secondary, borderColor: t.border_secondary, color: t.text_primary }}
+              className="flex-1 h-[56px] border border-[#EFEFEF] rounded-full font-bold text-[15px] active:scale-[0.98] transition-all bg-white text-[#111111] shadow-sm"
             >
-              Done
+              Finish
             </button>
           </div>
 
-          <div className="flex flex-col items-center gap-2 mt-3 text-center">
+          <div className="flex flex-col items-center gap-3 mt-4">
             <button 
               onClick={handleDownload}
               disabled={downloading}
-              className="text-[13px] font-medium flex items-center gap-1.5"
-              style={{ color: t.accent }}
+              className="text-[14px] font-bold flex items-center gap-2 text-[#FF2D78] hover:opacity-80 transition-opacity"
             >
-              {downloading ? <Loader2 size={14} className="animate-spin" /> : '⬇️'} Save Receipt
+              {downloading ? <Loader2 size={16} className="animate-spin" /> : '⬇️'} Download Receipt
             </button>
             
             <button 
               onClick={() => setCommunityScreen('quiz')}
-              className="text-[12px] mt-2 underline"
-              style={{ color: t.text_tertiary }}
+              className="text-[12px] font-medium underline text-[#888888] decoration-dotted"
             >
               Retake Quiz
             </button>

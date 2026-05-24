@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Trophy, Instagram } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
-import { useTheme } from '../../App';
 
 interface Player {
   name: string;
@@ -43,28 +42,25 @@ const MOCK_MATCHUPS: Record<string, Matchup[]> = {
 };
 
 export const BracketView: React.FC = () => {
-  const t = useTheme();
   const { setCommunityScreen } = useInventory();
   const [activeRound, setActiveRound] = useState('qf');
 
   return (
-    <div className="flex flex-col min-h-screen pb-[120px]" style={{ background: t.bg_primary }}>
+    <div className="flex flex-col min-h-screen pb-[120px] bg-[#F5F5F5]">
       {/* Top Bar */}
       <div 
-        className="px-5 py-4 flex items-center justify-between sticky top-0 backdrop-blur-md z-40 border-b"
-        style={{ background: `${t.bg_primary}CC`, borderColor: t.border_secondary }}
+        className="px-5 py-4 flex items-center justify-between sticky top-0 backdrop-blur-md z-40 bg-[#F5F5F5]/80"
       >
         <button onClick={() => setCommunityScreen('bestDresser')}>
-          <ArrowLeft style={{ color: t.text_primary }} size={24} />
+          <ArrowLeft className="text-[#111111]" size={24} />
         </button>
-        <h1 className="font-bold text-[18px]" style={{ color: t.text_primary }}>The Bracket</h1>
-        <Trophy style={{ color: t.amber }} size={22} fill="currentColor" />
+        <h1 className="font-bold text-[18px] text-[#111111]">The Bracket</h1>
+        <Trophy className="text-[#FFC107]" size={22} fill="currentColor" />
       </div>
 
       {/* Round Tabs */}
       <div 
-        className="px-5 py-2 overflow-x-auto no-scrollbar flex gap-2.5 sticky top-[60px] z-30 backdrop-blur-sm border-b"
-        style={{ background: `${t.bg_primary}80`, borderColor: t.border_subtle }}
+        className="px-5 py-2 overflow-x-auto no-scrollbar flex gap-2.5 sticky top-[60px] z-30 backdrop-blur-sm bg-[#F5F5F5]/50 border-b border-[#EFEFEF]"
       >
         {ROUNDS.map(round => (
           <button
@@ -72,21 +68,11 @@ export const BracketView: React.FC = () => {
             onClick={() => setActiveRound(round.id)}
             className={`
               px-6 h-10 rounded-full text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 border
+              ${activeRound === round.id ? 'bg-[#FF2D78] text-white border-[#FF2D78] shadow-md' : 'bg-white text-[#888888] border-[#EFEFEF]'}
             `}
-            style={{ 
-              background: activeRound === round.id ? t.accent : t.bg_secondary,
-              color: activeRound === round.id ? 'white' : t.text_tertiary,
-              borderColor: activeRound === round.id ? t.accent : t.border_secondary,
-              boxShadow: activeRound === round.id ? `0 0 15px ${t.accent}4D` : 'none'
-            }}
           >
             {round.name}
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full`}
-              style={{
-                background: activeRound === round.id ? 'rgba(255,255,255,0.2)' : t.bg_card,
-                color: activeRound === round.id ? 'white' : t.text_tertiary
-              }}
-            >
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeRound === round.id ? 'bg-white/20 text-white' : 'bg-[#F5F5F5] text-[#888888]'}`}>
                {round.matchups}
             </span>
           </button>
@@ -101,28 +87,23 @@ export const BracketView: React.FC = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-6"
+            className="space-y-8"
           >
              {(MOCK_MATCHUPS[activeRound as keyof typeof MOCK_MATCHUPS] || []).map((match, i) => (
                 <div key={match.id} className="relative">
-                   <div className="absolute top-0 left-0 w-full flex justify-center -translate-y-1/2">
-                      <div className="border px-3 py-1 rounded-full" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
-                         <span className="text-[10px] font-bold uppercase tracking-widest leading-none" style={{ color: t.text_tertiary }}>Matchup {i + 1}</span>
+                   <div className="absolute top-0 left-0 w-full flex justify-center -translate-y-1/2 z-10">
+                      <div className="border border-[#EFEFEF] px-4 py-1.5 rounded-full bg-white shadow-sm">
+                         <span className="text-[10px] font-bold uppercase tracking-widest leading-none text-[#888888]">Matchup {i + 1}</span>
                       </div>
                    </div>
 
-                   <div className={`border rounded-[24px] p-6 pt-8 overflow-hidden relative transition-all shadow-sm`}
-                     style={{ 
-                       background: t.bg_card, 
-                       borderColor: match.status === 'active' ? t.accent : t.border_secondary,
-                       boxShadow: match.status === 'active' ? `0 0 20px ${t.accent}0D` : 'none'
-                     }}
+                   <div className={`border rounded-[32px] p-6 pt-10 overflow-hidden relative transition-all shadow-sm bg-white ${match.status === 'active' ? 'border-[#FF2D78]' : 'border-[#EFEFEF]'}`}
                    >
                       {match.status === 'active' && (
-                        <div className="absolute top-0 right-0 p-3">
-                           <div className="flex items-center gap-1.5 px-2 py-1 rounded-full" style={{ background: `${t.accent}1A` }}>
-                             <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: t.accent }} />
-                             <span className="text-[9px] font-bold uppercase tracking-wide" style={{ color: t.accent }}>Voting Live</span>
+                        <div className="absolute top-0 right-0 p-4">
+                           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FF2D78]/10">
+                             <div className="w-2 h-2 rounded-full animate-pulse bg-[#FF2D78]" />
+                             <span className="text-[9px] font-bold uppercase tracking-wide text-[#FF2D78]">Voting Live</span>
                            </div>
                         </div>
                       )}
@@ -131,34 +112,30 @@ export const BracketView: React.FC = () => {
                          {/* P1 */}
                          <div className="flex flex-col items-center flex-1">
                             <div className="relative">
-                               <div className="w-[60px] h-[60px] rounded-full border-2 flex items-center justify-center text-[24px] relative z-10" 
-                                 style={{ background: t.bg_secondary, borderColor: t.border_secondary }}>👤</div>
+                               <div className="w-[64px] h-[64px] rounded-full border-2 flex items-center justify-center text-[24px] relative z-10 bg-[#F5F5F5] border-[#EFEFEF] shadow-sm">👤</div>
                                {match.p1.winner && (
-                                  <div className="absolute -top-2 -left-2 w-7 h-7 rounded-full flex items-center justify-center border-2 z-20"
-                                    style={{ background: t.amber, borderColor: t.bg_card }}>
-                                     <Trophy size={14} className="text-black" fill="currentColor" />
+                                  <div className="absolute -top-2 -left-2 w-8 h-8 rounded-full flex items-center justify-center border-2 z-20 bg-[#FFC107] border-white shadow-md">
+                                     <Trophy size={14} className="text-white" fill="currentColor" />
                                   </div>
                                )}
                             </div>
-                            <span className={`text-[14px] mt-2.5 font-bold truncate w-full text-center`}
-                              style={{ color: match.p1.winner ? t.amber : t.text_primary }}>
+                            <span className={`text-[14px] mt-3 font-bold truncate w-full text-center ${match.p1.winner ? 'text-[#FF2D78]' : 'text-[#111111]'}`}>
                                {match.p1.name || 'TBD'}
                             </span>
                          </div>
 
                          {/* Center */}
                          <div className="flex flex-col items-center gap-2">
-                             <div className="font-black text-[13px] tracking-tighter italic" style={{ color: t.text_tertiary }}>VS</div>
-                             <div className="h-6 w-[1px]" style={{ background: t.border_secondary }} />
+                             <div className="font-black text-[13px] tracking-tighter italic text-[#EFEFEF]">VS</div>
+                             <div className="h-8 w-[1.5px] bg-[#F5F5F5]" />
                          </div>
 
                          {/* P2 */}
                          <div className="flex flex-col items-center flex-1">
                             <div className="relative">
-                               <div className="w-[60px] h-[60px] rounded-full border-2 flex items-center justify-center text-[24px] relative z-10"
-                                 style={{ background: t.bg_secondary, borderColor: t.border_secondary }}>👤</div>
+                               <div className="w-[64px] h-[64px] rounded-full border-2 flex items-center justify-center text-[24px] relative z-10 bg-[#F5F5F5] border-[#EFEFEF] shadow-sm">👤</div>
                             </div>
-                            <span className="text-[14px] mt-2.5 font-bold truncate w-full text-center" style={{ color: t.text_primary }}>
+                            <span className="text-[14px] mt-3 font-bold truncate w-full text-center text-[#111111]">
                                {match.p2.name || 'TBD'}
                             </span>
                          </div>
@@ -169,18 +146,18 @@ export const BracketView: React.FC = () => {
                          <div className="mt-8">
                             <div className="flex justify-between items-end mb-2 px-1">
                                <div className="flex flex-col">
-                                  <span className={`text-[12px] font-bold`} style={{ color: match.status === 'active' ? t.accent : t.text_tertiary }}>{match.p1.votes} votes</span>
-                               </div>
+                                  <span className={`text-[12px] font-bold ${match.status === 'active' ? 'text-[#FF2D78]' : 'text-[#888888]'}`}>{match.p1.votes} votes</span>
+                                </div>
                                <div className="flex flex-col items-end">
-                                  <span className="text-[12px] font-bold" style={{ color: t.text_tertiary }}>{match.p2.votes} votes</span>
+                                  <span className="text-[12px] font-bold text-[#888888]">{match.p2.votes} votes</span>
                                </div>
                             </div>
-                            <div className="h-1.5 rounded-full overflow-hidden flex" style={{ background: t.bg_secondary }}>
+                            <div className="h-2 rounded-full overflow-hidden flex bg-[#F5F5F5]">
                                <div 
                                  className={`h-full`} 
                                  style={{ 
                                    width: `${(match.p1.votes / (match.p1.votes + match.p2.votes)) * 100}%`,
-                                   background: match.status === 'active' ? t.accent : t.text_tertiary
+                                   background: match.status === 'active' ? '#FF2D78' : '#888888'
                                  }} 
                                 />
                                <div className="h-full flex-1" />
@@ -189,15 +166,14 @@ export const BracketView: React.FC = () => {
                       )}
 
                       {match.status === 'active' && (
-                        <button className="mt-6 w-full h-[52px] rounded-full text-white font-black text-[14px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-transform"
-                          style={{ background: t.gradient }}>
-                          <Instagram size={18} /> VOTE NOW
+                        <button className="mt-8 w-full h-[56px] rounded-full text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]">
+                          <Instagram size={18} /> VOTE ON IG STORIES
                         </button>
                       )}
 
                       {match.status === 'upcoming' && (
-                        <div className="mt-6 w-full h-[52px] rounded-full flex items-center justify-center" style={{ background: t.bg_secondary }}>
-                           <span className="text-[12px] font-bold uppercase tracking-widest" style={{ color: t.text_tertiary }}>Starts Friday</span>
+                        <div className="mt-8 w-full h-[56px] rounded-full flex items-center justify-center bg-[#F5F5F5]">
+                           <span className="text-[12px] font-bold uppercase tracking-widest text-[#888888]">Starts Friday</span>
                         </div>
                       )}
                    </div>
@@ -205,14 +181,12 @@ export const BracketView: React.FC = () => {
              ))}
 
              {/* Tie-Breaker Hint */}
-             <div className="p-6 border border-dashed rounded-[24px] flex items-center gap-4"
-               style={{ background: t.bg_primary, borderColor: t.border_secondary }}>
-                <div className="w-10 h-10 border rounded-full flex items-center justify-center shrink-0"
-                  style={{ borderColor: `${t.amber}33` }}>
-                  <span className="text-[18px]">💡</span>
+             <div className="p-6 border border-dashed rounded-[24px] flex items-center gap-4 bg-white border-[#EFEFEF] shadow-sm">
+                <div className="w-12 h-12 border rounded-full flex items-center justify-center shrink-0 border-[#FFC107]/20 bg-[#FFC107]/5">
+                   <span className="text-[20px]">💡</span>
                 </div>
-                <p className="text-[12px] leading-relaxed" style={{ color: t.text_secondary }}>
-                   In case of a tie, the Thread judging panel will select the winner based on <span style={{ color: t.text_primary }}>creativity and photo quality</span>.
+                <p className="text-[12px] leading-relaxed text-[#888888]">
+                   In case of a tie, the Thread judging panel will select the winner based on <span className="text-[#111111] font-bold">creativity and photo quality</span>.
                 </p>
              </div>
           </motion.div>

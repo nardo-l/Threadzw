@@ -24,15 +24,15 @@ export const CommunityFlow: React.FC = () => {
     case 'quizResult':
       return <QuizResultView />;
     case 'bestDresser':
-      return <ComingSoonScreen feature="bestDresser" />;
+      return <BestDresserMainView />;
     case 'bestDresserEntry':
-      return <ComingSoonScreen feature="bestDresser" />;
+      return <BestDresserEntryView />;
     case 'entrySuccess':
-      return <ComingSoonScreen feature="bestDresser" />;
+      return <EntrySuccessView />;
     case 'bracket':
-      return <ComingSoonScreen feature="bestDresser" />;
+      return <BracketView />;
     case 'hallOfFame':
-      return <ComingSoonScreen feature="hallOfFame" />;
+      return <HallOfFameView />;
     default:
       return <CommunityHub />;
   }

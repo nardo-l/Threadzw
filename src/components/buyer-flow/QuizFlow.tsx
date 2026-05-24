@@ -91,7 +91,7 @@ export const QuizFlow: React.FC = () => {
       <div className="px-5 mt-6 space-y-2.5">
         {currentQ.options.map((opt, i) => (
           <button 
-            key={i}
+            key={`quiz-opt-${currentStep}-${i}`}
             onClick={() => handleSelect(i)}
             className={`w-full flex items-center justify-between p-4 px-[18px] rounded-[14px] border-1.5 transition-all text-left
               ${selectedAnswers[currentStep] === i 

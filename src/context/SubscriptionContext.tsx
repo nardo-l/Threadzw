@@ -131,7 +131,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         plan: 'shop',
         billing_cycle: params.billingCycle || 'monthly',
         status: 'active',
-        amount_paid: params.amountPaid || 6,
+        amount_paid: params.amountPaid || 9,
         currency: 'USD',
         started_at: now.toISOString(),
         current_period_start: now.toISOString(),
@@ -159,7 +159,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         is_live: true,
         product_count: 0,
         subscription_status: 'trial',
-        trial_ends_at: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString()
+        trial_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
       })
       .select()
       .single();

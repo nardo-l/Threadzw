@@ -135,7 +135,7 @@ export const BestDresserHub: React.FC = () => {
         <h3 className="text-white font-bold text-[15px] px-5 mb-4">Hall of Fame 👑</h3>
         <div className="flex overflow-x-auto no-scrollbar gap-4 px-5">
            {winners.map((w, i) => (
-              <div key={i} className="w-[150px] bg-[#111] border border-[#f59e0b] rounded-[14px] p-5 flex flex-col items-center shrink-0">
+              <div key={`hof-winner-${i}`} className="w-[150px] bg-[#111] border border-[#f59e0b] rounded-[14px] p-5 flex flex-col items-center shrink-0">
                  <span className="text-[20px]">👑</span>
                  <div className="w-[48px] h-[48px] rounded-full border-2 border-[#f59e0b] p-0.5 mt-2">
                     <div className={`w-full h-full rounded-full bg-linear-to-br ${w.color}`} />

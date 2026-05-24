@@ -5,7 +5,6 @@ import { X } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { useTheme, useThemeControl } from '../../App';
 
 const FALLBACK_QUESTIONS = [
   // ... (keeping FALLBACK_QUESTIONS as is)
@@ -132,7 +131,6 @@ const FALLBACK_QUESTIONS = [
 ];
 
 const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const t = useTheme();
   const [ballState, setBallState] = useState<{ x: number; y: number; trail: { x: number; y: number }[] }>({
     x: -16,
     y: 60,
@@ -145,6 +143,8 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
   const isMountedRef = useRef(true);
   
   const DURATION = 2000;
+
+  const ACCENT_COLOR = '#FF2D78';
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -204,70 +204,39 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
   }, [onComplete]);
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: t.bg_primary,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999
-    }}>
-      <div style={{
-        width: '100%',
-        height: 120,
-        position: 'relative',
-        overflow: 'visible'
-      }}>
-        <svg style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          overflow: 'visible'
-        }}>
+    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[9999]">
+      <div className="w-full h-[120px] relative overflow-visible">
+        <svg className="absolute inset-0 w-full h-full overflow-visible">
           <polyline
             points={ballState.trail.map(p => `${p.x},${p.y}`).join(' ')}
             fill="none"
-            stroke={`${t.accent}4D`}
-            strokeWidth="6"
+            stroke={`${ACCENT_COLOR}1A`}
+            strokeWidth="8"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
           <polyline
             points={ballState.trail.map(p => `${p.x},${p.y}`).join(' ')}
             fill="none"
-            stroke={t.accent}
-            strokeWidth="2"
+            stroke={ACCENT_COLOR}
+            strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            opacity="0.7"
+            opacity="0.8"
           />
         </svg>
         
-        <div style={{
-          position: 'absolute',
-          width: 16,
-          height: 16,
-          borderRadius: '50%',
-          background: t.gradient,
-          boxShadow: `0 0 16px ${t.accent}, 0 0 32px ${t.accent}66`,
-          left: ballState.x,
-          top: ballState.y - 8,
-          transform: 'none',
-          pointerEvents: 'none'
-        }} />
+        <div 
+          className="absolute w-5 h-5 rounded-full bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] pointer-events-none"
+          style={{
+            boxShadow: `0 0 20px ${ACCENT_COLOR}66`,
+            left: ballState.x,
+            top: ballState.y - 10
+          }} 
+        />
       </div>
       
-      <p style={{
-        color: t.text_tertiary,
-        fontSize: 11,
-        fontFamily: 'monospace',
-        marginTop: 24,
-        letterSpacing: 3,
-        textTransform: 'uppercase'
-      }}>
+      <p className="text-[#888888] text-[12px] font-bold mt-8 tracking-[4px] uppercase">
         Reading your drip...
       </p>
     </div>
@@ -275,7 +244,6 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 };
 
 export const QuizView: React.FC = () => {
-  const t = useTheme();
   const { setCommunityScreen, updateUserData, setBuyerFlowState } = useInventory();
   const { session, updateProfile } = useAuth();
   const navigate = useNavigate();
@@ -287,6 +255,8 @@ export const QuizView: React.FC = () => {
   const [selectedAnswerKey, setSelectedAnswerKey] = useState<string | null>(null);
   
   const isMounted = useRef(true);
+
+  const ACCENT_COLOR = '#FF2D78';
 
   useEffect(() => {
     isMounted.current = true;
@@ -455,21 +425,20 @@ export const QuizView: React.FC = () => {
 
   if (loadingQuiz) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center" style={{ background: t.bg_primary }}>
-        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: `${t.accent}33`, borderTopColor: t.accent }} />
-        <p className="mt-4 font-mono text-[13px] tracking-widest uppercase" style={{ color: t.text_tertiary }}>Reading your vibe...</p>
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white">
+        <div className="w-10 h-10 border-4 rounded-full animate-spin border-[#FF2D78]/10 border-t-[#FF2D78]" />
+        <p className="mt-6 font-bold text-[13px] tracking-widest uppercase text-[#888888]">Reading your vibe...</p>
       </div>
     );
   }
 
   if (quizQuestions.length === 0) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center" style={{ background: t.bg_primary }}>
-        <p className="font-bold" style={{ color: t.text_primary }}>Something went wrong loading the quiz.</p>
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-8 text-center bg-white">
+        <p className="font-bold text-[#111111]">Something went wrong loading the quiz.</p>
         <button 
           onClick={handleClose}
-          className="mt-4 px-6 h-12 rounded-full text-white font-bold"
-          style={{ background: t.accent }}
+          className="mt-6 px-8 h-14 rounded-full text-white font-bold bg-[#FF2D78] shadow-lg"
         >
           Go Back
         </button>
@@ -482,52 +451,44 @@ export const QuizView: React.FC = () => {
   }
 
   const getQuestionFontSize = (text: string) => {
-    if (text.length < 30) return 'text-[26px]';
-    if (text.length < 50) return 'text-[22px]';
-    return 'text-[18px]';
+    if (text.length < 30) return 'text-[32px]';
+    if (text.length < 50) return 'text-[28px]';
+    return 'text-[24px]';
   };
 
-  const { activeTheme } = useThemeControl();
-  const gradients = activeTheme === 'light' ? [
-    'from-[#E3F2FD] to-[#BBDEFB]',
-    'from-[#E8F5E9] to-[#C8E6C9]',
-    'from-[#FFF3E0] to-[#FFE0B2]',
-    'from-[#F3E5F5] to-[#E1BEE7]'
-  ] : [
-    'from-[#1a1a2a] to-[#2a1a3a]',
-    'from-[#1a2a1a] to-[#0a1a0a]',
-    'from-[#2a1a1a] to-[#3a0a0a]',
-    'from-[#1a1a1a] to-[#2a2a2a]'
+  const gradients = [
+    'from-[#F0F4FF] to-[#E0E7FF]',
+    'from-[#F0FFF4] to-[#DCFCE7]',
+    'from-[#FFF0F0] to-[#FEE2E2]',
+    'from-[#F5F5F5] to-[#EFEFEF]'
   ];
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col font-sans" style={{ background: t.bg_primary }}>
+    <div className="fixed inset-0 z-[100] flex flex-col font-sans bg-white">
       {/* Top Bar */}
       <div className="px-5 pt-12 pb-2 flex items-center justify-between">
         <button 
           onClick={handleClose}
-          className="w-9 h-9 rounded-full flex items-center justify-center active:scale-95 transition-transform"
-          style={{ background: t.bg_secondary, color: t.text_primary }}
+          className="w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-transform bg-[#F5F5F5] text-[#111111]"
         >
           <X size={18} />
         </button>
-        <span className="font-mono font-bold text-[14px]" style={{ color: t.text_primary }}>
+        <span className="font-bold text-[14px] text-[#888888]">
           {currentStep + 1}/{quizQuestions.length}
         </span>
       </div>
 
       {/* Progress Bars */}
-      <div className="px-5 mt-2 flex gap-[3px]">
+      <div className="px-5 mt-4 flex gap-[4px]">
         {quizQuestions.map((_, idx) => (
-          <div key={idx} className="flex-1 h-0.5 rounded-full overflow-hidden" style={{ background: `${t.text_primary}33` }}>
+          <div key={`quiz-progress-bar-${idx}`} className="flex-1 h-1.5 rounded-full overflow-hidden bg-[#F5F5F5]">
             <motion.div 
               initial={{ width: '0%' }}
               animate={{ 
                 width: idx < currentStep ? '100%' : (idx === currentStep ? '100%' : '0%') 
               }}
               transition={{ duration: idx === currentStep ? 0.4 : 0 }}
-              className="h-full"
-              style={{ background: t.accent }}
+              className="h-full bg-[#FF2D78]"
             />
           </div>
         ))}
@@ -542,19 +503,19 @@ export const QuizView: React.FC = () => {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: '-100%', opacity: 0 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="flex flex-col pt-8 min-h-full"
+            className="flex flex-col pt-12 min-h-full"
           >
             {/* Question Section */}
-            <div className="px-5 mb-8">
-              <span className="text-[28px] mb-2 block">{currentQuestion?.question_emoji}</span>
-              <h2 className={`font-bold leading-tight uppercase ${getQuestionFontSize(currentQuestion?.question_text || '')}`} style={{ color: t.text_primary, fontFamily: "'Bebas Neue', 'Arial Black', sans-serif", letterSpacing: '0.02em' }}>
+            <div className="px-6 mb-10">
+              <span className="text-[36px] mb-4 block">{currentQuestion?.question_emoji}</span>
+              <h2 className={`font-bold leading-tight text-[#111111] ${getQuestionFontSize(currentQuestion?.question_text || '')}`} style={{ letterSpacing: '-0.02em' }}>
                 {currentQuestion?.question_text}
               </h2>
             </div>
 
             {/* Answers Grid */}
-            <div className="px-5 pb-20">
-              <div className="grid grid-cols-2 gap-2.5">
+            <div className="px-5 pb-24">
+              <div className="grid grid-cols-2 gap-3">
                 {currentQuestion?.quiz_answers.map((answer: any, idx: number) => {
                   const isSelected = selectedAnswerKey === answer.answer_key;
                   const isAnySelected = selectedAnswerKey !== null;
@@ -565,13 +526,13 @@ export const QuizView: React.FC = () => {
                       whileTap={{ scale: 0.97 }}
                       onClick={() => !isAnySelected && handleSelect(currentQuestion.id, answer.answer_key)}
                       className={`
-                        relative aspect-[4/5] rounded-[16px] overflow-hidden transition-all duration-300 border-2
+                        relative aspect-[4/5] rounded-[24px] overflow-hidden transition-all duration-300 border-2
+                        ${isSelected ? 'border-[#FF2D78]' : 'border-transparent'}
                       `}
                       style={{ 
-                        borderColor: isSelected ? t.accent : 'transparent',
-                        opacity: isAnySelected && !isSelected ? 0.4 : 1,
-                        transform: isSelected ? 'scale(0.97)' : 'scale(1)',
-                        filter: isSelected ? 'brightness(0.75)' : 'none'
+                        opacity: isAnySelected && !isSelected ? 0.5 : 1,
+                        transform: isSelected ? 'scale(1.02)' : 'scale(1)',
+                        zIndex: isSelected ? 10 : 1
                       }}
                     >
                       {answer.image_url ? (
@@ -580,16 +541,17 @@ export const QuizView: React.FC = () => {
                             src={answer.image_url} 
                             alt={answer.answer_text} 
                             className="absolute inset-0 w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
-                          <span className="absolute bottom-3 left-3 right-3 text-white font-bold text-[13px] leading-tight text-left" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                          <span className="absolute bottom-4 left-4 right-4 text-white font-bold text-[15px] leading-tight text-left">
                             {answer.answer_text}
                           </span>
                         </>
                       ) : (
-                        <div className={`w-full h-full bg-gradient-to-br ${gradients[idx % gradients.length]} flex flex-col items-center justify-center p-4 text-center`}>
-                          <span className="text-[24px] mb-2 opacity-80">{currentQuestion.question_emoji}</span>
-                          <span className="font-bold text-[14px]" style={{ color: activeTheme === 'light' ? '#1a1a1a' : '#ffffff' }}>
+                        <div className={`w-full h-full bg-gradient-to-br ${gradients[idx % gradients.length]} flex flex-col items-center justify-center p-5 text-center`}>
+                          <span className="text-[28px] mb-4 opacity-50">{currentQuestion.question_emoji}</span>
+                          <span className="font-bold text-[15px] text-[#111111]">
                             {answer.answer_text}
                           </span>
                         </div>
@@ -601,10 +563,9 @@ export const QuizView: React.FC = () => {
                           <motion.div 
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-lg"
-                            style={{ background: t.accent }}
+                            className="absolute top-4 right-4 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shadow-lg bg-[#FF2D78]"
                           >
-                            <span className="text-white font-bold text-[14px]">✓</span>
+                            <span className="text-white font-bold text-[16px]">✓</span>
                           </motion.div>
                         )}
                       </AnimatePresence>

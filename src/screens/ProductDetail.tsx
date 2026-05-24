@@ -1,627 +1,225 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  ArrowLeft, 
-  Share2, 
-  MapPin, 
-  Clock, 
-  Star, 
-  X, 
-  MessageCircle,
-  Check,
-  ChevronRight,
-  Heart
-} from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useTheme } from '../App';
-import { useInventory, Review } from '../context/InventoryContext';
-import { isShopOpen } from '../lib/utils';
-
-import { Avatar } from '../components/Avatar';
-
-const IMAGE_PLACEHOLDERS = [
-  'bg-gradient-to-br from-[#FF2D78] to-[#9B27AF]',
-  'bg-[#1a1a1a]',
-  'bg-[#2a1a2a]',
-  'bg-[#111111]',
-  'bg-[#1a1a2a]',
-  'bg-[#0a0a0a]'
-];
-
-const DUMMY_SIZES = [
-  { id: 'uk7', label: 'UK7', stock: 'in-stock' },
-  { id: 'uk8', label: 'UK8', stock: 'in-stock' },
-  { id: 'uk9', label: 'UK9', stock: 'low' },
-  { id: 'uk10', label: 'UK10', stock: 'out' },
-  { id: 'uk11', label: 'UK11', stock: 'in-stock' }
-];
+import { 
+  ArrowLeft, Share2, MessageCircle, 
+  Check, Zap, Package, ShoppingBag,
+  ChevronRight, Shield
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { Button } from '../components/ui/Button';
+import { Product, Shop } from '../types';
 
 export const ProductDetail: React.FC = () => {
-  const t = useTheme();
   const navigate = useNavigate();
-  const { id } = useParams();
-  const { 
-    addRecentlyViewed, 
-    products, 
-    shops, 
-    toggleLike, 
-    toggleSave, 
-    likedProductIds, 
-    savedProductIds, 
-    addToCart, 
-    createOrder,
-    increaseViewCount,
-    increaseShopViewCount,
-    reviews
-  } = useInventory();
-  
-  const product = products.find(p => p.id === id);
-  const shop = shops.find(s => s.id === product?.shop_id);
-  const shopReviews = useMemo(() => (shop?.id ? reviews[shop.id] || [] : []), [shop?.id, reviews]);
-  const averageRating = useMemo(() => {
-    if (shopReviews.length === 0) return 5.0;
-    const sum = shopReviews.reduce((acc, r) => acc + r.rating, 0);
-    return (sum / shopReviews.length).toFixed(1);
-  }, [shopReviews]);
-  const openStatus = { isOpen: true, text: 'Open' };
-
+  const { id } = useParams<{ id: string }>();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
-  const [selectedSizeId, setSelectedSizeId] = useState<string | null>(null);
-  const isWishlisted = savedProductIds.includes(product?.id || '');
-  const isLiked = likedProductIds.includes(product?.id || '');
-  
-  const [isLikeSheetOpen, setIsLikeSheetOpen] = useState(false);
-  const [showToast, setShowToast] = useState<{ show: boolean, type: 'success' | 'removed' | 'error', message: string }>({
-    show: false,
-    type: 'success',
-    message: ''
-  });
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const touchStartX = useRef<number | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   useEffect(() => {
-    if (id) {
-      addRecentlyViewed(id);
-      increaseViewCount(id);
-    }
-  }, [id, increaseViewCount, addRecentlyViewed]);
+    const fetchData = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, shops(*)')
+        .eq('id', id)
+        .single();
+      
+      if (error || !data) {
+        setLoading(false);
+        return;
+      }
+      
+      setProduct(data);
+      setShop(data.shops);
+      setLoading(false);
+      
+      // Increment view
+      await supabase.rpc('increment_product_view_count', { product_id: id });
+    };
+    
+    fetchData();
+  }, [id]);
 
-  useEffect(() => {
-    if (shop?.id) {
-      increaseShopViewCount(shop.id);
-    }
-  }, [shop?.id, increaseShopViewCount]);
-
-  if (!product) {
+  if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-8" style={{ background: t.bg_primary }}>
-        <h1 className="text-xl font-bold mb-4" style={{ color: t.text_primary }}>Product not found</h1>
-        <button onClick={() => navigate(-1)} className="font-bold" style={{ color: t.accent }}>Go Back</button>
+      <div className="min-h-screen bg-page-bg flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-neon border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const triggerToast = (type: 'success' | 'removed' | 'error', message: string) => {
-    setShowToast({ show: true, type, message });
-    setTimeout(() => {
-      setShowToast(prev => ({ ...prev, show: false }));
-    }, 3000);
-  };
+  if (!product || !shop) {
+    return (
+      <div className="min-h-screen bg-page-bg text-white flex flex-col items-center justify-center p-10 text-center">
+        <div className="w-20 h-20 bg-card-bg rounded-3xl flex items-center justify-center text-4xl mb-6">🚫</div>
+        <h1 className="text-2xl font-black italic tracking-tighter">Item Not Found</h1>
+        <button onClick={() => navigate(-1)} className="mt-8 text-neon font-black uppercase text-xs italic tracking-widest underline">Back to Shop</button>
+      </div>
+    );
+  }
 
-  const onToggleWishlist = () => {
-    toggleSave(product.id);
-  };
-
-  const handleAddToCart = () => {
-    if (!selectedSizeId) {
-      triggerToast('error', 'Select a size first');
+  const handleWhatsApp = () => {
+    if (!selectedSize && product.sizes?.length > 0) {
+      alert('Please select a size first');
       return;
     }
-    
-    addToCart({
-      productId: product.id,
-      shopId: product.shop_id,
-      name: product.name,
-      size: selectedSizeId,
-      quantity: 1,
-      price: product.price,
-      imageEmoji: product.images?.[0] || '👟',
-      shopName: shop?.name || 'Unknown Shop'
-    });
-    
-    triggerToast('success', 'Added to enquiries');
-    setIsLikeSheetOpen(false);
-  };
-
-  const handleLikeClick = () => {
-    setIsLikeSheetOpen(true);
-  };
-
-  const handleWhatsApp = async () => {
-    const size = product.sizes.find(s => s.size === selectedSizeId)?.size;
-    
-    // Record order in Supabase
-    if (shop) {
-      await createOrder(shop.id, [{
-        productId: product.id,
-        shopId: product.shop_id,
-        name: product.name,
-        size: size || 'Unknown',
-        quantity: 1,
-        price: product.price,
-        imageEmoji: product.images?.[0] || '👟',
-        shopName: shop.name
-      }], product.price);
-    }
-
-    const baseMessage = `Hi! I saw your ${product.name} on Thread ZW and I'm interested.`;
-    const message = size ? `${baseMessage} Is it still available in ${size}?` : baseMessage;
-    const url = `https://wa.me/${shop?.whatsapp?.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
+    const message = `Hi! I saw your ${product.name} on ThreadZW and I'm interested. ${selectedSize ? `Is it available in size ${selectedSize}?` : ''}`;
+    const url = `https://wa.me/${shop.whatsapp?.replace(/\+/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const diff = touchStartX.current - touchEndX;
-
-    if (Math.abs(diff) > 50) {
-      if (diff > 0 && currentImage < (product.images.length - 1)) {
-        setCurrentImage(prev => prev + 1);
-      } else if (diff < 0 && currentImage > 0) {
-        setCurrentImage(prev => prev - 1);
-      }
-    }
-    touchStartX.current = null;
-  };
-
   return (
-    <div className="flex flex-col min-h-screen relative font-sans" style={{ background: t.bg_primary }}>
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {showToast.show && (
-          <motion.div 
-            initial={{ y: -100, x: '-50%', opacity: 0 }}
-            animate={{ y: 20, x: '-50%', opacity: 1 }}
-            exit={{ y: -100, x: '-50%', opacity: 0 }}
-            className={`fixed top-0 left-1/2 z-[100] px-6 py-2.5 rounded-full whitespace-nowrap shadow-2xl border text-sm font-medium`}
-            style={{ 
-              background: showToast.type === 'success' ? t.green : showToast.type === 'error' ? t.red : t.bg_secondary,
-              color: 'white',
-              borderColor: 'rgba(255,255,255,0.1)'
-            }}
-          >
-            {showToast.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <header className="fixed top-[env(safe-area-inset-top,20px)] left-4 right-4 z-40 flex justify-between items-center pointer-events-none">
-        <button 
-          onClick={() => navigate(-1)}
-          className="w-10 h-10 flex items-center justify-center backdrop-blur-md rounded-full pointer-events-auto active:scale-95 transition-transform"
-          style={{ background: 'rgba(0,0,0,0.4)', color: 'white' }}
-        >
+    <div className="min-h-screen bg-page-bg text-white pb-40 lg:pb-0">
+      {/* Top Navigation */}
+      <div className="fixed top-0 left-0 right-0 h-20 z-50 flex justify-between items-center px-6 pointer-events-none">
+        <button onClick={() => navigate(-1)} className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 flex items-center justify-center pointer-events-auto active:scale-90 transition-all">
           <ArrowLeft size={22} />
         </button>
-        <button 
-          className="w-9 h-9 flex items-center justify-center backdrop-blur-md rounded-full pointer-events-auto active:scale-95 transition-transform"
-          style={{ background: 'rgba(0,0,0,0.4)', color: 'white' }}
-        >
-          <Share2 size={18} />
+        <button className="w-12 h-12 rounded-2xl bg-black/40 backdrop-blur-xl border border-white/10 flex items-center justify-center pointer-events-auto active:scale-90 transition-all">
+          <Share2 size={22} />
         </button>
-      </header>
-
-      {/* Image Carousel */}
-      <div 
-        className="relative w-full h-[380px] overflow-hidden"
-        style={{ background: t.bg_secondary }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div 
-          className="flex h-full transition-transform duration-500 ease-out"
-          style={{ transform: `translateX(-${currentImage * 100}%)` }}
-        >
-          {product.images.length > 0 ? product.images.map((img, i) => (
-            <div key={i} className="w-full h-full flex-shrink-0">
-               <img src={img || undefined} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-            </div>
-          )) : (
-            <div className="w-full h-full bg-[#1a1a1a] flex items-center justify-center">
-              <span className="text-8xl opacity-20">👟</span>
-            </div>
-          )}
-        </div>
-
-        {/* Counter Overlay */}
-        {product.images.length > 1 && (
-          <div className="absolute top-4 right-4 bg-black/60 px-3 py-1 rounded-full border border-white/10 backdrop-blur-sm pointer-events-none">
-            <span className="text-[10px] font-mono font-bold text-white uppercase tracking-wider">
-              {currentImage + 1} / {product.images.length}
-            </span>
-          </div>
-        )}
-
-        {/* Dot Indicators */}
-        {product.images.length > 1 && (
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-2 pointer-events-auto">
-            {product.images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentImage(i)}
-                className={`rounded-full transition-all duration-300 ${
-                  i === currentImage ? 'bg-white w-2 h-2' : 'bg-white/30 w-1.5 h-1.5'
-                }`}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Product Info Section */}
-      <div className="p-5 flex flex-col">
-        <div className="flex justify-between items-start gap-4">
-          <h1 className="text-xl font-bold leading-tight" style={{ color: t.text_primary }}>{product.name}</h1>
-          <span className="text-[22px] font-bold" style={{ color: t.accent }}>${product.price}</span>
-        </div>
-
-        <div className="flex items-center gap-2 mt-2">
-          {/* Category Badge */}
-          <div className="px-2.5 py-1 rounded-full border flex items-center" style={{ background: t.bg_secondary, borderColor: t.border_primary }}>
-            <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: t.text_secondary }}>{product.category}</span>
-          </div>
-
-          {/* Condition Badge */}
-          <div className="px-2.5 py-1 rounded-full border flex items-center" style={{ background: t.green_bg, borderColor: t.green }}>
-            <span className="text-[11px] font-bold" style={{ color: t.green }}>Verified</span>
-          </div>
-
-          {/* Stock Badge */}
-          <div className="px-2.5 py-1 rounded-full border flex items-center gap-1.5" style={{ background: product.total_stock > 0 ? t.green_bg : t.red_bg, borderColor: product.total_stock > 0 ? t.green : t.red }}>
-            <div className={`w-1.5 h-1.5 rounded-full ${product.total_stock > 0 ? '' : 'bg-red-500'}`} style={{ background: product.total_stock > 0 ? t.green : t.red }} />
-            <span className={`text-[11px] font-medium`} style={{ color: product.total_stock > 0 ? t.green : t.red }}>
-              {product.total_stock > 0 ? 'In Stock' : 'Out of Stock'}
-            </span>
-          </div>
-        </div>
-
-        {/* Sizes Section */}
-        {product.sizes.length > 0 && (
-          <div className="mt-8">
-            <p className="text-sm font-bold mb-3" style={{ color: t.text_primary }}>Sizes Available</p>
-            <div className="flex flex-wrap gap-2">
-              {product.sizes.map(size => {
-                const isOut = size.quantity === 0;
-                const isLow = size.quantity > 0 && size.quantity < 3;
-                const isSelected = selectedSizeId === size.size;
-
-                return (
-                  <button
-                    key={size.size}
-                    disabled={isOut}
-                    onClick={() => setSelectedSizeId(size.size)}
-                    className={`
-                      px-4 py-2 rounded-full font-bold text-[13px] border transition-all
-                    `}
-                    style={{
-                      background: isSelected ? t.accent : isOut ? t.bg_secondary : t.bg_card,
-                      color: isSelected ? 'white' : isOut ? t.text_tertiary : t.text_primary,
-                      borderColor: isSelected ? t.accent : isOut ? t.border_secondary : t.border_primary,
-                      textDecoration: isOut ? 'line-through' : 'none',
-                      opacity: isOut ? 0.5 : 1,
-                      boxShadow: isSelected ? t.shadow : 'none'
-                    }}
-                  >
-                    {size.size}
-                    {isLow && !isSelected && <span className="ml-1 text-[10px] font-mono" style={{ color: t.amber }}>!</span>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        <div className="h-px w-full my-6" style={{ background: t.border_secondary }} />
-
-        {/* Shop Row */}
-        {shop && (
-          <>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar 
-                    url={shop.avatar_url || shop.logo_url} 
-                    size={44}
-                    className="border"
-                    style={{ borderColor: t.border_secondary }}
-                  />
-                  {shop.is_verified && (
-                    <div 
-                      className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                      style={{ background: t.accent, borderColor: t.bg_primary }}
-                    >
-                      <Check size={8} className="text-white" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-1">
-                    <span className="text-sm font-bold" style={{ color: t.text_primary }}>{shop.name}</span>
-                    {shop.is_verified && (
-                      <div className="bg-blue-500 rounded-full p-0.5 shrink-0">
-                        <Check size={8} className="text-white stroke-[4]" />
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-[12px]" style={{ color: t.text_tertiary }}>{shop.category}</span>
-                </div>
-              </div>
-              <button 
-                onClick={() => navigate(`/shop/${shop.id}`)}
-                className="px-3.5 py-2 rounded-full border text-[12px] font-bold transition-colors"
-                style={{ borderColor: t.accent, color: t.accent }}
-              >
-                Visit Shop
-              </button>
-            </div>
-            <div className="h-px w-full my-6" style={{ background: t.border_secondary }} />
-          </>
-        )}
-
-        {/* Description Section */}
-        <div>
-          <h2 className="text-sm font-bold mb-2.5" style={{ color: t.text_primary }}>About This Product</h2>
-          <p className="text-sm leading-[1.6]" style={{ color: t.text_secondary }}>
-            {product.description || 'No description provided for this drip.'}
-          </p>
-        </div>
-
-        <div className="h-px w-full my-6" style={{ background: t.border_secondary }} />
-
-        {/* Find The Shop Section */}
-        {shop && (
-          <div>
-            <h2 className="text-sm font-bold mb-3" style={{ color: t.text_primary }}>Find The Shop</h2>
-            <div 
-              className="border rounded-[12px] p-4 flex flex-col gap-3"
-              style={{ background: t.bg_card, borderColor: t.border_primary }}
-            >
-              <div className="flex items-center gap-2">
-                <MapPin size={16} style={{ color: t.accent }} />
-                <span className="text-[13px] font-bold" style={{ color: t.text_primary }}>{shop.location || shop.area}</span>
-              </div>
-              <p className="text-[13px] leading-[1.6]" style={{ color: t.text_secondary }}>
-                {shop.landmark || 'No landmark provided'} {shop.directions ? `• ${shop.directions}` : ''}
-              </p>
-              <div className="flex items-center gap-2">
-                <Clock size={16} style={{ color: t.accent }} />
-                <div className="flex flex-col">
-                  <span className="text-[12px]" style={{ color: t.text_tertiary }}>{shop.trading_hours || 'Mon–Sat: 8am – 6pm'}</span>
-                  <span className={`text-[11px] font-bold mt-0.5`} style={{ color: openStatus.isOpen ? t.green : t.amber }}>
-                     {openStatus.text}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="h-px w-full my-6" style={{ background: t.border_secondary }} />
-          </div>
-        )}
-
-        {/* Reviews Section */}
-        <div className="flex flex-col pb-[200px]">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-bold" style={{ color: t.text_primary }}>Reviews</h2>
-            <div className="flex items-center gap-1.5">
-              <Star size={14} className="fill-current" style={{ color: t.accent }} />
-              <span className="text-[14px] font-bold" style={{ color: t.text_primary }}>{averageRating}</span>
-              <span className="text-[12px]" style={{ color: t.text_tertiary }}>( {shopReviews.length} )</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2.5">
-            {shopReviews.length > 0 ? shopReviews.slice(0, 3).map(item => (
-              <div 
-                key={item.id} 
-                className="rounded-[12px] p-3.5 border"
-                style={{ background: t.bg_card, borderColor: t.border_secondary }}
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <div className="flex items-center gap-2.5">
-                    <Avatar 
-                      url={null} 
-                      size={32}
-                      className="border"
-                      style={{ borderColor: t.border_secondary }}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-[13px] font-bold" style={{ color: t.text_primary }}>{item.userName}</span>
-                      <span className="text-[10px]" style={{ color: t.text_tertiary }}>@{item.userHandle}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        size={10} 
-                        className={i < item.rating ? "fill-current" : ""} 
-                        style={{ color: i < item.rating ? t.accent : t.border_secondary }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <p className="text-[13px] leading-normal" style={{ color: t.text_secondary }}>{item.text}</p>
-                <span className="text-[11px] mt-2 block" style={{ color: t.text_tertiary }}>{new Date(item.timestamp).toLocaleDateString()}</span>
-              </div>
-            )) : (
-              <div 
-                className="rounded-[12px] p-8 border text-center"
-                style={{ background: t.bg_card, borderColor: t.border_secondary }}
-              >
-                <p className="text-sm" style={{ color: t.text_tertiary }}>No reviews yet for this shop.</p>
-              </div>
-            )}
-          </div>
-
-          {shopReviews.length > 3 && (
-            <button className="text-[13px] font-bold mt-4 self-center active:underline" style={{ color: t.accent }}>
-              See All Reviews
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Sticky Bottom Bar */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 z-50 border-t px-5 pt-4 pb-[env(safe-area-inset-bottom,32px)] lg:max-w-none mx-auto"
-        style={{ 
-          background: t.bg_primary, 
-          borderColor: t.border_primary,
-          boxShadow: t.shadow 
-        }}
-      >
-        <div className="flex gap-3 max-w-[800px] mx-auto">
-          <button 
-            onClick={handleLikeClick}
-            className="flex-1 h-[56px] rounded-full text-white font-bold text-[16px] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            style={{ 
-              background: `linear-gradient(135deg, ${t.accent}, ${t.accent_dark})`,
-              boxShadow: t.shadow
-            }}
-          >
-            I Like It
-          </button>
-          <button 
-            onClick={onToggleWishlist}
-            className={`w-[56px] h-[56px] rounded-full border-2 font-bold text-[15px] flex items-center justify-center transition-all`}
-            style={{ 
-              borderColor: t.accent,
-              background: isWishlisted ? `${t.accent}26` : 'transparent',
-              color: t.accent
-            }}
-          >
-            <Heart size={20} className={isWishlisted ? 'fill-current' : ''} />
-          </button>
-          <button 
-            onClick={handleWhatsApp}
-            className="w-[56px] h-[56px] rounded-full text-white flex items-center justify-center active:scale-[0.98] transition-all"
-            style={{ background: '#25D366' }}
-          >
-            <MessageCircle size={22} fill="white" />
-          </button>
-        </div>
-      </div>
-
-      {/* I Like It Bottom Sheet */}
-      <AnimatePresence>
-        {isLikeSheetOpen && (
-          <>
-            <motion.div 
+      <div className="lg:flex lg:min-h-screen">
+        {/* Media Section */}
+        <div className="relative w-full aspect-[4/5] lg:aspect-auto lg:flex-1 lg:h-screen bg-ele-bg overflow-hidden sticky lg:top-0">
+          <AnimatePresence mode="wait">
+            <motion.img 
+              key={currentImage}
+              src={product.images?.[currentImage] || 'https://via.placeholder.com/600x800'} 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsLikeSheetOpen(false)}
-              className="fixed inset-0 z-[60]"
-              style={{ background: t.overlay }}
+              transition={{ duration: 0.5 }}
             />
-            <motion.div 
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-[70] rounded-t-[20px] pb-10 lg:max-w-[500px] mx-auto max-h-[85vh] overflow-y-auto no-scrollbar border-t shadow-2xl"
-              style={{ background: t.bg_primary, borderColor: t.border_primary }}
-            >
-              <div className="p-6">
-                {/* Drag Handle */}
-                <div className="w-10 h-1 rounded-full mx-auto mb-5" style={{ background: t.border_subtle }} />
+          </AnimatePresence>
+          
+          {/* Controls */}
+          {product.images?.length > 1 && (
+            <div className="absolute inset-x-0 bottom-10 flex justify-center gap-2 z-20">
+              {product.images.map((_, i) => (
+                <div 
+                  key={`indicator-${i}`} 
+                  onClick={() => setCurrentImage(i)}
+                  className={`h-1 rounded-full transition-all duration-300 ${i === currentImage ? 'w-8 bg-neon' : 'w-2 bg-white/20'}`} 
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-[64px] h-[64px] rounded-[12px] overflow-hidden border" style={{ background: t.bg_secondary, borderColor: t.border_secondary }}>
-                       {product.images[0] ? <img src={product.images[0] || undefined} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <div className="w-full h-full" style={{ background: t.accent }} />}
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                      <h3 className="text-[17px] font-bold truncate leading-tight" style={{ color: t.text_primary }}>{product.name}</h3>
-                      <p className="text-[17px] font-bold mt-0.5" style={{ color: t.accent }}>${product.price}</p>
-                      <span className="text-[12px] font-medium mt-1" style={{ color: t.text_tertiary }}>Shop: {shop?.name}</span>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setIsLikeSheetOpen(false)}
-                    className="w-9 h-9 flex items-center justify-center rounded-full shrink-0"
-                    style={{ background: t.bg_secondary, color: t.text_tertiary }}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
+        {/* Content Section */}
+        <div className="px-6 pt-10 pb-20 lg:w-[480px] lg:h-screen lg:overflow-y-auto lg:bg-page-bg lg:pt-24 lg:pb-32 no-scrollbar">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-neon/10 border border-neon/30 text-neon px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest italic leading-none">
+                {product.category || 'CURATED DROP'}
+              </div>
+              <div className="flex items-center gap-1.5 text-secondary-text text-[10px] font-bold uppercase tracking-widest">
+                <Zap size={10} className="text-neon" /> {product.total_stock > 0 ? `${product.total_stock} LEFT` : 'OUT OF STOCK'}
+              </div>
+            </div>
 
-                <div className="space-y-6">
-                  {/* Visit Section */}
-                  <div className="border rounded-[20px] p-5" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[14px] font-black uppercase tracking-widest" style={{ color: t.text_primary }}>Visit Shop in Person</h3>
-                      <div className="flex items-center gap-1.5">
-                        <div className={`w-1.5 h-1.5 rounded-full`} style={{ background: openStatus.isOpen ? t.green : t.amber }} />
-                        <span className={`text-[11px] font-bold uppercase tracking-wider`} style={{ color: openStatus.isOpen ? t.green : t.amber }}>
-                          {openStatus.isOpen ? 'Open Now' : 'Closed'}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-start gap-3">
-                        <MapPin size={18} className="shrink-0 mt-0.5" style={{ color: t.accent }} />
-                        <div>
-                          <p className="text-[15px] font-bold leading-tight" style={{ color: t.text_primary }}>{shop?.location || shop?.area}</p>
-                          <p className="text-[13px] mt-1" style={{ color: t.text_secondary }}>{shop?.landmark}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start gap-3">
-                        <Clock size={16} className="shrink-0 mt-0.5" style={{ color: t.text_tertiary }} />
-                        <p className="text-[13px]" style={{ color: t.text_secondary }}>{shop?.trading_hours || 'Mon–Sat: 8am – 6pm'}</p>
-                      </div>
+            <h1 className="text-[40px] font-black italic tracking-tighter leading-none mb-4">{product.name}</h1>
+            
+            <div className="flex items-baseline gap-3 mb-10 pb-8 border-b border-border">
+              <span className="text-4xl font-black text-neon italic">${product.price}</span>
+              <span className="text-secondary-text text-sm font-bold uppercase tracking-widest italic opacity-50">USD</span>
+            </div>
 
-                      {shop?.directions && (
-                        <div className="pt-3 border-t" style={{ borderColor: t.border_secondary }}>
-                           <p className="text-[12px] italic leading-relaxed" style={{ color: t.text_tertiary }}>"{shop?.directions}"</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* WhatsApp Section */}
-                  <div className="border rounded-[20px] p-5" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
-                    <h3 className="text-[14px] font-black uppercase tracking-widest mb-4" style={{ color: t.text_primary }}>Direct Contact</h3>
-                    <button 
-                      onClick={handleWhatsApp}
-                      className="w-full h-[60px] bg-[#25D366] rounded-full text-white font-black text-[15px] flex items-center justify-center gap-3 active:scale-[0.98] transition-transform shadow-[0_10px_20px_-10px_rgba(37,211,102,0.4)]"
-                    >
-                      <MessageCircle size={22} fill="white" />
-                      Chat on WhatsApp
-                    </button>
-                    <p className="text-[11px] text-center mt-3 font-medium" style={{ color: t.text_tertiary }}>
-                      {selectedSizeId ? `Enquiring for Size ${selectedSizeId}` : 'Size not selected yet'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8 px-4 text-center">
-                  <p className="text-[12px] font-medium leading-relaxed" style={{ color: t.text_tertiary }}>
-                    Thread ZW connects you directly to sellers.<br />We don't take payments.
-                  </p>
+            {/* Sizes */}
+            {product.sizes?.length > 0 && (
+              <div className="mb-10">
+                <h3 className="text-secondary-text text-[11px] font-black tracking-[0.2em] uppercase mb-4 italic">Select Archetype Config</h3>
+                <div className="flex flex-wrap gap-3">
+                  {product.sizes.map((s: any) => {
+                    const isSelected = selectedSize === s.size;
+                    const isOut = s.quantity === 0;
+                    return (
+                      <button 
+                        key={s.size}
+                        disabled={isOut}
+                        onClick={() => setSelectedSize(s.size)}
+                        className={`h-16 flex-1 min-w-[70px] rounded-2xl border-2 font-black italic text-lg transition-all ${isSelected ? 'bg-neon border-neon text-neon-text shadow-[0_8px_24px_rgba(198,255,0,0.15)]' : isOut ? 'bg-ele-bg border-border text-secondary-text/30 cursor-not-allowed italic font-normal' : 'bg-card-bg border-border hover:border-white'}`}
+                      >
+                        {s.size}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            )}
+
+            {/* Narrative */}
+            <div className="mb-12">
+               <h3 className="text-secondary-text text-[11px] font-black tracking-[0.2em] uppercase mb-4 italic">Manifesto Note</h3>
+               <p className="text-lg font-medium text-secondary-text leading-relaxed">
+                 {product.description || 'A unique piece curated for the high-end streetwear enthusiast. Premium materials, flawless construction.'}
+               </p>
+            </div>
+
+            {/* Shop Box */}
+            <div className="bg-card-bg border border-border rounded-[32px] p-6 mb-12 flex items-center justify-between group active:scale-[0.98] transition-all" onClick={() => navigate(`/shop/${shop.handle}`)}>
+              <div className="flex items-center gap-4">
+                 <div className="w-16 h-16 rounded-[24px] bg-ele-bg border-2 border-border overflow-hidden">
+                    {shop.avatar_url ? (
+                      <img src={shop.avatar_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-black text-neon text-xl bg-page-bg">
+                        {shop.name[0].toUpperCase()}
+                      </div>
+                    )}
+                 </div>
+                 <div>
+                    <h4 className="font-bold text-lg mb-0.5">{shop.name}</h4>
+                    <span className="text-secondary-text text-xs uppercase tracking-widest font-black italic text-neon">@{shop.handle}</span>
+                 </div>
+              </div>
+              <ChevronRight size={20} className="text-secondary-text group-hover:translate-x-1 transition-transform" />
+            </div>
+
+            {/* Tech Specs */}
+            <div className="grid grid-cols-2 gap-4 mb-20">
+               <div className="bg-ele-bg border border-border/50 rounded-2xl p-5 flex flex-col gap-4">
+                  <Shield size={24} className="text-neon" />
+                  <div>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest italic mb-1">Authentic Node</h5>
+                    <p className="text-[9px] text-secondary-text font-bold leading-relaxed">Fully verified by ThreadZW protocols.</p>
+                  </div>
+               </div>
+               <div className="bg-ele-bg border border-border/50 rounded-2xl p-5 flex flex-col gap-4">
+                  <Package size={24} className="text-warm" />
+                  <div>
+                    <h5 className="text-[10px] font-black uppercase tracking-widest italic mb-1">Stock Status</h5>
+                    <p className="text-[9px] text-secondary-text font-bold leading-relaxed">Direct from shop inventory.</p>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Persistent Buy Bar */}
+      <footer className="fixed bottom-0 left-0 right-0 z-[60] bg-page-bg/80 backdrop-blur-2xl border-t border-border px-6 pt-6 pb-safe">
+        <div className="max-w-xl mx-auto flex items-center gap-6">
+          <div className="flex flex-col">
+             <span className="text-secondary-text text-[10px] font-black uppercase tracking-widest italic opacity-50 mb-1">Subtotal</span>
+             <div className="text-3xl font-black italic tracking-tighter leading-none">${product.price}</div>
+          </div>
+          <button 
+            onClick={handleWhatsApp}
+            className="flex-1 h-[68px] bg-neon text-neon-text rounded-2xl flex items-center justify-center gap-3 font-black text-xl italic tracking-tighter uppercase shadow-[0_12px_40px_rgba(198,255,0,0.2)] active:scale-[0.97] transition-all"
+          >
+            ORDER ON WHATSAPP <MessageCircle size={28} fill="currentColor" stroke="none" />
+          </button>
+        </div>
+      </footer>
     </div>
   );
 };

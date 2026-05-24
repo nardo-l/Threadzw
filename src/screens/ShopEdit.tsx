@@ -58,8 +58,14 @@ export const ShopEdit = () => {
   const [shopName, setShopName] = useState('');
   const [handle, setHandle] = useState('');
   const [originalHandle, setOriginalHandle] = useState('');
+  const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
   const [categories, setCategories] = useState<string[]>([]);
+  const [suburb, setSuburb] = useState('');
+  const [city, setCity] = useState('');
+  const [googleMapsUrl, setGoogleMapsUrl] = useState('');
+  const [pickupAvailable, setPickupAvailable] = useState(false);
+  const [pickupLabel, setPickupLabel] = useState('');
   const [area, setArea] = useState('');
   const [landmark, setLandmark] = useState('');
   const [directions, setDirections] = useState('');
@@ -165,8 +171,14 @@ export const ShopEdit = () => {
       setShopName(data.name || '');
       setHandle(data.handle || '');
       setOriginalHandle(data.handle || '');
+      setTagline(data.tagline || '');
       setDescription(data.description || '');
       setCategories(data.categories || []);
+      setSuburb(data.suburb || '');
+      setCity(data.city || '');
+      setGoogleMapsUrl(data.google_maps_url || '');
+      setPickupAvailable(data.pickup_available || false);
+      setPickupLabel(data.pickup_label || '');
       setArea(data.location || '');
       setLandmark(data.landmark || '');
       setDirections(data.directions || '');
@@ -235,7 +247,7 @@ export const ShopEdit = () => {
     if (hasChanges) {
       setShowUnsavedModal(true);
     } else {
-      navigate('/shop-centre');
+      navigate('/settings');
     }
   };
 
@@ -310,8 +322,14 @@ export const ShopEdit = () => {
         .update({
           name: shopName.trim(),
           handle: handle.trim().toLowerCase(),
+          tagline: tagline.trim() || null,
           description: description.trim(),
           categories,
+          suburb: suburb.trim() || null,
+          city: city.trim() || null,
+          google_maps_url: googleMapsUrl.trim() || null,
+          pickup_available: pickupAvailable,
+          pickup_label: pickupLabel.trim() || null,
           location: onlineOnly ? null : area,
           landmark: onlineOnly ? null : landmark.trim(),
           directions: onlineOnly ? null : directions.trim(),
@@ -319,6 +337,7 @@ export const ShopEdit = () => {
           delivery_info: onlineOnly ? deliveryInfo.trim() : null,
           whatsapp: `+263${cleanWhatsapp}`,
           instagram: instagram.trim() || null,
+          instagram_url: instagram.trim() ? `https://instagram.com/${instagram.trim().replace(/^@/, '')}` : null,
           trading_hours: tradingHours,
           banner_url: newBannerUrl,
           logo_url: newAvatarUrl,
@@ -337,7 +356,7 @@ export const ShopEdit = () => {
 
       setHasChanges(false);
       showToast('Shop updated successfully', 'success');
-      setTimeout(() => navigate('/shop-centre'), 800);
+      setTimeout(() => navigate('/settings'), 800);
 
     } catch (err) {
       console.error('Save error:', err);
@@ -359,7 +378,7 @@ export const ShopEdit = () => {
       setIsLive(!isLive);
       showToast(isLive ? 'Shop paused' : 'Shop is live again', 'success');
       setShowPauseModal(false);
-      navigate('/shop-centre');
+      navigate('/settings');
     } catch (err) {
       showToast('Error updating shop status', 'error');
     }
@@ -644,6 +663,27 @@ export const ShopEdit = () => {
             {validationErrors.handle && <FieldError message={validationErrors.handle} />}
           </div>
 
+          {/* Tagline */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-end">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider">
+                Tagline
+              </label>
+              <span className="font-mono text-[10px] text-muted">{tagline.length}/300</span>
+            </div>
+            <input 
+              value={tagline}
+              onChange={e => {
+                if (e.target.value.length <= 300) {
+                  setTagline(e.target.value);
+                  markChanged();
+                }
+              }}
+              placeholder="e.g. The underdog clothing brand"
+              className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+            />
+          </div>
+
           {/* Description */}
           <div className="space-y-2">
             <div className="flex justify-between items-end">
@@ -737,6 +777,48 @@ export const ShopEdit = () => {
                 {validationErrors.area && <FieldError message={validationErrors.area} />}
               </div>
 
+              {/* Suburb & City Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Suburb</label>
+                  <input 
+                    value={suburb}
+                    onChange={e => {
+                      setSuburb(e.target.value);
+                      markChanged();
+                    }}
+                    placeholder="e.g. Avondale"
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">City</label>
+                  <input 
+                    value={city}
+                    onChange={e => {
+                      setCity(e.target.value);
+                      markChanged();
+                    }}
+                    placeholder="e.g. Harare"
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                  />
+                </div>
+              </div>
+
+              {/* Google Maps URL Link */}
+              <div className="space-y-2">
+                <label className="font-mono text-xs text-muted uppercase tracking-wider">Google Maps Link</label>
+                <input 
+                  value={googleMapsUrl}
+                  onChange={e => {
+                    setGoogleMapsUrl(e.target.value);
+                    markChanged();
+                  }}
+                  placeholder="e.g. https://maps.google.com/?q=..."
+                  className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                />
+              </div>
+
               {/* Landmark */}
               <div id="field-landmark" className="space-y-2">
                 <label className="font-mono text-xs text-muted uppercase tracking-wider">
@@ -794,6 +876,44 @@ export const ShopEdit = () => {
                 rows={3}
                 placeholder="Describe how you deliver -- courier, pickup point, areas covered..."
                 className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
+              />
+            </div>
+          )}
+        </section>
+
+        {/* Section 4B: Pickup Settings */}
+        <section className="space-y-6 pt-6 border-t border-border">
+          <div className="flex justify-between items-center">
+            <h2 className="font-syne font-bold text-lg text-white">Pickup Settings</h2>
+          </div>
+
+          <div className="flex items-center justify-between bg-elevated p-4 rounded-12">
+            <div className="flex flex-col">
+              <span className="font-sans text-white font-medium">In-person Pickup Available</span>
+              <span className="font-mono text-[10px] text-muted uppercase mt-0.5">Allow buyers to pick up items directly</span>
+            </div>
+            <button 
+              onClick={() => {
+                setPickupAvailable(!pickupAvailable);
+                markChanged();
+              }}
+              className={`w-12 h-6 rounded-pill relative transition-colors ${pickupAvailable ? 'bg-primary' : 'bg-muted/30'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${pickupAvailable ? 'left-7' : 'left-1'}`} />
+            </button>
+          </div>
+
+          {pickupAvailable && (
+            <div className="space-y-2 animate-wipe overflow-hidden">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider">Pickup Notice / Label</label>
+              <input 
+                value={pickupLabel}
+                onChange={e => {
+                  setPickupLabel(e.target.value);
+                  markChanged();
+                }}
+                placeholder="e.g. Pickup available within 2 hours"
+                className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
               />
             </div>
           )}
@@ -984,7 +1104,7 @@ export const ShopEdit = () => {
                 Save Changes
               </button>
               <button 
-                onClick={() => navigate('/shop-centre')}
+                onClick={() => navigate('/settings')}
                 className="w-full py-4 border border-red text-red font-syne font-bold rounded-14"
               >
                 Discard & Leave

@@ -233,7 +233,7 @@ export const EcoCashPaymentSheet: React.FC<EcoCashPaymentSheetProps> = ({
                 'Enter your EcoCash PIN on your phone to approve',
                 'Your shop goes live instantly',
               ].map((s, i) => (
-                <div key={i} className="flex items-start gap-2 mb-1.5">
+                <div key={`payment-step-${i}`} className="flex items-start gap-2 mb-1.5">
                   <span className="font-dm-mono text-[#f72585] text-xs w-4 flex-shrink-0">
                     {i + 1}.
                   </span>

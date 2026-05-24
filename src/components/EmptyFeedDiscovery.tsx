@@ -60,7 +60,7 @@ export const EmptyFeedDiscovery: React.FC = () => {
       <div className="flex flex-col gap-3">
         {features.map((feature, i) => (
           <div
-            key={i}
+            key={`feature-card-${i}`}
             onClick={feature.action}
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-4 cursor-pointer active:scale-95 transition-transform"
             style={{ borderLeftColor: feature.colour, borderLeftWidth: 3 }}

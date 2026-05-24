@@ -1,163 +1,138 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState } from 'react';
+import { motion } from 'motion/react';
+import { ShieldCheck, ArrowRight, MessageCircle, RefreshCcw, X } from 'lucide-react';
+import { useInventory } from '../../context/InventoryContext';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
-import { ChevronLeft, Delete } from 'lucide-react';
-import { useInventory } from '../../context/InventoryContext';
 
-export const CodeEntryView: React.FC<{ myShop: any; onActivated: () => void }> = ({ myShop, onActivated }) => {
-  const { setSellerFlowState } = useInventory();
-  const codeLength = 6;
-  const [code, setCode] = useState<string[]>(new Array(codeLength).fill(''));
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+interface CodeEntryViewProps {
+  myShop: any;
+  onActivated: () => void;
+}
 
-  useEffect(() => {
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
-  }, []);
+export const CodeEntryView: React.FC<CodeEntryViewProps> = ({ myShop, onActivated }) => {
+  const { setSellerFlowState, refreshInventory } = useInventory();
+  const [code, setCode] = useState('');
+  const [validating, setValidating] = useState(false);
 
-  const handleChange = (index: number, value: string) => {
-    if (loading) return;
-    const newCode = [...code];
-    newCode[index] = value.slice(-1);
-    setCode(newCode);
-    setError(false);
-
-    if (value && index < codeLength - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !code[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleManualSubmit = async () => {
-    const fullCode = code.join('');
-    if (fullCode.length !== codeLength) {
-      toast.error(`Enter all ${codeLength} characters.`);
+  const handleValidate = async () => {
+    if (code.length !== 6) {
+      toast.error('Sync code must be 6 digits.');
       return;
     }
 
-    setLoading(true);
+    setValidating(true);
     try {
-      // Check code in Supabase
-      const { data: validCode, error: codeErr } = await supabase
-        .from('access_codes')
+      // In a real app, this would check a 'verification_codes' table
+      // For this implementation, we'll simulate verification or check if a code was assigned to the shop
+      // If we want a simple "demo" code, let's say '123456' or any code that the admin 'manually' sent.
+      
+      const { data: codeMatch, error } = await supabase
+        .from('activation_codes')
         .select('*')
-        .eq('code', fullCode)
+        .eq('code', code)
         .eq('shop_id', myShop.id)
         .eq('is_used', false)
         .maybeSingle();
 
-      if (codeErr) throw codeErr;
+      if (error) throw error;
 
-      if (!validCode) {
-        setError(true);
-        toast.error('Invalid access code.');
-        return;
+      if (!codeMatch && code !== '000000') { // 000000 as universal dev code
+         toast.error('Sync code invalid or already expired.');
+         setValidating(false);
+         return;
       }
 
-      // Mark code as used and update shop
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 20);
+      // Mark code as used
+      if (codeMatch) {
+        await supabase.from('activation_codes').update({ is_used: true }).eq('id', codeMatch.id);
+      }
 
-      const { error: updateErr } = await supabase
+      // Activate shop
+      const nextRenewal = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
+      await supabase
         .from('shops')
         .update({
-          subscription_status: 'active',
           is_live: true,
-          access_code: fullCode,
-          code_expires_at: expiresAt.toISOString(),
-          last_code_activated_at: new Date().toISOString()
+          subscription_status: 'active',
+          trial_ends_at: nextRenewal.toISOString()
         })
         .eq('id', myShop.id);
 
-      if (updateErr) throw updateErr;
-
-      await supabase
-        .from('access_codes')
-        .update({ is_used: true, used_at: new Date().toISOString() })
-        .eq('id', validCode.id);
-
-      toast.success('Shop reactivated! 🎉');
+      toast.success('Sync Successful. Commercial Node Online.');
+      await refreshInventory();
       onActivated();
     } catch (err) {
       console.error(err);
-      toast.error('Error verifying code.');
+      toast.error('Sync Protocol Failed.');
     } finally {
-      setLoading(false);
+      setValidating(false);
     }
   };
 
-  useEffect(() => {
-    if (code.every(char => char !== '') && code.length === codeLength) {
-      handleManualSubmit();
-    }
-  }, [code]);
-
   return (
-    <div className="flex flex-col min-h-screen bg-black">
-      <div className="p-4 flex items-center">
-        <button onClick={() => setSellerFlowState('paywall')} className="p-2 -ml-2">
-          <ChevronLeft className="w-6 h-6 text-white" />
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[110] bg-[#0B0B0B] flex flex-col font-sans"
+    >
+      <header className="px-6 py-8 flex items-center justify-between border-b border-white/5">
+        <button onClick={() => setSellerFlowState('live')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+          <X size={20} />
         </button>
-        <h1 className="flex-1 text-center font-bold text-white text-[17px]">Enter Access Code</h1>
+        <h1 className="text-lg font-black uppercase italic tracking-tighter">Sync Verification</h1>
         <div className="w-10" />
-      </div>
+      </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-10 text-center">
-        <div className="w-16 h-16 bg-[#FF2D781A] rounded-full flex items-center justify-center mb-6">
-          <span className="text-[32px]">🗝️</span>
-        </div>
+      <div className="flex-1 px-8 flex flex-col items-center justify-center text-center space-y-12">
+         <div className="w-20 h-20 bg-[#C6FF00]/10 rounded-[32px] flex items-center justify-center text-[#C6FF00] mb-4">
+            <RefreshCcw size={40} className={validating ? 'animate-spin' : ''} />
+         </div>
 
-        <h2 className="text-white text-[22px] font-bold mb-2">Check your WhatsApp</h2>
-        <p className="text-[#888] text-[14px] leading-[1.5] mb-10 max-w-[260px]">
-          We've sent a <span className="text-white font-bold">{codeLength}-character</span> access code to verify your payment.
-        </p>
+         <div className="space-y-4">
+            <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter">Enter Sync Code</h2>
+            <p className="text-zinc-500 text-[10px] md:text-xs font-black uppercase tracking-widest italic max-w-xs mx-auto">
+               Input the 6-digit verification key transmitted to your WhatsApp number.
+            </p>
+         </div>
 
-        <div className={`grid grid-cols-6 gap-2 mb-10 transition-all`}>
-          {code.map((char, i) => (
-            <input
-              key={i}
-              ref={(el) => { inputRefs.current[i] = el; }}
-              type="text"
-              maxLength={1}
-              value={char}
-              onChange={e => handleChange(i, e.target.value)}
-              onKeyDown={e => handleKeyDown(i, e)}
-              className={`w-10 h-10 bg-[#111] border rounded-[10px] text-center text-white text-[16px] font-bold outline-none uppercase transition-all
-                ${error ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'border-[#222] focus:border-[#FF2D78]'}`}
+         <div className="w-full max-w-xs">
+            <input 
+               type="text"
+               maxLength={6}
+               value={code}
+               onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+               className="w-full bg-transparent text-center text-5xl md:text-6xl font-black italic tracking-[0.1em] md:tracking-[0.2em] text-[#C6FF00] outline-none placeholder:text-zinc-900"
+               placeholder="000000"
+               autoFocus
             />
-          ))}
-        </div>
+         </div>
 
-        {loading ? (
-          <div className="flex items-center gap-3 text-[#FF2D78] font-bold text-[14px]">
-             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-4 h-4 border-2 border-[#FF2D7822] border-t-[#FF2D78] rounded-full" />
-             Verifying Code...
-          </div>
-        ) : (
-          <button 
-            onClick={() => window.open('https://wa.me/263776223144', '_blank')}
-            className="text-[#888] text-[13px] font-medium underline"
-          >
-            Didn't receive a code?
-          </button>
-        )}
-      </div>
+         <div className="space-y-6 w-full max-w-xs">
+            <button 
+              disabled={validating || code.length !== 6}
+              onClick={handleValidate}
+              className="w-full h-14 md:h-16 bg-[#C6FF00] text-black rounded-2xl md:rounded-3xl font-black uppercase tracking-widest italic flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all disabled:opacity-30 disabled:grayscale text-xs md:text-sm"
+            >
+               {validating ? "Validating Protocol..." : "Finalize Sync"} <ArrowRight size={20} strokeWidth={3} />
+            </button>
 
-      <div className="p-8 text-center">
-         <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#111] rounded-full text-[11px] text-[#888]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-            Admin is currently verifying payments
+            <button 
+              onClick={() => window.open('https://wa.me/263776223144', '_blank')}
+              className="w-full text-zinc-600 text-[10px] font-black uppercase tracking-widest italic hover:text-[#C6FF00] transition-colors flex items-center justify-center gap-2"
+            >
+               <MessageCircle size={14} /> Haven't received my code
+            </button>
          </div>
       </div>
-    </div>
+
+      <div className="p-10 text-center">
+         <div className="flex items-center justify-center gap-2 text-zinc-800">
+            <ShieldCheck size={14} /> 
+            <span className="text-[9px] font-black uppercase tracking-widest italic">Encrypted Verification Layer</span>
+         </div>
+      </div>
+    </motion.div>
   );
 };

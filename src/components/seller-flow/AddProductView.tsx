@@ -241,12 +241,12 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
         <button onClick={() => setSellerFlowState('live')} className="p-1">
           <X className="text-white" size={24} />
         </button>
-        <h1 className="text-white font-bold text-[18px] absolute left-1/2 -translate-x-1/2">New Listing</h1>
+        <h1 className="text-white font-black uppercase tracking-widest text-[14px] absolute left-1/2 -translate-x-1/2 italic">Sync New Unit</h1>
         <button 
           onClick={saveDraft}
-          className="text-[#888] text-[13px] font-medium"
+          className="text-[#888] text-[11px] font-black uppercase tracking-widest italic"
         >
-          Save Draft
+          Park Data
         </button>
       </div>
 
@@ -254,23 +254,23 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
         {/* Photo Section */}
         <div className="px-5 mt-5">
           <div className="flex justify-between items-center mb-1.5">
-            <span className="text-white font-bold text-[14px]">Photos</span>
-            <span className="text-[#888] text-[12px]">{photoCount} / 6 uploaded</span>
+            <span className="text-white font-black uppercase tracking-widest text-[12px] italic">Visual Data</span>
+            <span className="text-[#888] text-[10px] uppercase font-black tracking-widest">{photoCount} / 6 Captured</span>
           </div>
           <div className="w-full h-[3px] bg-[#222] rounded-full overflow-hidden">
             <motion.div 
                animate={{ width: `${overallProgress}%` }}
-               className="h-full bg-linear-to-r from-[#9B27AF] to-[#FF2D78]" 
+               className="h-full bg-[#C6FF00]" 
             />
           </div>
 
           <div className="grid grid-cols-3 gap-2 mt-4">
-            {['Main', 'Back', 'Side', 'Detail', 'On Foot', 'Size Tag'].map((label, i) => (
-              <div key={i} className="flex flex-col items-center">
+            {['Primary', 'Anterior', 'Lateral', 'Detail', 'Context', 'Metadata'].map((label, i) => (
+              <div key={`photo-slot-${i}`} className="flex flex-col items-center">
                 <div 
                   onClick={() => document.getElementById(`photo-input-${i}`)?.click()}
                   className={`aspect-square w-full rounded-[12px] flex items-center justify-center relative transition-all border-[1.5px] overflow-hidden
-                    ${photoPreviews[i] ? 'border-[#FF2D78]' : 'border-dashed border-[#333] bg-[#111] text-[#333]'}`}
+                    ${photoPreviews[i] ? 'border-[#C6FF00]' : 'border-dashed border-[#333] bg-[#111] text-[#333]'}`}
                 >
                   <input 
                     id={`photo-input-${i}`} 
@@ -282,18 +282,18 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
                   {photoPreviews[i] ? (
                      <>
                        <img src={photoPreviews[i]!} className="w-full h-full object-cover" />
-                       <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#FF2D78] rounded-full flex items-center justify-center text-white">
+                       <div className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#C6FF00] rounded-full flex items-center justify-center text-black">
                           <Check size={10} />
                        </div>
                        {uploadProgress[i] > 0 && uploadProgress[i] < 100 && (
                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-6 h-6 border-2 border-[#FF2D78] border-t-transparent rounded-full" />
+                            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-6 h-6 border-2 border-[#C6FF00] border-t-transparent rounded-full" />
                          </div>
                        )}
                      </>
                   ) : <Camera size={20} />}
                 </div>
-                <span className="text-[#888] text-[10px] mt-1.5">{label}</span>
+                <span className="text-[#555] text-[9px] font-black uppercase tracking-widest mt-1.5 italic">{label}</span>
               </div>
             ))}
           </div>
@@ -303,40 +303,40 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
         <div className="px-5 mt-8 space-y-6">
            {/* Product Name */}
            <div>
-              <label className="text-white font-bold text-[13px] block mb-2">Product Name *</label>
+              <label className="text-white/40 font-black uppercase tracking-widest text-[10px] block mb-2 italic">Unit Signature *</label>
               <input 
                  value={name}
                  onChange={(e) => setName(e.target.value)}
-                 placeholder="e.g. Air Force 1 Low White"
-                 className="w-full h-12 bg-[#1a1a1a] border border-[#333] rounded-[10px] px-3.5 text-white text-[15px] focus:outline-none focus:border-[#FF2D78] transition-colors"
+                 placeholder="e.g. System Alpha Product"
+                 className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-3.5 text-white text-[15px] focus:outline-none focus:border-[#C6FF00] transition-colors font-bold"
               />
            </div>
 
            {/* Price */}
            <div>
-              <label className="text-white font-bold text-[13px] block mb-2">Price (USD) *</label>
-              <div className="flex items-center bg-[#1a1a1a] border border-[#333] rounded-[10px] px-3.5 focus-within:border-[#FF2D78] transition-colors">
-                 <span className="text-[#888] text-[15px]">$</span>
+              <label className="text-white/40 font-black uppercase tracking-widest text-[10px] block mb-2 italic">Market Value (USD) *</label>
+              <div className="flex items-center bg-[#111] border border-[#222] rounded-[10px] px-3.5 focus-within:border-[#C6FF00] transition-colors">
+                 <span className="text-[#C6FF00] font-black text-[15px]">$</span>
                  <input 
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
-                    className="flex-1 h-12 bg-transparent text-white text-[15px] pl-1.5 focus:outline-none"
+                    className="flex-1 h-12 bg-transparent text-white text-[15px] pl-1.5 focus:outline-none font-bold"
                  />
               </div>
            </div>
 
            {/* Category Selection */}
            <div>
-              <label className="text-white font-bold text-[13px] block mb-2.5">Category *</label>
+              <label className="text-white/40 font-black uppercase tracking-widest text-[10px] block mb-2.5 italic">Sector Classification *</label>
               <div className="flex flex-wrap gap-2">
                  {categories.map(c => (
                     <button 
                        key={c.value}
                        onClick={() => setCategory(c.value)}
-                       className={`px-[18px] py-2 rounded-full text-[13px] font-medium transition-all
-                        ${category === c.value ? 'bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white shadow-lg' : 'bg-[#1a1a1a] border border-[#333] text-[#888]'}`}
+                       className={`px-[18px] py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border
+                        ${category === c.value ? 'bg-[#C6FF00] border-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/20' : 'bg-[#1a1a1a] border-[#222] text-[#555]'}`}
                     >
                        {c.label}
                     </button>
@@ -346,14 +346,14 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
 
            {/* Condition */}
            <div>
-              <label className="text-white font-bold text-[13px] block mb-2.5">Condition *</label>
+              <label className="text-white/40 font-black uppercase tracking-widest text-[10px] block mb-2.5 italic">Status Condition *</label>
               <div className="flex flex-wrap gap-2">
                  {conditions.map(c => (
                     <button 
                        key={c.value}
                        onClick={() => setCondition(c.value)}
-                       className={`px-[18px] py-2 rounded-full text-[13px] font-medium transition-all
-                        ${condition === c.value ? 'bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white shadow-lg' : 'bg-[#1a1a1a] border border-[#333] text-[#888]'}`}
+                       className={`px-[18px] py-2 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border
+                        ${condition === c.value ? 'bg-[#C6FF00] border-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/20' : 'bg-[#1a1a1a] border-[#222] text-[#555]'}`}
                     >
                        {c.label}
                     </button>
@@ -363,22 +363,22 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
 
            {/* Sizes & Stock */}
            <div>
-              <label className="text-white font-bold text-[13px] block">Sizes & Stock *</label>
-              <p className="text-[#888] text-[12px] mb-3">Add sizes and quantity for each</p>
+              <label className="text-white/40 font-black uppercase tracking-widest text-[10px] block italic mb-1">Inventory Metrics *</label>
+              <p className="text-[#555] text-[10px] uppercase font-black tracking-widest mb-3 italic">Define dimensions and volume</p>
               
               <div className="space-y-1.5 mb-3">
                  {sizes.map((s, i) => (
-                    <div key={i} className="flex items-center justify-between bg-[#1a1a1a] p-2.5 px-3.5 rounded-[10px]">
+                    <div key={`size-qty-${i}-${s.size}`} className="flex items-center justify-between bg-[#111] p-2.5 px-3.5 rounded-[10px] border border-[#222]">
                        <span className="text-white font-bold text-[14px]">{s.size}</span>
                        <div className="flex items-center gap-3">
-                          <button onClick={() => updateQty(i, -1)} className="w-7 h-7 bg-black text-[#FF2D78] rounded-full flex items-center justify-center font-bold">
-                             <Minus size={14} />
+                          <button onClick={() => updateQty(i, -1)} className="w-8 h-8 bg-black border border-[#222] text-[#C6FF00] rounded-full flex items-center justify-center">
+                             <Minus size={14} strokeWidth={3} />
                           </button>
-                          <span className="text-white font-bold text-[14px] min-w-[20px] text-center">{s.qty}</span>
-                          <button onClick={() => updateQty(i, 1)} className="w-7 h-7 bg-black text-[#FF2D78] rounded-full flex items-center justify-center font-bold">
-                             <Plus size={14} />
+                          <span className="text-white font-black text-[14px] min-w-[20px] text-center italic">{s.qty}</span>
+                          <button onClick={() => updateQty(i, 1)} className="w-8 h-8 bg-black border border-[#222] text-[#C6FF00] rounded-full flex items-center justify-center">
+                             <Plus size={14} strokeWidth={3} />
                           </button>
-                          <button onClick={() => removeSize(i)} className="ml-3 text-[#555]">
+                          <button onClick={() => removeSize(i)} className="ml-3 text-red-500/50">
                              <X size={16} />
                           </button>
                        </div>
@@ -390,42 +390,42 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
                  <input 
                     value={newSize}
                     onChange={(e) => setNewSize(e.target.value)}
-                    placeholder="UK8"
-                    className="w-20 h-10 bg-[#1a1a1a] border border-[#333] rounded-[8px] px-3 text-white text-[13px] text-center focus:outline-none focus:border-[#FF2D78]"
+                    placeholder="DIM"
+                    className="w-20 h-11 bg-[#111] border border-[#222] rounded-[8px] px-3 text-white text-[13px] text-center focus:outline-none focus:border-[#C6FF00] font-black uppercase"
                  />
                  <button 
                   onClick={addSize}
-                  className="px-4 h-10 border border-[#FF2D78] text-[#FF2D78] rounded-full text-[13px] font-bold hover:bg-[#FF2D7811] transition-colors"
+                  className="px-6 h-11 border border-[#C6FF00] text-[#C6FF00] rounded-full text-[11px] font-black uppercase tracking-widest hover:bg-[#C6FF0011] transition-all italic"
                  >
-                    Add Size +
+                    Inject Parameter +
                  </button>
               </div>
-              <p className="text-[#888] text-[13px] mt-4">Total Stock: <span className="text-white font-bold">{totalStock}</span></p>
+              <p className="text-[#555] text-[10px] uppercase font-black tracking-widest mt-4 italic">Aggregate Stock: <span className="text-[#C6FF00]">{totalStock} UNITS</span></p>
            </div>
 
            {/* Description */}
            <div>
-              <label className="text-white font-bold text-[13px] block mb-2">Description</label>
+              <label className="text-white/40 font-black uppercase tracking-widest text-[10px] block mb-2 italic">Unit Narrative</label>
               <textarea 
                  value={description}
                  onChange={(e) => setDescription(e.target.value)}
-                 placeholder="Describe your product — condition details, colorway, history..."
-                 className="w-full min-h-[100px] bg-[#1a1a1a] border border-[#333] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#FF2D78] transition-colors resize-none"
+                 placeholder="Terminal entry for unit specifics, history, and metadata..."
+                 className="w-full min-h-[100px] bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#C6FF00] transition-colors resize-none font-medium leading-relaxed"
               />
            </div>
         </div>
 
         {/* Publish Section */}
         <div className="px-5 mt-8 pb-10">
-           <div className="bg-[#FF2D780F] border border-[#FF2D7826] rounded-[12px] p-4 mb-5">
-              <h4 className="text-[#FF2D78] font-bold text-[13px] mb-2.5">Before you publish:</h4>
+           <div className="bg-[#C6FF000a] border border-[#C6FF0022] rounded-[12px] p-4 mb-5">
+              <h4 className="text-[#C6FF00] font-black uppercase tracking-[0.2em] text-[10px] mb-2.5 italic">Safety Protocol:</h4>
               <div className="space-y-2">
                  {checklist.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                       <div className={`w-4 h-4 rounded-full flex items-center justify-center ${item.complete ? 'text-[#FF2D78]' : 'text-[#444]'}`}>
-                          {item.complete ? <Check size={14} strokeWidth={3} /> : <div className="w-3.5 h-3.5 rounded-full border border-[#444]" />}
+                    <div key={`safety-check-${i}`} className="flex items-center gap-2.5">
+                       <div className={`w-4 h-4 rounded-full flex items-center justify-center ${item.complete ? 'text-[#C6FF00]' : 'text-[#333]'}`}>
+                          {item.complete ? <Check size={14} strokeWidth={4} /> : <div className="w-3.5 h-3.5 rounded-full border border-[#333]" />}
                        </div>
-                       <span className={`text-[13px] ${item.complete ? 'text-white' : 'text-[#888]'}`}>{item.label}</span>
+                       <span className={`text-[11px] font-black uppercase tracking-widest italic ${item.complete ? 'text-white' : 'text-[#444]'}`}>{item.label}</span>
                     </div>
                  ))}
               </div>
@@ -434,21 +434,21 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
            <div className="flex flex-col gap-2">
               <button 
                 onClick={() => {
-                  setToast('Draft saved ✓');
+                  setToast('Data Parked ✓');
                   setTimeout(() => setToast(null), 3000);
                 }}
-                className="w-full h-13 bg-[#111] border border-[#333] rounded-full text-white font-bold text-[14px]"
+                className="w-full h-14 bg-[#111] border border-[#222] rounded-full text-white font-black uppercase tracking-widest text-[12px] italic shadow-xl"
               >
-                Save as Draft
+                Park Data
               </button>
               <button 
                 onClick={handlePublish}
                 disabled={!isFormComplete}
-                className={`w-full h-13 rounded-full font-bold text-[14px] flex items-center justify-center gap-2 transition-all
-                  ${isFormComplete ? 'bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white shadow-lg shadow-[#FF2D7833]' : 'bg-[#333] text-[#666]'}`}
+                className={`w-full h-14 rounded-full font-black uppercase tracking-widest text-[12px] italic flex items-center justify-center gap-2 transition-all shadow-2xl
+                  ${isFormComplete ? 'bg-[#C6FF00] text-black shadow-[#C6FF00]/20' : 'bg-[#222] text-[#444]'}`}
               >
                 {!isFormComplete && <Lock size={14} />}
-                {isFormComplete ? 'Publish Listing ✓' : 'Publish Listing'}
+                {isFormComplete ? 'Transmit to Global Marketplace ✓' : 'Transmit Blocked'}
               </button>
            </div>
         </div>
@@ -462,7 +462,7 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
-               className="fixed inset-0 bg-black/90 z-[100]"
+               className="fixed inset-0 bg-black/98 z-[100] backdrop-blur-xl"
             />
             <motion.div 
                initial={{ scale: 0.9, opacity: 0 }}
@@ -470,23 +470,25 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
                exit={{ scale: 0.9, opacity: 0 }}
                className="fixed inset-0 z-[110] flex items-center justify-center px-6"
             >
-               <div className="w-full bg-[#111] rounded-[24px] p-8 border border-[#222] flex flex-col items-center text-center">
-                  <div className="w-14 h-14 bg-[#FF2D78] rounded-full flex items-center justify-center text-white text-[28px] mb-5">✓</div>
-                  <h3 className="text-white font-bold text-[22px]">Product Listed! 🎉</h3>
-                  <p className="text-[#888] text-[14px] mt-2 mb-8">Your product is now live in the Thread ZW feed.</p>
+               <div className="w-full bg-[#0A0A0A] rounded-[40px] p-10 border border-[#C6FF00]/10 flex flex-col items-center text-center shadow-black shadow-2xl">
+                  <div className="w-20 h-20 bg-[#C6FF00]/10 rounded-full flex items-center justify-center text-[#C6FF00] text-[40px] mb-8 border border-[#C6FF00]/20 shadow-lg shadow-[#C6FF00]/5">
+                    <Check size={40} strokeWidth={4} />
+                  </div>
+                  <h3 className="text-white font-black text-[24px] uppercase tracking-tighter italic">Unit Deployed</h3>
+                  <p className="text-[#555] text-[13px] font-black uppercase tracking-widest mt-4 mb-10 italic">Broadcasted to ThreadZW Global Node.</p>
                   
-                  <div className="flex flex-col gap-2.5 w-full">
+                  <div className="flex flex-col gap-3 w-full">
                      <button 
                        onClick={() => setShowSuccess(false)}
-                       className="w-full h-12 border border-[#FF2D78] text-[#FF2D78] rounded-full font-bold text-[14px]"
+                       className="w-full h-14 border border-[#C6FF00] text-[#C6FF00] rounded-full font-black uppercase tracking-widest text-[13px] italic active:scale-95 transition-all shadow-xl shadow-[#C6FF00]/5"
                      >
-                        Add Another Product
+                        Sync Additional Unit
                      </button>
                      <button 
                        onClick={() => setSellerFlowState('live')}
-                       className="w-full h-12 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] rounded-full text-white font-bold text-[14px]"
+                       className="w-full h-14 bg-[#C6FF00] text-black rounded-full font-black uppercase tracking-widest text-[13px] italic active:scale-95 transition-all shadow-xl shadow-[#C6FF00]/20"
                      >
-                        Go to Shop Centre
+                        Access Terminal Home
                      </button>
                   </div>
                </div>

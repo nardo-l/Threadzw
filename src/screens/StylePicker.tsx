@@ -87,7 +87,7 @@ export const StylePicker = ({ onComplete }: { onComplete: () => void }) => {
           <div className="grid grid-cols-2 gap-3">
             {[1, 2, 3, 4].map((i) => (
               <div
-                key={i}
+                key={`style-card-skeleton-${i}`}
                 className="aspect-[3/4] bg-[#1a1a1a] rounded-[16px] animate-pulse"
                 style={{ animation: 'pulse 1.5s ease-in-out infinite' }}
               />

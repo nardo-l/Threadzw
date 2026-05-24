@@ -308,19 +308,21 @@ export const OrderManagement: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col bg-background min-h-screen pb-12">
+    <div className="flex flex-col bg-cream min-h-screen pb-12">
       {/* Top Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 flex flex-col max-w-[430px] mx-auto">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-cream/80 backdrop-blur-xl px-6 py-6 flex flex-col max-w-[430px] mx-auto">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <h1 className="text-2xl font-pacifico text-white">Orders</h1>
-            <span className="text-[10px] font-mono text-muted uppercase tracking-widest">SoleKing HRE</span>
+            <h1 className="text-5xl font-display font-black uppercase italic tracking-tighter leading-none">
+              the <span className="text-pink">log</span>
+            </h1>
+            <p className="italic-accent text-lg mt-1">Order Engagement Ledger</p>
           </div>
-          <div className="flex items-center gap-4">
-            <button onClick={() => setIsFilterSheetOpen(true)} className={`p-2 rounded-full transition-colors ${Object.values(filters).some(v => v !== 'All') ? 'text-primary' : 'text-white'}`}>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setIsFilterSheetOpen(true)} className={`w-12 h-12 rounded-full border-2 border-charcoal flex items-center justify-center transition-all ${Object.values(filters).some(v => v !== 'All') ? 'bg-lime' : 'bg-white'}`}>
               <Filter size={20} />
             </button>
-            <button onClick={() => setIsSearchExpanded(!isSearchExpanded)} className="p-2 text-white">
+            <button onClick={() => setIsSearchExpanded(!isSearchExpanded)} className="w-12 h-12 rounded-full border-2 border-charcoal bg-white flex items-center justify-center">
               <Search size={20} />
             </button>
           </div>
@@ -332,20 +334,20 @@ export const OrderManagement: React.FC = () => {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="mt-4 overflow-hidden"
+              className="mt-6 overflow-hidden"
             >
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={16} />
+              <div className="relative group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/20 group-focus-within:text-pink transition-colors" size={20} />
                 <input 
                   type="text"
-                  placeholder="Search product, ID, or note..."
+                  placeholder="ID / Reference / Product"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-card border border-white/10 rounded-pill py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-primary transition-all"
+                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 pl-14 pr-12 text-sm text-charcoal font-display uppercase tracking-tight focus:shadow-[8px_8px_0_#F4A6C1] outline-none transition-all"
                 />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted">
-                    <X size={16} />
+                  <button onClick={() => setSearchQuery('')} className="absolute right-6 top-1/2 -translate-y-1/2 text-charcoal/30">
+                    <X size={20} />
                   </button>
                 )}
               </div>
@@ -354,72 +356,73 @@ export const OrderManagement: React.FC = () => {
         </AnimatePresence>
 
         {/* Active Filter Pills */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mt-2">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar mt-4">
           {Object.entries(filters).map(([key, value]) => {
             if (value === 'All') return null;
             return (
               <button 
                 key={key}
                 onClick={() => setFilters(prev => ({ ...prev, [key]: 'All' }))}
-                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1 bg-primary/10 border border-primary/30 rounded-pill text-[10px] font-mono text-primary whitespace-nowrap"
+                className="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-charcoal text-cream border-2 border-charcoal rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap shadow-[4px_4px_0_#C6FF00]"
               >
                 {value}
-                <X size={10} />
+                <X size={12} />
               </button>
             );
           })}
         </div>
       </header>
 
-      <main className="pt-32 px-6 flex flex-col gap-8">
+      <main className="pt-48 px-6 flex flex-col gap-10">
         {/* Stats Row */}
-        <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Today's Revenue" value={`$${stats.todayRevenue}`} color="text-secondary" delay={0.1} />
-          <StatCard label="Today's Sales" value={stats.todaySalesCount} color="text-green-400" delay={0.2} />
-          <StatCard label="This Month" value={`$${stats.monthRevenue}`} color="text-primary" delay={0.3} />
+        <div className="grid grid-cols-3 gap-4">
+          <StatCard label="Today Rev" value={`$${stats.todayRevenue}`} color="text-charcoal" delay={0.1} />
+          <StatCard label="Today Unit" value={stats.todaySalesCount} color="text-pink" delay={0.2} />
+          <StatCard label="Month Rev" value={`$${stats.monthRevenue}`} color="text-charcoal" delay={0.3} />
         </div>
 
         {/* Log a Sale Button */}
         <button 
           onClick={() => setIsLogSheetOpen(true)}
-          className="w-full py-4 gradient-pink-purple text-white font-syne font-bold rounded-button shadow-xl shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          className="w-full py-6 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-[32px] shadow-[10px_10px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3"
         >
-          <Plus size={20} />
-          Log a Sale
+          <Plus size={28} strokeWidth={3} />
+          Log Engagement
         </button>
 
         {/* Sales Log Section */}
-        <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono text-primary uppercase tracking-[0.3em]">Sales Log</span>
+        <div className="flex flex-col gap-8">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-black text-charcoal/20 uppercase tracking-[0.4em]">Historical Ledger</span>
+            <div className="h-px flex-1 bg-charcoal/10" />
           </div>
 
           {filteredSales.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-card rounded-card border border-dashed border-white/10 gap-4">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-muted">
-                <Receipt size={32} />
+            <div className="flex flex-col items-center justify-center py-24 bg-white rounded-[40px] border-2 border-dashed border-charcoal/20 shadow-inner gap-6 text-center">
+              <div className="w-20 h-20 rounded-[32px] bg-cream border-2 border-charcoal flex items-center justify-center text-charcoal/10 shadow-[8px_8px_0_rgba(0,0,0,0.05)]">
+                <Receipt size={40} />
               </div>
-              <div className="text-center">
-                <h3 className="text-lg font-syne font-bold text-white">No sales found</h3>
-                <p className="text-sm text-muted font-sans mt-1">Try adjusting your filters or log a new sale</p>
+              <div className="px-10">
+                <h3 className="text-3xl font-display font-black uppercase italic tracking-tighter leading-none mb-2">Zero Records</h3>
+                <p className="italic-accent text-lg text-charcoal/40">The ledger is void. Initialize a transaction log.</p>
               </div>
               <button 
                 onClick={() => setIsLogSheetOpen(true)}
-                className="mt-2 px-6 py-2 bg-primary/20 text-primary border border-primary/30 rounded-pill text-xs font-bold"
+                className="px-10 py-4 bg-charcoal text-cream rounded-full font-black uppercase tracking-widest italic text-xs shadow-[6px_6px_0_#C6FF00]"
               >
-                Log a Sale
+                Log First Sale
               </button>
             </div>
           ) : (
             (Object.entries(groupedSales) as [string, Sale[]][]).map(([group, groupSales]) => {
               if (groupSales.length === 0) return null;
               return (
-                <div key={group} className="flex flex-col gap-4">
+                <div key={group} className="flex flex-col gap-6">
                   <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-mono text-muted uppercase tracking-widest whitespace-nowrap">{group}</span>
-                    <div className="h-[1px] w-full bg-white/5" />
+                    <span className="text-[10px] font-black text-pink uppercase tracking-widest whitespace-nowrap bg-pink/10 px-3 py-1 rounded-full">{group}</span>
+                    <div className="h-[2px] w-full bg-charcoal/5" />
                   </div>
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-6">
                     {groupSales.map(sale => (
                       <SaleCard 
                         key={sale.id} 
@@ -486,10 +489,10 @@ const StatCard: React.FC<{ label: string; value: string | number; color: string;
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
-    className="bg-card p-4 rounded-card border border-white/5 flex flex-col gap-1"
+    className="bg-white p-5 rounded-[24px] border-2 border-charcoal flex flex-col gap-1 shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
   >
-    <span className={`text-xl font-syne font-bold ${color}`}>{value}</span>
-    <span className="text-[8px] font-mono text-muted uppercase tracking-wider">{label}</span>
+    <span className={`text-2xl font-display font-black italic tracking-tighter leading-none ${color}`}>{value}</span>
+    <span className="text-[8px] font-black text-charcoal/30 uppercase tracking-widest">{label}</span>
   </motion.div>
 );
 
@@ -501,56 +504,56 @@ const SaleCard: React.FC<{ sale: Sale; products: Product[]; onEdit: () => void; 
   const product = products.find(p => p.id === sale.product_id);
 
   return (
-    <div className="bg-card rounded-card border border-white/5 overflow-hidden flex flex-col">
-      <div className="px-4 py-2 bg-white/[0.02] border-b border-white/5 flex justify-between items-center">
-        <span className="text-[10px] font-mono text-muted">{sale.reference}</span>
-        <span className="text-[10px] font-mono text-muted">{dateStr}, {timeStr}</span>
+    <div className="bg-white rounded-[32px] border-2 border-charcoal overflow-hidden flex flex-col shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[10px_10px_0_#F4A6C1] transition-all">
+      <div className="px-5 py-3 bg-cream border-b-2 border-charcoal flex justify-between items-center">
+        <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest">{sale.reference}</span>
+        <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest">{dateStr}, {timeStr}</span>
       </div>
       
-      <div className="p-4 flex flex-col gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl gradient-pink-purple flex items-center justify-center text-2xl opacity-80 overflow-hidden">
+      <div className="p-6 flex flex-col gap-6">
+        <div className="flex items-center gap-5">
+          <div className="w-16 h-16 rounded-2xl bg-cream border-2 border-charcoal flex items-center justify-center text-3xl font-display font-black text-charcoal italic overflow-hidden shadow-inner">
             {product?.images?.[0] ? (
               <img src={product.images[0] || undefined} alt="" className="w-full h-full object-cover" />
             ) : (
-              '👟'
+              <ShoppingBag size={24} />
             )}
           </div>
           <div className="flex-1 flex flex-col">
-            <h4 className="text-sm font-bold text-white">{sale.product_name}</h4>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="px-2 py-0.5 bg-white/5 rounded-pill text-[10px] font-mono text-light">{sale.size}</span>
-              <span className="text-[10px] font-mono text-muted">×{sale.quantity}</span>
+            <h4 className="text-xl font-display font-black uppercase italic tracking-tighter leading-none">{sale.product_name}</h4>
+            <div className="flex items-center gap-3 mt-2">
+              <div className="oval-sticker !bg-charcoal !text-cream !shadow-none !text-[9px]">{sale.size}</div>
+              <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest">×{sale.quantity} UNIT</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-syne font-bold text-primary">${sale.sale_price * sale.quantity}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-display font-black text-pink italic tracking-tighter leading-none">${sale.sale_price * sale.quantity}</span>
             {isNegotiated && (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-muted line-through">${sale.listed_price * sale.quantity}</span>
-                <span className="px-2 py-0.5 bg-amber-400/10 text-amber-400 text-[8px] font-mono font-bold rounded-pill border border-amber-400/20 uppercase">Negotiated</span>
+                <span className="text-sm font-display font-black text-charcoal/20 line-through tracking-tighter">${sale.listed_price * sale.quantity}</span>
+                <span className="oval-sticker !bg-lime !text-charcoal !shadow-none !text-[8px]">Negotiated</span>
               </div>
             )}
           </div>
-          <div className={`px-3 py-1 rounded-pill text-[10px] font-mono font-bold flex items-center gap-1.5 capitalize ${
-            sale.channel === 'in_store' ? 'bg-green-400/10 text-green-400' : 'bg-blue-400/10 text-blue-400'
+          <div className={`oval-sticker !shadow-none !text-[9px] flex items-center gap-2 ${
+            sale.channel === 'in_store' ? '!bg-charcoal !text-white' : '!bg-white border-2 border-charcoal !text-charcoal'
           }`}>
-            {sale.channel === 'in_store' ? <Store size={12} /> : <MessageCircle size={12} />}
+            {sale.channel === 'in_store' ? <Store size={14} /> : <MessageCircle size={14} />}
             {sale.channel.replace('_', ' ')}
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2 border-t border-white/5">
-          <button onClick={onEdit} className="flex items-center gap-1.5 text-[10px] font-mono text-muted hover:text-white transition-colors">
-            <Edit2 size={12} />
-            Edit
+        <div className="flex items-center justify-between pt-4 border-t-2 border-charcoal/5">
+          <button onClick={onEdit} className="flex items-center gap-2 text-[10px] font-black text-charcoal/40 hover:text-charcoal transition-colors uppercase tracking-widest italic">
+            <Edit2 size={14} />
+            Refine
           </button>
-          <button onClick={onDelete} className="flex items-center gap-1.5 text-[10px] font-mono text-red-400 hover:text-red-300 transition-colors">
-            <Trash2 size={12} />
-            Delete
+          <button onClick={onDelete} className="flex items-center gap-2 text-[10px] font-black text-pink hover:text-pink-dark transition-colors uppercase tracking-widest italic">
+            <Trash2 size={14} />
+            Purge
           </button>
         </div>
       </div>
@@ -592,39 +595,39 @@ const SaleSheet: React.FC<{
   return (
     <motion.div 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-end justify-center"
+      className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-[100] flex items-end justify-center"
       onClick={onClose}
     >
       <motion.div 
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="bg-background w-full max-w-[430px] rounded-t-[32px] p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto no-scrollbar"
+        className="bg-cream w-full max-w-[430px] rounded-t-[40px] border-t-4 border-charcoal p-10 flex flex-col gap-8 max-h-[90vh] overflow-y-auto no-scrollbar shadow-[0_-20px_50px_rgba(0,0,0,0.1)]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-2" />
+        <div className="w-16 h-1.5 bg-charcoal/10 rounded-full mx-auto" />
         
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-syne font-bold text-white">{initialSale ? 'Edit Sale' : 'Log a Sale'}</h2>
-          <button onClick={onClose} className="p-2 rounded-full bg-card text-muted"><X size={20} /></button>
+          <h2 className="text-3xl font-display font-black uppercase italic tracking-tighter leading-none">{initialSale ? 'Edit Record' : 'Initialize Sale'}</h2>
+          <button onClick={onClose} className="w-10 h-10 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal"><X size={20} /></button>
         </div>
 
         {step === 1 ? (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-3">
-              <label className="text-[10px] font-mono text-primary uppercase tracking-widest">Which product was sold?</label>
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={16} />
+              <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.2em] italic">Product Identification</label>
+              <div className="relative group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/20 group-focus-within:text-pink transition-colors" size={20} />
                 <input 
                   type="text"
-                  placeholder="Search your listings..."
+                  placeholder="Query units catalog..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-card border border-white/10 rounded-pill py-3 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-primary transition-all"
+                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 pl-14 pr-6 text-sm text-charcoal outline-none focus:shadow-[6px_6px_0_#F4A6C1] transition-all"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {filteredProducts.map(p => {
                 const isOutOfStock = p.total_stock === 0;
                 return (
@@ -632,26 +635,26 @@ const SaleSheet: React.FC<{
                     key={p.id}
                     disabled={isOutOfStock}
                     onClick={() => handleSelectProduct(p)}
-                    className={`p-4 rounded-card border transition-all flex items-center justify-between ${
-                      isOutOfStock ? 'bg-card/50 border-white/5 opacity-50' : 'bg-card border-white/5 active:scale-[0.98]'
+                    className={`p-5 rounded-[32px] border-2 transition-all flex items-center justify-between shadow-[4px_4px_0_rgba(0,0,0,0.05)] ${
+                      isOutOfStock ? 'bg-white/50 border-charcoal/10 opacity-50 grayscale' : 'bg-white border-charcoal hover:shadow-[6px_6px_0_#C6FF00] active:scale-[0.98]'
                     }`}
                   >
-                    <div className="flex items-center gap-3 text-left">
-                      <div className="w-10 h-10 rounded-xl gradient-pink-purple flex items-center justify-center text-xl opacity-80 overflow-hidden">
+                    <div className="flex items-center gap-4 text-left">
+                      <div className="w-14 h-14 rounded-2xl bg-cream border-2 border-charcoal flex items-center justify-center text-2xl font-display font-black text-charcoal italic overflow-hidden shadow-inner">
                         {p.images?.[0] ? (
                           <img src={p.images[0] || undefined} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          '👟'
+                          <ShoppingBag size={20} />
                         )}
                       </div>
                       <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm font-bold text-white line-clamp-1">{p.name}</span>
-                        <span className="text-[10px] font-mono text-muted">{p.total_stock} in stock</span>
+                        <span className="text-lg font-display font-black uppercase italic tracking-tighter leading-none">{p.name}</span>
+                        <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest mt-1">{p.total_stock} IN BASE</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-sm font-syne font-bold text-primary">${p.price}</span>
-                      {isOutOfStock && <span className="text-[8px] font-mono text-red-100 uppercase">Out of Stock</span>}
+                      <span className="text-xl font-display font-black text-pink italic tracking-tighter leading-none">${p.price}</span>
+                      {isOutOfStock && <span className="text-[8px] font-black text-pink uppercase mt-1">DEPLETED</span>}
                     </div>
                   </button>
                 );
@@ -659,24 +662,24 @@ const SaleSheet: React.FC<{
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             {/* Summary Chip */}
-            <div className="bg-card p-3 rounded-2xl border border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl gradient-pink-purple flex items-center justify-center text-xl opacity-80 overflow-hidden">
+            <div className="bg-white p-5 rounded-[32px] border-2 border-charcoal flex items-center justify-between shadow-[6px_6px_0_rgba(0,0,0,0.05)]">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-cream border-2 border-charcoal flex items-center justify-center text-2xl font-display font-black text-charcoal italic overflow-hidden shadow-inner">
                   {selectedProduct?.images?.[0] ? (
                     <img src={selectedProduct.images[0] || undefined} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    '👟'
+                    <ShoppingBag size={20} />
                   )}
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold text-white">{selectedProduct?.name}</span>
-                  <span className="text-[10px] font-mono text-muted">${selectedProduct?.price} listed</span>
+                  <span className="text-lg font-display font-black uppercase italic tracking-tighter leading-none">{selectedProduct?.name}</span>
+                  <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest mt-1">${selectedProduct?.price} LISTED</span>
                 </div>
               </div>
               {!initialSale && (
-                <button onClick={() => setStep(1)} className="p-2 text-muted hover:text-white">
+                <button onClick={() => setStep(1)} className="w-10 h-10 rounded-full bg-cream border-2 border-charcoal flex items-center justify-center text-charcoal/30 hover:text-charcoal transition-colors">
                   <X size={16} />
                 </button>
               )}
@@ -684,8 +687,8 @@ const SaleSheet: React.FC<{
 
             {/* Size Selection */}
             <div className="flex flex-col gap-3">
-              <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Size</label>
-              <div className="flex flex-wrap gap-2">
+              <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Inventory Class (Size)</label>
+              <div className="flex flex-wrap gap-3">
                 {selectedProduct?.sizes.map(v => {
                   const isAvailable = v.quantity > 0 || (initialSale?.size === v.size);
                   const isSelected = size === v.size;
@@ -697,12 +700,12 @@ const SaleSheet: React.FC<{
                         setSize(v.size);
                         setQuantity(1);
                       }}
-                      className={`px-4 py-2 rounded-pill border text-xs font-bold transition-all ${
+                      className={`px-6 py-3 rounded-full border-2 text-xs font-black uppercase tracking-widest transition-all ${
                         isSelected 
-                          ? 'bg-primary border-primary text-white' 
+                          ? 'bg-charcoal border-charcoal text-white shadow-[4px_4px_0_#C6FF00]' 
                           : isAvailable 
-                            ? 'bg-card border-white/10 text-white' 
-                            : 'bg-card/50 border-white/5 text-muted opacity-50'
+                            ? 'bg-white border-charcoal text-charcoal' 
+                            : 'bg-white/50 border-charcoal/10 text-charcoal/20 opacity-50'
                       }`}
                     >
                       {v.size}
@@ -714,74 +717,74 @@ const SaleSheet: React.FC<{
 
             {/* Quantity Stepper */}
             <div className="flex flex-col gap-3">
-              <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Quantity</label>
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-4 bg-card p-1 rounded-pill border border-white/10">
+              <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Quantity Protocol</label>
+              <div className="flex items-center gap-8">
+                <div className="flex items-center gap-6 bg-white p-2 rounded-full border-2 border-charcoal inline-flex shadow-[4px_4px_0_rgba(0,0,0,1)]">
                   <button 
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white active:scale-90 transition-all"
+                    className="w-12 h-12 rounded-full bg-cream border-2 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all"
                   >
-                    <Minus size={18} />
+                    <Minus size={20} />
                   </button>
-                  <span className="text-lg font-syne font-bold text-white min-w-[20px] text-center">{quantity}</span>
+                  <span className="text-2xl font-display font-black text-charcoal min-w-[30px] text-center italic tracking-tighter">{quantity}</span>
                   <button 
                     onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
                     disabled={quantity >= maxStock}
-                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white active:scale-90 transition-all disabled:opacity-30"
+                    className="w-12 h-12 rounded-full bg-charcoal border-2 border-charcoal flex items-center justify-center text-cream active:scale-90 transition-all disabled:opacity-30"
                   >
-                    <Plus size={18} />
+                    <Plus size={20} />
                   </button>
                 </div>
-                <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Max: {maxStock}</span>
+                <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Base Max: {maxStock}</span>
               </div>
             </div>
 
             {/* Sale Price */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Sale Price (per unit)</label>
+                <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Unit Price Calibration</label>
                 {isNegotiated && (
-                  <span className="px-2 py-0.5 bg-amber-400/10 text-amber-400 text-[8px] font-mono font-bold rounded-pill border border-amber-400/20 uppercase">Negotiated</span>
+                  <div className="oval-sticker !bg-lime !text-charcoal !shadow-none !text-[8.5px]">Negotiated</div>
                 )}
               </div>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white font-syne font-bold">$</span>
+                <span className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal font-display font-black text-2xl italic tracking-tighter leading-none">$</span>
                 <input 
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full bg-card border border-white/10 rounded-pill py-3 pl-8 pr-4 text-sm text-white font-syne font-bold focus:outline-none focus:border-primary transition-all"
+                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-12 pr-6 text-2xl font-display font-black text-pink outline-none italic tracking-tighter focus:shadow-[6px_6px_0_#F4A6C1] transition-all"
                 />
               </div>
             </div>
 
             {/* Sale Channel */}
             <div className="flex flex-col gap-3">
-              <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Sale Channel</label>
-              <div className="grid grid-cols-2 gap-2 p-1 bg-card rounded-pill border border-white/10">
+              <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Capture Channel</label>
+              <div className="grid grid-cols-2 gap-3 p-1.5 bg-white border-2 border-charcoal rounded-full shadow-[4px_4px_0_rgba(0,0,0,1)]">
                 <button 
                   onClick={() => setChannel('in_store')}
-                  className={`py-2 rounded-pill text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                    channel === 'in_store' ? 'bg-primary text-white' : 'text-muted'
+                  className={`py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                    channel === 'in_store' ? 'bg-charcoal text-white' : 'text-charcoal/40'
                   }`}
                 >
-                  <Store size={14} /> In Store
+                  <Store size={16} /> Physical
                 </button>
                 <button 
                   onClick={() => setChannel('whatsapp')}
-                  className={`py-2 rounded-pill text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                    channel === 'whatsapp' ? 'bg-primary text-white' : 'text-muted'
+                  className={`py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                    channel === 'whatsapp' ? 'bg-pink text-charcoal' : 'text-charcoal/40'
                   }`}
                 >
-                  <MessageCircle size={14} /> WhatsApp
+                  <MessageCircle size={16} /> WhatsApp
                 </button>
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 mt-4">
+            <div className="flex flex-col gap-6 mt-4">
               <div className="flex items-center justify-between px-2">
-                <span className="text-sm font-mono text-muted uppercase tracking-widest">Total</span>
-                <span className="text-2xl font-syne font-bold text-primary">${total}</span>
+                <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Sum Total</span>
+                <span className="text-4xl font-display font-black text-charcoal italic tracking-tighter leading-none">${total}</span>
               </div>
               <button 
                 disabled={!size}
@@ -793,16 +796,16 @@ const SaleSheet: React.FC<{
                   is_negotiated: isNegotiated,
                   channel
                 })}
-                className="w-full py-4 bg-primary text-white font-syne font-bold rounded-button shadow-xl shadow-primary/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                className="w-full py-6 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-[32px] shadow-[10px_10px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all disabled:opacity-50 disabled:grayscale"
               >
-                {initialSale ? 'Save Changes' : 'Confirm Sale'}
+                {initialSale ? 'Update Ledger' : 'Confirm Entry'}
               </button>
               {initialSale && (
                 <button 
                   onClick={onClose}
-                  className="w-full py-4 bg-transparent border border-white/10 text-white font-bold rounded-button active:scale-[0.98] transition-all"
+                  className="w-full py-5 bg-transparent border-2 border-charcoal text-charcoal font-black uppercase tracking-widest italic text-[11px] rounded-[32px] active:scale-[0.98] transition-all"
                 >
-                  Cancel
+                  Abort
                 </button>
               )}
             </div>
@@ -824,33 +827,33 @@ const FilterSheet: React.FC<{
   return (
     <motion.div 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-end justify-center"
+      className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-[100] flex items-end justify-center"
       onClick={onClose}
     >
       <motion.div 
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="bg-background w-full max-w-[430px] rounded-t-[32px] p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto no-scrollbar"
+        className="bg-cream w-full max-w-[430px] rounded-t-[40px] border-t-4 border-charcoal p-10 flex flex-col gap-8 max-h-[90vh] overflow-y-auto no-scrollbar shadow-[0_-20px_50px_rgba(0,0,0,0.1)]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-2" />
+        <div className="w-16 h-1.5 bg-charcoal/10 rounded-full mx-auto" />
         
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-syne font-bold text-white">Filters</h2>
-          <button onClick={() => onApply({ dateRange: 'All', channel: 'All', saleType: 'All', productId: 'All' })} className="text-xs font-mono text-muted uppercase tracking-widest hover:text-white transition-colors">Reset</button>
+          <h2 className="text-3xl font-display font-black uppercase italic tracking-tighter leading-none">Filter Protocol</h2>
+          <button onClick={() => onApply({ dateRange: 'All', channel: 'All', saleType: 'All', productId: 'All' })} className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest hover:text-charcoal transition-colors italic underline decoration-charcoal/10 underline-offset-4">Reset Ledger</button>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-8">
           {/* Date Range */}
           <div className="flex flex-col gap-3">
-            <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Date Range</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Temporal Window</label>
+            <div className="flex flex-wrap gap-3">
               {['All', 'Today', 'This Week', 'This Month'].map(range => (
                 <button
                   key={range}
                   onClick={() => setLocalFilters(prev => ({ ...prev, dateRange: range as any }))}
-                  className={`px-4 py-2 rounded-pill border text-xs font-bold transition-all ${
-                    localFilters.dateRange === range ? 'bg-primary border-primary text-white' : 'bg-card border-white/10 text-white'
+                  className={`px-6 py-3 rounded-full border-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                    localFilters.dateRange === range ? 'bg-charcoal border-charcoal text-white shadow-[4px_4px_0_#C6FF00]' : 'bg-white border-charcoal text-charcoal'
                   }`}
                 >
                   {range}
@@ -861,14 +864,14 @@ const FilterSheet: React.FC<{
 
           {/* Channel */}
           <div className="flex flex-col gap-3">
-            <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Channel</label>
-            <div className="flex gap-2">
+            <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Capture Channel</label>
+            <div className="flex gap-3">
               {['All', 'in_store', 'whatsapp'].map(c => (
                 <button
                   key={c}
                   onClick={() => setLocalFilters(prev => ({ ...prev, channel: c as any }))}
-                  className={`px-4 py-2 rounded-pill border text-xs font-bold transition-all capitalize ${
-                    localFilters.channel === c ? 'bg-primary border-primary text-white' : 'bg-card border-white/10 text-white'
+                  className={`px-6 py-3 rounded-full border-2 text-[10px] font-black uppercase tracking-widest transition-all capitalize ${
+                    localFilters.channel === c ? 'bg-charcoal border-charcoal text-white shadow-[4px_4px_0_#C6FF00]' : 'bg-white border-charcoal text-charcoal'
                   }`}
                 >
                   {c.replace('_', ' ')}
@@ -879,14 +882,14 @@ const FilterSheet: React.FC<{
 
           {/* Sale Type */}
           <div className="flex flex-col gap-3">
-            <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Sale Type</label>
-            <div className="flex gap-2">
+            <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Engagement Modality</label>
+            <div className="flex gap-3">
               {['All', 'Full Price', 'Negotiated'].map(t => (
                 <button
                   key={t}
                   onClick={() => setLocalFilters(prev => ({ ...prev, saleType: t as any }))}
-                  className={`px-4 py-2 rounded-pill border text-xs font-bold transition-all ${
-                    localFilters.saleType === t ? 'bg-primary border-primary text-white' : 'bg-card border-white/10 text-white'
+                  className={`px-6 py-3 rounded-full border-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                    localFilters.saleType === t ? 'bg-charcoal border-charcoal text-white shadow-[4px_4px_0_#C6FF00]' : 'bg-white border-charcoal text-charcoal'
                   }`}
                 >
                   {t}
@@ -897,17 +900,22 @@ const FilterSheet: React.FC<{
 
           {/* Product */}
           <div className="flex flex-col gap-3">
-            <label className="text-[10px] font-mono text-muted uppercase tracking-widest">Product</label>
-            <select 
-              value={localFilters.productId}
-              onChange={(e) => setLocalFilters(prev => ({ ...prev, productId: e.target.value }))}
-              className="w-full bg-card border border-white/10 rounded-2xl py-3 px-4 text-sm text-white focus:outline-none focus:border-primary transition-all appearance-none"
-            >
-              <option value="All">All Products</option>
-              {products.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest italic">Unit Specificity</label>
+            <div className="relative group">
+               <select 
+                value={localFilters.productId}
+                onChange={(e) => setLocalFilters(prev => ({ ...prev, productId: e.target.value }))}
+                className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 px-6 text-sm font-black uppercase text-charcoal focus:shadow-[6px_6px_0_#F4A6C1] transition-all appearance-none outline-none"
+              >
+                <option value="All">All Units</option>
+                {products.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+                 <ChevronRight size={20} className="rotate-90" />
+              </div>
+            </div>
           </div>
 
           <button 
@@ -915,9 +923,9 @@ const FilterSheet: React.FC<{
               onApply(localFilters);
               onClose();
             }}
-            className="w-full py-4 bg-primary text-white font-syne font-bold rounded-button shadow-xl shadow-primary/20 active:scale-[0.98] transition-all mt-4"
+            className="w-full py-6 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-[32px] shadow-[10px_10px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all mt-4"
           >
-            Apply Filters
+            Apply Protocol
           </button>
         </div>
       </motion.div>
@@ -928,36 +936,36 @@ const FilterSheet: React.FC<{
 const DeleteModal: React.FC<{ sale: Sale; onClose: () => void; onConfirm: () => void }> = ({ sale, onClose, onConfirm }) => (
   <motion.div 
     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-6"
+    className="fixed inset-0 bg-charcoal/40 backdrop-blur-sm z-[110] flex items-center justify-center p-6"
     onClick={onClose}
   >
     <motion.div 
       initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-      className="bg-card w-full max-w-[340px] rounded-[32px] p-8 flex flex-col gap-6 border border-white/5"
+      className="bg-cream w-full max-w-[340px] rounded-[40px] p-10 flex flex-col gap-8 border-4 border-charcoal shadow-[12px_12px_0_rgba(0,0,0,1)]"
       onClick={e => e.stopPropagation()}
     >
-      <div className="flex flex-col items-center text-center gap-2">
-        <div className="w-16 h-16 rounded-full bg-red-400/10 flex items-center justify-center text-red-400 mb-2">
-          <Trash2 size={32} />
+      <div className="flex flex-col items-center text-center gap-4">
+        <div className="w-20 h-20 rounded-[32px] bg-pink/10 border-2 border-charcoal flex items-center justify-center text-pink mb-2 shadow-[6px_6px_0_rgba(0,0,0,1)]">
+          <Trash2 size={40} />
         </div>
-        <h2 className="text-xl font-syne font-bold text-white">Delete this sale?</h2>
-        <p className="text-sm text-muted font-sans leading-relaxed">
-          This will restore <span className="text-white font-bold">{sale.quantity} unit(s)</span> of <span className="text-white font-bold">{sale.product_name}</span> to stock.
+        <h2 className="text-3xl font-display font-black uppercase italic tracking-tighter leading-none">Purge Entry?</h2>
+        <p className="italic-accent text-lg leading-relaxed text-charcoal/60">
+          Reverse protocol? This will restore <span className="text-charcoal font-black">{sale.quantity} UNIT(S)</span> to base stock.
         </p>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <button 
           onClick={onConfirm}
-          className="w-full py-4 bg-red-400 text-white font-bold rounded-button active:scale-[0.98] transition-all"
+          className="w-full py-5 bg-pink text-charcoal font-black uppercase tracking-widest italic text-[11px] rounded-[32px] border-2 border-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[4px] active:shadow-none transition-all"
         >
-          Delete
+          Confirm Purge
         </button>
         <button 
           onClick={onClose}
-          className="w-full py-4 bg-transparent border border-white/10 text-white font-bold rounded-button active:scale-[0.98] transition-all"
+          className="w-full py-5 bg-white border-2 border-charcoal text-charcoal font-black uppercase tracking-widest italic text-[11px] rounded-[32px] active:scale-[0.98] transition-all"
         >
-          Keep
+          Abort
         </button>
       </div>
     </motion.div>

@@ -217,8 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .upsert({ 
           id: session.user.id, 
-          ...updates,
-          updated_at: new Date().toISOString()
+          ...updates
         });
       
       if (error) {

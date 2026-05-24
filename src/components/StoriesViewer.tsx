@@ -188,8 +188,8 @@ export const StoriesViewer: React.FC = () => {
       >
         {/* Progress Bars */}
         <div className="absolute top-4 left-4 right-4 z-50 flex gap-1">
-          {currentStories.map((_, i) => (
-            <div key={i} className="flex-1 h-[3px] bg-white/30 rounded-full overflow-hidden">
+          {currentStories.map((s, i) => (
+            <div key={s.id || `progress-${i}`} className="flex-1 h-[3px] bg-white/30 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-white transition-all duration-100 linear"
                 style={{ 

@@ -3,11 +3,9 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Mail, Send, CheckCircle2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { useTheme } from '../App';
 import { toast } from 'sonner';
 
 export const ForgotPassword = () => {
-  const t = useTheme();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +21,7 @@ export const ForgotPassword = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://reset-password-henna.vercel.app/",
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) throw error;
@@ -40,29 +38,25 @@ export const ForgotPassword = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex flex-col p-6" style={{ background: t.bg_primary }}>
-        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto">
+      <div className="min-h-screen bg-black flex flex-col p-6 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] aspect-square bg-[#C6FF00] opacity-[0.05] blur-[120px] rounded-full pointer-events-none" />
+        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto relative z-10">
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
-            style={{ background: t.accent_bg }}
+            className="w-20 h-20 rounded-full bg-[#C6FF00]/10 flex items-center justify-center mb-10 border border-[#C6FF00]/20"
           >
-            <CheckCircle2 size={40} style={{ color: t.accent }} />
+            <CheckCircle2 size={40} className="text-[#C6FF00]" />
           </motion.div>
-          <h1 className="text-2xl font-bold mb-3" style={{ color: t.text_primary }}>
-            Check your email
-          </h1>
-          <p className="text-[15px] leading-relaxed mb-8" style={{ color: t.text_secondary }}>
-            We've sent a password reset link to <span className="font-medium text-white">{email}</span>. 
-            Please check your inbox and follow the instructions.
+          <h1 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-white">Security Protocol</h1>
+          <p className="text-[#888] text-sm leading-relaxed mb-10 font-mono uppercase tracking-widest text-[11px]">
+            Access link transmitted to <span className="text-white font-bold">{email}</span>. 
           </p>
           <button
             onClick={() => navigate('/auth')}
-            className="w-full py-4 rounded-xl font-bold text-[15px] transition-all active:scale-95"
-            style={{ background: t.gradient, color: 'white' }}
+            className="w-full py-5 bg-[#C6FF00] text-black rounded-full font-black uppercase tracking-widest text-lg shadow-xl shadow-[#C6FF00]/20 transition-all active:scale-[0.98]"
           >
-            Back to Sign In
+            Terminal Login ✓
           </button>
         </div>
       </div>
@@ -70,39 +64,34 @@ export const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col p-6" style={{ background: t.bg_primary }}>
-      <button
-        onClick={() => navigate('/auth')}
-        className="w-10 h-10 rounded-full flex items-center justify-center mb-8 border"
-        style={{ borderColor: t.border_subtle, color: t.text_primary }}
-      >
-        <ArrowLeft size={20} />
-      </button>
+    <div className="min-h-screen bg-black flex flex-col p-6 overflow-hidden">
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] aspect-square bg-[#C6FF00] opacity-[0.05] blur-[120px] rounded-full pointer-events-none" />
+      <header className="py-4 relative z-10">
+        <button
+          onClick={() => navigate('/auth')}
+          className="w-12 h-12 rounded-full bg-[#111] border border-[#222] flex items-center justify-center text-white active:scale-90 transition-transform"
+        >
+          <ArrowLeft size={20} />
+        </button>
+      </header>
 
-      <div className="max-w-sm mx-auto w-full">
-        <h1 className="text-3xl font-bold mb-3" style={{ color: t.text_primary }}>
-          Forgot Password?
-        </h1>
-        <p className="text-[15px] mb-8" style={{ color: t.text_secondary }}>
-          No worries! Enter your email address below and we'll send you a link to reset your password.
+      <main className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full relative z-10">
+        <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-4 text-white">Reset Key?</h1>
+        <p className="text-[#888] text-sm leading-relaxed mb-10">
+          Transmit your email address and we'll send a link to securely reset your access key.
         </p>
 
         <form onSubmit={handleResetRequest} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[13px] font-medium ml-1" style={{ color: t.text_secondary }}>
-              Email Address
-            </label>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-mono uppercase tracking-widest text-[#555] ml-1">Business Email</label>
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <Mail size={18} style={{ color: t.text_secondary }} />
-              </div>
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#333] w-5 h-5" />
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="hello@example.com"
-                className="w-full bg-transparent border-2 rounded-xl py-4 pl-12 pr-4 text-[15px] outline-none transition-all focus:border-primary"
-                style={{ borderColor: t.border_subtle, color: t.text_primary }}
+                placeholder="simba@threadzw.com"
+                className="w-full bg-[#111] border border-[#222] rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-[#C6FF00] transition-all"
                 required
               />
             </div>
@@ -111,20 +100,19 @@ export const ForgotPassword = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 rounded-xl flex items-center justify-center gap-2 font-bold text-[15px] transition-all active:scale-95 disabled:opacity-50"
-            style={{ background: t.gradient, color: 'white' }}
+            className="w-full h-16 bg-[#C6FF00] text-black rounded-full flex items-center justify-center gap-3 font-black uppercase tracking-widest text-lg shadow-xl shadow-[#C6FF00]/20 transition-all active:scale-[0.98] disabled:opacity-50"
           >
             {loading ? (
-              <Loader2 size={20} className="animate-spin" />
+              <Loader2 size={24} className="animate-spin" />
             ) : (
               <>
-                <span>Send Reset Link</span>
+                <span>Transmit Link</span>
                 <Send size={18} />
               </>
             )}
           </button>
         </form>
-      </div>
+      </main>
     </div>
   );
 };

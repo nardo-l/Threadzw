@@ -15,8 +15,11 @@ import {
   Trash2, 
   Pause, 
   Play,
-  ShoppingBag
+  ShoppingBag,
+  Package,
+  Zap
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '../context/ToastContext';
 import { Shimmer } from '../components/ui/Shimmer';
 import { ScreenError } from '../components/ui/ScreenError';
@@ -71,6 +74,8 @@ export const EditProduct = () => {
   const [singleQuantity, setSingleQuantity] = useState(1);
   const [colours, setColours] = useState<ColourVariant[]>([]);
   const [status, setStatus] = useState('active');
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [collection, setCollection] = useState('');
 
   // Images -- 6 slots
   const [photos, setPhotos] = useState<PhotoSlot[]>([
@@ -97,11 +102,22 @@ export const EditProduct = () => {
     setLoading(true);
     setError(null);
     try {
+      // 1. Fetch user's shop first
+      const { data: shopData, error: shopError } = await supabase
+        .from('shops')
+        .select('id')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+
+      if (shopError) throw shopError;
+      if (!shopData) throw new Error('Shop not found');
+
+      // 2. Query product by shop_id
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('id', productId)
-        .eq('owner_id', user.id)
+        .eq('shop_id', shopData.id)
         .single();
 
       if (error) throw error;
@@ -132,6 +148,10 @@ export const EditProduct = () => {
 
       // Pre-fill colours
       setColours(data.colours || []);
+
+      // Pre-fill collection & featured
+      setIsFeatured(data.is_featured || false);
+      setCollection(data.collection || '');
 
       // Pre-fill images
       if (data.images && data.images.length > 0) {
@@ -213,7 +233,7 @@ export const EditProduct = () => {
   };
 
   const addColour = () => {
-    setColours([...colours, { name: '', hex: '#f72585' }]);
+    setColours([...colours, { name: '', hex: '#C6FF00' }]);
     markChanged();
   };
 
@@ -383,6 +403,7 @@ export const EditProduct = () => {
         description: description.trim() || null,
         price: parseFloat(price),
         original_price: originalPrice ? parseFloat(originalPrice) : null,
+        compare_price: originalPrice ? parseFloat(originalPrice) : null,
         images: cleanImageUrls as string[],
         sizes: noSizes
           ? [{ size: 'One Size', quantity: singleQuantity }]
@@ -393,6 +414,8 @@ export const EditProduct = () => {
         colours: colours.filter(c => c.name) as any,
         total_stock: totalStock,
         status: totalStock === 0 ? 'sold_out' : (status as any),
+        is_featured: isFeatured,
+        collection: collection.trim() || null,
       });
 
       if (!success) throw new Error('Failed to update product');
@@ -429,7 +452,7 @@ export const EditProduct = () => {
         <div className="pt-20 px-4 space-y-8">
           <div className="grid grid-cols-2 gap-2">
             <Shimmer className="col-span-2 h-[200px] rounded-16" />
-            {[...Array(5)].map((_, i) => <Shimmer key={i} className="h-[120px] rounded-16" />)}
+            {[...Array(5)].map((_, i) => <Shimmer key={`photo-shimmer-${i}`} className="h-[120px] rounded-16" />)}
           </div>
           <Shimmer className="w-1/3 h-6 rounded-md" />
           <Shimmer className="w-full h-14 rounded-12" />
@@ -466,45 +489,43 @@ export const EditProduct = () => {
   const stockDecreased = originalData && totalStock < originalData.total_stock;
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-cream pb-32 font-sans selection:bg-pink/30">
       {/* Top Bar */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md z-50 flex items-center justify-between px-4 border-b border-border max-w-[430px] mx-auto">
-        <button onClick={handleBack} className="p-2 -ml-2 text-white hover:text-primary transition-colors">
-          <ArrowLeft size={24} />
+      <div className="fixed top-0 left-0 right-0 h-24 bg-cream/80 backdrop-blur-xl z-50 flex items-center justify-between px-6 border-b-4 border-charcoal max-w-[430px] mx-auto">
+        <button onClick={handleBack} className="p-3 -ml-3 text-charcoal hover:text-pink transition-all active:scale-90 bg-white border-2 border-charcoal rounded-2xl shadow-[4px_4px_0_rgba(0,0,0,1)]">
+          <ArrowLeft size={24} strokeWidth={3} />
         </button>
-        <h1 className="font-pacifico text-xl text-white">Edit Product</h1>
+        <h1 className="text-2xl font-display font-black text-charcoal italic uppercase tracking-tighter">Modify <span className="text-pink">Asset</span></h1>
         <button 
           onClick={handleSave}
           disabled={saving || !hasChanges}
-          className={`font-mono text-sm font-bold transition-colors ${
-            saving || !hasChanges ? 'text-muted cursor-not-allowed' : 'text-primary'
+          className={`h-12 px-6 rounded-2xl font-display font-black text-xs uppercase italic tracking-widest transition-all ${
+            saving || !hasChanges 
+              ? 'bg-charcoal/5 border-2 border-charcoal/5 text-charcoal/20 cursor-not-allowed' 
+              : 'bg-charcoal text-cream border-2 border-charcoal shadow-[4px_4px_0_#C6FF00] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-none'
           }`}
         >
-          {saving ? <Loader2 size={18} className="animate-spin" /> : 'Save'}
+          {saving ? <Loader2 size={18} className="animate-spin" strokeWidth={3} /> : 'Sync'}
         </button>
       </div>
 
-      <div className="pt-20 px-4 space-y-10">
+      <div className="pt-32 px-6 space-y-12">
         {/* Section 1: Photos */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-end">
-            <div className="space-y-1">
-              <h2 className="font-syne font-bold text-lg text-white">Photos</h2>
-              <p className="font-sans text-xs text-muted">Tap any photo to replace it</p>
+        <section className="space-y-6">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-4 mb-3">
+               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Visual Protocol</h2>
+               <div className="h-px flex-1 bg-charcoal/10" />
             </div>
-            <div className="flex gap-1">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className={`w-1.5 h-1.5 rounded-full ${photos[i].url || photos[i].preview ? 'bg-primary' : 'bg-muted/30'}`} />
-              ))}
-            </div>
+            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Asset Cluster</h3>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-4">
             {/* Slot 1: Main Photo */}
             <div 
               onClick={() => fileInputRefs.current[0]?.click()}
-              className={`col-span-2 h-[200px] rounded-16 overflow-hidden bg-elevated border-2 border-dashed transition-all cursor-pointer group relative flex flex-col items-center justify-center ${
-                photos[0].url || photos[0].preview ? 'border-transparent' : 'border-primary/30'
+              className={`col-span-2 h-[280px] rounded-[48px] overflow-hidden bg-white border-4 border-dashed transition-all cursor-pointer group relative flex flex-col items-center justify-center ${
+                photos[0].url || photos[0].preview ? 'border-charcoal border-solid' : 'border-charcoal/10 hover:border-pink/40'
               }`}
             >
               {(photos[0].url || photos[0].preview) ? (
@@ -512,27 +533,28 @@ export const EditProduct = () => {
                   <img 
                     src={photos[0].preview || photos[0].url || undefined} 
                     alt="Main" 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                    <Camera size={24} className="text-white mb-1" />
-                    <span className="font-mono text-[10px] text-white uppercase tracking-wider">Replace</span>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                    <span className="font-mono text-[10px] text-white uppercase tracking-wider">Main Photo (Cover)</span>
+                  <div className="absolute inset-0 bg-charcoal/20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm">
+                    <div className="w-16 h-16 bg-white border-4 border-charcoal rounded-full flex items-center justify-center text-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)]">
+                       <Camera size={28} strokeWidth={4} />
+                    </div>
+                    <span className="font-display font-black text-xs text-white uppercase tracking-[0.2em] italic mt-4">Replace Primary</span>
                   </div>
                 </>
               ) : (
-                <>
-                  <Camera size={24} className="text-primary mb-2" />
-                  <span className="font-mono text-xs text-muted">Main Photo</span>
-                </>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 bg-cream border-4 border-charcoal border-dashed rounded-full flex items-center justify-center text-charcoal/20">
+                    <Camera size={28} strokeWidth={3} />
+                  </div>
+                  <span className="text-[10px] font-black text-charcoal/20 uppercase tracking-[0.3em] italic">Initial Asset Required</span>
+                </div>
               )}
-              <span className="absolute top-3 left-3 font-mono text-[10px] text-white/40">01</span>
+              <div className="absolute top-6 left-6 w-10 h-10 bg-white border-4 border-charcoal rounded-2xl flex items-center justify-center font-display font-black italic shadow-[4px_4px_0_rgba(0,0,0,1)]">01</div>
               {uploadingSlots[0] && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                  <Loader2 size={24} className="text-primary animate-spin" />
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 backdrop-blur-md">
+                   <div className="w-12 h-12 border-4 border-charcoal border-t-pink rounded-full animate-spin" />
                 </div>
               )}
             </div>
@@ -543,10 +565,10 @@ export const EditProduct = () => {
               const hasImage = slot.url || slot.preview;
               return (
                 <div 
-                  key={idx}
+                  key={`photo-slot-edit-${idx}`}
                   onClick={() => fileInputRefs.current[idx]?.click()}
-                  className={`h-[120px] rounded-16 overflow-hidden bg-elevated border-2 border-dashed transition-all cursor-pointer group relative flex flex-col items-center justify-center ${
-                    hasImage ? 'border-transparent' : 'border-primary/30'
+                  className={`h-[140px] rounded-[32px] overflow-hidden bg-white border-4 border-dashed transition-all cursor-pointer group relative flex flex-col items-center justify-center ${
+                    hasImage ? 'border-charcoal border-solid shadow-[6px_6px_0_rgba(0,0,0,0.03)]' : 'border-charcoal/10 hover:border-pink/20 hover:bg-pink/5'
                   }`}
                 >
                   {hasImage ? (
@@ -554,36 +576,32 @@ export const EditProduct = () => {
                       <img 
                         src={slot.preview || slot.url || undefined} 
                         alt={slot.label} 
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                        <Camera size={20} className="text-white mb-1" />
-                        <span className="font-mono text-[10px] text-white uppercase tracking-wider">Replace</span>
+                      <div className="absolute inset-0 bg-charcoal/20 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center backdrop-blur-sm">
+                        <Camera size={20} className="text-white" strokeWidth={4} />
                       </div>
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
                           removePhoto(idx);
                         }}
-                        className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-red transition-colors"
+                        className="absolute top-3 right-3 w-8 h-8 rounded-[12px] bg-red-500 border-2 border-charcoal flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)]"
                       >
-                        <X size={14} />
+                        <X size={16} strokeWidth={4} />
                       </button>
-                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                        <span className="font-mono text-[10px] text-white uppercase tracking-wider">{slot.label}</span>
-                      </div>
                     </>
                   ) : (
                     <>
-                      <Camera size={20} className="text-primary mb-1" />
-                      <span className="font-mono text-[10px] text-muted">{slot.label}</span>
+                      <Camera size={24} className="text-charcoal/10" strokeWidth={3} />
+                      <span className="text-[8px] font-black text-charcoal/10 uppercase tracking-widest mt-2 px-4 text-center">{slot.label}</span>
                     </>
                   )}
-                  <span className="absolute top-2 left-2 font-mono text-[10px] text-white/40">0{idx + 1}</span>
+                  <div className="absolute top-3 left-3 w-7 h-7 bg-white border-2 border-charcoal rounded-xl flex items-center justify-center text-[10px] font-display font-black italic shadow-[3px_3px_0_rgba(0,0,0,1)]">0{idx + 1}</div>
                   {uploadingSlots[idx] && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                      <Loader2 size={20} className="text-primary animate-spin" />
+                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10 backdrop-blur-sm">
+                       <Loader2 size={24} className="text-pink animate-spin" strokeWidth={4} />
                     </div>
                   )}
                 </div>
@@ -591,20 +609,23 @@ export const EditProduct = () => {
             })}
           </div>
 
-          <div className="flex justify-between items-center">
-            <span className="font-mono text-[10px] text-muted uppercase tracking-wider">
-              {photos.filter(p => p.url || p.preview).length} of 6 photos
-            </span>
-            {photos.some(p => !p.url && !p.preview) && (
-              <span className="font-mono text-[10px] text-amber uppercase tracking-wider">
-                Missing photos will use original images
-              </span>
-            )}
+          <div className="flex justify-between items-center px-4">
+             <div className="flex items-center gap-3">
+                <div className="w-2 h-2 rounded-full bg-lime animate-pulse" />
+                <span className="text-[9px] font-black text-charcoal/40 uppercase tracking-[0.3em] italic">
+                   Buffer Registry: {photos.filter(p => p.url || p.preview).length} / 6
+                </span>
+             </div>
+             {photos.some(p => !p.url && !p.preview) && (
+               <span className="text-[9px] font-black text-pink uppercase tracking-widest italic animate-pulse">
+                 Synchronizing Legacy Assets
+               </span>
+             )}
           </div>
 
           {photos.map((_, i) => (
             <input
-              key={i}
+              key={`hidden-input-${i}`}
               type="file"
               accept="image/*"
               ref={el => { fileInputRefs.current[i] = el; }}
@@ -615,74 +636,76 @@ export const EditProduct = () => {
         </section>
 
         {/* Quick Actions */}
-        <section className="flex gap-2 overflow-x-auto no-scrollbar py-2">
+        <section className="flex gap-4 overflow-x-auto no-scrollbar py-4 px-2">
           <button 
             onClick={handleQuickPause}
-            className={`flex items-center gap-2 px-4 py-2 rounded-pill font-mono text-[10px] uppercase tracking-wider whitespace-nowrap border transition-all ${
+            className={`flex items-center gap-3 px-8 py-4 rounded-[24px] font-display font-black text-[10px] uppercase tracking-widest whitespace-nowrap border-4 transition-all hover:translate-y-[-2px] active:translate-y-[2px] italic ${
               status === 'active' 
-                ? 'bg-amber/10 border-amber text-amber' 
-                : 'bg-green/10 border-green text-green'
+                ? 'bg-amber-50 border-charcoal text-charcoal shadow-[6px_6px_0_rgba(245,158,11,1)]' 
+                : 'bg-lime border-charcoal text-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)]'
             }`}
           >
-            {status === 'active' ? <Pause size={14} /> : <Play size={14} />}
-            {status === 'active' ? 'Pause Listing' : 'Resume Listing'}
+            {status === 'active' ? <Pause size={18} strokeWidth={4} /> : <Play size={18} strokeWidth={4} />}
+            {status === 'active' ? 'Archive Signal' : 'Restore Signal'}
           </button>
           
           <button 
             onClick={() => setShowSoldOutModal(true)}
             disabled={totalStock === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-pill font-mono text-[10px] uppercase tracking-wider whitespace-nowrap border transition-all ${
+            className={`flex items-center gap-3 px-8 py-4 rounded-[24px] font-display font-black text-[10px] uppercase tracking-widest whitespace-nowrap border-4 transition-all hover:translate-y-[-2px] active:translate-y-[2px] italic ${
               totalStock === 0 
-                ? 'bg-muted/10 border-muted text-muted cursor-not-allowed' 
-                : 'bg-card border-border text-white hover:border-primary'
+                ? 'bg-charcoal/5 border-charcoal/5 text-charcoal/20 cursor-not-allowed' 
+                : 'bg-white border-charcoal text-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)]'
             }`}
           >
-            <ShoppingBag size={14} />
-            Mark All Sold Out
+            <ShoppingBag size={18} strokeWidth={4} />
+            Liquidate Stock
           </button>
 
           <button 
             onClick={() => setShowDeleteModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-pill font-mono text-[10px] uppercase tracking-wider whitespace-nowrap border border-red text-red bg-red/10"
+            className="flex items-center gap-3 px-8 py-4 rounded-[24px] font-display font-black text-[10px] uppercase tracking-widest whitespace-nowrap border-4 border-charcoal bg-red-500 text-white italic hover:translate-y-[-2px] active:translate-y-[2px] shadow-[6px_6px_0_rgba(0,0,0,1)]"
           >
-            <Trash2 size={14} />
-            Delete Product
+            <Trash2 size={18} strokeWidth={4} />
+            Purge Unit
           </button>
         </section>
 
         {/* Section 2: Product Details */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <h2 className="font-syne font-bold text-lg text-white">Product Details</h2>
+        <section className="flex flex-col gap-10 mt-16 relative z-10">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-4 mb-3">
+               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Identity Header</h2>
+               <div className="h-px flex-1 bg-charcoal/10" />
+            </div>
+            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Product Metadata</h3>
+          </div>
           
           {/* Product Name */}
-          <div id="field-productName" className="space-y-2">
-            <div className="flex justify-between items-end">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                Product Name <span className="text-primary">*</span>
-              </label>
-              <span className="font-mono text-[10px] text-muted">{productName.length}/80</span>
+          <div id="field-productName" className="flex flex-col gap-4">
+            <div className="flex justify-between items-end px-4">
+              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none">Nomenclature</label>
+              <span className="text-[10px] font-black text-charcoal/20 italic">{productName.length} / 80</span>
             </div>
-            <input 
-              value={productName}
-              onChange={e => {
-                if (e.target.value.length <= 80) {
-                  setProductName(e.target.value);
-                  markChanged();
-                }
-              }}
-              placeholder="e.g. Vintage Nike Windbreaker"
-              className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none transition-all ${
-                validationErrors.productName ? 'border-red' : 'border-transparent focus:border-primary'
-              }`}
-            />
+            <div className={`p-8 bg-white rounded-[40px] border-4 transition-all duration-500 ${validationErrors.productName ? 'border-pink bg-pink/5' : 'border-charcoal focus-within:shadow-[12px_12px_0_#C6FF00]'}`}>
+              <input 
+                value={productName}
+                onChange={e => {
+                  if (e.target.value.length <= 80) {
+                    setProductName(e.target.value);
+                    markChanged();
+                  }
+                }}
+                placeholder="Product Descriptor (e.g. Vintage Nike)"
+                className="w-full bg-transparent text-3xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/10 focus:outline-none italic"
+              />
+            </div>
           </div>
 
-          {/* Category */}
-          <div id="field-category" className="space-y-2">
-            <label className="font-mono text-xs text-muted uppercase tracking-wider">
-              Category <span className="text-primary">*</span>
-            </label>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+          {/* Category Selection */}
+          <div id="field-category" className="flex flex-col gap-5">
+            <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-4">Registry Segment</label>
+            <div className="flex flex-wrap gap-3 px-2">
               {categories.map(cat => (
                 <button
                   key={cat}
@@ -690,10 +713,10 @@ export const EditProduct = () => {
                     setCategory(cat);
                     markChanged();
                   }}
-                  className={`px-4 py-2 rounded-pill font-sans text-sm whitespace-nowrap border transition-all ${
+                  className={`px-8 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all border-4 italic ${
                     category === cat 
-                      ? 'bg-primary border-primary text-white' 
-                      : 'bg-elevated border-border text-muted'
+                      ? 'bg-charcoal text-cream border-charcoal shadow-[6px_6px_0_#C6FF00]' 
+                      : 'bg-white border-charcoal/5 text-charcoal/40 hover:border-charcoal/20'
                   }`}
                 >
                   {cat}
@@ -702,12 +725,30 @@ export const EditProduct = () => {
             </div>
           </div>
 
-          {/* Condition */}
-          <div id="field-condition" className="space-y-2">
-            <label className="font-mono text-xs text-muted uppercase tracking-wider">
-              Condition <span className="text-primary">*</span>
-            </label>
-            <div className="flex gap-2">
+          {/* Collection Drop */}
+          <div className="flex flex-col gap-5">
+            <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-4">Collection Drop</label>
+            <div className="relative group px-2 font-sans">
+              <input 
+                type="text"
+                value={collection}
+                onChange={(e) => {
+                  setCollection(e.target.value.slice(0, 50));
+                  markChanged();
+                }}
+                placeholder="e.g. Corteiz RTW, Essentials 2026..."
+                className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 focus:border-pink/40 focus:ring-8 focus:ring-pink/5 font-sans"
+              />
+              <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
+                <span className="text-[10px] font-black text-charcoal/30 italic leading-none">{collection.length}/50</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Condition Protocol */}
+          <div id="field-condition" className="flex flex-col gap-5">
+            <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-4">Physical Integrity</label>
+            <div className="grid grid-cols-2 gap-3 px-2">
               {conditions.map(cond => (
                 <button
                   key={cond}
@@ -715,10 +756,10 @@ export const EditProduct = () => {
                     setCondition(cond);
                     markChanged();
                   }}
-                  className={`flex-1 py-2 rounded-pill font-sans text-sm border transition-all ${
+                  className={`py-4 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all border-4 italic ${
                     condition === cond 
-                      ? 'bg-primary border-primary text-white' 
-                      : 'bg-elevated border-border text-muted'
+                      ? 'bg-charcoal text-cream border-charcoal shadow-[6px_6px_0_#F4A6C1]' 
+                      : 'bg-white border-charcoal/5 text-charcoal/40 hover:border-charcoal/20'
                   }`}
                 >
                   {cond}
@@ -726,47 +767,54 @@ export const EditProduct = () => {
               ))}
             </div>
             {condition && (
-              <p className="font-sans text-xs text-muted italic animate-wipe">
-                {conditionNotes[condition]}
-              </p>
+               <div className="mx-4 p-5 bg-cream-dark/50 border-2 border-charcoal/5 rounded-[24px] flex items-center gap-4">
+                  <div className="w-2 h-2 rounded-full bg-pink" />
+                  <p className="text-[11px] font-black text-charcoal/40 uppercase italic leading-tight tracking-tight">
+                    {conditionNotes[condition]}
+                  </p>
+               </div>
             )}
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-end">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">Description</label>
-              <span className="font-mono text-[10px] text-muted">{description.length}/400</span>
+          {/* Description Terminal */}
+          <div className="flex flex-col gap-4">
+            <div className="flex justify-between items-end px-4">
+               <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none">Manifesto Content</label>
+               <span className="text-[10px] font-black text-charcoal/20 italic">{description.length} / 400</span>
             </div>
-            <textarea 
-              value={description}
-              onChange={e => {
-                if (e.target.value.length <= 400) {
-                  setDescription(e.target.value);
-                  markChanged();
-                }
-              }}
-              rows={4}
-              placeholder="Tell buyers what makes this item special..."
-              className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
-            />
+            <div className="p-8 bg-white rounded-[40px] border-4 border-charcoal focus-within:shadow-[12px_12px_0_rgba(0,0,0,0.05)] transition-all">
+              <textarea 
+                value={description}
+                onChange={e => {
+                  if (e.target.value.length <= 400) {
+                    setDescription(e.target.value);
+                    markChanged();
+                  }
+                }}
+                rows={4}
+                placeholder="Declare product specifications..."
+                className="w-full bg-transparent text-xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/10 focus:outline-none resize-none italic leading-tight"
+              />
+            </div>
           </div>
         </section>
 
         {/* Section 3: Pricing */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <h2 className="font-syne font-bold text-lg text-white">Pricing</h2>
+        <section className="flex flex-col gap-10 mt-20 relative z-10">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-4 mb-3">
+               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Financial Layer</h2>
+               <div className="h-px flex-1 bg-charcoal/10" />
+            </div>
+            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Valuation Matrix</h3>
+          </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            {/* Price */}
-            <div id="field-price" className="space-y-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                Price <span className="text-primary">*</span>
-              </label>
-              <div className={`flex items-center bg-elevated border-2 rounded-12 overflow-hidden transition-all ${
-                validationErrors.price ? 'border-red' : 'border-transparent focus-within:border-primary'
-              }`}>
-                <span className="pl-4 font-mono text-primary">$</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
+            {/* Price Node */}
+            <div id="field-price" className="flex flex-col gap-4">
+              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-4">Registry Price (USD)</label>
+              <div className={`flex items-center bg-white border-4 rounded-[40px] px-8 py-8 transition-all duration-500 ${validationErrors.price ? 'border-pink' : 'border-charcoal focus-within:shadow-[12px_12px_0_#C6FF00]'}`}>
+                <span className="text-4xl font-display font-black text-charcoal/20 italic mr-4">$</span>
                 <input 
                   type="number"
                   value={price}
@@ -775,18 +823,16 @@ export const EditProduct = () => {
                     markChanged();
                   }}
                   placeholder="0.00"
-                  className="w-full bg-transparent p-4 pl-1 text-white font-sans focus:outline-none"
+                  className="w-full bg-transparent text-5xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/5 focus:outline-none italic"
                 />
               </div>
             </div>
 
-            {/* Original Price */}
-            <div id="field-originalPrice" className="space-y-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">Original Price</label>
-              <div className={`flex items-center bg-elevated border-2 rounded-12 overflow-hidden transition-all ${
-                validationErrors.originalPrice ? 'border-red' : 'border-transparent focus-within:border-primary'
-              }`}>
-                <span className="pl-4 font-mono text-muted">$</span>
+            {/* Compare Price Node */}
+            <div id="field-originalPrice" className="flex flex-col gap-4">
+              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-4">Benchmark Value (MSRP)</label>
+              <div className={`flex items-center bg-white border-4 rounded-[40px] px-8 py-8 transition-all duration-500 ${validationErrors.originalPrice ? 'border-pink' : 'border-charcoal focus-within:shadow-[12px_12px_0_rgba(0,0,0,0.05)]'}`}>
+                <span className="text-4xl font-display font-black text-charcoal/20 italic mr-4">$</span>
                 <input 
                   type="number"
                   value={originalPrice}
@@ -795,244 +841,298 @@ export const EditProduct = () => {
                     markChanged();
                   }}
                   placeholder="0.00"
-                  className="w-full bg-transparent p-4 pl-1 text-white font-sans focus:outline-none"
+                  className="w-full bg-transparent text-5xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/5 focus:outline-none italic"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-4 px-4">
             {price && (
-              <div className="flex items-center gap-3 animate-wipe">
-                <span className="font-syne font-bold text-3xl text-primary">USD {price}</span>
+              <div className="flex items-center gap-6 animate-wipe">
+                <span className="text-7xl font-display font-black text-charcoal italic tracking-tighter leading-none">USD {price}</span>
                 {originalPrice && parseFloat(originalPrice) > parseFloat(price) && (
-                  <span className="bg-primary text-white px-2 py-0.5 rounded-pill font-mono text-[10px] font-bold">
-                    -{Math.round((1 - parseFloat(price) / parseFloat(originalPrice)) * 100)}% OFF
-                  </span>
+                  <div className="oval-sticker !bg-pink !text-white !text-xl animate-bounce">
+                    -{Math.round((1 - parseFloat(price) / parseFloat(originalPrice)) * 100)}% RELIEF
+                  </div>
                 )}
               </div>
             )}
-            {originalPrice && (
-              <p className="font-mono text-[10px] text-muted uppercase tracking-tighter">
-                {parseFloat(originalPrice) > parseFloat(price) 
-                  ? 'Buyers see a strikethrough of this price'
-                  : <span className="text-amber">Compare price should be higher than listed price</span>
-                }
-              </p>
-            )}
+            <p className="text-[11px] font-black text-charcoal/30 uppercase tracking-[0.2em] italic leading-tight">
+              {originalPrice && parseFloat(originalPrice) > parseFloat(price) 
+                ? 'Market benchmark comparison enabled for visual leverage.'
+                : 'No price reduction detected in current valuation.'
+              }
+            </p>
           </div>
         </section>
 
         {/* Section 4: Sizes & Stock */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <h2 className="font-syne font-bold text-lg text-white">Sizes & Stock</h2>
-          
-          <div className="flex items-center justify-between bg-elevated p-4 rounded-12">
-            <span className="font-sans text-sm text-white">This item has no sizes (e.g. chains, caps)</span>
+        <section id="error-sizes" className="flex flex-col gap-10 mt-20 relative z-10">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-4 mb-3">
+               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Logistics</h2>
+               <div className="h-px flex-1 bg-charcoal/10" />
+            </div>
+            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Availability Index</h3>
+          </div>
+
+          <div className="flex items-center justify-between p-10 bg-white rounded-[48px] border-4 border-charcoal shadow-[12px_12px_0_rgba(0,0,0,0.05)] transition-all duration-500 group">
+            <div className="flex flex-col gap-2">
+              <span className="text-xl font-display font-black text-charcoal uppercase tracking-tighter italic leading-none">Universal Scale</span>
+              <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.4em] italic mb-1">Accessories / One-Size Units</span>
+            </div>
             <button 
               onClick={() => {
                 setNoSizes(!noSizes);
                 markChanged();
               }}
-              className={`w-12 h-6 rounded-pill relative transition-colors ${noSizes ? 'bg-primary' : 'bg-muted/30'}`}
+              className={`w-20 h-10 rounded-full relative transition-all duration-500 overflow-hidden border-4 ${noSizes ? 'bg-lime border-charcoal' : 'bg-cream-dark border-charcoal/10'}`}
             >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${noSizes ? 'left-7' : 'left-1'}`} />
+              <motion.div 
+                animate={{ x: noSizes ? 40 : 4 }}
+                className="absolute top-1/2 -translate-y-1/2 w-7 h-7 bg-charcoal rounded-full shadow-lg z-10"
+              />
             </button>
           </div>
 
           {noSizes ? (
-            <div className="space-y-2 animate-wipe">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">Quantity</label>
-              <div className="flex items-center gap-4 bg-elevated p-2 rounded-12 w-fit">
+            <div className="flex flex-col gap-6 p-10 bg-white rounded-[48px] border-2 border-charcoal/5 shadow-[20px_20px_0_rgba(0,0,0,0.02)]">
+              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none text-center">Master Stock Units</label>
+              <div className="flex items-center gap-10">
                 <button 
                   onClick={() => {
                     setSingleQuantity(Math.max(0, singleQuantity - 1));
                     markChanged();
                   }}
-                  className="w-10 h-10 rounded-lg bg-background flex items-center justify-center text-white"
+                  className="w-20 h-20 rounded-[28px] bg-white border-4 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all hover:bg-cream-dark shadow-[6px_6px_0_rgba(0,0,0,1)]"
                 >
-                  <Minus size={18} />
+                  <Minus size={32} strokeWidth={4} />
                 </button>
-                <span className="font-syne font-bold text-xl w-8 text-center">{singleQuantity}</span>
+                <div className="flex-1 flex flex-col items-center">
+                   <span className="text-7xl font-display font-black text-charcoal italic tracking-tighter leading-none">{singleQuantity}</span>
+                   <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest mt-4 italic">Operational Range</span>
+                </div>
                 <button 
                   onClick={() => {
                     setSingleQuantity(singleQuantity + 1);
                     markChanged();
                   }}
-                  className="w-10 h-10 rounded-lg bg-background flex items-center justify-center text-white"
+                  className="w-20 h-20 rounded-[28px] bg-charcoal flex items-center justify-center text-lime shadow-[6px_6px_0_#C6FF00] active:scale-90 transition-all"
                 >
-                  <Plus size={18} />
+                  <Plus size={32} strokeWidth={4} />
                 </button>
               </div>
             </div>
           ) : (
-            <div id="field-sizes" className="space-y-4 animate-wipe">
-              <div className="space-y-3">
-                {sizeVariants.map((variant, idx) => (
-                  <div key={idx} className="flex items-center gap-3 animate-wipe">
-                    <input 
-                      value={variant.size}
-                      onChange={e => updateSizeVariant(idx, { size: e.target.value })}
-                      placeholder="Size"
-                      className="w-20 bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white font-sans focus:outline-none"
-                    />
-                    <div className="flex items-center gap-2 bg-elevated p-1 rounded-12">
+            <div className="flex flex-col gap-6">
+              <AnimatePresence>
+                {sizeVariants.map((v, idx) => (
+                  <motion.div 
+                    key={`size-variant-edit-${idx}`}
+                    initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="flex items-center gap-6 bg-white p-6 rounded-[32px] border-4 border-charcoal shadow-[10px_10px_0_rgba(0,0,0,0.03)] group"
+                  >
+                    <div className="flex-1 relative pl-4">
+                      <input 
+                        type="text"
+                        value={v.size}
+                        onChange={(e) => updateSizeVariant(idx, { size: e.target.value })}
+                        placeholder="Label (e.g. UK9)"
+                        className="w-full bg-transparent text-xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/10 focus:outline-none italic"
+                      />
+                    </div>
+                    <div className="flex flex-col items-center gap-1 min-w-[60px]">
+                       <span className={`text-[9px] font-black uppercase tracking-widest leading-none ${
+                        v.quantity > 3 ? 'text-lime' : v.quantity > 0 ? 'text-amber-500' : 'text-pink'
+                       }`}>
+                         {v.quantity > 3 ? 'In Stock' : v.quantity > 0 ? 'Low' : 'Depleted'}
+                       </span>
+                    </div>
+                    <div className="flex items-center gap-2 bg-cream-dark rounded-full border-2 border-charcoal/5 p-1.5">
                       <button 
-                        onClick={() => updateSizeVariant(idx, { quantity: Math.max(0, variant.quantity - 1) })}
-                        className="w-8 h-8 rounded-lg bg-background flex items-center justify-center text-white"
+                        onClick={() => updateSizeVariant(idx, { quantity: Math.max(0, v.quantity - 1) })}
+                        className="w-12 h-12 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)]"
                       >
-                        <Minus size={14} />
+                        <Minus size={18} strokeWidth={4} />
                       </button>
-                      <span className="font-mono text-sm w-6 text-center">{variant.quantity}</span>
+                      <span className="w-12 text-center font-display font-black text-charcoal text-xl italic">{v.quantity}</span>
                       <button 
-                        onClick={() => updateSizeVariant(idx, { quantity: variant.quantity + 1 })}
-                        className="w-8 h-8 rounded-lg bg-background flex items-center justify-center text-white"
+                        onClick={() => updateSizeVariant(idx, { quantity: v.quantity + 1 })}
+                        className="w-12 h-12 rounded-full bg-charcoal text-cream flex items-center justify-center active:scale-90 transition-all shadow-[4px_4px_0_#C6FF00]"
                       >
-                        <Plus size={14} />
+                        <Plus size={18} strokeWidth={4} />
                       </button>
                     </div>
-                    
-                    <div className={`px-2 py-1 rounded-pill font-mono text-[8px] uppercase font-bold ${
-                      variant.quantity > 3 ? 'bg-green/10 text-green' : 
-                      variant.quantity > 0 ? 'bg-amber/10 text-amber' : 'bg-red/10 text-red'
-                    }`}>
-                      {variant.quantity > 3 ? 'In Stock' : variant.quantity > 0 ? 'Low' : 'Sold Out'}
-                    </div>
-
                     <button 
-                      onClick={() => removeSizeVariant(idx)}
-                      className="p-2 text-muted hover:text-red transition-colors"
+                      onClick={() => removeSizeVariant(idx)} 
+                      className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-pink transition-all active:scale-90"
                     >
-                      <X size={18} />
+                      <Trash2 size={24} strokeWidth={3} />
                     </button>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
-
+              </AnimatePresence>
+              
               <button 
                 onClick={addSizeVariant}
-                className="flex items-center gap-2 px-4 py-2 rounded-pill border border-border text-muted hover:text-primary hover:border-primary transition-all font-sans text-sm"
+                className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-pink/5 hover:border-pink/40 transition-all active:scale-[0.98] group mt-4"
               >
-                <Plus size={16} />
-                Add Size
+                <Plus size={28} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-pink" />
+                <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Register Size Unit</span>
               </button>
 
-              {/* Quick Add Sizes */}
+              {/* Suggestions */}
               {(category === 'Sneakers' || category === 'Clothing') && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {(category === 'Sneakers' ? ['UK6', 'UK7', 'UK8', 'UK9', 'UK10', 'UK11', 'UK12'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']).map(s => (
-                    <button 
-                      key={s}
-                      onClick={() => {
-                        if (!sizeVariants.some(v => v.size === s)) {
-                          setSizeVariants([...sizeVariants, { size: s, quantity: 1 }]);
-                          markChanged();
-                        }
-                      }}
-                      className="px-3 py-1 bg-elevated rounded-pill font-mono text-[10px] text-muted hover:text-white transition-colors"
-                    >
-                      {s}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-5 mt-6 px-4">
+                  <div className="flex items-center gap-3">
+                     <span className="text-[9px] font-black text-charcoal/20 uppercase tracking-[0.3em] italic leading-none">Protocol Shortcuts</span>
+                     <div className="h-px flex-1 bg-charcoal/5" />
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {(category === 'Sneakers' ? ['UK6', 'UK7', 'UK8', 'UK9', 'UK10', 'UK11', 'UK12'] : ['XS', 'S', 'M', 'L', 'XL', 'XXL']).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          if (!sizeVariants.some(v => v.size === s)) {
+                            setSizeVariants([...sizeVariants, { size: s, quantity: 1 }]);
+                            markChanged();
+                          }
+                        }}
+                        className="px-6 py-3 bg-white border-2 border-charcoal/10 rounded-2xl text-[10px] font-black text-charcoal/40 hover:text-charcoal hover:bg-cream-dark hover:border-charcoal/40 transition-all italic tracking-widest uppercase shadow-sm"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className={`font-mono text-xs uppercase tracking-wider ${totalStock > 0 ? 'text-white' : 'text-red'}`}>
-                Total Stock: {totalStock} units
-              </span>
-              <div className={`w-2 h-2 rounded-full ${totalStock > 0 ? 'bg-green' : 'bg-red'}`} />
+          <div className="flex flex-col gap-6">
+            <div className={`p-8 rounded-[48px] border-4 transition-all duration-700 ${totalStock > 0 ? 'bg-charcoal text-lime border-charcoal shadow-[12px_12px_0_#C6FF00]' : 'bg-pink/10 text-pink border-pink shadow-[12px_12px_0_rgba(0,0,0,1)]'}`}>
+               <div className="flex items-center gap-6">
+                  <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center border-4 ${totalStock > 0 ? 'bg-lime border-lime text-charcoal' : 'bg-pink text-white border-pink'}`}>
+                    <Package size={24} strokeWidth={4} />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] italic mb-1 opacity-60">Inventory Status</span>
+                    <span className="text-2xl font-display font-black italic tracking-tighter uppercase leading-none">Total Units: {totalStock}</span>
+                  </div>
+               </div>
             </div>
 
             {stockDecreased && (
-              <div className="bg-amber/5 border-l-4 border-amber p-4 rounded-r-16 space-y-1 animate-wipe">
-                <p className="font-mono text-[10px] text-amber uppercase font-bold">You're reducing stock</p>
-                <p className="font-sans text-sm text-white">Current: {originalData.total_stock} units → New: {totalStock} units</p>
-                <p className="font-sans text-xs text-muted">Make sure this matches your actual physical stock</p>
-              </div>
+               <motion.div 
+                 initial={{ opacity: 0, x: -20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 className="p-8 bg-pink/5 border-4 border-pink rounded-[40px] flex items-start gap-6"
+               >
+                  <AlertTriangle size={32} className="text-pink shrink-0" strokeWidth={3} />
+                  <div className="flex flex-col gap-2">
+                     <p className="text-[10px] font-black text-pink uppercase tracking-[0.3em] italic">Stock Reduction Protocol</p>
+                     <p className="text-[14px] font-black text-charcoal leading-tight italic uppercase tracking-tighter">
+                        Current: {originalData.total_stock} units → New: {totalStock} units. Ensure physical reconciliation.
+                     </p>
+                  </div>
+               </motion.div>
             )}
           </div>
         </section>
 
         {/* Section 5: Colours */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <div className="space-y-1">
-            <h2 className="font-syne font-bold text-lg text-white">Colours</h2>
-            <p className="font-sans text-xs text-muted">Optional — only add if your item comes in different colours</p>
+        <section className="flex flex-col gap-10 mt-20 relative z-10">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-4 mb-3">
+               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Spectrum Data</h2>
+               <div className="h-px flex-1 bg-charcoal/10" />
+            </div>
+            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Color Mapping</h3>
           </div>
 
-          <div className="space-y-3">
-            {colours.map((colour, idx) => (
-              <div key={idx} className="flex items-center gap-3 animate-wipe">
-                <div 
-                  className="w-10 h-10 rounded-12 border-2 border-border relative overflow-hidden"
-                  style={{ backgroundColor: colour.hex }}
+          <div className="flex flex-col gap-6">
+            <AnimatePresence>
+              {colours.map((c, idx) => (
+                <motion.div 
+                  key={`colour-mapping-edit-${idx}`}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="flex items-center gap-6 bg-white p-6 rounded-[32px] border-4 border-charcoal shadow-[10px_10px_0_rgba(0,0,0,0.03)] group"
                 >
-                  <input 
-                    type="color"
-                    value={colour.hex}
-                    onChange={e => updateColour(idx, { hex: e.target.value })}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                  />
-                </div>
-                <input 
-                  value={colour.name}
-                  onChange={e => updateColour(idx, { name: e.target.value })}
-                  placeholder="Colour Name"
-                  className="flex-1 bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white font-sans focus:outline-none"
-                />
+                  <div className="flex-1 relative pl-4">
+                    <input 
+                      type="text"
+                      value={c.name}
+                      onChange={(e) => updateColour(idx, { name: e.target.value })}
+                      placeholder="Declaration (e.g. Cobalt)"
+                      className="w-full bg-transparent text-xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/10 focus:outline-none italic"
+                    />
+                  </div>
+                  <div className="relative w-16 h-16 rounded-[20px] overflow-hidden border-4 border-charcoal hover:scale-105 transition-all cursor-pointer shadow-[4px_4px_0_rgba(0,0,0,0.1)]">
+                    <input 
+                      type="color"
+                      value={c.hex}
+                      onChange={(e) => updateColour(idx, { hex: e.target.value })}
+                      className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                    />
+                  </div>
+                  <button onClick={() => removeColour(idx)} className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-pink transition-all active:scale-90">
+                    <X size={24} strokeWidth={3} />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            <button 
+              onClick={addColour}
+              className="w-full h-16 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-4 text-charcoal/40 hover:bg-lime/5 hover:border-lime/40 transition-all active:scale-[0.98] mt-2 group"
+            >
+              <Plus size={24} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-lime" />
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] italic">Add Component Color</span>
+            </button>
+
+            <div className="flex flex-wrap gap-2 pt-4 px-4">
+              {['White', 'Black', 'Grey', 'Brown', 'Navy', 'Red', 'Green', 'Multi'].map(c => (
                 <button 
-                  onClick={() => removeColour(idx)}
-                  className="p-2 text-muted hover:text-red transition-colors"
+                  key={c}
+                  onClick={() => {
+                    if (!colours.some(col => col.name === c)) {
+                      const hexMap: Record<string, string> = {
+                        'White': '#ffffff', 'Black': '#000000', 'Grey': '#888888', 'Brown': '#8b4513',
+                        'Navy': '#000080', 'Red': '#ff0000', 'Green': '#00ff00', 'Multi': '#C6FF00'
+                      };
+                      setColours([...colours, { name: c, hex: hexMap[c] || '#C6FF00' }]);
+                      markChanged();
+                    }
+                  }}
+                  className="px-5 py-2 bg-white border-2 border-charcoal/5 rounded-2xl text-[9px] font-black text-charcoal/30 hover:text-charcoal hover:border-charcoal/40 transition-all italic uppercase tracking-widest"
                 >
-                  <X size={18} />
+                  {c}
                 </button>
-              </div>
-            ))}
-          </div>
-
-          <button 
-            onClick={addColour}
-            className="flex items-center gap-2 px-4 py-2 rounded-pill border border-border text-muted hover:text-primary hover:border-primary transition-all font-sans text-sm"
-          >
-            <Plus size={16} />
-            Add Colour
-          </button>
-
-          <div className="flex flex-wrap gap-2 pt-2">
-            {['White', 'Black', 'Grey', 'Brown', 'Navy', 'Red', 'Green', 'Multi'].map(c => (
-              <button 
-                key={c}
-                onClick={() => {
-                  if (!colours.some(col => col.name === c)) {
-                    const hexMap: Record<string, string> = {
-                      'White': '#ffffff', 'Black': '#000000', 'Grey': '#888888', 'Brown': '#8b4513',
-                      'Navy': '#000080', 'Red': '#ff0000', 'Green': '#00ff00', 'Multi': '#f72585'
-                    };
-                    setColours([...colours, { name: c, hex: hexMap[c] || '#f72585' }]);
-                    markChanged();
-                  }
-                }}
-                className="px-3 py-1 bg-elevated rounded-pill font-mono text-[10px] text-muted hover:text-white transition-colors"
-              >
-                {c}
-              </button>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
 
         {/* Section 6: Listing Status */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <h2 className="font-syne font-bold text-lg text-white">Listing Status</h2>
+        <section className="flex flex-col gap-10 mt-20 relative z-10 pb-10">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-4 mb-3">
+               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Visibility Layer</h2>
+               <div className="h-px flex-1 bg-charcoal/10" />
+            </div>
+            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Status Protocol</h3>
+          </div>
           
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
             {[
-              { id: 'active', label: 'Active', color: 'bg-green', note: 'Your product is visible to buyers in the feed' },
-              { id: 'paused', label: 'Paused', color: 'bg-amber', note: 'Your product is hidden but not deleted. Buyers cannot see it.' },
-              { id: 'sold_out', label: 'Sold Out', color: 'bg-muted', note: 'Shown in the feed with a Sold Out badge. Buyers can see it but not enquire.' }
+              { id: 'active', label: 'Authorized', color: 'bg-lime', icon: <Check size={20} strokeWidth={4} />, hex: '#C6FF00', note: 'Unit is live in the global marketplace' },
+              { id: 'paused', label: 'Legacy', color: 'bg-amber-500', icon: <Pause size={20} strokeWidth={4} />, hex: '#F59E0B', note: 'Unit is archived but preserved in the database.' },
+              { id: 'sold_out', label: 'Liquidated', color: 'bg-pink', icon: <ShoppingBag size={20} strokeWidth={4} />, hex: '#F4A6C1', note: 'Stock level at zero. Displayed as legacy interest unit.' }
             ].map(s => (
               <button
                 key={s.id}
@@ -1040,209 +1140,337 @@ export const EditProduct = () => {
                   setStatus(s.id);
                   markChanged();
                 }}
-                className={`flex-1 py-3 rounded-12 border-2 transition-all flex flex-col items-center gap-1 ${
+                className={`group flex flex-col items-center justify-center p-10 rounded-[48px] border-4 transition-all duration-700 relative overflow-hidden ${
                   status === s.id 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-transparent bg-elevated'
+                    ? 'bg-charcoal border-charcoal shadow-[12px_12px_0_rgba(var(--status-color),0.2)]'
+                    : 'bg-white border-charcoal/5 grayscale opacity-40 hover:opacity-100 hover:grayscale-0'
                 }`}
+                style={{ '--status-color': s.id === 'active' ? '198,255,0' : s.id === 'paused' ? '245,158,11' : '244,166,193' } as any}
               >
-                <div className={`w-2 h-2 rounded-full ${s.color}`} />
-                <span className={`font-syne font-bold text-xs ${status === s.id ? 'text-primary' : 'text-muted'}`}>{s.label}</span>
+                <div className={`w-14 h-14 rounded-[20px] flex items-center justify-center mb-6 border-4 transition-all duration-700 ${
+                  status === s.id ? `${s.color} border-white/10 text-charcoal shadow-[0_0_20px_rgba(var(--status-color),0.5)] scale-110` : 'bg-charcoal/5 border-charcoal text-charcoal/10'
+                }`}>
+                  {s.icon}
+                </div>
+                <span className={`text-xl font-display font-black uppercase italic tracking-tighter transition-colors ${status === s.id ? 'text-white' : 'text-charcoal'}`}>{s.label}</span>
+                {status === s.id && (
+                   <div className="mt-4 px-4 py-2 bg-white/5 border border-white/10 rounded-full">
+                      <p className="text-[8px] font-black text-white/40 uppercase tracking-widest italic text-center leading-none px-2">{s.note}</p>
+                   </div>
+                )}
               </button>
             ))}
           </div>
-          
-          <p className={`font-mono text-[10px] uppercase tracking-wider ${
-            status === 'active' ? 'text-green' : status === 'paused' ? 'text-amber' : 'text-muted'
-          }`}>
-            {status === 'active' ? 'Your product is visible to buyers in the feed' : 
-             status === 'paused' ? 'Your product is hidden but not deleted. Buyers cannot see it.' : 
-             'Shown in the feed with a Sold Out badge. Buyers can see it but not enquire.'}
-          </p>
+
+          <div 
+            className={`p-10 rounded-[48px] border-4 transition-all duration-700 relative overflow-hidden group cursor-pointer mt-10 ${isFeatured ? 'bg-charcoal border-lime shadow-[0_20px_40px_rgba(198,255,0,0.15)]' : 'bg-white border-charcoal/5 shadow-[12px_12px_0_rgba(0,0,0,0.02)]'}`} 
+            onClick={() => {
+              setIsFeatured(!isFeatured);
+              markChanged();
+            }}
+          >
+            {isFeatured && (
+               <div className="absolute inset-0 bg-gradient-to-br from-lime/5 via-transparent to-transparent opacity-50" />
+            )}
+            <div className="flex items-center justify-between relative z-10">
+              <div className="flex flex-col gap-4 max-w-[75%]">
+                <div className="flex items-center gap-4">
+                  <h4 className={`text-2xl font-display font-black uppercase italic tracking-tighter transition-colors ${isFeatured ? 'text-lime' : 'text-charcoal'}`}>Priority Broadcaster</h4>
+                   <div className={`w-3 h-3 rounded-full ${isFeatured ? 'bg-lime animate-pulse shadow-[0_0_12px_#C6FF00]' : 'bg-charcoal/5'}`} />
+                </div>
+                <p className={`text-[12px] font-black uppercase italic leading-tight tracking-[0.1em] ${isFeatured ? 'text-white/40' : 'text-charcoal/30'}`}>
+                  Amplify acquisition frequency. Elevate listing to the primary discovery layer for global terminal visibility.
+                </p>
+              </div>
+              <div className={`w-16 h-16 rounded-[28px] flex items-center justify-center border-4 transition-all duration-700 ${isFeatured ? 'bg-lime border-lime text-charcoal shadow-2xl scale-110' : 'bg-white border-charcoal/10 text-charcoal/10'}`}>
+                 <Zap size={32} strokeWidth={4} />
+              </div>
+            </div>
+          </div>
         </section>
       </div>
 
       {/* Bottom Action Area */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-md border-t border-border z-40 max-w-[430px] mx-auto">
-        {hasChanges ? (
-          <div className="space-y-3">
-            <button 
-              onClick={handleSave}
-              disabled={saving}
-              className="w-full py-4 gradient-pink-purple text-white font-syne font-bold rounded-14 shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-cream/90 backdrop-blur-xl border-t-4 border-charcoal z-40 max-w-[430px] mx-auto">
+        <AnimatePresence mode="wait">
+          {hasChanges ? (
+            <motion.div 
+              key="changed"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="flex flex-col gap-4"
             >
-              {saving ? (
-                <>
-                  <Loader2 size={20} className="animate-spin" />
-                  Saving...
-                </>
-              ) : 'Save Changes'}
-            </button>
-            <button 
-              onClick={() => setShowDiscardModal(true)}
-              className="w-full py-2 text-muted font-sans text-sm hover:text-white transition-colors"
-            >
-              Discard Changes
-            </button>
-          </div>
-        ) : (
-          <button 
-            disabled
-            className="w-full py-4 bg-card text-muted font-sans font-bold rounded-14 cursor-default"
-          >
-            No changes to save
-          </button>
-        )}
+              <button 
+                onClick={handleSave}
+                disabled={saving}
+                className="w-full h-20 bg-charcoal text-cream font-display font-black text-xl italic rounded-[28px] shadow-[8px_8px_0_#C6FF00] flex items-center justify-center gap-4 uppercase tracking-[0.2em] transition-all hover:translate-y-[-4px] hover:shadow-[12px_12px_0_#C6FF00] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 size={28} className="animate-spin" strokeWidth={4} />
+                    Syncing...
+                  </>
+                ) : 'Commit Updates'}
+              </button>
+              <button 
+                onClick={() => setShowDiscardModal(true)}
+                className="w-full py-4 text-charcoal/40 font-black uppercase tracking-[0.4em] text-[10px] italic hover:text-pink transition-colors"
+               >
+                Erase Buffer
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="ready"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="p-8 bg-charcoal/5 border-4 border-dashed border-charcoal/10 rounded-[40px] flex items-center justify-center italic"
+             >
+              <span className="text-[12px] font-black text-charcoal/20 uppercase tracking-[0.4em]">Terminal Primed</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Modals */}
-
-      {/* Unsaved Changes Modal */}
-      {showUnsavedModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">Unsaved changes</h3>
-              <p className="font-sans text-muted">Leave without saving your changes?</p>
-            </div>
-            <div className="space-y-3">
-              <button 
-                onClick={handleSave}
-                className="w-full py-4 bg-primary text-white font-syne font-bold rounded-14 shadow-lg shadow-primary/20"
-              >
-                Save Changes
-              </button>
-              <button 
-                onClick={() => navigate(-1)}
-                className="w-full py-4 border border-red text-red font-syne font-bold rounded-14"
-              >
-                Discard & Leave
-              </button>
-              <button 
-                onClick={() => setShowUnsavedModal(false)}
-                className="w-full py-2 text-muted font-sans text-sm"
-              >
-                Keep Editing
-              </button>
-            </div>
+      <AnimatePresence>
+        {/* Unsaved Changes Modal */}
+        {showUnsavedModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-8">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-charcoal/90 backdrop-blur-md"
+              onClick={() => setShowUnsavedModal(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white w-full max-w-[380px] rounded-[48px] p-10 border-4 border-charcoal shadow-[16px_16px_0_rgba(0,0,0,1)] relative z-10 flex flex-col gap-8"
+            >
+              <div className="flex flex-col gap-4">
+                <div className="w-16 h-16 bg-pink/10 border-4 border-pink rounded-[24px] flex items-center justify-center text-pink">
+                   <AlertTriangle size={32} strokeWidth={4} />
+                </div>
+                <div className="flex flex-col">
+                   <h3 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-[0.8] mb-2">Unsaved Signal</h3>
+                   <p className="text-[11px] font-black text-charcoal/40 uppercase italic tracking-widest leading-relaxed">
+                      Terminal state will be lost if connection is severed. Register changes now?
+                   </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={handleSave}
+                  className="w-full h-16 bg-charcoal text-cream font-display font-black rounded-[24px] uppercase italic tracking-[0.1em] shadow-[6px_6px_0_#C6FF00] active:scale-95 transition-all text-sm"
+                >
+                  Confirm Registry
+                </button>
+                <button 
+                  onClick={() => navigate(-1)}
+                  className="w-full h-16 bg-white border-4 border-pink text-pink font-display font-black rounded-[24px] uppercase italic tracking-[0.1em] shadow-[6px_6px_0_rgba(244,166,193,0.3)] active:scale-95 transition-all text-sm"
+                >
+                  Sever Link
+                </button>
+                <button 
+                  onClick={() => setShowUnsavedModal(false)}
+                  className="w-full py-2 text-charcoal/20 font-black uppercase text-[10px] tracking-widest italic"
+                >
+                  Return to Matrix
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Discard Changes Modal */}
-      {showDiscardModal && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowDiscardModal(false)} />
-          <div className="relative bg-card w-full max-w-[430px] rounded-t-32 p-8 animate-wipe overflow-hidden">
-            <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-6" />
-            <div className="space-y-2 mb-8">
-              <h3 className="font-syne font-bold text-2xl text-white">Discard all changes?</h3>
-              <p className="font-sans text-muted">Your edits will be lost</p>
-            </div>
-            <div className="space-y-3">
-              <button 
-                onClick={() => {
-                  fetchProduct();
-                  setHasChanges(false);
-                  setShowDiscardModal(false);
-                }}
-                className="w-full py-4 bg-red text-white font-syne font-bold rounded-14"
-              >
-                Discard
-              </button>
-              <button 
-                onClick={() => setShowDiscardModal(false)}
-                className="w-full py-4 bg-elevated text-white font-syne font-bold rounded-14"
-              >
-                Keep Editing
-              </button>
-            </div>
+        {/* Discard Changes Modal */}
+        {showDiscardModal && (
+          <div className="fixed inset-0 z-[200] flex items-end justify-center">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-charcoal/80 backdrop-blur-sm"
+              onClick={() => setShowDiscardModal(false)}
+            />
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="relative bg-white w-full max-w-[430px] rounded-t-[54px] p-12 border-t-8 border-charcoal shadow-[0_-20px_60px_rgba(0,0,0,0.4)]"
+            >
+              <div className="w-20 h-2 bg-charcoal/10 rounded-full mx-auto mb-10" />
+              <div className="flex flex-col gap-6 mb-12">
+                <div className="flex items-center gap-4">
+                   <div className="w-1.5 h-10 bg-pink rounded-full" />
+                   <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-[0.8]">Reset Buffer?</h3>
+                </div>
+                <p className="text-[12px] font-black text-charcoal/30 uppercase italic tracking-[0.2em] leading-relaxed">
+                   Purging temporary cache. This action is irreversible within the current session.
+                </p>
+              </div>
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={() => {
+                    fetchProduct();
+                    setHasChanges(false);
+                    setShowDiscardModal(false);
+                  }}
+                  className="w-full h-20 bg-pink text-white font-display font-black text-xl italic rounded-[28px] uppercase tracking-[0.2em] shadow-[8px_8px_0_#000000] active:translate-y-[4px] active:shadow-none transition-all"
+                >
+                  Flush Cache
+                </button>
+                <button 
+                  onClick={() => setShowDiscardModal(false)}
+                  className="w-full h-20 bg-cream text-charcoal border-4 border-charcoal font-display font-black text-xl italic rounded-[28px] uppercase tracking-[0.2em] shadow-[8px_8px_0_rgba(0,0,0,0.05)] active:translate-y-[4px] active:shadow-none transition-all"
+                >
+                  Abort Reset
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">Delete this product?</h3>
-              <p className="font-sans text-muted text-sm leading-relaxed">
-                Buyers can no longer find this listing. Sales history is preserved.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <button 
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setShowDeleteConfirmModal(true);
-                }}
-                className="w-full py-4 bg-red text-white font-syne font-bold rounded-14"
-              >
-                Yes, Delete
-              </button>
-              <button 
-                onClick={() => setShowDeleteModal(false)}
-                className="w-full py-4 bg-elevated text-white font-syne font-bold rounded-14"
-              >
-                Cancel
-              </button>
-            </div>
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-8">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-charcoal/95 backdrop-blur-xl"
+              onClick={() => setShowDeleteModal(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white w-full max-w-[380px] rounded-[54px] p-12 border-8 border-charcoal shadow-[24px_24px_0_#EF4444] relative z-10 flex flex-col gap-10 text-center"
+            >
+              <div className="flex flex-col items-center gap-6">
+                <div className="w-24 h-24 bg-red-500 border-4 border-charcoal rounded-full flex items-center justify-center text-white animate-pulse shadow-[8px_8px_0_rgba(0,0,0,1)]">
+                   <Trash2 size={42} strokeWidth={4} />
+                </div>
+                <div className="flex flex-col gap-2">
+                   <h3 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-[0.8]">Terminate Unit?</h3>
+                   <p className="text-[10px] font-black text-charcoal/30 uppercase italic tracking-widest px-4">
+                      Permanent removal from global network index.
+                   </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setShowDeleteConfirmModal(true);
+                  }}
+                  className="w-full h-20 bg-charcoal text-white font-display font-black rounded-[28px] uppercase italic tracking-[0.1em] shadow-[8px_8px_0_#EF4444] active:scale-95 transition-all"
+                >
+                  Purge Asset
+                </button>
+                <button 
+                  onClick={() => setShowDeleteModal(false)}
+                  className="w-full h-20 bg-white border-2 border-charcoal/10 text-charcoal/20 font-display font-black rounded-[28px] uppercase italic tracking-[0.1em] active:scale-95 transition-all text-sm"
+                >
+                  Retake Control
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Delete Final Confirm Modal */}
-      {showDeleteConfirmModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">Delete {productName}?</h3>
-              <p className="font-sans text-muted text-sm">This action cannot be undone.</p>
-            </div>
-            <div className="space-y-3">
-              <button 
-                onClick={handleDelete}
-                className="w-full py-4 bg-red text-white font-syne font-bold rounded-14 shadow-lg shadow-red/20"
-              >
-                Delete Forever
-              </button>
-              <button 
-                onClick={() => setShowDeleteConfirmModal(false)}
-                className="w-full py-4 bg-elevated text-white font-syne font-bold rounded-14"
-              >
-                Go Back
-              </button>
-            </div>
+        {/* Delete Final Confirm Modal */}
+        {showDeleteConfirmModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-8">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-red-500/20 backdrop-blur-2xl"
+              onClick={() => setShowDeleteConfirmModal(false)}
+            />
+            <motion.div 
+              initial={{ scale: 1.1, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.1, opacity: 0 }}
+              className="bg-charcoal w-full max-w-[380px] rounded-[54px] p-12 border-8 border-red-500 shadow-[24px_24px_0_rgba(239,68,68,0.2)] relative z-10 flex flex-col gap-10 text-center"
+            >
+              <div className="flex flex-col items-center gap-6">
+                <div className="flex flex-col gap-2">
+                   <h3 className="text-5xl font-display font-black text-white uppercase italic tracking-tighter leading-[0.8] mb-4">Final Breach?</h3>
+                   <p className="text-[12px] font-black text-red-500 uppercase italic tracking-widest">
+                      Deleting: {productName}
+                   </p>
+                   <p className="text-[10px] font-black text-white/20 uppercase italic tracking-[0.2em] mt-4">This action cannot be reverted.</p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-4">
+                <button 
+                  onClick={handleDelete}
+                  className="w-full h-20 bg-red-500 text-white font-display font-black rounded-[28px] uppercase italic tracking-[0.1em] shadow-[8px_8px_0_rgba(0,0,0,1)] active:translate-y-[4px] active:shadow-none transition-all"
+                >
+                  Sever Forever
+                </button>
+                <button 
+                  onClick={() => setShowDeleteConfirmModal(false)}
+                  className="w-full h-20 bg-white/5 border-2 border-white/10 text-white font-display font-black rounded-[28px] uppercase italic tracking-[0.1em] active:scale-95 transition-all text-sm"
+                >
+                  Emergency Abort
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Sold Out Modal */}
-      {showSoldOutModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">Mark all as sold out?</h3>
-              <p className="font-sans text-muted text-sm">This will set all size quantities to 0.</p>
-            </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setShowSoldOutModal(false)}
-                className="flex-1 py-4 bg-elevated text-white font-syne font-bold rounded-14"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleMarkSoldOut}
-                className="flex-1 py-4 bg-primary text-white font-syne font-bold rounded-14"
-              >
-                Confirm
-              </button>
-            </div>
+        {/* Sold Out Modal */}
+        {showSoldOutModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-8">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-charcoal/80 backdrop-blur-lg"
+              onClick={() => setShowSoldOutModal(false)}
+            />
+            <motion.div 
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="bg-white w-full max-w-[380px] rounded-[54px] p-12 border-4 border-charcoal shadow-[16px_16px_0_#FFD700] relative z-10 flex flex-col gap-10"
+            >
+              <div className="flex flex-col gap-4">
+                <div className="w-16 h-16 bg-amber-500/10 border-4 border-amber-500 rounded-[24px] flex items-center justify-center text-amber-500">
+                   <ShoppingBag size={32} strokeWidth={4} />
+                </div>
+                <div className="flex flex-col">
+                   <h3 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-[0.8] mb-2">Liquidate State</h3>
+                   <p className="text-[11px] font-black text-charcoal/40 uppercase italic tracking-widest leading-relaxed">
+                      Setting all indices to zero. This unit will be marked as depleted.
+                   </p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setShowSoldOutModal(false)}
+                  className="flex-1 h-16 bg-cream text-charcoal border-4 border-charcoal font-display font-black rounded-[20px] uppercase italic tracking-widest text-xs active:scale-95 transition-all"
+                >
+                  Abort
+                </button>
+                <button 
+                  onClick={handleMarkSoldOut}
+                  className="flex-1 h-16 bg-charcoal text-cream font-display font-black rounded-[20px] uppercase italic tracking-widest text-xs shadow-[4px_4px_0_#FFD700] active:scale-95 transition-all"
+                >
+                  Confirm
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -1,31 +1,32 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ArrowRight, Star, Heart, Sparkles, Zap, Smartphone, Package, ShieldCheck, Globe } from 'lucide-react';
 
 const slides = [
   {
-    emoji: '🧵',
-    title: "You're about to open your shop.",
-    body: "Thousands of buyers in Zimbabwe are looking for what you sell. Let's get you in front of them."
+    icon: <Smartphone size={40} className="text-pink" />,
+    title: "the operational node.",
+    body: "Transform your vision into a high-performance digital terminal designed for the modern elite."
   },
   {
-    emoji: '⚡',
-    title: "Set up in under 2 minutes.",
-    body: "Add your shop name, your products, and your directions. That's it. Buyers find you and reach out on WhatsApp."
+    icon: <Zap size={40} className="text-lime" />,
+    title: "deploy instantly.",
+    body: "Minimal configuration, maximum throughput. Your inventory broadcasts globally via WhatsApp routing."
   },
   {
-    emoji: '📦',
-    title: "Every new drop becomes a story.",
-    body: "When you list something new it automatically appears as a story in the feed. Your followers see it first."
+    icon: <Package size={40} className="text-pink" />,
+    title: "inventory engine.",
+    body: "Manage stock units and capture sales with an operating system built for high-demand storefronts."
   },
   {
-    emoji: '💰',
-    title: "20 days completely free.",
-    body: "No payment needed to start. Your first 20 days are on us. After that it's just $4 or $8 a month."
+    icon: <ShieldCheck size={40} className="text-lime" />,
+    title: "verified identity.",
+    body: "Build trust with curated aesthetics. Designed to close sales, not just showcase them."
   },
   {
-    emoji: '🔥',
-    title: "Zimbabwe's closet is waiting.",
-    body: "You're joining the platform built for local fashion. Let's set up your shop."
+    icon: <Globe size={40} className="text-pink" />,
+    title: "sync once. live.",
+    body: "Your commerce node is ready for initial deployment. The future of commerce is curated."
   }
 ];
 
@@ -51,52 +52,68 @@ export const SellerOnboarding: React.FC<SellerOnboardingProps> = ({ onComplete }
   };
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-      <button 
-        onClick={handleSkip}
-        className="absolute top-12 right-6 text-[#888] text-[13px] font-medium"
-      >
-        Skip
-      </button>
+    <div className="fixed inset-0 bg-cream z-50 flex flex-col items-center justify-between py-16 px-8 overflow-hidden font-sans">
+      {/* Background Decor */}
+      <div className="absolute top-10 left-10 text-pink/10 -rotate-12"><Star size={100} fill="currentColor" /></div>
+      <div className="absolute bottom-10 right-10 text-charcoal/5 rotate-45"><Sparkles size={120} /></div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-10 text-center">
+      <header className="w-full flex justify-between items-center relative z-10">
+        <span className="text-xl font-display font-black tracking-tighter italic">thread<span className="text-pink">zw</span></span>
+        <button onClick={handleSkip} className="text-charcoal/40 text-[10px] font-black uppercase tracking-widest italic hover:text-pink transition-colors">
+           Bypass Protocol
+        </button>
+      </header>
+
+      <div className="flex-1 flex flex-col items-center justify-center text-center relative z-10 max-w-sm">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSlide}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.1 }}
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, ease: "circOut" }}
             className="flex flex-col items-center"
           >
-            <span className="text-[64px] mb-5">{slides[currentSlide].emoji}</span>
-            <h2 className="text-white text-[26px] font-bold leading-[1.2] mb-3 max-w-[280px]">
+            <div className="mb-12 relative">
+               <div className="w-28 h-28 glass rounded-full flex items-center justify-center border-charcoal border-2 shadow-[8px_8px_0_#F4A6C1]">
+                  {slides[currentSlide].icon}
+               </div>
+               <div className="absolute -top-4 -right-4"><Heart size={24} className="text-pink" fill="currentColor" /></div>
+            </div>
+            
+            <h2 className="text-5xl md:text-6xl font-display font-black mb-6 italic leading-[0.9]">
               {slides[currentSlide].title}
             </h2>
-            <p className="text-[#888] text-[15px] leading-[1.6] max-w-[280px]">
+            
+            <p className="italic-accent text-charcoal/60 text-lg mb-4">"The elite merchant operating system."</p>
+
+            <p className="text-charcoal text-[13px] leading-tight font-bold uppercase tracking-wide">
               {slides[currentSlide].body}
             </p>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      <div className="pb-20 flex flex-col items-center w-full">
-        <div className="flex gap-2 mb-8">
+      <footer className="w-full flex flex-col items-center gap-10 relative z-10 max-w-sm">
+        <div className="flex gap-3">
           {slides.map((_, i) => (
             <div 
-              key={i}
-              className={`h-[6px] rounded-full transition-all duration-300 ${currentSlide === i ? 'w-[18px] bg-[#FF2D78]' : 'w-[6px] bg-[#333]'}`}
+              key={`onboarding-slide-dot-${i}`}
+              className={`h-2 rounded-full transition-all duration-500 border border-charcoal/20 ${currentSlide === i ? 'w-12 bg-pink' : 'w-2 bg-charcoal/10'}`}
             />
           ))}
         </div>
 
         <button
           onClick={handleNext}
-          className="bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold text-[14px] px-[40px] py-[14px] rounded-full shadow-lg"
+          className="w-full h-16 bg-charcoal text-cream rounded-full font-black text-sm uppercase tracking-widest shadow-[8px_8px_0_#C6FF00] active:scale-95 transition-all flex items-center justify-center gap-3 italic mb-4"
         >
-          {currentSlide === slides.length - 1 ? "Let's Build →" : "Next →"}
+          {currentSlide === slides.length - 1 ? "Initialize Node" : "Next Engagement"}
+          <ArrowRight size={18} strokeWidth={3} />
         </button>
-      </div>
+        
+        <span className="text-[10px] font-bold uppercase tracking-widest text-charcoal/30">Verified Infrastructure Node Established 2026</span>
+      </footer>
     </div>
   );
 };

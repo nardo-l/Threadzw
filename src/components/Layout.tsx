@@ -1,294 +1,199 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Store, Search, Heart, User } from 'lucide-react';
+import React, { useRef, memo } from 'react';
+import { NavLink, useLocation, useNavigate, Outlet } from 'react-router-dom';
+import { 
+  LayoutDashboard, 
+  Package, 
+  ShoppingCart, 
+  User, 
+  Settings,
+  Bell,
+  Menu,
+  X,
+  CreditCard,
+  Plus,
+  ArrowUpRight
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useInventory } from '../context/InventoryContext';
-import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../App';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const t = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-  const { 
-    onboardingComplete, 
-    sellerFlowState, 
-    buyerFlowState, 
-    setBuyerFlowState, 
-    communityScreen, 
-    setCommunityScreen,
-  } = useInventory();
-  const { session, isGuest } = useAuth();
-  const { showRenewalPaywall, paywallType } = useSubscription();
-  const [isPillVisible, setIsPillVisible] = useState(true);
-  const mainRef = useRef<HTMLDivElement>(null);
-
-  const isAuthScreen = ['/auth', '/login', '/signup', '/verify'].includes(location.pathname);
-  const isPaywallScreen = location.pathname.startsWith('/paywall');
-  const isShopCentre = location.pathname.startsWith('/shop-centre');
+  const { session, profile, signOut } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   
-  // Buyer Flow nav logic:
-  const isBuyerHidden = ['productDetail', 'shopProfile', 'quiz', 'quizResult', 'bestDresserEntry'].includes(buyerFlowState);
-  
-  // Community Flow nav logic:
-  const isCommunityHidden = ['quiz', 'quizResult', 'shareCard', 'bestDresserEntry', 'entrySuccess', 'bracket'].includes(communityScreen);
-  const isCommunityVisibleRoute = location.pathname.startsWith('/best-dresser') || location.pathname.startsWith('/community') || location.pathname.startsWith('/quiz');
+  const isTerminal = location.pathname.startsWith('/terminal');
 
-  // Show nav only if authenticated OR guest, 
-  // AND it's not an auth screen
-  // AND NOT on the expired paywall (hidden on State 2, visible on State 1)
-  const isExpiredPaywallActive = (showRenewalPaywall && paywallType === 'expired') || (isPaywallScreen && paywallType === 'expired');
-
-  // Seller Flow nav logic:
-  const hiddenOnSellerStates = ['shopCentre_pendingCode', 'paywall_plan', 'paywall_payment', 'paywall_code', 'pending_code', 'enter_code', 'payment_received'].includes(sellerFlowState);
-  const isSellerHidden = isShopCentre && hiddenOnSellerStates;
-
-  // Main routes should generally ALWAYS show nav if on main tabs
-  const isMainRoute = ['/', '/shops', '/search', '/saved-items', '/profile', '/notifications'].includes(location.pathname);
-
-  const showNav = (session || isGuest) && 
-                 !isAuthScreen && 
-                 !isExpiredPaywallActive &&
-                 !isSellerHidden &&
-                 (isMainRoute || (!isBuyerHidden && !isCommunityHidden)) &&
-                 !location.pathname.startsWith('/new-listing');
-
-  const hideNav = !showNav;
-
-  useEffect(() => {
-    const handleInteraction = () => {
-      setIsPillVisible(true);
-    };
-
-    window.addEventListener('touchstart', handleInteraction);
-    window.addEventListener('mousedown', handleInteraction);
-
-    return () => {
-      window.removeEventListener('touchstart', handleInteraction);
-      window.removeEventListener('mousedown', handleInteraction);
-    };
-  }, []);
+  const navItems = [
+    { to: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
+    { to: '/terminal', icon: <Settings size={20} />, label: 'Terminal' },
+    { to: '/inventory', icon: <Package size={20} />, label: 'Inventory' },
+    { to: '/orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
+    { to: '/profile', icon: <User size={20} />, label: 'Node Account' },
+  ];
 
   return (
-    <div className="flex min-h-screen" style={{ background: t.bg_primary }}>
+    <div className="flex min-h-screen bg-[#0B0B0B] text-white font-sans">
       {/* Desktop Sidebar */}
-      {showNav && (
-        <aside 
-          className="hidden lg:flex w-[280px] flex-col sticky top-0 h-screen p-6"
-          style={{ borderRight: `1px solid ${t.border_secondary}` }}
+      <aside className="hidden lg:flex w-[260px] flex-col sticky top-0 h-screen border-r border-white/5 bg-[#0B0B0B] p-6">
+        <div 
+          onClick={() => navigate('/')}
+          className="mb-12 cursor-pointer flex items-center gap-2 group"
         >
-          <div 
-            onClick={() => navigate('/')}
-            className="mb-10 cursor-pointer"
-          >
-            <h1 className="text-[28px] font-pacifico leading-none" style={{ color: t.accent }}>thread</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] mt-1 font-bold" style={{ color: `${t.text_primary}4D` }}>The Marketplace</p>
+          <div className="w-8 h-8 bg-[#C6FF00] rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
+            <span className="text-black font-black text-lg italic">T</span>
           </div>
+          <h1 className="text-xl font-black uppercase italic tracking-tighter">thread<span className="text-[#C6FF00]">ZW</span></h1>
+        </div>
 
-          <nav className="flex flex-col gap-2">
-            <SidebarNavItem to="/" icon={<Home size={22} />} label="Home" />
-            <SidebarNavItem to="/shops" icon={<Store size={22} />} label="Shops" />
-            <SidebarNavItem to="/search" icon={<Search size={22} />} label="Search" />
-            <SidebarNavItem to="/profile" icon={<User size={22} />} label="Profile" />
-          </nav>
+        <nav className="flex flex-col gap-1.5">
+          {navItems.map((item) => (
+            <SidebarNavItem 
+              key={item.to} 
+              to={item.to} 
+              icon={item.icon} 
+              label={item.label} 
+              isActive={location.pathname === item.to}
+            />
+          ))}
+        </nav>
 
-          <div className="mt-auto pt-6 border-t" style={{ borderColor: t.border_secondary }}>
-            {session && (
-              <button 
-                onClick={() => navigate('/shop-centre')}
-                className="w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all active:scale-95"
-                style={{ background: t.gradient, color: 'white', boxShadow: t.shadow }}
-              >
-                <span>🏪</span>
-                Shop Centre
-              </button>
-            )}
-          </div>
-        </aside>
-      )}
-
-      {/* Main Container */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <main 
-          ref={mainRef}
-          className={`relative max-w-[1400px] mx-auto w-full flex-1 no-scrollbar lg:overflow-y-auto ${!hideNav ? 'pb-24 lg:pb-0' : ''}`}
-        >
-          <div className={`mx-auto w-full h-full ${!location.pathname.startsWith('/shop-centre') && !location.pathname.startsWith('/new-listing') && !location.pathname.startsWith('/product/') ? 'max-w-[430px] lg:max-w-none' : ''}`}>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={location.pathname}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="min-h-full flex flex-col"
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Floating Shop Centre Button (Mobile Only) */}
-          {location.pathname === '/' && session && (
-            <motion.button
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/shop-centre')}
-              className="lg:hidden fixed bottom-[96px] right-5 z-50 flex items-center gap-2 px-[18px] py-[10px] rounded-full transition-all"
-              style={{ background: t.gradient, boxShadow: t.shadow_lg }}
+        <div className="mt-auto flex flex-col gap-4">
+          {profile?.has_shop && (
+            <button 
+              onClick={() => window.open(`/shop/@${profile.handle}`, '_blank')}
+              className="w-full h-12 bg-[#151515] border border-white/5 rounded-xl flex items-center justify-between px-4 text-[12px] font-black uppercase tracking-widest hover:bg-white/5 transition-all group"
             >
-              <span className="text-[14px]">🏪</span>
-              <span className="text-white font-bold text-[13px]">Shop Centre</span>
-            </motion.button>
+              <span>Public Store</span>
+              <ArrowUpRight size={14} className="text-[#C6FF00] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </button>
           )}
+          
+          <button 
+            onClick={() => navigate('/new-listing')}
+            className="w-full h-14 bg-[#C6FF00] text-black rounded-xl flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[13px] italic shadow-xl shadow-[#C6FF00]/10 hover:shadow-[#C6FF00]/20 transition-all active:scale-95"
+          >
+            <Plus size={18} strokeWidth={3} /> Inject Unit
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile Header */}
+        <header className="lg:hidden flex items-center justify-between px-6 h-20 sticky top-0 z-[60] bg-[#0B0B0B]/80 backdrop-blur-xl border-b border-white/5">
+          <div className="flex items-center gap-2" onClick={() => navigate('/')}>
+             <div className="w-7 h-7 bg-[#C6FF00] rounded-lg flex items-center justify-center">
+              <span className="text-black font-black text-sm italic">T</span>
+            </div>
+            <h1 className="text-[18px] font-black uppercase italic tracking-tighter">thread<span className="text-[#C6FF00]">ZW</span></h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-zinc-400">
+              <Menu size={24} />
+            </button>
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-x-hidden">
+          <div className="max-w-[1200px] mx-auto p-6 md:p-10">
+            {children}
+          </div>
         </main>
 
-        {/* Bottom Nav (Mobile/Tablet Only) */}
-        {!hideNav && (
-          <motion.div 
-            initial={{ y: 0, opacity: 1 }}
-            animate={{ 
-              y: isPillVisible ? 0 : 100,
-              opacity: isPillVisible ? 1 : 0
-            }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="lg:hidden fixed bottom-[24px] left-5 right-5 z-[50] text-center"
-          >
-            <nav 
-              className="backdrop-blur-xl rounded-[100px] px-2 py-[10px] flex items-center w-full max-w-[400px] mx-auto overflow-hidden border"
-              style={{ background: `${t.nav_bg}E6`, borderColor: t.nav_border, boxShadow: t.shadow_lg }}
-            >
-              <NavItem to="/" icon={<Home size={22} />} label="Home" />
-              <NavItem to="/shops" icon={<Store size={22} />} label="Shops" />
-              <NavItem to="/search" icon={<Search size={22} />} label="Search" />
-              <NavItem to="/profile" icon={<User size={22} />} label="Profile" />
-            </nav>
-          </motion.div>
-        )}
+        {/* Mobile Bottom Nav */}
+        <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[50] w-full px-6 max-w-[400px]">
+           <nav className="bg-[#151515]/90 backdrop-blur-2xl rounded-[32px] h-[72px] flex items-center justify-around shadow-2xl border border-white/5 px-2">
+              {navItems.slice(0, 4).map((item) => (
+                <MobileNavItem 
+                  key={item.to} 
+                  to={item.to} 
+                  icon={item.icon} 
+                  isActive={location.pathname === item.to} 
+                />
+              ))}
+              <button 
+                onClick={() => navigate('/profile')}
+                className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${location.pathname === '/profile' ? 'bg-[#C6FF00] text-black' : 'text-zinc-500'}`}
+              >
+                <User size={20} />
+              </button>
+           </nav>
+        </div>
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-[1000] flex justify-end">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="relative w-[80%] max-w-[300px] h-full bg-[#0B0B0B] border-l border-white/5 p-8 flex flex-col"
+            >
+              <div className="flex justify-between items-center mb-12">
+                <h2 className="text-xl font-black uppercase italic tracking-tighter">Menu</h2>
+                <button onClick={() => setIsMobileMenuOpen(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                 {navItems.map((item) => (
+                  <button
+                    key={item.to}
+                    onClick={() => {
+                      navigate(item.to);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl text-[14px] font-black uppercase tracking-widest italic ${location.pathname === item.to ? 'bg-[#C6FF00] text-black' : 'text-zinc-500 hover:bg-white/5'}`}
+                  >
+                    {item.icon} {item.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-auto space-y-4">
+                <button 
+                  onClick={() => signOut()}
+                  className="w-full h-14 border border-white/5 rounded-2xl text-zinc-500 font-black uppercase tracking-widest text-[11px] italic"
+                >
+                  Terminate Session
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
-const SidebarNavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
-  const t = useTheme();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { setBuyerFlowState } = useInventory();
-  
-  const getIsActive = () => {
-    if (to === '/') return location.pathname === '/';
-    if (to === '/shops') return location.pathname === '/shops' || location.pathname.startsWith('/shop/');
-    if (to === '/search') return location.pathname === '/search';
-    if (to === '/profile') {
-      return location.pathname === '/profile' || 
-             location.pathname.startsWith('/profile/') || 
-             location.pathname === '/saved-items' || 
-             location.pathname === '/notifications';
-    }
-    return false;
-  };
+const SidebarNavItem = ({ to, icon, label, isActive }: any) => (
+  <NavLink
+    to={to}
+    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-[14px] font-black uppercase tracking-widest italic transition-all ${isActive ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'text-zinc-500 hover:bg-white/5 hover:text-white'}`}
+  >
+    {icon}
+    <span>{label}</span>
+  </NavLink>
+);
 
-  const isActive = getIsActive();
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    if (to === '/') setBuyerFlowState('home');
-    else if (to === '/shops') setBuyerFlowState('shops');
-    else if (to === '/search') setBuyerFlowState('search');
-    navigate(to);
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={`
-        w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all duration-300
-        ${isActive 
-          ? 'font-bold' 
-          : 'hover:bg-white/5'}
-      `}
-      style={{
-        background: isActive ? t.accent_bg : 'transparent',
-        color: isActive ? t.accent : t.text_secondary
-      }}
-    >
-      <div className={`${isActive ? 'scale-110' : 'scale-100'} transition-transform duration-300`}>
-        {icon}
-      </div>
-      <span className="text-[15px]">{label}</span>
-      {isActive && (
-        <motion.div 
-          layoutId="sidebar-active"
-          className="ml-auto w-1.5 h-1.5 rounded-full"
-          style={{ background: t.accent }}
-        />
-      )}
-    </button>
-  );
-};
-
-const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => {
-  const t = useTheme();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { setBuyerFlowState } = useInventory();
-  
-  const getIsActive = () => {
-    if (to === '/') return location.pathname === '/';
-    if (to === '/shops') return location.pathname === '/shops' || location.pathname.startsWith('/shop/');
-    if (to === '/shop-centre') {
-      return location.pathname.startsWith('/shop-centre') || 
-             location.pathname.startsWith('/dashboard') ||
-             location.pathname.startsWith('/new-listing') ||
-             location.pathname.startsWith('/orders') ||
-             location.pathname.startsWith('/subscription-management');
-    }
-    if (to === '/search') return location.pathname === '/search';
-    if (to === '/profile') {
-      return location.pathname === '/profile' || 
-             location.pathname.startsWith('/profile/') || 
-             location.pathname === '/saved-items' || 
-             location.pathname === '/notifications' ||
-             location.pathname === '/settings';
-    }
-    return false;
-  };
-
-  const isActive = getIsActive();
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    
-    // Direct state setting as requested by user
-    if (to === '/') {
-      setBuyerFlowState('home');
-    } else if (to === '/shops') {
-      setBuyerFlowState('shops');
-    } else if (to === '/search') {
-      setBuyerFlowState('search');
-    } else if (to === '/profile') {
-      // Profile is a separate screen, not handled by BuyerJourney state-switcher
-    }
-    
-    navigate(to);
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={`
-        flex-1 h-full flex flex-col items-center justify-center gap-1 transition-all duration-300 relative
-        ${isActive ? '' : 'hover:scale-110'}
-      `}
-      style={{ color: isActive ? t.nav_active : t.nav_inactive }}
-    >
-      {icon}
-      {isActive && (
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full" style={{ background: t.nav_active }} />
-      )}
-    </button>
-  );
-};
+const MobileNavItem = ({ to, icon, isActive }: any) => (
+  <NavLink
+    to={to}
+    className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${isActive ? 'bg-[#C6FF00] text-black shadow-xl shadow-[#C6FF00]/20' : 'text-zinc-500'}`}
+  >
+    {icon}
+  </NavLink>
+);

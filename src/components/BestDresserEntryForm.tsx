@@ -144,7 +144,7 @@ export const BestDresserEntryForm: React.FC<BestDresserEntryFormProps> = ({ onCl
               '4. Top 10 nominees featured on the app homepage',
               '5. Winner announced at end of the month'
             ].map((item, i) => (
-              <li key={i} className="text-xs font-sans text-white/90 leading-relaxed">{item}</li>
+              <li key={`success-item-${i}`} className="text-xs font-sans text-white/90 leading-relaxed">{item}</li>
             ))}
           </ul>
         </motion.div>
@@ -176,7 +176,7 @@ export const BestDresserEntryForm: React.FC<BestDresserEntryFormProps> = ({ onCl
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           {[...Array(20)].map((_, i) => (
             <div 
-              key={i}
+              key={`confetti-${i}`}
               className="confetti"
               style={{
                 left: `${Math.random() * 100}%`,
@@ -214,7 +214,7 @@ export const BestDresserEntryForm: React.FC<BestDresserEntryFormProps> = ({ onCl
               '4. Submit the form below with your Instagram details',
               '5. We review entries and announce nominees within 48 hours'
             ].map((rule, i) => (
-              <li key={i} className="text-[13px] font-sans text-white leading-relaxed">{rule}</li>
+              <li key={`rule-item-${i}`} className="text-[13px] font-sans text-white leading-relaxed">{rule}</li>
             ))}
           </ol>
           <div className="pt-2 border-t border-white/5">
@@ -374,7 +374,7 @@ export const BestDresserEntryForm: React.FC<BestDresserEntryFormProps> = ({ onCl
                             '3. Tap \'Copy Link\'',
                             '4. Paste it in the field above'
                           ].map((step, i) => (
-                            <li key={i} className="text-xs font-sans text-muted leading-relaxed">{step}</li>
+                            <li key={`link-help-step-${i}`} className="text-xs font-sans text-muted leading-relaxed">{step}</li>
                           ))}
                         </ul>
                       </motion.div>

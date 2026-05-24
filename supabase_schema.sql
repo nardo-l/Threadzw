@@ -48,7 +48,7 @@ create table if not exists public.shops (
   plan text,
   access_code text,
   trial_started_at timestamp with time zone default now(),
-  trial_ends_at timestamp with time zone default (now() + interval '28 days'),
+  trial_ends_at timestamp with time zone default (now() + interval '3 days'),
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
@@ -205,14 +205,24 @@ create policy "Owners can delete own products"
 create or replace function update_updated_at()
 returns trigger as $$
 begin
-  new.updated_at = now();
-  return new;
+  if TG_OP = 'DELETE' then
+    return OLD;
+  end if;
+  if NEW is not null then
+    begin
+      NEW.updated_at := now();
+    exception when others then
+      null;
+    end;
+  end if;
+  return NEW;
 end;
 $$ language plpgsql;
 
 create trigger products_updated_at
   before update on public.products
   for each row execute procedure update_updated_at();
+
 
 -- ORDERS TABLE (manual sales log)
 create table if not exists public.orders (
@@ -495,6 +505,59 @@ values
   ('best_dresser', null)
 on conflict (card_key) do nothing;
 
+-- MUSIFY TABLES
+create table if not exists public.musify_tracks_cache (
+  id uuid default gen_random_uuid() primary key,
+  artist_name text not null,
+  tracks jsonb not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create unique index if not exists musify_tracks_cache_artist_name_idx on public.musify_tracks_cache (lower(artist_name));
+
+alter table public.musify_tracks_cache enable row level security;
+create policy "Anyone can view musify tracks cache" on public.musify_tracks_cache for select using (true);
+create policy "Service role can manage tracks cache" on public.musify_tracks_cache for all using (true); -- Usually handled by edge functions with service role
+
+create table if not exists public.musify_leaderboard (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade,
+  display_name text,
+  handle text,
+  avatar_url text,
+  artist_name text,
+  score integer,
+  best_percentage integer,
+  max_streak integer,
+  difficulty text,
+  created_at timestamptz default now()
+);
+
+alter table public.musify_leaderboard enable row level security;
+create policy "Anyone can view musify leaderboard" on public.musify_leaderboard for select using (true);
+create policy "Authenticated users can insert musify score" on public.musify_leaderboard for insert with check (auth.uid() = user_id);
+
+create table if not exists public.musify_sessions (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade,
+  artist_query text,
+  artist_name text,
+  artist_image text,
+  total_questions integer,
+  correct_count integer,
+  score_percentage integer,
+  max_streak integer,
+  difficulty text,
+  platform text default 'native' check (platform in ('native', 'muzify')),
+  completed boolean default false,
+  created_at timestamptz default now()
+);
+
+alter table public.musify_sessions enable row level security;
+create policy "Users can view own musify sessions" on public.musify_sessions for select using (auth.uid() = user_id);
+create policy "Users can insert own musify sessions" on public.musify_sessions for insert with check (auth.uid() = user_id);
+
 -- Ensure community-cards bucket exists
 insert into storage.buckets (id, name, public)
 select 'community-cards', 'community-cards', true
@@ -560,7 +623,7 @@ alter table public.shops
   add column if not exists plan text,
   add column if not exists access_code text,
   add column if not exists trial_started_at timestamp with time zone default now(),
-  add column if not exists trial_ends_at timestamp with time zone default (now() + interval '28 days'),
+  add column if not exists trial_ends_at timestamp with time zone default (now() + interval '3 days'),
   add column if not exists featured_until timestamp with time zone;
 
 -- UPDATE PRODUCTS TABLE (add missing columns)
@@ -895,7 +958,16 @@ create trigger tr_payments_notify_code_sent
 create or replace function public.tr_fn_update_admin_settings_timestamp()
 returns trigger as $function$
 begin
-  NEW.updated_at = now();
+  if TG_OP = 'DELETE' then
+    return OLD;
+  end if;
+  if NEW is not null then
+    begin
+      NEW.updated_at := now();
+    exception when others then
+      null;
+    end;
+  end if;
   return NEW;
 end;
 $function$ language plpgsql;
@@ -950,11 +1022,11 @@ as $function$
 begin
   if (tg_op = 'update') then
     if (old.trial_started_at is null and new.trial_started_at is not null) then
-      new.trial_ends_at := new.trial_started_at + interval '20 days';
+      new.trial_ends_at := new.trial_started_at + interval '3 days';
     end if;
   elsif (tg_op = 'insert') then
     if (new.trial_started_at is not null) then
-      new.trial_ends_at := new.trial_started_at + interval '20 days';
+      new.trial_ends_at := new.trial_started_at + interval '3 days';
     end if;
   end if;
   return new;

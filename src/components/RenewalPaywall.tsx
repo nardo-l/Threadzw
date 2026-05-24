@@ -51,7 +51,7 @@ export const RenewalPaywall: React.FC = () => {
               "Buyers cannot find your shop",
               "New enquiries are disabled"
             ].map((text, i) => (
-              <li key={i} className="flex items-center gap-3 text-sm text-[#888]">
+              <li key={`expired-note-${i}`} className="flex items-center gap-3 text-sm text-[#888]">
                 <X size={16} className="text-[#ef4444]" />
                 {text}
               </li>
@@ -72,7 +72,7 @@ export const RenewalPaywall: React.FC = () => {
               <h3 className="text-[20px] font-black text-white">Unlimited Products</h3>
             </div>
             <div className="text-right">
-              <span className="text-[28px] font-black text-white leading-none">$6</span>
+              <span className="text-[28px] font-black text-white leading-none">$9</span>
               <span className="text-[12px] text-[#666] block">monthly</span>
             </div>
           </div>
@@ -84,7 +84,7 @@ export const RenewalPaywall: React.FC = () => {
               "Direct WhatsApp connection",
               "Verified shop badge"
             ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-3">
+              <div key={`plan-feature-${i}`} className="flex items-center gap-3">
                 <div className="w-5 h-5 rounded-full bg-[#FF2D78] flex items-center justify-center">
                   <Check size={12} className="text-white" strokeWidth={3} />
                 </div>
@@ -134,7 +134,7 @@ export const RenewalPaywall: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[11px] font-bold text-[#888] uppercase tracking-widest">Monthly Amount</span>
-                  <span className="text-[24px] font-black text-[#FF2D78]">$6.00</span>
+                  <span className="text-[24px] font-black text-[#FF2D78]">$9.00</span>
                 </div>
               </div>
 
@@ -143,7 +143,7 @@ export const RenewalPaywall: React.FC = () => {
                   <CreditCard size={18} className="text-[#FF2D78]" />
                   <span className="text-[15px]">EcoCash or InnBucks</span>
                 </div>
-                <p className="text-[12px] text-[#888] leading-relaxed">You will be redirected to the Shop Centre instructions to send your $6 verification payment.</p>
+                <p className="text-[12px] text-[#888] leading-relaxed">You will be redirected to the Shop Centre instructions to send your $9 verification payment.</p>
               </div>
 
               <button 

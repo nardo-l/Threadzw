@@ -1,5 +1,6 @@
 {
-  "name": "Thread ZW",
-  "description": "Thread ZW is a Zimbabwean fashion marketplace to discover and shop outfits easily.",
-  "requestFramePermissions": []
+  "name": "ThreadZW",
+  "description": "WhatsApp-first storefront builder for African businesses. Streetwear SaaS for the next generation of entrepreneurs.",
+  "requestFramePermissions": ["autoplay", "encrypted-media", "picture-in-picture"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

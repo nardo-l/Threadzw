@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 
-import { useTheme } from '../App';
-
 interface AvatarProps {
   url?: string | null;
   size?: number;
@@ -19,10 +17,9 @@ export const Avatar: React.FC<AvatarProps> = ({
   className = '',
   style = {}
 }) => {
-  const t = useTheme();
   const [error, setError] = useState(false);
   
-  const resolvedRingColor = ringColor || t.accent;
+  const resolvedRingColor = ringColor || '#FF2D78';
   
   return (
     <div 
@@ -35,11 +32,11 @@ export const Avatar: React.FC<AvatarProps> = ({
         flexShrink: 0,
         border: ring 
           ? `2px solid ${resolvedRingColor}` 
-          : `2px solid ${t.border_secondary}`,
+          : `2px solid #222`,
         boxShadow: ring 
-          ? `0 0 0 2px ${t.accent_bg}`
+          ? `0 0 0 2px rgba(255,45,120,0.1)`
           : 'none',
-        background: t.gradient,
+        background: '#1a1a1a',
         ...style
       }}
     >
@@ -58,7 +55,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         <div style={{
           width: '100%',
           height: '100%',
-          background: t.gradient
+          background: '#1a1a1a'
         }} />
       )}
     </div>

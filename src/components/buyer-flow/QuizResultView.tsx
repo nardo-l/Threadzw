@@ -150,7 +150,7 @@ export const QuizResultView: React.FC = () => {
             <span className="text-white text-[38px] font-black font-bebas tracking-tight">
               {result.prefix}
             </span>
-            <span className="text-[42px] font-black font-bebas tracking-tight bg-linear-to-br from-[#9B27AF] to-[#FF2D78] bg-clip-text text-transparent italic">
+            <span className="text-[42px] font-black font-bebas tracking-tight bg-linear-to-br from-[#9B27AF] to-[#FF5FA2] bg-clip-text text-transparent italic">
               {result.name}
             </span>
           </div>
@@ -204,7 +204,7 @@ export const QuizResultView: React.FC = () => {
           transition={{ duration: 0.4, delay: 0.35 }}
           className="mt-8 px-6"
         >
-          <span className="text-[#FF2D78] text-[40px] font-serif leading-[0.6] block mb-1.5">"</span>
+          <span className="text-[#FF5FA2] text-[40px] font-serif leading-[0.6] block mb-1.5">"</span>
           <p className="text-white text-[15px] leading-[1.8] italic font-light">
             {result.message}
           </p>
@@ -220,7 +220,7 @@ export const QuizResultView: React.FC = () => {
           <div className="flex gap-2.5">
             <button 
               onClick={handleShare}
-              className="flex-1 h-[52px] bg-linear-to-r from-[#9B27AF] to-[#FF2D78] rounded-[12px] text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="flex-1 h-[52px] bg-linear-to-r from-[#9B27AF] to-[#FF5FA2] rounded-[12px] text-white font-bold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
               Share 📸
             </button>
@@ -236,7 +236,7 @@ export const QuizResultView: React.FC = () => {
             <button 
               onClick={handleDownload}
               disabled={downloading}
-              className="text-[#FF2D78] text-[13px] font-medium flex items-center gap-1.5"
+              className="text-[#FF5FA2] text-[13px] font-medium flex items-center gap-1.5"
             >
               {downloading ? <Loader2 size={14} className="animate-spin" /> : '⬇️'} Save Receipt
             </button>

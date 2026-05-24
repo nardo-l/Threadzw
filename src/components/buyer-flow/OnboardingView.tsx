@@ -34,14 +34,14 @@ export const OnboardingView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-black relative p-6">
+    <div className="flex flex-col min-h-screen bg-white relative p-8">
       {/* Skip Button */}
       <button 
         onClick={() => {
           setOnboardingComplete(true);
           setBuyerFlowState('home');
         }}
-        className="absolute top-8 right-6 text-[#888888] text-[13px] font-medium z-10"
+        className="absolute top-10 right-8 text-[#888888] text-[14px] font-bold z-10"
       >
         Skip
       </button>
@@ -50,17 +50,19 @@ export const OnboardingView: React.FC = () => {
         <AnimatePresence mode="wait">
           <motion.div 
             key={currentSlide}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.1 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="flex flex-col items-center max-w-[300px]"
+            className="flex flex-col items-center max-w-[320px]"
           >
-            <div className="text-[80px] mb-6">{slides[currentSlide].emoji}</div>
-            <h2 className="text-white font-bold text-[28px] mt-6 leading-tight">
+            <div className="w-32 h-32 bg-[#F5F5F5] rounded-[40px] flex items-center justify-center text-[64px] mb-10 shadow-sm">
+              {slides[currentSlide].emoji}
+            </div>
+            <h2 className="text-[#111111] font-bold text-[32px] mt-2 leading-tight tracking-tight">
               {slides[currentSlide].title}
             </h2>
-            <p className="text-[#888888] text-[15px] mt-3">
+            <p className="text-[#888888] text-[17px] mt-4 leading-relaxed">
               {slides[currentSlide].body}
             </p>
           </motion.div>
@@ -68,17 +70,17 @@ export const OnboardingView: React.FC = () => {
       </div>
 
       {/* Navigation section */}
-      <div className="flex flex-col items-center pb-10">
+      <div className="flex flex-col items-center pb-12">
         {/* Pagination Dots */}
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2.5 mb-10">
           {slides.map((_, i) => (
             <motion.div 
-              key={i}
+              key={`onboarding-dot-${i}`}
               animate={{ 
-                width: i === currentSlide ? 18 : 6,
-                backgroundColor: i === currentSlide ? '#FF2D78' : '#333333'
+                width: i === currentSlide ? 24 : 8,
+                backgroundColor: i === currentSlide ? '#FF5FA2' : '#EEEEEE'
               }}
-              className="h-1.5 rounded-full"
+              className="h-2 rounded-full"
             />
           ))}
         </div>
@@ -86,9 +88,9 @@ export const OnboardingView: React.FC = () => {
         {/* CTA Button */}
         <button 
           onClick={handleNext}
-          className="w-[160px] h-[52px] rounded-full bg-linear-to-br from-[#9B27AF] to-[#FF2D78] text-white font-bold text-[15px] shadow-lg flex items-center justify-center active:scale-[0.98] transition-transform"
+          className="w-full h-16 rounded-[24px] bg-gradient-to-br from-[#9B27AF] to-[#FF5FA2] text-white font-bold text-[16px] shadow-xl shadow-pink-500/20 flex items-center justify-center active:scale-[0.98] transition-all"
         >
-          {currentSlide === slides.length - 1 ? "Let's Go →" : "Next →"}
+          {currentSlide === slides.length - 1 ? "Start Shopping" : "Next Step"}
         </button>
       </div>
     </div>

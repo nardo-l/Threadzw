@@ -89,7 +89,7 @@ export const BestDresserEntry: React.FC = () => {
               <label className="text-white font-bold text-[13px]">Confirm the following *</label>
               <div className="space-y-4">
                  {checklistItems.map((item, i) => (
-                    <div key={i} className="flex gap-3 items-start" onClick={() => toggleCheck(i)}>
+                    <div key={`entry-check-${i}`} className="flex gap-3 items-start" onClick={() => toggleCheck(i)}>
                        <div className={`w-6 h-6 rounded-[6px] shrink-0 border-2 transition-all flex items-center justify-center
                          ${checks[i] ? 'bg-linear-to-br from-[#9B27AF] to-[#FF2D78] border-transparent' : 'bg-[#1a1a1a] border-[#333]'}`}>
                           {checks[i] && <Check className="text-white" size={14} strokeWidth={4} />}

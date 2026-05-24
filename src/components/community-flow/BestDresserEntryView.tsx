@@ -3,10 +3,8 @@ import { ArrowLeft, Instagram, Link as LinkIcon, Check, Send, AlertCircle } from
 import { useInventory } from '../../context/InventoryContext';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { useTheme } from '../../App';
 
 export const BestDresserEntryView: React.FC = () => {
-  const t = useTheme();
   const { setCommunityScreen } = useInventory();
   const { user } = useAuth();
   const [handle, setHandle] = useState('');
@@ -14,6 +12,8 @@ export const BestDresserEntryView: React.FC = () => {
   const [checkedRules, setCheckedRules] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const ACCENT_COLOR = '#FF2D78';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,58 +54,52 @@ export const BestDresserEntryView: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col pt-safe overflow-y-auto" style={{ background: t.bg_primary }}>
+    <div className="fixed inset-0 z-50 flex flex-col pt-safe overflow-y-auto bg-[#F5F5F5]">
       {/* Header */}
       <div 
-        className="px-5 py-4 flex items-center justify-between sticky top-0 backdrop-blur-md z-30 border-b"
-        style={{ background: `${t.bg_primary}CC`, borderColor: t.border_secondary }}
+        className="px-5 py-4 flex items-center justify-between sticky top-0 backdrop-blur-md z-30 bg-[#F5F5F5]/80"
       >
         <button onClick={() => setCommunityScreen('bestDresser')}>
-          <ArrowLeft style={{ color: t.text_primary }} size={24} />
+          <ArrowLeft className="text-[#111111]" size={24} />
         </button>
-        <h1 className="font-bold text-[16px]" style={{ color: t.text_primary }}>Enter Contest</h1>
+        <h1 className="font-bold text-[16px] text-[#111111]">Enter Contest</h1>
         <div className="w-6" />
       </div>
 
       <div className="px-6 py-8">
         <div className="mb-8 text-center">
-           <div className="w-20 h-20 bg-linear-to-br from-[#9B27AF] to-[#FF2D78] rounded-[24px] mx-auto flex items-center justify-center shadow-lg transform rotate-3">
+           <div className="w-20 h-20 bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] rounded-[24px] mx-auto flex items-center justify-center shadow-lg transform rotate-3">
               <Instagram size={40} className="text-white" />
            </div>
-           <h2 className="text-[24px] font-black mt-6 tracking-tight" style={{ color: t.text_primary }}>Submit Your Fit</h2>
-           <p className="text-[15px] mt-2" style={{ color: t.text_tertiary }}>Enter the April 2026 contest</p>
+           <h2 className="text-[28px] font-bold mt-6 tracking-tight text-[#111111]">Submit Your Fit</h2>
+           <p className="text-[15px] mt-2 text-[#888888]">Enter the April 2026 contest</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* IG Handle */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-widest mb-2 block" style={{ color: t.text_tertiary }}>
+            <label className="text-[11px] font-bold uppercase tracking-widest mb-2 block text-[#888888]">
               INSTAGRAM HANDLE
             </label>
             <div className="relative group">
-               <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold" style={{ color: t.accent }}>@</div>
+               <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#FF2D78]">@</div>
                <input 
                  type="text"
                  value={handle}
                  onChange={(e) => setHandle(e.target.value)}
                  placeholder="your.handle"
-                 className="w-full h-[56px] border rounded-[16px] pl-9 pr-4 font-medium outline-none transition-all"
-                 style={{ 
-                   background: t.bg_secondary, 
-                   borderColor: t.border_secondary, 
-                   color: t.text_primary 
-                 }}
+                 className="w-full h-[56px] border border-[#EFEFEF] rounded-[16px] pl-9 pr-4 font-medium outline-none transition-all bg-white text-[#111111] focus:border-[#FF2D78] shadow-sm"
                />
             </div>
           </div>
 
           {/* Post Link */}
           <div>
-            <label className="text-[11px] font-bold uppercase tracking-widest mb-2 block" style={{ color: t.text_tertiary }}>
+            <label className="text-[11px] font-bold uppercase tracking-widest mb-2 block text-[#888888]">
               LINK TO INSTAGRAM POST
             </label>
             <div className="relative group">
-               <div className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: t.amber }}>
+               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FFC107]">
                   <LinkIcon size={18} />
                </div>
                <input 
@@ -113,32 +107,27 @@ export const BestDresserEntryView: React.FC = () => {
                  value={link}
                  onChange={(e) => setLink(e.target.value)}
                  placeholder="https://instagram.com/p/..."
-                 className="w-full h-[56px] border rounded-[16px] pl-11 pr-4 font-medium outline-none transition-all"
-                 style={{ 
-                   background: t.bg_secondary, 
-                   borderColor: t.border_secondary, 
-                   color: t.text_primary 
-                 }}
+                 className="w-full h-[56px] border border-[#EFEFEF] rounded-[16px] pl-11 pr-4 font-medium outline-none transition-all bg-white text-[#111111] focus:border-[#FF2D78] shadow-sm"
                />
             </div>
-            <p className="text-[11px] mt-2" style={{ color: t.text_tertiary }}>
+            <p className="text-[11px] mt-2 text-[#888888]">
                Tip: Go to your post, tap ... and select "Copy Link"
             </p>
           </div>
 
           {/* Checklist */}
-          <div className="mt-8 p-5 border rounded-[20px] space-y-4" style={{ background: t.bg_card, borderColor: t.border_secondary }}>
-             <h3 className="font-bold text-[14px]" style={{ color: t.text_primary }}>Contest Rules</h3>
+          <div className="mt-8 p-6 border border-[#EFEFEF] rounded-[24px] space-y-4 bg-white shadow-sm">
+             <h3 className="font-bold text-[14px] text-[#111111]">Contest Rules</h3>
              {[
                "Photo is clear & high quality",
                "You are tagging @threadzw",
                "Your account is public",
              ].map((rule, i) => (
-                <div key={i} className="flex gap-3 items-center">
-                   <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: `${t.accent}1A` }}>
-                      <Check size={12} style={{ color: t.accent }} />
+                <div key={`contest-rule-${i}`} className="flex gap-3 items-center">
+                   <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#FF2D78]/10">
+                      <Check size={12} className="text-[#FF2D78]" />
                    </div>
-                   <span className="text-[13px]" style={{ color: t.text_secondary }}>{rule}</span>
+                   <span className="text-[13px] text-[#888888]">{rule}</span>
                 </div>
              ))}
 
@@ -148,24 +137,24 @@ export const BestDresserEntryView: React.FC = () => {
                 className="mt-4 flex items-center gap-3 group"
              >
                 <div className={`
-                   w-6 h-6 rounded-[6px] border-2 flex items-center justify-center transition-all
-                   ${checkedRules ? 'border-transparent' : ''}
+                   w-6 h-6 rounded-[8px] border-2 flex items-center justify-center transition-all
+                   ${checkedRules ? 'border-transparent' : 'border-[#EFEFEF]'}
                 `}
                 style={{ 
-                  background: checkedRules ? t.accent : 'transparent',
-                  borderColor: checkedRules ? t.accent : t.border_subtle
+                  background: checkedRules ? ACCENT_COLOR : 'transparent',
+                  borderColor: checkedRules ? ACCENT_COLOR : '#EFEFEF'
                 }}
                 >
                    {checkedRules && <Check size={16} className="text-white" />}
                 </div>
-                <span className={`text-[13px] text-left leading-tight ${checkedRules ? 'font-medium' : ''}`} style={{ color: checkedRules ? t.text_primary : t.text_tertiary }}>
+                <span className={`text-[13px] text-left leading-tight ${checkedRules ? 'font-medium text-[#111111]' : 'text-[#888888]'}`}>
                   I confirm my entry meets all the rules and guidelines for this month.
                 </span>
              </button>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 bg-[#ef44441a] p-4 rounded-[12px] border border-[#ef444433]" style={{ color: t.red }}>
+            <div className="flex items-center gap-2 bg-red-50 p-4 rounded-[16px] border border-red-100 text-red-600">
                <AlertCircle size={18} />
                <span className="text-[13px] font-medium">{error}</span>
             </div>
@@ -176,16 +165,12 @@ export const BestDresserEntryView: React.FC = () => {
             disabled={isLoading}
             className={`
               w-full h-[64px] rounded-full font-bold text-[16px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all
+              ${isLoading ? 'bg-white border border-[#EFEFEF] text-[#888888] cursor-not-allowed' : 'bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] text-white cursor-pointer'}
             `}
-            style={{ 
-              background: isLoading ? t.bg_secondary : t.gradient,
-              color: isLoading ? t.text_tertiary : 'white',
-              cursor: isLoading ? 'not-allowed' : 'pointer'
-            }}
           >
             {isLoading ? (
                <>
-                 <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: `${t.text_tertiary}33`, borderTopColor: t.text_tertiary }} />
+                 <div className="w-5 h-5 border-2 rounded-full animate-spin border-[#888888]/30 border-t-[#888888]" />
                  <span>Submitting...</span>
                </>
             ) : (
@@ -197,7 +182,7 @@ export const BestDresserEntryView: React.FC = () => {
           </button>
         </form>
 
-        <p className="mt-8 text-[11px] text-center leading-relaxed max-w-[240px] mx-auto" style={{ color: t.text_tertiary }}>
+        <p className="mt-8 text-[11px] text-center leading-relaxed max-w-[240px] mx-auto text-[#888888]">
            Entries are reviewed by our team manually. You will be notified if you are nominated for the bracket.
         </p>
       </div>

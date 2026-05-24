@@ -1,32 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useInventory } from '../../context/InventoryContext';
-import { ChevronLeft, Camera, Edit2, Plus, X, Search, Check } from 'lucide-react';
+import { ChevronLeft, Camera, X, Search, Check, Smartphone, Globe, ChevronRight, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ZIMBABWE_TOWNS } from '../../constants';
 
 const categories = [
-  // ... categories same
+  { emoji: '👕', label: 'Clothing', value: 'clothing' },
+  { emoji: '👟', label: 'Sneakers', value: 'sneakers' },
+  { emoji: '📻', label: 'Tech & Gadgets', value: 'electronics' },
+  { emoji: '💍', label: 'Accessories', value: 'accessories' },
+  { emoji: '📦', label: 'General Goods', value: 'other' }
 ];
-
-const TIME_OPTIONS = [
-  '6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM', '8:30 AM',
-  '9:00 AM', '9:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-  '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM', '2:00 PM', '2:30 PM',
-  '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM', '5:00 PM', '5:30 PM',
-  '6:00 PM', '6:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM',
-  '9:00 PM', '9:30 PM', '10:00 PM'
-];
-
-const DEFAULT_HOURS = {
-  monday:    { open: true,  openTime: '8:00 AM', closeTime: '6:00 PM' },
-  tuesday:   { open: true,  openTime: '8:00 AM', closeTime: '6:00 PM' },
-  wednesday: { open: true,  openTime: '8:00 AM', closeTime: '6:00 PM' },
-  thursday:  { open: true,  openTime: '8:00 AM', closeTime: '6:00 PM' },
-  friday:    { open: true,  openTime: '8:00 AM', closeTime: '6:00 PM' },
-  saturday:  { open: true,  openTime: '8:00 AM', closeTime: '5:00 PM' },
-  sunday:    { open: false, openTime: '9:00 AM', closeTime: '3:00 PM' }
-};
 
 interface ShopSetupFormProps {
   onNext: () => void;
@@ -35,120 +20,14 @@ interface ShopSetupFormProps {
 export const ShopSetupForm: React.FC<ShopSetupFormProps> = ({ onNext }) => {
   const { shopFormData, setShopFormData, setSellerFlowState } = useInventory();
   const [handleAvailability, setHandleAvailability] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
-  const [localHandle, setLocalHandle] = useState(shopFormData.handle);
+  const [localHandle, setLocalHandle] = useState(shopFormData.handle || '');
   const [showTownPicker, setShowTownPicker] = useState(false);
   const [townSearch, setTownSearch] = useState('');
   
-  const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
-  const [tradingHours, setTradingHours] = useState(shopFormData.tradingHoursJson || DEFAULT_HOURS);
-
-  const formatTradingHours = (hours: any) => {
-    const daysArr = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    const dayAbbr: any = {
-      monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu',
-      friday: 'Fri', saturday: 'Sat', sunday: 'Sun'
-    };
-    
-    const lines = [];
-    let rangeStart = null;
-    let rangeHours = null;
-    
-    daysArr.forEach((day, index) => {
-      const h = hours[day];
-      const dayName = dayAbbr[day];
-      
-      if (!h.open) {
-        if (rangeStart !== null) {
-          lines.push(
-            rangeStart === dayAbbr[daysArr[index-1]]
-              ? `${rangeStart}: ${rangeHours}`
-              : `${rangeStart}–${dayAbbr[daysArr[index-1]]}: ${rangeHours}`
-          );
-          rangeStart = null;
-          rangeHours = null;
-        }
-        lines.push(`${dayName}: Closed`);
-      } else {
-        const hoursStr = `${h.openTime}–${h.closeTime}`;
-        
-        if (rangeHours === hoursStr) {
-          // Continue
-        } else {
-          if (rangeStart !== null) {
-            lines.push(
-              rangeStart === dayAbbr[daysArr[index-1]]
-                ? `${rangeStart}: ${rangeHours}`
-                : `${rangeStart}–${dayAbbr[daysArr[index-1]]}: ${rangeHours}`
-            );
-          }
-          rangeStart = dayName;
-          rangeHours = hoursStr;
-        }
-      }
-      
-      if (index === daysArr.length - 1 && rangeStart !== null) {
-        lines.push(
-          rangeStart === dayName
-            ? `${rangeStart}: ${rangeHours}`
-            : `${rangeStart}–${dayName}: ${rangeHours}`
-        );
-      }
-    });
-    
-    return lines.join('\n');
-  };
-
   useEffect(() => {
-    const formatted = formatTradingHours(tradingHours);
-    setShopFormData({ 
-      tradingHours: formatted,
-      tradingHoursJson: tradingHours
-    });
-  }, [tradingHours]);
-
-  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Banner must be less than 5MB');
-        return;
-      }
-      const preview = URL.createObjectURL(file);
-      setShopFormData({ bannerFile: file, bannerPreview: preview });
-    }
-  };
-
-  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('Avatar must be less than 2MB');
-        return;
-      }
-      const preview = URL.createObjectURL(file);
-      setShopFormData({ avatarFile: file, avatarPreview: preview });
-    }
-  };
-
-  const applyToAll = (openTime: string, closeTime: string) => {
-    const newHours = { ...tradingHours };
-    Object.keys(newHours).forEach(day => {
-      if (newHours[day as keyof typeof tradingHours].open) {
-        newHours[day as keyof typeof tradingHours] = {
-          ...newHours[day as keyof typeof tradingHours],
-          openTime,
-          closeTime
-        };
-      }
-    });
-    setTradingHours(newHours);
-  };
-
-  // Debounced check
-  useEffect(() => {
-    if (localHandle.length < 3) {
+    if (!localHandle || localHandle.length < 3) {
       setHandleAvailability('idle');
       return;
     }
@@ -156,456 +35,196 @@ export const ShopSetupForm: React.FC<ShopSetupFormProps> = ({ onNext }) => {
     setHandleAvailability('checking');
     const timer = setTimeout(async () => {
       const cleanHandle = localHandle.toLowerCase().replace(/[^a-z0-9_]/g, '');
-      const { data } = await supabase
-        .from('shops')
-        .select('id')
-        .eq('handle', cleanHandle)
-        .maybeSingle();
-
+      const { data } = await supabase.from('shops').select('id').eq('handle', cleanHandle).maybeSingle();
       setHandleAvailability(data ? 'taken' : 'available');
       setShopFormData({ handle: cleanHandle });
     }, 500);
-
     return () => clearTimeout(timer);
   }, [localHandle, setShopFormData]);
 
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const preview = URL.createObjectURL(file);
+      setShopFormData({ avatarFile: file, avatarPreview: preview });
+    }
+  };
+
   const isFormValid = 
-    shopFormData.name.trim().length > 0 &&
+    shopFormData.name?.trim()?.length > 0 &&
     handleAvailability === 'available' &&
-    shopFormData.category !== '' &&
-    shopFormData.town !== '' &&
-    shopFormData.directions.trim().length > 0 &&
-    shopFormData.tradingHours.trim().length > 0 &&
-    shopFormData.whatsapp.trim().length > 0;
+    shopFormData.category &&
+    shopFormData.town &&
+    shopFormData.whatsapp?.trim()?.length > 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white relative">
-      {/* Top Bar */}
-      <div className="sticky top-0 bg-black z-10 px-4 py-4 flex items-center border-b border-[#111]">
-        <button 
-          onClick={() => setSellerFlowState('seller_onboarding')} 
-          className="p-2 -ml-2"
-        >
-          <ChevronLeft className="w-6 h-6 text-white" />
+    <div className="flex flex-col min-h-screen bg-[#0B0B0B] text-white font-sans">
+      {/* Header */}
+      <header className="px-6 py-8 flex items-center justify-between border-b border-white/5">
+        <button onClick={() => setSellerFlowState('seller_onboarding')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+          <ChevronLeft size={20} />
         </button>
-        <h1 className="flex-1 text-center font-bold text-[18px]">Set Up Your Shop</h1>
-        <div className="w-10" /> {/* Spacer */}
-      </div>
+        <h1 className="text-lg font-black uppercase italic tracking-tighter">Node Configuration</h1>
+        <div className="w-10" />
+      </header>
 
       {/* Progress */}
-      <div className="flex flex-col items-center py-4 bg-black">
-        <span className="text-[#888] text-[12px] mb-2">Step 1 of 2</span>
-        <div className="w-full px-6">
-           <div className="h-[3px] w-full bg-[#1a1a1a] rounded-full overflow-hidden">
-              <div className="h-full bg-[#c8f135] w-1/2" />
-           </div>
-        </div>
+      <div className="px-6 py-4">
+         <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Deployment Sync</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#C6FF00] italic">Protocol Alpha</span>
+         </div>
+         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <motion.div initial={{ width: 0 }} animate={{ width: '50%' }} className="h-full bg-[#C6FF00]" />
+         </div>
       </div>
 
-      {/* Form */}
-      <div className="flex-1 overflow-y-auto px-5 py-6 pb-32">
-        {/* IMAGE UPLOAD SECTION */}
-        <div className="mb-14">
-          <div 
-            onClick={() => bannerInputRef.current?.click()}
-            className="w-full h-[140px] bg-[#111] border border-dashed border-[#333] rounded-[14px] overflow-hidden relative cursor-pointer"
-          >
-            {shopFormData.bannerPreview ? (
-              <img 
-                src={shopFormData.bannerPreview} 
-                className="w-full h-full object-cover" 
-                alt="Banner preview"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full">
-                <span className="text-2xl">🖼️</span>
-                <span className="text-white text-[13px] mt-1.5 font-bold">Add Shop Banner</span>
-                <span className="text-[#888] text-[10px] mt-1">Recommended: 1200×400px</span>
-              </div>
-            )}
-            
-            {shopFormData.bannerPreview && (
-              <div className="absolute bottom-[10px] right-[10px] bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-2">
-                <span className="text-white text-[11px] font-bold">✏️ Change Banner</span>
-              </div>
-            )}
-            
-            <input 
-              type="file"
-              ref={bannerInputRef}
-              onChange={handleBannerSelect}
-              accept="image/*"
-              className="hidden"
-            />
-          </div>
-
-          {/* AVATAR UPLOAD */}
-          <div className="relative flex justify-center -mt-10">
-            <div 
-              onClick={() => avatarInputRef.current?.click()}
-              className="w-20 h-20 rounded-full border-[3px] border-black overflow-hidden relative cursor-pointer bg-gradient-to-tr from-[#9B27AF] to-[#FF2D78] flex items-center justify-center shadow-xl"
-            >
-              {shopFormData.avatarPreview ? (
-                <img 
-                  src={shopFormData.avatarPreview} 
-                  className="w-full h-full object-cover" 
-                  alt="Avatar preview"
-                />
-              ) : (
-                <Plus className="text-white w-7 h-7" strokeWidth={3} />
-              )}
-              
-              {shopFormData.avatarPreview && (
-                <div className="absolute bottom-0 right-0 w-6 h-6 bg-[#FF2D78] rounded-full border-2 border-black flex items-center justify-center">
-                  <Edit2 className="text-white w-2.5 h-2.5" />
-                </div>
-              )}
-              
-              <input 
-                type="file"
-                ref={avatarInputRef}
-                onChange={handleAvatarSelect}
-                accept="image/*"
-                className="hidden"
-              />
-            </div>
-          </div>
-        </div>
-
-        <h2 className="text-white font-bold text-[15px] mb-6">Your Shop</h2>
-
-        {/* Shop Name */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-white font-bold text-[13px]">Shop Name *</label>
-            <span className="text-[#888] text-[10px]">{shopFormData.name.length}/30</span>
-          </div>
-          <input 
-            type="text"
-            maxLength={30}
-            value={shopFormData.name}
-            onChange={(e) => setShopFormData({ name: e.target.value })}
-            placeholder="e.g. KickZone, VintageVault, DrapeZW"
-            className="w-full h-[50px] bg-[#111] border border-[#222] rounded-[10px] px-4 text-[15px] focus:border-[#FF2D78] outline-none transition-all"
-          />
-        </div>
-
-        {/* Handle */}
-        <div className="mb-6">
-          <label className="text-white font-bold text-[13px] block mb-2">Your Handle *</label>
-          <div className="flex items-center bg-[#111] border border-[#222] rounded-[10px] focus-within:border-[#FF2D78] transition-all overflow-hidden">
-            <div className="px-3 border-r border-[#222] h-[50px] flex items-center">
-              <span className="text-[#888] text-[16px]">@</span>
-            </div>
-            <input 
-              type="text"
-              value={localHandle}
-              onChange={(e) => setLocalHandle(e.target.value)}
-              placeholder="yourshopname"
-              className="flex-1 h-[50px] bg-transparent px-4 text-[15px] outline-none"
-            />
-          </div>
-          <div className="flex justify-between items-center mt-1">
-             <span className="text-[#888] text-[11px]">Letters, numbers and underscores only. Min 3 characters.</span>
-             {handleAvailability === 'checking' && <span className="text-[#888] text-[11px]">Checking...</span>}
-             {handleAvailability === 'taken' && <span className="text-[#FF2D78] text-[11px]">✗ Handle taken</span>}
-             {handleAvailability === 'available' && <span className="text-[#22c55e] text-[11px]">✓ Available</span>}
-          </div>
-        </div>
-
-        {/* Category */}
-        <div className="mb-6">
-          <label className="text-white font-bold text-[13px] block mb-2">What do you sell? *</label>
-          <div className="grid grid-cols-2 gap-2 mt-3">
-             {[
-               { emoji: '👕', label: 'Clothing', value: 'clothing' },
-               { emoji: '👟', label: 'Sneakers', value: 'sneakers' },
-               { emoji: '🧥', label: 'Thrift & Vintage', value: 'thrift' },
-               { emoji: '🔥', label: 'Streetwear', value: 'streetwear' },
-               { emoji: '💍', label: 'Accessories', value: 'accessories' },
-               { emoji: '📱', label: 'Electronics', value: 'electronics' },
-               { emoji: '👠', label: 'Footwear', value: 'footwear' },
-               { emoji: '⚽', label: 'Sportswear', value: 'sportswear' },
-               { emoji: '👔', label: 'Formal Wear', value: 'formal' },
-               { emoji: '🧒', label: 'Kids Fashion', value: 'kids' },
-               { emoji: '👜', label: 'Bags', value: 'bags' },
-               { emoji: '💄', label: 'Beauty', value: 'beauty' },
-               { emoji: '📦', label: 'Other', value: 'other' }
-             ].map(c => (
-                <button
-                  key={c.value}
-                  onClick={() => setShopFormData({ category: c.value })}
-                  className={`flex items-center gap-2 p-3 rounded-[10px] border transition-all text-left
-                    ${shopFormData.category === c.value 
-                      ? 'bg-[rgba(255,45,120,0.08)] border-[#FF2D78] text-[#FF2D78]' 
-                      : 'bg-[#111] border-[#222] text-white opacity-80'}`}
-                >
-                  <span className="text-[18px]">{c.emoji}</span>
-                  <span className="text-[13px] font-medium">{c.label}</span>
-                </button>
-             ))}
-          </div>
-        </div>
-
-        {/* About Your Shop */}
-        <div className="mb-6">
-          <div className="flex items-center gap-1 mb-2">
-            <label className="text-white font-bold text-[13px]">About Your Shop</label>
-            <span className="text-[#888] text-[11px]">(optional)</span>
-          </div>
-          <textarea 
-            rows={3}
-            maxLength={200}
-            value={shopFormData.description}
-            onChange={(e) => setShopFormData({ description: e.target.value })}
-            placeholder="Tell buyers what makes your shop different..."
-            className="w-full bg-[#111] border border-[#222] rounded-[10px] p-4 text-[15px] focus:border-[#FF2D78] outline-none transition-all resize-none"
-          />
-          <div className="text-right mt-1">
-             <span className="text-[#888] text-[10px]">{shopFormData.description.length}/200</span>
-          </div>
-        </div>
-
-        {/* Town */}
-        <div className="mb-6">
-           <label className="text-white font-bold text-[13px] block mb-2">Your Shop's Town *</label>
-           <button 
-             type="button"
-             onClick={() => setShowTownPicker(true)}
-             className="w-full bg-[rgba(255,45,120,0.08)] border border-[rgba(255,45,120,0.3)] rounded-[10px] p-[14px] flex justify-between items-center"
+      {/* Form Content */}
+      <div className="flex-1 overflow-y-auto px-6 py-8 pb-40 space-y-10">
+        
+        {/* Avatar / Logo Section */}
+        <div className="flex flex-col items-center gap-4">
+           <div 
+             onClick={() => avatarInputRef.current?.click()}
+             className="w-24 h-24 md:w-32 md:h-32 rounded-[32px] md:rounded-[48px] bg-white/5 border border-dashed border-white/20 flex flex-col items-center justify-center relative group cursor-pointer overflow-hidden shadow-2xl transition-all hover:border-[#C6FF00]/50"
            >
-              <span className="text-[#FF2D78] text-[14px] font-medium">📍 {shopFormData.town || 'Select Town'}</span>
-              <span className="text-[#888] text-[11px]">Change →</span>
-           </button>
+              {shopFormData.avatarPreview ? (
+                <img src={shopFormData.avatarPreview} className="w-full h-full object-cover" />
+              ) : (
+                <>
+                  <Camera className="size-6 md:size-8 text-zinc-700 mb-2 transition-colors group-hover:text-[#C6FF00]" />
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-zinc-500 italic group-hover:text-white transition-colors">Visual ID</span>
+                </>
+              )}
+              <input ref={avatarInputRef} type="file" onChange={handleAvatarSelect} className="hidden" accept="image/*" />
+           </div>
+           <p className="text-[8px] font-black uppercase tracking-widest text-[#C6FF00] italic">Node ID logo required</p>
         </div>
 
-        {/* Directions */}
-        <div className="mb-6">
-          <label className="text-white font-bold text-[13px] block mb-2">How to Find Your Shop *</label>
-          <textarea 
-            rows={4}
-            value={shopFormData.directions}
-            onChange={(e) => setShopFormData({ directions: e.target.value })}
-            placeholder="e.g. Eastlea Shopping Centre, Shop 14, Ground Floor. Opposite Chicken Inn. Look for the orange sign."
-            className="w-full bg-[#111] border border-[#222] rounded-[10px] p-4 text-[15px] focus:border-[#FF2D78] outline-none transition-all resize-none"
-          />
-        </div>
+        {/* Basic Metadata */}
+        <div className="space-y-6">
+           <InputGroup label="Commercial Entity Name" placeholder="e.g. SoloTech HRE">
+              <input 
+                value={shopFormData.name || ''} 
+                onChange={(e) => setShopFormData({ name: e.target.value })}
+                className="w-full h-12 md:h-14 bg-black border border-white/5 rounded-xl md:rounded-2xl px-5 text-sm font-bold focus:border-[#C6FF00] focus:ring-1 focus:ring-[#C6FF00]/20 transition-all outline-none" 
+              />
+           </InputGroup>
 
-        {/* TRADING HOURS PICKER */}
-        <div className="mb-8">
-          <label className="text-white font-bold text-[13px] block mb-3">Trading Hours *</label>
-          
-          <div className="bg-[#111] border border-[#222] rounded-[14px] overflow-hidden">
-            {Object.keys(tradingHours).map((day, index, arr) => {
-              const h = tradingHours[day as keyof typeof tradingHours];
-              const dayCapitalized = day.charAt(0).toUpperCase() + day.slice(1);
-              
-              const parseTime = (t: string) => {
-                const [time, period] = t.split(' ');
-                let [hours, mins] = time.split(':').map(Number);
-                if (period === 'PM' && hours !== 12) hours += 12;
-                if (period === 'AM' && hours === 12) hours = 0;
-                return hours * 60 + mins;
-              };
-              const isValid = parseTime(h.closeTime) > parseTime(h.openTime);
+           <InputGroup label="Network Handle (@)">
+              <div className="relative">
+                 <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600 font-bold">@</span>
+                 <input 
+                    value={localHandle} 
+                    onChange={(e) => setLocalHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                    className="w-full h-12 md:h-14 bg-black border border-white/5 rounded-xl md:rounded-2xl pl-10 pr-5 text-sm font-bold focus:border-[#C6FF00] focus:ring-1 focus:ring-[#C6FF00]/20 transition-all outline-none" 
+                    placeholder="solotech_node"
+                 />
+                 <div className="absolute right-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    {handleAvailability === 'checking' && <div className="w-4 h-4 border-2 border-[#C6FF00]/30 border-t-[#C6FF00] rounded-full animate-spin" />}
+                    {handleAvailability === 'available' && <Check size={16} className="text-[#C6FF00]" />}
+                    {handleAvailability === 'taken' && <X size={16} className="text-red-500" />}
+                 </div>
+              </div>
+           </InputGroup>
 
-              return (
-                <div key={day} className={`p-4 ${index !== arr.length - 1 ? 'border-b border-[#1a1a1a]' : ''}`}>
-                  <div className="flex items-center">
-                    {/* Toggle */}
-                    <button 
-                      onClick={() => setTradingHours(prev => ({ 
-                        ...prev, 
-                        [day]: { ...prev[day as keyof typeof tradingHours], open: !prev[day as keyof typeof tradingHours].open } 
-                      }))}
-                      className={`w-9 h-5 rounded-full relative transition-all duration-300 ${h.open ? 'bg-[#FF2D78]' : 'bg-[#333]'}`}
+           <InputGroup label="Market Category">
+              <div className="grid grid-cols-2 gap-2 md:gap-3">
+                 {categories.map(c => (
+                    <button
+                      key={c.value}
+                      onClick={() => setShopFormData({ category: c.value })}
+                      className={`h-12 md:h-14 rounded-xl md:rounded-2xl border flex items-center gap-3 px-4 transition-all ${shopFormData.category === c.value ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00]' : 'bg-black border-white/5 text-zinc-500'}`}
                     >
-                      <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${h.open ? 'left-5' : 'left-1'}`} />
+                       <span className="text-lg">{c.emoji}</span>
+                       <span className="text-[10px] md:text-[11px] font-black uppercase tracking-widest italic">{c.label}</span>
                     </button>
-                    
-                    <span className="text-white font-bold text-[14px] ml-2.5">{dayCapitalized}</span>
-                    
-                    {!h.open ? (
-                      <span className="ml-auto text-[#888] text-[12px] font-bold">Closed</span>
-                    ) : (
-                      <div className="ml-auto flex items-center gap-2">
-                        <div className="flex flex-col items-center">
-                          <span className="text-[#666] text-[8px] uppercase font-bold mb-1">Open</span>
-                          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-2 py-1">
-                            <select 
-                              value={h.openTime}
-                              onChange={(e) => setTradingHours(prev => ({ 
-                                ...prev, 
-                                [day]: { ...prev[day as keyof typeof tradingHours], openTime: e.target.value } 
-                              }))}
-                              className="bg-transparent text-white text-[11px] outline-none border-none"
-                            >
-                              {TIME_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center">
-                          <span className="text-[#666] text-[8px] uppercase font-bold mb-1">Close</span>
-                          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg px-2 py-1">
-                            <select 
-                              value={h.closeTime}
-                              onChange={(e) => setTradingHours(prev => ({ 
-                                ...prev, 
-                                [day]: { ...prev[day as keyof typeof tradingHours], closeTime: e.target.value } 
-                              }))}
-                              className="bg-transparent text-white text-[11px] outline-none border-none"
-                            >
-                              {TIME_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                            </select>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {h.open && !isValid && (
-                    <p className="text-[#ef4444] text-[10px] mt-2 font-bold text-right italic">Close must be after open</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Quick Presets */}
-          <div className="flex items-center justify-between mt-4 px-1">
-            <span className="text-[#888] text-[11px]">Apply to all open days:</span>
-            <div className="flex gap-2">
-              {[
-                { label: '9–5', open: '9:00 AM', close: '5:00 PM' },
-                { label: '8–6', open: '8:00 AM', close: '6:00 PM' },
-                { label: '8–8', open: '8:00 AM', close: '8:00 PM' }
-              ].map(p => (
-                <button
-                  key={p.label}
-                  onClick={() => applyToAll(p.open, p.close)}
-                  className="bg-[#1a1a1a] text-[#888] text-[11px] font-bold px-3 py-1.5 rounded-full border border-[#2a2a2a] active:bg-[#FF2D78] active:text-white transition-all"
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-          </div>
+                 ))}
+              </div>
+           </InputGroup>
         </div>
 
-        {/* WhatsApp */}
-        <div className="mb-6">
-          <label className="text-white font-bold text-[13px] block mb-1">Shop WhatsApp *</label>
-          <p className="text-[#888] text-[11px] mb-3">Buyers will contact you on this number.</p>
-          <input 
-            type="tel"
-            value={shopFormData.whatsapp}
-            onChange={(e) => setShopFormData({ whatsapp: e.target.value })}
-            placeholder="+263 7X XXX XXXX"
-            className="w-full h-[50px] bg-[#111] border border-[#222] rounded-[10px] px-4 text-[15px] focus:border-[#FF2D78] outline-none transition-all"
-          />
-        </div>
+        {/* Location & Routing */}
+        <div className="space-y-6 pt-6 border-t border-white/5">
+           <InputGroup label="Geospatial Hub (Town)">
+              <button 
+                onClick={() => setShowTownPicker(true)}
+                className="w-full h-12 md:h-14 bg-black border border-white/5 rounded-xl md:rounded-2xl px-5 text-sm font-bold flex items-center justify-between group hover:border-[#C6FF00]/30 transition-all italic text-zinc-300"
+              >
+                 <div className="flex items-center gap-3 uppercase">
+                   <Globe size={16} className="text-[#C6FF00]" />
+                   {shopFormData.town || 'Select Hub'}
+                 </div>
+                 <ChevronRight size={16} className="text-zinc-700" />
+              </button>
+           </InputGroup>
 
-        {/* Instagram */}
-        <div className="mb-10">
-          <div className="flex items-center gap-1 mb-2">
-            <label className="text-white font-bold text-[13px]">Instagram Handle</label>
-            <span className="text-[#888] text-[11px]">(optional)</span>
-          </div>
-          <div className="flex items-center bg-[#111] border border-[#222] rounded-[10px] focus-within:border-[#FF2D78] transition-all overflow-hidden">
-            <div className="px-3 border-r border-[#222] h-[50px] flex items-center">
-              <span className="text-[#888] text-[16px]">@</span>
-            </div>
-            <input 
-              type="text"
-              value={shopFormData.instagram}
-              onChange={(e) => setShopFormData({ instagram: e.target.value })}
-              placeholder="yourshop"
-              className="flex-1 h-[50px] bg-transparent px-4 text-[15px] outline-none"
-            />
-          </div>
+           <InputGroup label="WhatsApp Routing">
+              <div className="relative">
+                 <Smartphone size={16} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" />
+                 <input 
+                    value={shopFormData.whatsapp || ''} 
+                    onChange={(e) => setShopFormData({ whatsapp: e.target.value })}
+                    className="w-full h-12 md:h-14 bg-black border border-white/5 rounded-xl md:rounded-2xl pl-12 pr-5 text-sm font-bold focus:border-[#C6FF00] focus:ring-1 focus:ring-[#C6FF00]/20 transition-all outline-none" 
+                    placeholder="+263 712 345 678"
+                 />
+              </div>
+           </InputGroup>
+
+           <InputGroup label="In-Depth Directions">
+              <textarea 
+                value={shopFormData.directions || ''} 
+                onChange={(e) => setShopFormData({ directions: e.target.value })}
+                className="w-full bg-black border border-white/5 rounded-2xl p-5 text-sm font-bold focus:border-[#C6FF00] focus:ring-1 focus:ring-[#C6FF00]/20 transition-all outline-none min-h-[120px] resize-none" 
+                placeholder="e.g. Eastlea Shopping Center, Suite 12. Opposite post office."
+              />
+           </InputGroup>
         </div>
       </div>
 
-      {/* Next Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black border-t border-[#111] p-[16px] pb-[32px] z-20">
-         {isFormValid ? (
-            <button
-              onClick={onNext}
-              className="w-full h-[54px] bg-linear-to-r from-[#9B27AF] to-[#FF2D78] rounded-full text-white font-bold text-[14px] flex items-center justify-center gap-2"
-            >
-              Next — Activate Free Trial →
-            </button>
-         ) : (
-            <button
-              disabled
-              className="w-full h-[54px] bg-[#1a1a1a] rounded-full text-[#555] font-bold text-[14px] pointer-events-none"
-            >
-              Fill all required fields
-            </button>
-         )}
+      {/* Footer CTA */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0B0B0B] via-[#0B0B0B] to-transparent">
+         <button 
+           disabled={!isFormValid}
+           onClick={onNext}
+           className="w-full h-14 md:h-16 bg-[#C6FF00] text-black rounded-2xl md:rounded-3xl font-black uppercase tracking-widest italic flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all disabled:opacity-30 disabled:grayscale text-xs md:text-sm"
+         >
+            Initialize Node <ArrowRight size={18} strokeWidth={3} />
+         </button>
       </div>
-      {/* Town Picker */}
+
+      {/* Town Picker Sheet */}
       <AnimatePresence>
         {showTownPicker && (
           <>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 z-[100] backdrop-blur-sm"
-              onClick={() => setShowTownPicker(false)}
-            />
-            <motion.div 
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              className="fixed inset-x-0 bottom-0 bg-[#0d0d0d] rounded-t-[32px] z-[101] flex flex-col max-h-[85vh] border-t border-[#222]"
-            >
-              <div className="p-6 flex flex-col h-full">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-white text-xl font-bold">Select Town</h3>
-                  <button onClick={() => setShowTownPicker(false)} className="p-2">
-                    <X size={20} className="text-white" />
-                  </button>
-                </div>
-                
-                <div className="relative mb-4">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#555]" size={18} />
-                  <input 
-                    type="text"
-                    value={townSearch}
-                    onChange={(e) => setTownSearch(e.target.value)}
-                    placeholder="Search town..."
-                    className="w-full h-12 bg-[#111] border border-[#222] rounded-[14px] pl-11 pr-4 text-white placeholder:text-[#444] focus:border-[#FF2D78] outline-none"
-                    autoFocus
-                  />
-                </div>
-
-                <div className="overflow-y-auto no-scrollbar space-y-2 pb-10">
-                  {ZIMBABWE_TOWNS.filter(t => t.toLowerCase().includes(townSearch.toLowerCase())).map(town => (
-                    <button 
-                      key={town}
-                      type="button"
-                      onClick={() => {
-                        setShopFormData({ town });
-                        setShowTownPicker(false);
-                        setTownSearch('');
-                      }}
-                      className={`w-full p-4 rounded-2xl flex items-center justify-between text-left transition-all ${
-                        shopFormData.town === town ? 'bg-[#FF2D78] text-white' : 'bg-[#111] text-[#888] border border-[#222]'
-                      }`}
-                    >
-                      <span className="font-bold">{town}</span>
-                      {shopFormData.town === town && <Check size={18} />}
-                    </button>
-                  ))}
-                  {ZIMBABWE_TOWNS.filter(t => t.toLowerCase().includes(townSearch.toLowerCase())).length === 0 && (
-                    <div className="text-center py-10">
-                      <p className="text-[#444] text-[14px]">No towns found for "{townSearch}"</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm" onClick={() => setShowTownPicker(false)} />
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} className="fixed inset-x-0 bottom-0 z-[101] max-h-[80vh] bg-[#151515] border-t border-white/10 rounded-t-[40px] flex flex-col">
+               <div className="p-8 flex flex-col gap-6 h-full">
+                  <div className="flex justify-between items-center">
+                     <h3 className="text-xl font-black uppercase italic tracking-tighter">SELECT HUB</h3>
+                     <button onClick={() => setShowTownPicker(false)}><X size={24} /></button>
+                  </div>
+                  <div className="relative">
+                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-600" />
+                     <input 
+                       value={townSearch} 
+                       onChange={(e) => setTownSearch(e.target.value)}
+                       className="w-full h-12 bg-black border border-white/5 rounded-xl pl-12 pr-5 text-sm font-bold outline-none focus:border-[#C6FF00]" 
+                       placeholder="Search regions..." 
+                     />
+                  </div>
+                  <div className="overflow-y-auto space-y-2 pb-10">
+                     {ZIMBABWE_TOWNS.filter(t => t.toLowerCase().includes(townSearch.toLowerCase())).map(t => (
+                        <button
+                          key={t}
+                          onClick={() => { setShopFormData({ town: t }); setShowTownPicker(false); }}
+                          className={`w-full p-4 rounded-xl text-left font-black uppercase tracking-widest italic text-xs transition-colors ${shopFormData.town === t ? 'bg-[#C6FF00] text-black' : 'hover:bg-white/5 '}`}
+                        >
+                           {t}
+                        </button>
+                     ))}
+                  </div>
+               </div>
             </motion.div>
           </>
         )}
@@ -613,3 +232,10 @@ export const ShopSetupForm: React.FC<ShopSetupFormProps> = ({ onNext }) => {
     </div>
   );
 };
+
+const InputGroup = ({ label, children }: any) => (
+  <div className="space-y-3">
+     <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic block">{label}</label>
+     {children}
+  </div>
+);

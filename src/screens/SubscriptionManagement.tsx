@@ -86,7 +86,7 @@ export const SubscriptionManagement: React.FC = () => {
     const { error } = await renewSubscription({
       plan: 'shop',
       billingCycle: 'monthly',
-      amountPaid: 6,
+      amountPaid: 9,
       paynowReference: `TZW-REACTIVATE-${Date.now()}`,
     });
 
@@ -141,7 +141,7 @@ export const SubscriptionManagement: React.FC = () => {
 
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-syne font-bold text-primary">
-                $6
+                $9
               </span>
               <span className="text-[10px] font-mono text-muted uppercase">
                 /month
@@ -179,7 +179,7 @@ export const SubscriptionManagement: React.FC = () => {
                 "Direct WhatsApp connection",
                 "Priority seller support"
               ].map((f, i) => (
-                <li key={i} className="flex items-center gap-3 text-sm text-light font-sans font-light">
+                <li key={`sub-feature-${i}`} className="flex items-center gap-3 text-sm text-light font-sans font-light">
                   <Check size={16} className="text-primary" />
                   {f}
                 </li>

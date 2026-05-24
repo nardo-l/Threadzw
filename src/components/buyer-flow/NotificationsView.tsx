@@ -18,7 +18,6 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useInventory } from '../../context/InventoryContext';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import { useTheme } from '../../App';
 
 type NotificationType = 
   | 'new_drop' | 'price_drop' | 'low_stock' | 'restock' 
@@ -38,7 +37,6 @@ interface Notification {
 }
 
 export const NotificationsView: React.FC = () => {
-  const t = useTheme();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { setBuyerFlowState, setCurrentShopId, setCurrentProductId } = useInventory();
@@ -169,41 +167,46 @@ export const NotificationsView: React.FC = () => {
 
   const getIcon = (type: NotificationType) => {
     const iconSize = 20;
+    const accent = '#FF5FA2';
+    const accent_bg = '#FF5FA21A';
+    const green = '#22c55e';
+    const amber = '#f59e0b';
+    const blue = '#3b82f6';
+    const red = '#ef4444';
+    
     switch (type) {
-      case 'new_drop': return { icon: <Tag size={iconSize} />, color: t.accent, bg: t.accent_bg };
-      case 'price_drop': return { icon: <TrendingDown size={iconSize} />, color: t.green, bg: `${t.green}1A` };
-      case 'low_stock': return { icon: <AlertTriangle size={iconSize} />, color: t.amber, bg: `${t.amber}1A` };
-      case 'restock': return { icon: <LineChart size={iconSize} />, color: t.blue, bg: `${t.blue}1A` };
+      case 'new_drop': return { icon: <Tag size={iconSize} />, color: accent, bg: accent_bg };
+      case 'price_drop': return { icon: <TrendingDown size={iconSize} />, color: green, bg: `${green}1A` };
+      case 'low_stock': return { icon: <AlertTriangle size={iconSize} />, color: amber, bg: `${amber}1A` };
+      case 'restock': return { icon: <LineChart size={iconSize} />, color: blue, bg: `${blue}1A` };
       case 'new_shop': return { icon: <Store size={iconSize} />, color: '#9333ea', bg: '#9333ea1A' };
-      case 'trial_reminder': return { icon: <Clock size={iconSize} />, color: t.red, bg: `${t.red}1A` };
-      case 'payment_confirmed': return { icon: <CheckCircle2 size={iconSize} />, color: t.green, bg: `${t.green}1A` };
-      case 'best_dresser_nominee': return { icon: <StarIcon size={iconSize} />, color: t.accent, bg: t.accent_bg };
-      case 'voting_open': return { icon: <Bell size={iconSize} />, color: t.blue, bg: `${t.blue}1A` };
-      case 'voting_reminder': return { icon: <Bell size={iconSize} />, color: t.amber, bg: `${t.amber}1A` };
-      case 'round_win': return { icon: <Trophy size={iconSize} />, color: t.amber, bg: `${t.amber}1A` };
-      case 'final_win': return { icon: <Trophy size={iconSize} />, color: t.amber, bg: `${t.amber}1A` };
-      default: return { icon: <Bell size={iconSize} />, color: t.text_tertiary, bg: t.bg_secondary };
+      case 'trial_reminder': return { icon: <Clock size={iconSize} />, color: red, bg: `${red}1A` };
+      case 'payment_confirmed': return { icon: <CheckCircle2 size={iconSize} />, color: green, bg: `${green}1A` };
+      case 'best_dresser_nominee': return { icon: <StarIcon size={iconSize} />, color: accent, bg: accent_bg };
+      case 'voting_open': return { icon: <Bell size={iconSize} />, color: blue, bg: `${blue}1A` };
+      case 'voting_reminder': return { icon: <Bell size={iconSize} />, color: amber, bg: `${amber}1A` };
+      case 'round_win': return { icon: <Trophy size={iconSize} />, color: amber, bg: `${amber}1A` };
+      case 'final_win': return { icon: <Trophy size={iconSize} />, color: amber, bg: `${amber}1A` };
+      default: return { icon: <Bell size={iconSize} />, color: '#888', bg: '#1a1a1a' };
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen text-sans pb-[100px]" style={{ background: t.bg_primary }}>
+    <div className="flex flex-col min-h-screen text-sans pb-[100px] bg-black">
       {/* Header */}
       <div 
-        className="px-6 flex items-center justify-between py-5 sticky top-0 backdrop-blur-xl z-20 border-b"
-        style={{ background: `${t.bg_primary}CC`, borderColor: t.border_secondary }}
+        className="px-6 flex items-center justify-between py-5 sticky top-0 backdrop-blur-xl z-20 border-b bg-black/80 border-[#1a1a1a]"
       >
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/profile')} className="p-2 -ml-2" style={{ color: t.text_primary }}>
+          <button onClick={() => navigate('/profile')} className="p-2 -ml-2 text-white">
             <ArrowLeft size={22} />
           </button>
-          <h1 className="text-[20px] font-bold" style={{ color: t.text_primary }}>Notifications</h1>
+          <h1 className="text-[20px] font-bold text-white">Notifications</h1>
         </div>
         {unreadCount > 0 && (
           <button 
             onClick={markAllRead}
-            className="text-[13px] font-bold active:scale-95 transition-transform"
-            style={{ color: t.accent }}
+            className="text-[13px] font-bold active:scale-95 transition-transform text-[#FF5FA2]"
           >
             Mark all read
           </button>
@@ -218,10 +221,10 @@ export const NotificationsView: React.FC = () => {
             onClick={() => setFilter(f as any)}
             className={`px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap transition-all border`}
             style={{ 
-              backgroundColor: filter === f ? t.accent : t.bg_card,
-              borderColor: filter === f ? t.accent : t.border_secondary,
-              color: filter === f ? '#fff' : t.text_secondary,
-              boxShadow: filter === f ? `0 4px 12px ${t.accent}4D` : 'none'
+              backgroundColor: filter === f ? '#FF5FA2' : '#111',
+              borderColor: filter === f ? '#FF5FA2' : '#222',
+              color: filter === f ? '#FFFFFF' : '#888888',
+              boxShadow: filter === f ? `0 4px 12px #FF5FA24D` : 'none'
             }}
           >
             {f}
@@ -233,15 +236,15 @@ export const NotificationsView: React.FC = () => {
       <div className="flex-1 px-6 space-y-3">
         {loading ? (
           Array(6).fill(0).map((_, i) => (
-            <div key={i} className="h-[80px] rounded-[16px] animate-pulse" style={{ background: t.bg_card }} />
+            <div key={`notification-shimmer-${i}`} className="h-[80px] rounded-[20px] animate-pulse bg-[#111] border border-[#222]" />
           ))
         ) : filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-4" style={{ background: t.bg_card }}>
-              <Bell size={24} style={{ color: t.text_tertiary }} />
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-[#111] shadow-sm">
+              <Bell size={28} className="text-[#444]" />
             </div>
-            <h3 className="font-bold text-[16px]" style={{ color: t.text_primary }}>No notifications yet</h3>
-            <p className="text-[13px] max-w-[200px] mt-1" style={{ color: t.text_secondary }}>
+            <h3 className="font-bold text-[18px] text-white">No notifications yet</h3>
+            <p className="text-[14px] max-w-[220px] mt-2 text-[#888] leading-relaxed">
               We'll let you know when something exciting happens.
             </p>
           </div>
@@ -257,41 +260,35 @@ export const NotificationsView: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   onClick={() => handleNotificationClick(n)}
-                  className={`p-4 rounded-[16px] border transition-all active:scale-[0.98] flex items-start gap-4 cursor-pointer`}
-                  style={{ 
-                    background: n.read ? t.bg_primary : t.bg_card, 
-                    borderColor: n.read ? t.border_secondary : t.border_secondary 
-                  }}
+                  className={`p-5 rounded-[24px] border transition-all active:scale-[0.98] flex items-start gap-4 cursor-pointer shadow-sm ${n.read ? 'bg-[#111]/40 border-[#222]' : 'bg-[#111] border-[#333] shadow-[0_4px_16px_rgba(0,0,0,0.2)]'}`}
                 >
                   <div 
-                    className="w-10 h-10 rounded-[12px] flex items-center justify-center shrink-0 shadow-sm" 
+                    className="w-11 h-11 rounded-[16px] flex items-center justify-center shrink-0" 
                     style={{ backgroundColor: bg, color: color }}
                   >
                     {icon}
                   </div>
 
                   <div className="flex-1 min-w-0 pt-0.5">
-                    <div className="flex items-center justify-between mb-0.5">
+                    <div className="flex items-center justify-between mb-1">
                       <p 
-                        className={`text-[14px] font-bold truncate`}
-                        style={{ color: n.read ? t.text_secondary : t.text_primary }}
+                        className={`text-[15px] font-bold truncate ${n.read ? 'text-[#888]' : 'text-white'}`}
                       >
                         {n.title}
                       </p>
                       {!n.read && (
                         <div 
-                          className="w-2 h-2 rounded-full shrink-0" 
-                          style={{ background: t.accent, boxShadow: `0 0 8px ${t.accent}66` }} 
+                          className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#FF5FA2]" 
+                          style={{ boxShadow: `0 0 8px #FF5FA266` }} 
                         />
                       )}
                     </div>
                     <p 
-                      className={`text-[12px] leading-[1.4] line-clamp-2`}
-                      style={{ color: n.read ? t.text_tertiary : t.text_secondary }}
+                      className={`text-[13px] leading-[1.5] line-clamp-2 font-medium ${n.read ? 'text-[#555]' : '#888'}`}
                     >
                       {n.body}
                     </p>
-                    <p className="text-[10px] mt-2 font-mono uppercase tracking-wider" style={{ color: t.text_tertiary }}>
+                    <p className="text-[11px] mt-3 font-bold uppercase tracking-wider text-[#444]">
                       {formatDistanceToNow(parseISO(n.created_at), { addSuffix: true })}
                     </p>
                   </div>

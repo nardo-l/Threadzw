@@ -134,7 +134,7 @@ export const PaymentReceivedView: React.FC<{ myShop: any; onActivated: () => voi
         <div className="grid grid-cols-6 gap-2 mb-10 transition-all">
           {code.map((char, i) => (
             <input
-              key={i}
+              key={`code-input-char-${i}`}
               ref={(el) => { inputRefs.current[i] = el; }}
               type="text"
               maxLength={1}

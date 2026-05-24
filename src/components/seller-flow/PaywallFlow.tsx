@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ChevronRight, X } from 'lucide-react';
+import { Check, X, Smartphone, ShieldCheck, ArrowRight, MessageCircle } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { toast } from 'sonner';
 
 interface PaywallFlowProps {
   myShop: any;
@@ -13,273 +14,150 @@ interface PaywallFlowProps {
 export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated }) => {
   const { session } = useAuth();
   const { setSellerFlowState } = useInventory();
-  const [selectedPlan, setSelectedPlan] = useState<'standard' | 'pro'>((myShop?.plan === 'pro' ? 'pro' : 'standard') as 'standard' | 'pro');
   const [whatsappNumber, setWhatsappNumber] = useState(myShop?.whatsapp || '');
   const [loading, setLoading] = useState(false);
-  const [showPlanSelector, setShowPlanSelector] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-  const handlePlanChange = async (newPlan: 'standard' | 'pro') => {
-    setSelectedPlan(newPlan);
-    setShowPlanSelector(false);
-    
-    try {
-      await supabase
-        .from('shops')
-        .update({
-          plan: newPlan,
-          monthly_price: newPlan === 'standard' ? 4 : 8
-        })
-        .eq('id', myShop.id);
-    } catch (err) {
-      console.error('Error updating plan:', err);
-    }
-  };
 
   const handleSubmitPayment = async () => {
     if (!whatsappNumber.trim()) {
-      setToast({ message: 'Enter your WhatsApp number.', type: 'error' });
+      toast.error('Enter your WhatsApp number.');
       return;
     }
     
     setLoading(true);
     try {
+      // Record the pending payment
       const { error: paymentError } = await supabase
         .from('payments')
         .insert({
           shop_id: myShop.id,
           owner_id: session?.user?.id,
           whatsapp_number: whatsappNumber.trim(),
-          plan: selectedPlan,
-          amount: selectedPlan === 'pro' ? 8 : 4,
+          plan: 'standard',
+          amount: 10,
           status: 'pending',
           receiving_number: '0776223144'
         });
       
       if (paymentError) throw paymentError;
       
-      const { error: shopError } = await supabase
+      // Update shop status locally and on server
+      await supabase
         .from('shops')
         .update({
           subscription_status: 'pending_payment',
-          plan: selectedPlan
         })
         .eq('id', myShop.id);
       
-      if (shopError) throw shopError;
-      
-      setSellerFlowState('pending_code');
+      // Move to code entry state
+      setSellerFlowState('enter_code');
     } catch (err) {
       console.error(err);
-      setToast({ message: 'Could not submit. Try again.', type: 'error' });
+      toast.error('Could not submit activation protocol.');
     } finally {
       setLoading(false);
     }
   };
 
-  const planDetails = {
-    standard: {
-      name: '1 Product Store',
-      price: 4,
-      features: [
-        'Dedicated product page',
-        'Direct WhatsApp connect',
-        'Basic audience stats',
-        'Drip authentication label'
-      ]
-    },
-    pro: {
-      name: 'Multi Product Store',
-      price: 8,
-      features: [
-        'Full collection management',
-        'Smart inventory signals',
-        'Custom promo tools',
-        'Premium shop placement',
-        'Priority seller support'
-      ]
-    }
-  };
-
-  const currentPlanName = selectedPlan === 'standard' ? '1 Product Store' : 'Multi Product Store';
-  const currentPrice = selectedPlan === 'standard' ? '4' : '8';
-
   return (
-    <div className="flex flex-col min-h-screen bg-black pb-20 overflow-y-auto">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-[#0B0B0B] flex flex-col font-sans"
+    >
       {/* Header */}
-      <div className="flex flex-col items-center pt-10 pb-6 text-center px-6">
-        <span className="text-[40px] mb-2 shadow-[0_0_30px_rgba(255,45,120,0.2)]">🛍️</span>
-        <h1 className="text-white text-[24px] font-bold leading-tight">
-          Level up your store
-        </h1>
-        <p className="text-[#888] text-[13px] mt-2 max-w-[280px]">Choose the plan that fits your inventory goals</p>
-      </div>
+      <header className="px-6 py-8 flex items-center justify-between border-b border-white/5">
+        <button onClick={() => setSellerFlowState('live')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+          <X size={20} />
+        </button>
+        <h1 className="text-lg font-black uppercase italic tracking-tighter">Clear Node Balance</h1>
+        <div className="w-10" />
+      </header>
 
-      {/* Current Plan Card */}
-      <div className="mx-5 mb-8 bg-[#111] border border-[#222] border-l-4 border-l-[#FF2D78] rounded-[14px] p-4 flex justify-between items-center transition-all active:scale-[0.98]" onClick={() => setShowPlanSelector(true)}>
-        <div>
-           <span className="text-[#888] text-[11px] uppercase tracking-wider font-bold">Current Selection</span>
-           <h3 className="text-white text-[15px] font-bold mt-1">
-             {currentPlanName}
-           </h3>
-           <p className="text-[#FF2D78] text-[13px] font-medium mt-0.5">
-             ${currentPrice}/month
-           </p>
+      <div className="flex-1 overflow-y-auto px-6 py-10 pb-40 space-y-10">
+        
+        {/* Plan Header */}
+        <div className="text-center space-y-3">
+           <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-[#C6FF00]/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-[#C6FF00] shadow-[0_0_40px_rgba(198,255,0,0.1)]">
+              <ShieldCheck className="size-7 md:size-8" />
+           </div>
+           <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter">Founder Node Access</h2>
+           <p className="text-[#C6FF00] text-[12px] md:text-sm font-black italic uppercase tracking-widest">$10.00 USD / MONTH</p>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[#888] text-[12px] font-medium">Change</span>
-          <ChevronRight className="w-4 h-4 text-[#444]" />
-        </div>
-      </div>
 
-      {/* Payment Instructions */}
-      <div className="mx-5 bg-[#111] border border-[#222] rounded-[16px] p-5 mb-6">
-        <h3 className="text-white font-bold text-[16px] mb-5">How to Pay</h3>
+        {/* Manual Instructions */}
         <div className="space-y-6">
-          <div className="flex gap-4">
-            <div className="w-[26px] h-[26px] rounded-full bg-[#FF2D78] flex items-center justify-center text-white text-[12px] font-bold shrink-0 shadow-[0_0_15px_rgba(255,45,120,0.4)]">1</div>
-            <div className="flex-1">
-              <span className="text-white font-bold text-[14px]">Send Payment</span>
-              <p className="text-[#888] text-[13px] mt-1 leading-tight">EcoCash or InnBucks to <span className="text-white font-bold underline decoration-[#FF2D78]">0776223144</span>. Use your WhatsApp number as reference.</p>
-              <div className="mt-3 bg-[#1a1a1a] rounded-[8px] p-3 flex justify-between items-center ring-1 ring-white/5">
-                <span className="text-[#888] text-[13px]">Amount:</span>
-                <span className="text-[#FF2D78] font-bold text-[16px]">${selectedPlan === 'standard' ? '4' : '8'}</span>
+           <InstructionStep 
+             num="01" 
+             title="Send Transfer" 
+             desc="Send $10.00 via EcoCash or InnBucks to 0776223144 (Founder Routing)." 
+           />
+           
+           <div className="bg-[#151515] border border-white/5 rounded-3xl p-6 space-y-4">
+              <div className="flex justify-between items-center">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Recipient</span>
+                 <span className="text-sm font-bold text-white">0776223144</span>
               </div>
-            </div>
-          </div>
+              <div className="h-px bg-white/5" />
+              <div className="flex justify-between items-center">
+                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Reference</span>
+                 <span className="text-sm font-bold text-white italic">Your Shop Name</span>
+              </div>
+           </div>
 
-          <div className="flex gap-4">
-            <div className="w-[26px] h-[26px] rounded-full bg-[#FF2D78] flex items-center justify-center text-white text-[12px] font-bold shrink-0 shadow-[0_0_15px_rgba(255,45,120,0.4)]">2</div>
-            <div className="flex-1">
-              <span className="text-white font-bold text-[14px]">Enter Your Number</span>
-              <p className="text-[#888] text-[13px] mt-1">Which number did you send from?</p>
+           <InstructionStep 
+             num="02" 
+             title="Confirm Origin" 
+             desc="Input the number used for this transaction below." 
+           />
+
+           <div className="relative">
+              <Smartphone size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500" />
               <input 
-                type="tel"
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="+263 7X XXX XXXX"
-                className="mt-3 w-full h-[52px] bg-[#1a1a1a] border border-[#333] rounded-[12px] px-4 text-white text-[15px] outline-none focus:border-[#FF2D78] transition-all ring-1 ring-white/5"
+                 value={whatsappNumber}
+                 onChange={(e) => setWhatsappNumber(e.target.value)}
+                 className="w-full h-14 md:h-16 bg-black border border-white/5 rounded-xl md:rounded-2xl pl-12 pr-5 text-sm font-bold focus:border-[#C6FF00] outline-none transition-all placeholder:text-zinc-700"
+                 placeholder="Origin Number"
               />
-            </div>
-          </div>
+           </div>
 
-          <div className="flex gap-4">
-            <div className="w-[26px] h-[26px] rounded-full bg-[#FF2D78] flex items-center justify-center text-white text-[12px] font-bold shrink-0 shadow-[0_0_15px_rgba(255,45,120,0.4)]">3</div>
-            <div className="flex-1">
-              <span className="text-white font-bold text-[14px]">Notification</span>
-              <p className="text-[#888] text-[13px] mt-1 leading-tight italic">We'll verify and WhatsApp your code within 2 hours.</p>
-            </div>
-          </div>
+           <InstructionStep 
+             num="03" 
+             title="Verification Code" 
+             desc="We will verify and WhatsApp a 6-digit sync code to you within 2 hours." 
+           />
         </div>
-      </div>
 
-      {/* Action Button */}
-      <div className="px-5">
+        {/* Support Link */}
         <button 
-           onClick={handleSubmitPayment}
-           disabled={loading || !whatsappNumber.trim()}
-           className={`w-full h-[56px] rounded-full font-bold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-[0.98]
-             ${whatsappNumber.trim() ? 'bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white shadow-xl' : 'bg-[#1a1a1a] text-[#555] pointer-events-none'}`}
+          onClick={() => window.open('https://wa.me/263776223144', '_blank')}
+          className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest italic text-zinc-400"
         >
-           {loading ? (
-             <div className="w-5 h-5 border-2 border-white rounded-full animate-spin border-t-transparent" />
-           ) : (
-             <>
-               🚀 I've Paid — Notify Admin
-             </>
-           )}
+          <MessageCircle size={18} className="text-[#C6FF00]" /> Direct Support Routing
         </button>
       </div>
 
-      {/* Plan Selector Bottom Sheet */}
-      <AnimatePresence>
-        {showPlanSelector && (
-          <>
-            <motion.div 
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               exit={{ opacity: 0 }}
-               onClick={() => setShowPlanSelector(false)}
-               className="fixed inset-0 bg-black/80 z-[100]"
-            />
-            <motion.div 
-               initial={{ y: '100%' }}
-               animate={{ y: 0 }}
-               exit={{ y: '100%' }}
-               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-               className="fixed bottom-0 left-0 right-0 bg-[#0a0a0a] rounded-t-[32px] p-6 z-[101] border-t border-[#333] shadow-2xl max-h-[90vh] overflow-y-auto"
-            >
-               <div className="w-12 h-1.5 bg-[#333] rounded-full mx-auto mb-6" />
-               <div className="flex justify-between items-center mb-6">
-                  <div>
-                    <h3 className="text-white text-[20px] font-bold">Switch Plan</h3>
-                    <p className="text-[#888] text-[13px]">Choose the right tools for your shop</p>
-                  </div>
-                  <button onClick={() => setShowPlanSelector(false)} className="p-2 bg-[#1a1a1a] rounded-full"><X className="w-5 h-5 text-[#888]" /></button>
-               </div>
-
-               <div className="space-y-4 mb-8">
-                  {Object.entries(planDetails).map(([id, p]) => (
-                    <button
-                      key={id}
-                      onClick={() => handlePlanChange(id as any)}
-                      className={`w-full p-5 rounded-[20px] border-2 text-left transition-all relative overflow-hidden group
-                        ${selectedPlan === id ? 'bg-[rgba(255,45,120,0.08)] border-[#FF2D78]' : 'bg-black border-[#1a1a1a]'}`}
-                    >
-                       <div className="flex justify-between items-start mb-4">
-                          <div>
-                             <p className={`text-[12px] font-black uppercase tracking-[0.1em] mb-1 ${selectedPlan === id ? 'text-[#FF2D78]' : 'text-[#555]'}`}>{p.name} Plan</p>
-                             <div className="flex items-baseline gap-1">
-                                <span className="text-white text-[28px] font-black">${p.price}</span>
-                                <span className="text-[#888] text-[13px] font-medium">/month</span>
-                             </div>
-                          </div>
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all
-                            ${selectedPlan === id ? 'bg-[#FF2D78] border-[#FF2D78]' : 'border-[#222]'}`}>
-                             {selectedPlan === id && <Check className="w-3.5 h-3.5 text-white" strokeWidth={4} />}
-                          </div>
-                       </div>
-                       
-                       <div className="space-y-2.5">
-                          {p.features.map((f, i) => (
-                             <div key={i} className="flex items-center gap-2.5">
-                                <div className={`w-1.5 h-1.5 rounded-full ${selectedPlan === id ? 'bg-[#FF2D78]' : 'bg-[#333]'}`} />
-                                <span className="text-[#aaa] text-[13px] font-medium leading-tight">{f}</span>
-                             </div>
-                          ))}
-                       </div>
-                       
-                       {id === 'pro' && (
-                         <div className="absolute top-4 right-12 bg-[#FF2D78] text-white text-[9px] font-black px-2 py-0.5 rounded-full rotate-12 shadow-lg">
-                            POPULAR
-                         </div>
-                       )}
-                    </button>
-                  ))}
-               </div>
-               
-               <button 
-                 onClick={() => setShowPlanSelector(false)}
-                 className="w-full h-14 rounded-full bg-white text-black font-bold text-[15px] mb-4"
-               >
-                 Confirm Selection
-               </button>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {toast && (
-        <div className="fixed bottom-24 left-6 right-6 z-[70]">
-           <motion.div 
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             className={`p-4 rounded-[12px] shadow-2xl flex items-center gap-3 ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}
-           >
-              <p className="text-white text-[13px] font-medium">{toast.message}</p>
-           </motion.div>
-        </div>
-      )}
-    </div>
+      {/* Footer CTA */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0B0B0B] via-[#0B0B0B] to-transparent">
+         <button 
+           disabled={loading || !whatsappNumber.trim()}
+           onClick={handleSubmitPayment}
+           className="w-full h-14 md:h-16 bg-[#C6FF00] text-black rounded-2xl md:rounded-3xl font-black uppercase tracking-widest italic flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-xs md:text-sm disabled:opacity-30"
+         >
+            {loading ? "Transmitting..." : "Initialize Sync"} 
+            <ArrowRight size={18} strokeWidth={3} />
+         </button>
+      </div>
+    </motion.div>
   );
 };
+
+const InstructionStep = ({ num, title, desc }: any) => (
+  <div className="flex gap-4 items-start">
+    <div className="text-[#C6FF00] font-black italic text-lg opacity-20 shrink-0 leading-none pt-1">{num}</div>
+    <div className="space-y-1">
+      <h4 className="text-xs font-black uppercase italic tracking-widest text-white">{title}</h4>
+      <p className="text-zinc-500 text-[10px] leading-relaxed font-medium uppercase tracking-wide">{desc}</p>
+    </div>
+  </div>
+);

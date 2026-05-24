@@ -1,24 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, AlertCircle, ArrowLeft, Star, Heart, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { mapError } from '../lib/utils';
-import { useTheme } from '../App';
 
-interface AuthProps {
-}
-
-export const Auth: React.FC<AuthProps> = () => {
-  const t = useTheme();
+export const Auth: React.FC = () => {
   const navigate = useNavigate();
   const mounted = React.useRef(true);
   useEffect(() => {
     return () => { mounted.current = false; };
   }, []);
 
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [view, setView] = useState<'welcome' | 'signin' | 'signup'>('welcome');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,15 +25,7 @@ export const Auth: React.FC<AuthProps> = () => {
   const [handle, setHandle] = useState('');
   
   const [showPassword, setShowPassword] = useState(false);
-
-  // Validations
-  const isHandleValid = (h: string) => {
-    return h.length >= 3 && h.length <= 20 && /^[a-zA-Z0-9_]+$/.test(h);
-  };
-
-  const isEmailValid = (e: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
-  };
+  const { setIsGuest } = useAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,40 +38,22 @@ export const Auth: React.FC<AuthProps> = () => {
     setError(null);
   
     try {
-      const { error: signInError } = await
-        supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password
-        })
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password
+      });
       
       if (signInError) {
-        // Smart Redirect: If user not found (usually 400 with 'Invalid login credentials')
-        // We can't perfectly distinguish between "wrong password" and "user not found" for security,
-        // but we can catch common hints or if message specifically says not found.
         if (signInError.message.toLowerCase().includes('invalid login credentials')) {
-          // We can't be 100% sure the user doesn't exist, but we can offer to sign up
-          // or if the user is 100% sure they never signed up, they can switch.
-          // To satisfy "user tries to sign in without an account they are taken to sign up page":
-          // since we can't reliably know if user exists without trying to sign up, 
-          // we will show the error and maybe a more prominent "Create Account" button?
-          // Actually, if we want to be more proactive, we can try to sign up if sign in fails? 
-          // No, that's risky. But we can assume if it's "Invalid login credentials", 
-          // and they want smart redirect, we can switch to signup mode and show hint.
-          setMode('signup');
+          setView('signup');
           setError('Account not found. Please create an account below.');
           setLoading(false);
           return;
         }
-        throw signInError
+        throw signInError;
       }
-      
-      // After successful sign in
       localStorage.setItem('thread_has_account', 'true');
-      
-      // Session listener handles navigation automatically
-      
     } catch (err: any) {
-      console.error('Sign in error:', err)
       setError(mapError(err))
     } finally {
       if (mounted.current) setLoading(false);
@@ -92,279 +62,263 @@ export const Auth: React.FC<AuthProps> = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim()) {
-      setError('Please enter your name.')
-      return
-    }
-    if (!handle.trim() || handle.length < 3) {
-      setError('Handle must be at least 3 characters.')
-      return
-    }
-    if (!email.trim()) {
-      setError('Please enter your email.')
-      return
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
-      return
+    if (!displayName.trim() || !handle.trim() || !email.trim() || password.length < 6) {
+      setError('Please fill in all fields correctly.');
+      return;
     }
     
     setLoading(true)
     setError(null)
     
     try {
-      const cleanHandle = handle
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9_]/g, '')
-      
-      // Check handle not taken
-      const { data: existing } = 
-        await supabase
-          .from('profiles')
-          .select('id')
-          .eq('handle', cleanHandle)
-          .maybeSingle()
-      
+      const cleanHandle = handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const { data: existing } = await supabase.from('profiles').select('id').eq('handle', cleanHandle).maybeSingle();
       if (existing) {
-        setError('That handle is already taken.')
-        setLoading(false)
-        return
+        setError('That handle is already taken.');
+        setLoading(false);
+        return;
       }
       
-      // Sign up with Supabase
-      const { data, error: signUpError } = await
-        supabase.auth.signUp({
-          email: email.trim(),
-          password: password,
-          options: {
-            data: {
-              display_name: displayName.trim(),
-              handle: cleanHandle
-            }
-          }
-        })
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: { data: { display_name: displayName.trim(), handle: cleanHandle } }
+      });
       
       if (signUpError) {
-        if (signUpError.message.toLowerCase().includes('already registered') || 
-            signUpError.message.toLowerCase().includes('already exists')) {
-          setMode('signin');
+        if (signUpError.message.toLowerCase().includes('already registered')) {
+          setView('signin');
           setError('An account with this email already exists. Please sign in.');
           setLoading(false);
           return;
         }
-        throw signUpError
+        throw signUpError;
       }
       
-      // After successful sign up
       localStorage.setItem('thread_has_account', 'true');
-      
-      // Create profile row immediately
       if (data.user) {
-        const pendingStyle = localStorage.getItem('pending_style');
-        
-        await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            display_name: displayName.trim(),
-            handle: cleanHandle,
-            email: email.trim(),
-            style_preference: pendingStyle || null,
-            created_at: new Date().toISOString()
-          });
-
-        if (pendingStyle) {
-          localStorage.removeItem('pending_style');
-        }
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          display_name: displayName.trim(),
+          handle: cleanHandle,
+          email: email.trim(),
+          created_at: new Date().toISOString()
+        });
       }
-      
-      // Session listener will automatically navigate to app
-      
     } catch (err: any) {
-      console.error('Sign up error:', err)
       setError(mapError(err))
     } finally {
-      if (mounted.current) setLoading(false)
+      if (mounted.current) setLoading(false);
     }
   };
 
-  const isFormFilled = mode === 'signin' 
-    ? email && password 
-    : email && password && displayName && handle;
-
   return (
-    <div className="flex-1 flex flex-col min-h-screen relative font-sans overflow-hidden" style={{ background: t.bg_primary }}>
-      {/* Header */}
-      <div className="pt-20 pb-12 flex flex-col items-center">
-        <h1 className="text-[52px] font-pacifico" style={{ color: t.accent }}>thread</h1>
-        <p className="text-[13px] mt-1" style={{ color: t.text_tertiary }}>Zimbabwe's Closet</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="px-8 mb-8">
-        <div className="flex border-b" style={{ borderColor: t.border_secondary }}>
-          <button 
-            onClick={() => { setMode('signin'); setError(null); }}
-            className={`flex-1 py-4 text-[15px] font-bold transition-all relative ${mode === 'signin' ? 'text-white' : 'text-[#888]'}`}
-            style={{ color: mode === 'signin' ? t.text_primary : t.text_tertiary }}
+    <div className="min-h-screen bg-cream text-charcoal selection:bg-pink/30 flex flex-col relative overflow-hidden font-sans">
+      {/* Background Decor */}
+      <div className="absolute top-10 right-10 text-pink/10 -rotate-12"><Star size={120} fill="currentColor" /></div>
+      <div className="absolute bottom-10 left-10 text-pink/10 rotate-12"><Heart size={80} fill="currentColor" /></div>
+      
+      <AnimatePresence mode="wait">
+        {view === 'welcome' && (
+          <motion.div 
+            key="welcome"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex-1 flex flex-col p-8 pt-20"
           >
-            Sign In
-            {mode === 'signin' && (
-              <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: t.accent }} />
-            )}
-          </button>
-          <button 
-            onClick={() => { setMode('signup'); setError(null); }}
-            className={`flex-1 py-4 text-[15px] font-bold transition-all relative ${mode === 'signup' ? 'text-white' : 'text-[#888]'}`}
-            style={{ color: mode === 'signup' ? t.text_primary : t.text_tertiary }}
-          >
-            Sign Up
-            {mode === 'signup' && (
-              <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: t.accent }} />
-            )}
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 px-8 overflow-y-auto no-scrollbar pb-12">
-        <form onSubmit={mode === 'signin' ? handleSignIn : handleSignUp} className="space-y-5">
-          {mode === 'signup' && (
-            <>
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Full Name</label>
-                <input 
-                  type="text"
-                  required
-                  value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
-                  placeholder="Simba Makoni"
-                  className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
-                  style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Username</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold" style={{ color: t.accent }}>@</span>
-                  <input 
-                    type="text"
-                    required
-                    value={handle}
-                    onChange={e => setHandle(e.target.value)}
-                    placeholder="handle"
-                    className="w-full h-14 border rounded-[16px] pl-9 pr-4 text-[15px] focus:border-primary outline-none transition-all"
-                    style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
-                  />
-                </div>
-                {handle && !isHandleValid(handle) && (
-                  <p className="text-[11px] mt-1 ml-1" style={{ color: t.red }}>Handle can only contain letters, numbers and underscores. Min 3 characters.</p>
-                )}
-              </div>
-            </>
-          )}
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Email</label>
-            <input 
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@email.com"
-              className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
-              style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
-            />
-            {email && !isEmailValid(email) && (
-              <p className="text-[11px] mt-1 ml-1" style={{ color: t.red }}>Please enter a valid email address.</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold uppercase tracking-widest ml-1" style={{ color: t.text_tertiary }}>Password</label>
-            <div className="relative">
-              <input 
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full h-14 border rounded-[16px] px-4 text-[15px] focus:border-primary outline-none transition-all"
-                style={{ background: t.bg_card, borderColor: t.border_secondary, color: t.text_primary, '--tw-ring-color': t.accent } as any}
-              />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2"
-                style={{ color: t.text_tertiary }}
+            <div className="flex flex-col items-center gap-6 mb-auto mt-20">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className="relative text-center"
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                <h1 className="text-8xl md:text-9xl font-display font-black italic tracking-tighter relative text-charcoal uppercase leading-[0.8]">
+                   thread<span className="text-pink">zw</span>
+                </h1>
+                <div className="mt-4 italic-accent text-xl">The Collective Protocol.</div>
+              </motion.div>
+            </div>
+
+            <div className="flex flex-col gap-6 max-w-sm mx-auto w-full mb-12">
+              <button 
+                onClick={() => setView('signup')}
+                className="w-full bg-charcoal text-cream py-6 rounded-full font-black uppercase tracking-widest text-[13px] italic hover:scale-105 active:scale-[0.98] transition-all shadow-[10px_10px_0_#C6FF00]"
+              >
+                Deploy Storefront
               </button>
+              <button 
+                onClick={() => setView('signin')}
+                className="w-full bg-white text-charcoal border-2 border-charcoal py-6 rounded-full font-black uppercase tracking-widest text-[13px] italic hover:bg-cream-dark active:scale-[0.98] transition-all shadow-[10px_10px_0_#F4A6C1]"
+              >
+                Client Authentication
+              </button>
+              
+              <div className="mt-8 flex flex-col items-center gap-4 text-center">
+                <button 
+                  onClick={() => setIsGuest(true)}
+                  className="oval-sticker hover:bg-pink hover:text-white transition-colors"
+                >
+                  Guest Access
+                </button>
+              </div>
             </div>
-            {password && password.length < 6 && (
-              <p className="text-[11px] mt-1 ml-1" style={{ color: t.red }}>Password must be at least 6 characters.</p>
-            )}
-          </div>
-
-          {error && (
-            <div className="border rounded-[10px] p-3 flex items-start gap-3" style={{ background: t.red + '14', borderColor: t.red + '40' }}>
-              <span className="text-[13px] mt-0.5">⚠️</span>
-              <p className="text-[13px]" style={{ color: t.red }}>{error}</p>
+            
+            <div className="mt-auto text-center border-t border-charcoal/5 pt-8">
+              <span className="italic-accent text-charcoal/30">Infrastructure Layer established in Zimbabwe.</span>
             </div>
-          )}
+          </motion.div>
+        )}
 
-          <button 
-            type="submit"
-            disabled={loading || !isFormFilled}
-            className={`w-full h-[52px] rounded-full font-bold text-[15px] transition-all flex items-center justify-center ${
-              isFormFilled 
-                ? 'text-white shadow-lg' 
-                : 'cursor-not-allowed'
-            }`}
-            style={{ 
-              background: isFormFilled ? (t.accent) : t.bg_card_2,
-              color: isFormFilled ? 'white' : t.text_tertiary
-            }}
+        {(view === 'signin' || view === 'signup') && (
+          <motion.div 
+            key={view}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="flex-1 flex flex-col p-8 pt-12 relative z-10"
           >
-            {loading ? (
-              <div className="spinner-20" style={{ borderTopColor: 'white' }} />
-            ) : (
-              mode === 'signin' ? 'Sign In' : 'Create Account'
-            )}
-          </button>
-
-
-          {mode === 'signin' && (
-            <Link 
-              to="/forgot-password"
-              className="w-full text-[13px] font-bold text-center mt-3 block"
-              style={{ color: t.accent }}
+            <button 
+              onClick={() => setView('welcome')}
+              className="w-12 h-12 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal mb-12 self-start active:scale-95 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)]"
             >
-              Forgot Password?
-            </Link>
-          )}
+              <ArrowLeft size={20} />
+            </button>
 
-          {mode === 'signup' && (
-            <p className="text-[11px] text-center mt-3" style={{ color: t.text_tertiary }}>
-              By signing up you agree to our <span className="underline" style={{ color: t.text_secondary }}>Terms of Service</span>
-            </p>
-          )}
-        </form>
-      </div>
+            <div className="max-w-sm mx-auto w-full">
+              <div className="mb-10">
+                <h2 className="text-6xl md:text-7xl font-display font-black uppercase italic tracking-tighter mb-2 leading-[0.8]">
+                  {view === 'signin' ? 'entry.' : 'setup.'}
+                </h2>
+                <div className="italic-accent text-pink">Protocol Engagement</div>
+              </div>
 
-      <style>{`
-        .spinner-20 {
-          width: 20px;
-          height: 20px;
-          border: 2px solid ${t.border_secondary};
-          border-top-color: ${t.accent};
-          border-radius: 50%;
-          animation: spin 0.7s linear infinite;
-        }
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+              <form onSubmit={view === 'signin' ? handleSignIn : handleSignUp} className="space-y-6">
+                <AnimatePresence mode="popLayout">
+                  {view === 'signup' && (
+                    <>
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-2"
+                      >
+                        <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 ml-2 italic">Commercial Name</label>
+                        <div className="relative">
+                          <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal/20" />
+                          <input
+                            type="text"
+                            required
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="Store Owner"
+                            className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                          />
+                        </div>
+                      </motion.div>
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-2"
+                      >
+                        <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 ml-2 italic">Node Handle</label>
+                        <div className="relative">
+                          <div className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-charcoal/20 font-black">@</div>
+                          <input
+                            type="text"
+                            required
+                            value={handle}
+                            onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                            placeholder="handle"
+                            className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                          />
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 ml-2 italic">Routing Address</label>
+                  <div className="relative">
+                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal/20" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="email@node.com"
+                      className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 italic">Key Phrase</label>
+                    {view === 'signin' && (
+                      <Link to="/forgot-password" disable-navigation="true" className="italic-accent text-[11px] hover:underline">Reset?</Link>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal/20" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-12 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-charcoal/20 hover:text-pink transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-pink/10 border-2 border-pink/20 rounded-[20px] flex items-start gap-3 mt-4"
+                  >
+                    <AlertCircle className="text-pink w-5 h-5 shrink-0 mt-0.5" />
+                    <p className="text-charcoal text-[11px] font-bold uppercase tracking-tight leading-tight">{error}</p>
+                  </motion.div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-charcoal text-cream py-6 rounded-full font-black uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 mt-10 text-[13px] italic shadow-[10px_10px_0_#C6FF00]"
+                >
+                  {loading ? (
+                    <div className="w-6 h-6 border-2 border-cream/30 border-t-cream rounded-full animate-spin" />
+                  ) : (
+                    view === 'signin' ? 'Verify Identity' : 'Establish Node'
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-12 text-center">
+                <p className="text-charcoal/40 text-xs font-black uppercase tracking-widest italic">
+                  {view === 'signin' ? 'Zero Account?' : 'Identity Established?'}
+                  <button 
+                    onClick={() => setView(view === 'signin' ? 'signup' : 'signin')}
+                    className="ml-2 text-charcoal border-b-2 border-pink hover:text-pink transition-colors"
+                  >
+                    {view === 'signin' ? 'Sign Up' : 'Sign In'}
+                  </button>
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

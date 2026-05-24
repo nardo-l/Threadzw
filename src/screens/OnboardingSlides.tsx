@@ -1,50 +1,27 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight } from 'lucide-react';
-import { useTheme } from '../App';
 
 const SLIDES = [
   {
     id: 'welcome',
-    emoji: '🧵',
-    title: "Welcome to Thread ZW",
-    body: "Zimbabwe's fashion marketplace. Discover local brands, thrift shops, and sneaker stores all in one place.",
+    emoji: '🚀',
+    title: "The Future of Selling in Zim",
+    body: "Turn your inventory into a professional WhatsApp-ready storefront. The easiest way to sell online in Zimbabwe.",
     bg: '#000000'
   },
   {
-    id: 'browse',
-    emoji: '🛍️',
-    title: "Browse & Discover",
-    body: "Scroll through hundreds of local products. Find your fit from shops across Zimbabwe.",
+    id: 'storefront',
+    emoji: '🏪',
+    title: "Pro Storefronts",
+    body: "Deploy your shop link in minutes. No complex code, just your products and a clean link to share.",
     bg: '#000000'
   },
   {
-    id: 'sell',
-    emoji: '📦',
-    title: "Sell on Thread ZW",
-    body: "Open your shop in 2 minutes. List products, reach buyers, and grow your brand.",
-    bg: '#000000'
-  },
-  {
-    id: 'quiz',
-    emoji: '🔥',
-    title: "Discover Your Style",
-    body: "Take the How Fly Are You? quiz and find out your style personality. Share your result to Instagram Stories.",
-    bg: '#000000'
-  },
-  {
-    id: 'dresser',
-    emoji: '🏆',
-    title: "Best Dresser Contest",
-    body: "Compete monthly for the title of Zimbabwe's Best Dresser. Win $30 cash. Coming soon.",
-    bg: '#000000',
-    comingSoon: true
-  },
-  {
-    id: 'stories',
-    emoji: '✨',
-    title: "New Drop Stories",
-    body: "When a shop adds something new it appears as a story. Be the first to see fresh drops from shops you follow.",
+    id: 'whatsapp',
+    emoji: '💬',
+    title: "Direct WhatsApp",
+    body: "Receive orders directly in your WhatsApp inbox. No middlemen. Just real business conversations.",
     bg: '#000000'
   }
 ];
@@ -54,7 +31,6 @@ interface Props {
 }
 
 export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
-  const t = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const handleNextSlide = () => {
@@ -70,13 +46,12 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col overflow-hidden select-none font-sans" style={{ background: t.bg_primary }}>
+    <div className="fixed inset-0 z-[200] flex flex-col overflow-hidden select-none font-sans bg-[#0d0d0d]">
       {/* Skip Button */}
       <div className="absolute top-8 right-8 z-50">
         <button 
           onClick={handleSkip}
-          className="text-[13px] font-medium px-2 py-1 transition-colors"
-          style={{ color: t.text_tertiary }}
+          className="text-[13px] font-medium px-2 py-1 transition-colors text-[#555]"
         >
           Skip
         </button>
@@ -96,7 +71,7 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="text-[120px] mb-12"
+              className="text-[120px] mb-8"
             >
               {SLIDES[currentSlide].emoji}
             </motion.div>
@@ -106,38 +81,30 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <h2 className="text-[32px] font-bold leading-tight" style={{ color: t.text_primary }}>
+              <h2 className="text-[32px] font-syne font-black uppercase italic tracking-tighter leading-tight text-white">
                 {SLIDES[currentSlide].title}
               </h2>
               
-              <p className="mt-4 text-[15px] leading-relaxed" style={{ color: t.text_tertiary }}>
+              <p className="mt-4 text-[15px] font-medium leading-relaxed text-zinc-500">
                 {SLIDES[currentSlide].body}
               </p>
-
-              {SLIDES[currentSlide].comingSoon && (
-                <div className="mt-6 flex justify-center">
-                  <div className="px-[14px] py-[5px] rounded-full" style={{ background: t.gradient }}>
-                    <span className="text-white text-[11px] font-bold uppercase tracking-wider">COMING SOON</span>
-                  </div>
-                </div>
-              )}
             </motion.div>
           </div>
 
           {/* Footer Controls */}
           <div className="p-8 pb-12 flex flex-col items-center gap-6">
             <div className="flex flex-col items-center gap-3">
-              <span className="text-[11px] font-bold uppercase tracking-widest" style={{ color: t.text_tertiary }}>
+              <span className="text-[11px] font-black uppercase tracking-widest text-[#333]">
                 Step {currentSlide + 1} of {SLIDES.length}
               </span>
               <div className="flex gap-2">
                 {SLIDES.map((_, i) => (
                   <div 
-                    key={i} 
+                    key={`slide-indicator-${i}`} 
                     className={`h-1.5 rounded-full transition-all duration-300 ${
-                      i === currentSlide ? 'w-6' : 'w-1.5'
+                      i === currentSlide ? 'w-8' : 'w-2'
                     }`} 
-                    style={{ background: i === currentSlide ? t.accent : t.border_secondary }}
+                    style={{ background: i === currentSlide ? '#C6FF00' : '#222' }}
                   />
                 ))}
               </div>
@@ -145,10 +112,9 @@ export const OnboardingSlides: React.FC<Props> = ({ onComplete }) => {
 
             <button 
               onClick={handleNextSlide} 
-              className="w-full h-[52px] rounded-full font-bold text-[14px] text-white flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-              style={{ background: t.accent, boxShadow: t.shadow }}
+              className="w-full h-16 rounded-full font-syne font-black uppercase italic tracking-widest text-[14px] text-black flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-[#C6FF00] shadow-xl shadow-[#C6FF0015]"
             >
-              {currentSlide === SLIDES.length - 1 ? 'Continue' : 'Next'} <ArrowRight size={18} />
+              {currentSlide === SLIDES.length - 1 ? 'LAUNCH PROTOCOL' : 'NEXT SEQUENCE'} <ArrowRight size={18} strokeWidth={3} />
             </button>
           </div>
         </motion.div>

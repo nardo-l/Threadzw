@@ -37,7 +37,7 @@ export const BestDresser: React.FC = () => {
           <div className="h-8 w-48 bg-card rounded-lg shimmer-bg" />
           <div className="h-12 w-full bg-card rounded-pill shimmer-bg" />
           <div className="grid grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-card rounded-card shimmer-bg" />)}
+            {[1, 2, 3, 4].map(i => <div key={`bd-shimmer-${i}`} className="h-48 bg-card rounded-card shimmer-bg" />)}
           </div>
         </div>
       </div>
@@ -211,8 +211,8 @@ export const BestDresser: React.FC = () => {
               { name: 'Tafadzwa', month: 'March 2026', personality: 'The Nonchalant', votes: 4520 },
               { name: 'Simba', month: 'February 2026', personality: 'The Hustler', votes: 3890 },
               { name: 'Rudo', month: 'January 2026', personality: 'The Creative', votes: 5120 },
-            ].map((champ, i) => (
-              <div key={i} className="bg-card rounded-card p-6 border border-secondary/20 flex items-center gap-6 relative overflow-hidden">
+            ].map((champ) => (
+              <div key={`champ-${champ.name}-${champ.month}`} className="bg-card rounded-card p-6 border border-secondary/20 flex items-center gap-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-secondary/5 blur-2xl rounded-full -mr-8 -mt-8" />
                 <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
                   <Award size={32} />

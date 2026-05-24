@@ -22,7 +22,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
     // Mock Paynow processing
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const amount = billing === 'monthly' ? 6 : 18;
+    const amount = billing === 'monthly' ? 9 : 27;
     const { error } = await renewSubscription({
       plan: 'full',
       billingCycle: billing,
@@ -90,7 +90,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
                   "Full dashboard analytics",
                   "Smart restock notifications"
                 ].map((text, i) => (
-                  <li key={i} className="flex items-center gap-3 text-sm text-white">
+                  <li key={`upgrade-feature-${i}`} className="flex items-center gap-3 text-sm text-white">
                     <div className="p-0.5 bg-primary/10 rounded-full text-primary">
                       <Check size={14} />
                     </div>
@@ -105,7 +105,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
               <div className="bg-elevated p-4 rounded-xl border border-white/5 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-syne font-bold text-white">
-                    $6/month
+                    $9/month
                   </span>
                   <span className="text-[10px] font-mono text-primary uppercase tracking-widest">
                     Thread ZW Shop

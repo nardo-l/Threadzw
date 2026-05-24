@@ -79,7 +79,7 @@ export const HowToUse: React.FC = () => {
         <div className="grid grid-cols-1 gap-4">
           {loading ? (
             [...Array(4)].map((_, i) => (
-              <div key={i} className="w-full h-32 bg-[#111] rounded-2xl animate-pulse" />
+              <div key={`guide-shimmer-${i}`} className="w-full h-32 bg-[#111] rounded-2xl animate-pulse" />
             ))
           ) : filteredGuides.length > 0 ? (
             filteredGuides.map((guide, idx) => (

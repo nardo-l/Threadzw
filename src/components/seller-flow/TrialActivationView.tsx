@@ -2,24 +2,9 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { useInventory } from '../../context/InventoryContext';
-import { ChevronLeft, Check } from 'lucide-react';
+import { ChevronLeft, Check, Smartphone, Terminal, Zap, Globe, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-
-const categories = [
-  { emoji: '👕', label: 'Clothing', value: 'clothing' },
-  { emoji: '👟', label: 'Sneakers', value: 'sneakers' },
-  { emoji: '🧥', label: 'Thrift & Vintage', value: 'thrift' },
-  { emoji: '🔥', label: 'Streetwear', value: 'streetwear' },
-  { emoji: '💍', label: 'Accessories', value: 'accessories' },
-  { emoji: '📱', label: 'Electronics', value: 'electronics' },
-  { emoji: '👠', label: 'Footwear', value: 'footwear' },
-  { emoji: '⚽', label: 'Sportswear', value: 'sportswear' },
-  { emoji: '👔', label: 'Formal Wear', value: 'formal' },
-  { emoji: '🧒', label: 'Kids Fashion', value: 'kids' },
-  { emoji: '👜', label: 'Bags', value: 'bags' },
-  { emoji: '💄', label: 'Beauty', value: 'beauty' },
-  { emoji: '📦', label: 'Other', value: 'other' }
-];
+import { toast } from 'sonner';
 
 interface TrialActivationViewProps {
   onActivated: () => void;
@@ -28,159 +13,67 @@ interface TrialActivationViewProps {
 
 export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActivated, onBack }) => {
   const { session, user } = useAuth();
-  const { shopFormData, setSellerFlowState, loadExistingShop } = useInventory();
-  const [whatsappNumber, setWhatsappNumber] = useState(shopFormData.whatsapp);
+  const { shopFormData, setSellerFlowState, refreshInventory } = useInventory();
   const [activating, setActivating] = useState(false);
   const [activationSuccess, setActivationSuccess] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const selectedCategory = categories.find(c => c.value === shopFormData.category);
-  const trialEnd = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000);
+  const trialEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
 
   const uploadShopImages = async (shopId: string) => {
-    let bannerUrl = null;
     let avatarUrl = null;
     
-    // Helper for robust upload
-    const safeUpload = async (file: File, bucket: string, prefix: string) => {
-      const ext = file.name.split('.').pop()?.toLowerCase();
-      const path = `${shopId}/${prefix}.${ext}`;
-      let targetBucket = bucket;
-
-      const { error } = await supabase.storage
-        .from(targetBucket)
-        .upload(path, file, { upsert: true, contentType: file.type });
-
-      if (error) {
-        if (error.message?.includes('Bucket not found') && targetBucket !== 'shop-banners') {
-          const { data, error: fallbackError } = await supabase.storage
-            .from('shop-banners')
-            .upload(`${prefix}_${path}`, file, { upsert: true, contentType: file.type });
-          if (fallbackError) throw fallbackError;
-          targetBucket = 'shop-banners';
-          return supabase.storage.from(targetBucket).getPublicUrl(`${prefix}_${path}`).data.publicUrl;
-        }
-        throw error;
-      }
-      return supabase.storage.from(targetBucket).getPublicUrl(path).data.publicUrl;
-    };
-    
-    if (shopFormData.bannerFile) {
-      try {
-        bannerUrl = await safeUpload(shopFormData.bannerFile, 'shop-banners', 'banner');
-      } catch (e) {
-        console.error('Banner upload failed:', e);
-      }
-    }
-    
     if (shopFormData.avatarFile) {
-      try {
-        avatarUrl = await safeUpload(shopFormData.avatarFile, 'shop-avatars', 'avatar');
-      } catch (e) {
-        console.error('Avatar upload failed:', e);
+      const ext = shopFormData.avatarFile.name.split('.').pop()?.toLowerCase();
+      const path = `${shopId}/logo.${ext}`;
+      const { error } = await supabase.storage.from('shop-avatars').upload(path, shopFormData.avatarFile, { upsert: true });
+      if (!error) {
+        avatarUrl = supabase.storage.from('shop-avatars').getPublicUrl(path).data.publicUrl;
       }
     }
-    
-    return { bannerUrl, avatarUrl };
+    return { avatarUrl };
   };
 
   const handleActivateTrial = async () => {
-    if (!whatsappNumber.trim()) {
-      setToast({ message: 'Enter your WhatsApp number.', type: 'error' });
-      return;
-    }
-
     if (!user?.id) return;
-
-    const checkExistingShop = async () => {
-      const { data, error } = await supabase
-        .from('shops')
-        .select('id')
-        .eq('owner_id', user.id)
-        .maybeSingle();
-      if (error) return null;
-      return data;
-    };
-
     setActivating(true);
+
     try {
-      // 1. Double check for existing shop (client side)
-      const existing = await checkExistingShop();
-      if (existing) {
-        setToast({ message: "You already have a shop. Loading it now...", type: 'success' });
-        await loadExistingShop();
-        onActivated();
-        return;
-      }
-
-      const trialStart = new Date();
-      const trialEnd = new Date(trialStart.getTime() + 20 * 24 * 60 * 60 * 1000);
-
-      // Create shop in Supabase first to get ID
+      // 1. Create or update the shop
       const { data: newShop, error } = await supabase
         .from('shops')
-        .insert({
-          owner_id: session.user.id,
+        .upsert({
+          owner_id: user.id,
           name: shopFormData.name,
-          handle: shopFormData.handle.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+          handle: shopFormData.handle,
           categories: [shopFormData.category],
-          description: shopFormData.description,
+          description: shopFormData.description || '',
           location: shopFormData.town,
-          whatsapp: whatsappNumber.trim(),
-          instagram: shopFormData.instagram,
-          plan: 'shop',
+          whatsapp: shopFormData.whatsapp,
           is_live: true,
           subscription_status: 'trial',
-          created_at: trialStart.toISOString()
-        })
+          trial_ends_at: trialEnd.toISOString(),
+          created_at: new Date().toISOString(),
+          plan: 'shop'
+        }, { onConflict: 'owner_id' })
         .select()
         .single();
 
-      if (error) {
-        // Handle unique constraint (one shop per user)
-        if (error.code === '23505' || error.message?.includes('shops_owner_id_unique')) {
-           setToast({ message: "You already have a shop. We're loading it for you.", type: 'success' });
-           await loadExistingShop();
-           onActivated();
-           return;
-        }
-        throw error;
+      if (error) throw error;
+
+      // 2. Upload Logo
+      const { avatarUrl } = await uploadShopImages(newShop.id);
+      if (avatarUrl) {
+        await supabase.from('shops').update({ logo_url: avatarUrl }).eq('id', newShop.id);
       }
 
-      // Upload images
-      const { bannerUrl, avatarUrl } = await uploadShopImages(newShop.id);
-      
-      // Update shop with image URLs
-      if (bannerUrl || avatarUrl) {
-        await supabase
-          .from('shops')
-          .update({
-            banner_url: bannerUrl,
-            logo_url: avatarUrl // Sync for compatibility
-          })
-          .eq('id', newShop.id);
-      }
+      // 3. Update Profile
+      await supabase.from('profiles').update({ has_shop: true }).eq('id', user.id);
 
-      // Update profile WhatsApp
-      await supabase
-        .from('profiles')
-        .update({ has_shop: true, shop_name: shopFormData.name })
-        .eq('id', session.user.id);
-
+      await refreshInventory();
       setActivationSuccess(true);
     } catch (err: any) {
-      console.error('Trial activation error:', err);
-      let msg = 'Could not activate trial. Please try again.';
-      
-      if (err.message?.includes('duplicate') || err.message?.includes('unique') || err.code === '23505') {
-        msg = 'That handle is already taken. Go back and choose another.';
-      } else if (err.message?.includes('column') || err.message?.includes('schema cache')) {
-        msg = 'System configuration error (missing columns). Please contact support.';
-      } else if (err.message?.includes('policy') || err.code === '42501') {
-        msg = 'Permission denied. Please ensure you are logged in correctly.';
-      }
-      
-      setToast({ message: msg, type: 'error' });
+      console.error('Activation Error:', err);
+      toast.error(err.message || 'Node initialization failed.');
     } finally {
       setActivating(false);
     }
@@ -188,209 +81,117 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
 
   if (activationSuccess) {
     return (
-      <div className="fixed inset-0 bg-black z-[60] flex flex-col items-center justify-center p-8 text-center">
+      <div className="fixed inset-0 bg-[#0B0B0B] z-[60] flex flex-col items-center justify-center p-8 text-center font-sans">
         <motion.div
            initial={{ scale: 0 }}
            animate={{ scale: 1 }}
-           transition={{ type: 'spring', damping: 12, stiffness: 200, duration: 0.5 }}
-           className="w-20 h-20 bg-[#FF2D78] rounded-full flex items-center justify-center mb-6"
+           className="w-24 h-24 bg-[#C6FF00] rounded-[32px] flex items-center justify-center mb-8 shadow-[0_0_50px_rgba(198,255,0,0.2)]"
         >
-           <Check className="w-9 h-9 text-white" strokeWidth={3} />
+           <Check className="w-10 h-10 text-black" strokeWidth={4} />
         </motion.div>
 
-        <h2 className="text-white text-[26px] font-bold mb-2">Your Shop is Live! 🎉</h2>
-        <div className="mb-8">
-           <p className="text-white text-[16px] font-medium">{shopFormData.name}</p>
-           <p className="text-[#888] text-[13px]">@{shopFormData.handle}</p>
-        </div>
+        <h2 className="text-white text-3xl font-black uppercase italic tracking-tighter mb-2">Node Active</h2>
+        <p className="text-zinc-500 text-sm uppercase tracking-widest italic mb-10">Initial deployment successful</p>
 
-        <div className="w-full bg-[#111] rounded-[14px] p-4 text-left space-y-4 mb-8 max-w-[320px]">
-           <div className="flex justify-between items-center text-[13px]">
-              <span className="text-[#888]">Plan:</span>
-              <span className="text-white">Thread ZW Shop (Trial)</span>
+        <div className="w-full max-w-sm bg-[#151515] border border-white/5 rounded-[32px] p-8 space-y-6 text-left">
+           <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Protocol</span>
+              <span className="text-sm font-bold text-white">Founder Trial Activation</span>
            </div>
-           <div className="h-[1px] bg-[#1a1a1a]" />
-           <div className="flex justify-between items-center text-[13px]">
-              <span className="text-[#888]">Trial ends:</span>
-              <span className="text-white font-bold">{trialEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+           <div className="h-px bg-white/5" />
+           <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Terminus Date</span>
+              <span className="text-sm font-bold text-[#C6FF00] italic">{trialEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
            </div>
-           <div className="h-[1px] bg-[#1a1a1a]" />
-           <div className="flex justify-between items-center text-[13px]">
-              <span className="text-[#888]">Monthly after trial:</span>
-              <span className="text-[#FF2D78] font-bold">$6/month</span>
+           <div className="h-px bg-white/5" />
+           <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Monthly Sync</span>
+              <span className="text-sm font-bold text-white">$10.00 USD</span>
            </div>
         </div>
 
         <button
           onClick={onActivated}
-          className="w-full h-14 rounded-full bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold text-[15px] shadow-lg max-w-[320px]"
+          className="w-full max-w-sm h-16 bg-white text-black rounded-3xl font-black uppercase tracking-[0.2em] shadow-xl mt-12 active:scale-95 transition-all text-sm italic"
         >
-          Start Adding Products →
+          Enter Terminal <Check className="inline ml-2" size={18} strokeWidth={3} />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white px-5">
-      {/* Top Bar */}
-      <div className="sticky top-0 bg-black z-10 py-4 flex items-center mb-2">
-        <button onClick={onBack} className="p-2 -ml-2">
-          <ChevronLeft className="w-6 h-6 text-white" />
+    <div className="flex flex-col min-h-screen bg-[#0B0B0B] text-white font-sans">
+      <header className="px-6 py-8 flex items-center justify-between border-b border-white/5">
+        <button onClick={onBack} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+          <ChevronLeft size={20} />
         </button>
-        <h1 className="flex-1 text-center font-bold text-[18px]">Activate Free Trial</h1>
+        <h1 className="text-lg font-black uppercase italic tracking-tighter">Activation Protocol</h1>
         <div className="w-10" />
+      </header>
+
+      <div className="px-6 py-4">
+         <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Finalization</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-[#C6FF00] italic">Ready for Launch</span>
+         </div>
+         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+            <motion.div initial={{ width: '50%' }} animate={{ width: '100%' }} className="h-full bg-[#C6FF00]" />
+         </div>
       </div>
 
-       {/* Progress */}
-       <div className="flex flex-col items-center py-2 mb-6">
-        <span className="text-[#888] text-[12px] mb-2">Step 2 of 2</span>
-        <div className="w-full px-1">
-           <div className="h-[3px] w-full bg-[#1a1a1a] rounded-full overflow-hidden">
-              <div className="h-full bg-[#c8f135] w-full" />
+      <div className="flex-1 overflow-y-auto px-6 py-10 pb-40 space-y-12">
+        <div className="text-center space-y-4">
+           <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">Initialize <span className="text-[#C6FF00]">Trial</span></h2>
+           <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest italic">Activating 3-day commercial access node</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+           <ProtocolFeature icon={<Zap size={24} />} title="Immediate Visibility" desc="Your storefront becomes globally accessible via protocol link." />
+           <ProtocolFeature icon={<Smartphone size={24} />} title="WhatsApp Bridge" desc="Sales routing initiated directly to your commercial number." />
+           <ProtocolFeature icon={<Globe size={24} />} title="Zimbabwean Distribution" desc="Indexed for local hub searches in your selected region." />
+           <ProtocolFeature icon={<Package size={24} />} title="Infinite Inventory" desc="Unlimited stock unit listings during the trial period." />
+        </div>
+
+        <div className="bg-[#151515] border border-white/5 rounded-[40px] p-8 flex flex-col items-center text-center gap-6">
+           <div className="w-16 h-16 bg-black border border-white/5 rounded-3xl flex items-center justify-center text-[#C6FF00]">
+              <Terminal size={32} />
+           </div>
+           <div>
+              <h3 className="text-sm font-black uppercase italic tracking-tighter mb-2">Zero Friction Entry</h3>
+              <p className="text-zinc-500 text-[11px] leading-relaxed font-medium uppercase tracking-wider">No credit card required. Your node remains active for 3 days of uninterrupted operation before the first lock occurs.</p>
            </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto pb-32">
-        {/* Shop Preview Card */}
-        <div className="bg-[#111] border border-[#222] rounded-[16px] overflow-hidden mb-6 shadow-xl">
-           <div className="h-[80px] bg-[#1a1a1a] relative">
-              {shopFormData.bannerPreview ? (
-                 <img src={shopFormData.bannerPreview} className="w-full h-full object-cover opacity-60" alt="Banner" />
-              ) : (
-                 <div className="w-full h-full bg-linear-to-br from-[#9B27AF]/20 to-[#FF2D78]/20" />
-              )}
-              
-              <div className="absolute -bottom-8 left-5">
-                 <div className="w-16 h-16 rounded-full border-4 border-[#111] overflow-hidden bg-gradient-to-tr from-[#9B27AF] to-[#FF2D78]">
-                    {shopFormData.avatarPreview ? (
-                       <img src={shopFormData.avatarPreview} className="w-full h-full object-cover" alt="Avatar" />
-                    ) : (
-                       <div className="w-full h-full flex items-center justify-center text-white font-bold text-xl">
-                          {shopFormData.name.charAt(0)}
-                       </div>
-                    )}
-                 </div>
-              </div>
-           </div>
-
-           <div className="p-5 pt-10">
-              <div className="flex justify-between items-start">
-                 <div>
-                    <h3 className="text-white text-[17px] font-bold">{shopFormData.name || 'Shop Name'}</h3>
-                    <p className="text-[#888] text-[12px]">@{shopFormData.handle || 'handle'}</p>
-                 </div>
-                 <div className="bg-[rgba(255,45,120,0.1)] px-2.5 py-1 rounded-full border border-[#FF2D7820]">
-                    <span className="text-[#FF2D78] text-[11px] font-medium uppercase tracking-wider">
-                       {selectedCategory?.emoji} {selectedCategory?.label}
-                    </span>
-                 </div>
-              </div>
-              
-              <div className="h-[1px] bg-[#1a1a1a] my-4" />
-              
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                   <span className="text-[#666] text-[13px] shrink-0">📍</span>
-                   <p className="text-[#888] text-[13px] leading-relaxed line-clamp-2">
-                      {shopFormData.town}, {shopFormData.directions}
-                   </p>
-                </div>
-                <div className="flex gap-2">
-                   <span className="text-[#666] text-[13px] shrink-0">🕐</span>
-                   <p className="text-[#888] text-[12px]">
-                      {shopFormData.tradingHours}
-                   </p>
-                </div>
-              </div>
-           </div>
-        </div>
-
-        {/* Trial Details Card */}
-        <div className="bg-linear-to-br from-[rgba(34,197,94,0.08)] to-[rgba(34,197,94,0.04)] border border-[rgba(34,197,94,0.2)] rounded-[16px] p-5 mb-6">
-           <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-[#14532d]/40 flex items-center justify-center text-[20px]">
-                 🎁
-              </div>
-              <div>
-                 <p className="text-white text-[16px] font-bold">20 Days Free</p>
-                 <p className="text-[#888] text-[12px]">No payment needed to start</p>
-              </div>
-           </div>
-
-           <div className="space-y-3 mb-4">
-              <div className="flex items-center gap-3">
-                 <div className="w-5 h-5 rounded-full bg-[#22c55e] flex items-center justify-center text-black">
-                    <Check className="w-3 h-3" strokeWidth={4} />
-                 </div>
-                 <span className="text-white text-[13px]">Your shop goes live instantly</span>
-              </div>
-              <div className="flex items-center gap-3">
-                 <div className="w-5 h-5 rounded-full bg-[#22c55e] flex items-center justify-center text-black">
-                    <Check className="w-3 h-3" strokeWidth={4} />
-                 </div>
-                 <span className="text-white text-[13px]">List up to 3 products</span>
-              </div>
-              <div className="flex items-center gap-3">
-                 <div className="w-5 h-5 rounded-full bg-[#22c55e] flex items-center justify-center text-black">
-                    <Check className="w-3 h-3" strokeWidth={4} />
-                 </div>
-                 <span className="text-white text-[13px]">Buyers can find you immediately</span>
-              </div>
-           </div>
-
-           <div className="bg-[#111] rounded-[10px] p-3 px-4 flex justify-between items-center">
-              <span className="text-[#888] text-[13px]">Trial ends:</span>
-              <span className="text-white text-[13px] font-bold">
-                 {trialEnd.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-              </span>
-           </div>
-        </div>
-
-        {/* WhatsApp Number Section */}
-        <div className="mb-6">
-           <label className="text-white font-bold text-[14px] block mb-2 text-center">Your WhatsApp Number</label>
-           <p className="text-[#888] text-[12px] text-center mb-4 leading-relaxed">
-              We'll send you shop updates, low stock alerts, and renewal reminders here.
-           </p>
-           <input 
-              type="tel"
-              value={whatsappNumber}
-              onChange={(e) => setWhatsappNumber(e.target.value)}
-              placeholder="+263 7X XXX XXXX"
-              className="w-full h-[52px] bg-[#111] border border-[#222] rounded-[12px] px-4 text-white text-[16px] outline-none focus:border-[#FF2D78] transition-all text-center"
-           />
-        </div>
-
-        <button
+      <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0B0B0B] via-[#0B0B0B] to-transparent">
+         <button 
+           disabled={activating}
            onClick={handleActivateTrial}
-           disabled={activating || !whatsappNumber.trim()}
-           className={`w-full h-14 rounded-full font-bold text-[15px] flex items-center justify-center mt-4 transition-all
-              ${whatsappNumber.trim() 
-                ? 'bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white' 
-                : 'bg-[#1a1a1a] text-[#555] pointer-events-none'}`}
-        >
-           {activating ? (
-             <div className="w-5 h-5 border-2 border-white rounded-full animate-spin border-t-transparent" />
-           ) : whatsappNumber.trim() ? "Activate My Free Trial 🚀" : "Enter your WhatsApp number"}
-        </button>
+           className="w-full h-14 md:h-16 bg-[#C6FF00] text-black rounded-2xl md:rounded-3xl font-black uppercase tracking-widest italic flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-xs md:text-sm disabled:opacity-50"
+         >
+            {activating ? "Deploying Node..." : "Activate Storefront Node"} 
+            {!activating && <ArrowRight size={18} strokeWidth={3} />}
+         </button>
       </div>
-
-      {toast && (
-        <div className="fixed bottom-24 left-6 right-6 z-[70]">
-           <motion.div 
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             className={`p-4 rounded-[12px] shadow-2xl flex items-center gap-3 ${toast.type === 'error' ? 'bg-red-500' : 'bg-green-500'}`}
-           >
-              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                 <span className="text-white text-[14px]">{toast.type === 'error' ? '!' : '✓'}</span>
-              </div>
-              <p className="text-white text-[13px] font-medium">{toast.message}</p>
-           </motion.div>
-        </div>
-      )}
     </div>
   );
 };
+
+const ProtocolFeature = ({ icon, title, desc }: any) => (
+  <div className="flex gap-5 items-start">
+    <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center text-[#C6FF00] shrink-0">
+      {icon}
+    </div>
+    <div>
+      <h4 className="text-xs font-black uppercase italic tracking-widest text-white mb-1">{title}</h4>
+      <p className="text-zinc-500 text-[10px] leading-relaxed font-medium uppercase tracking-wide">{desc}</p>
+    </div>
+  </div>
+);
+
+const ArrowRight = ({ size, strokeWidth, className }: any) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M5 12h14M12 5l7 7-7 7" />
+  </svg>
+);
