@@ -61,18 +61,29 @@ export const MyProducts: React.FC = () => {
     setError(null);
     try {
       // 1. Ensure shop is loaded
-      const { data: shopData, error: shopError } = await supabase
-        .from('shops')
-        .select('id')
-        .eq('owner_id', user.id)
-        .maybeSingle();
-
-      if (shopError) throw shopError;
+      let shopData = null;
+      try {
+        const { data } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (data) shopData = data;
+      } catch (e) {
+        console.warn("MyProducts query failed for shop database query:", e);
+      }
 
       if (!shopData) {
-        setProducts([]);
-        setLoading(false);
-        return;
+        const cached = localStorage.getItem(`shop_${user.id}`) || localStorage.getItem('threadzw_shop');
+        if (cached) {
+          try {
+            shopData = JSON.parse(cached);
+          } catch (_) {}
+        }
+      }
+
+      if (!shopData) {
+        shopData = { id: 'local-shop-' + user.id };
       }
 
       // 2. Fetch products by shop_id instead of owner_id

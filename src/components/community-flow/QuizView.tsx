@@ -344,7 +344,7 @@ export const QuizView: React.FC = () => {
   const handleBallComplete = useCallback(async () => {
     try {
       const result = calculatePersonality(answers);
-      updateUserData({ personality: result });
+      updateUserData({ personality: result } as any);
       
       if (session) {
         (async () => {

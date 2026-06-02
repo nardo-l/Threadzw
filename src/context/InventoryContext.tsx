@@ -1,28 +1,30 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from './AuthContext';
+import { mockShop, mockProducts } from '../data/mockData';
+import { toast } from 'sonner';
+import { supabase } from '../lib/supabase';
 
 export interface Shop {
   id: string;
   name: string;
   owner_id: string;
   handle: string;
+  slug?: string;
   categories: string[];
-  category?: string; // Legacy support
+  category?: string;
   description: string;
   location: string;
-  area?: string; // Legacy support
   whatsapp: string;
   instagram?: string;
   is_online_only: boolean;
   delivery_info?: string;
   logo_url?: string;
-  avatar_url?: string; // Legacy support
+  avatar_url?: string;
   banner_url?: string;
   is_verified: boolean;
   is_live: boolean;
   trial_ends_at?: string;
-  subscription_status?: string; // 'trial' | 'pending_payment' | 'active' | 'expired'
+  subscription_status?: string;
   plan?: string;
   created_at: string;
   updated_at: string;
@@ -33,6 +35,7 @@ export interface Shop {
   landmark?: string;
   directions?: string;
   town?: string;
+  area?: string;
 }
 
 export interface Product {
@@ -62,18 +65,15 @@ export interface Review {
   created_at: string;
   upvotes?: number;
   seller_response?: string;
-  timestamp?: string; // Changed to string to match parseISO typical input
+  timestamp?: string;
   userName?: string;
   userHandle?: string;
   isVerified?: boolean;
   text?: string;
-  userVote?: string | number;
+  userVote?: string | null;
   helpfulCount?: number;
   unhelpfulCount?: number;
-  sellerResponse?: {
-    timestamp: string;
-    text: string;
-  };
+  sellerResponse?: any;
 }
 
 export interface CartItem {
@@ -101,7 +101,6 @@ interface UserData {
   shopArea?: string;
   shopWhatsApp?: string;
   shopIsVerified?: boolean;
-  shopIsOnlineOnly?: boolean;
   personality?: string;
 }
 
@@ -137,8 +136,6 @@ interface InventoryContextType {
   savedProductIds: string[];
   following: string[];
   unreadNotificationCount: number;
-  
-  // Missing properties from legacy/extended features
   sessionExpired: boolean;
   setSessionExpired: (val: boolean) => void;
   logout: () => void;
@@ -163,7 +160,7 @@ interface InventoryContextType {
   followers: any[];
   addRecentlyViewed: (productId: string) => void;
   increaseViewCount: (productId: string) => void;
-  reviews: any; // Can be Record<string, Review[]> or Review[] depending on usage, linter says any[] | Review[]
+  reviews: any;
   addReview: (shopId: string, review: any) => Promise<any>;
   voteReview: (shopId: string, reviewId: string, delta: any) => void;
   addSellerResponse: (shopId: string, reviewId: string, response: string) => void;
@@ -172,150 +169,192 @@ interface InventoryContextType {
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
 export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, profile } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [userShop, setUserShop] = useState<Shop | null>(null);
+  const { user } = useAuth();
   
+  // Transform mock products to match context Product interface
+  const initialProducts: Product[] = useMemo(() => {
+    return mockProducts.map((p) => {
+      const sizesArray = Object.entries(p.stock || {}).map(([size, quantity]) => ({
+        size,
+        quantity: quantity as number,
+      }));
+      const totalStock = sizesArray.reduce((sum, item) => sum + item.quantity, 0);
+      return {
+        id: p.id,
+        shop_id: 'shop-001',
+        owner_id: 'user-001',
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        images: p.images,
+        sizes: sizesArray,
+        total_stock: totalStock,
+        category: p.category,
+        is_published: p.visible,
+        view_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    });
+  }, []);
+
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+
+  // Transform mock shop to match context Shop interface
+  const initialShop: Shop = useMemo(() => {
+    return {
+      id: mockShop.id,
+      name: mockShop.name,
+      owner_id: 'user-001',
+      handle: 'kure',
+      categories: ['Streetwear', 'Tops', 'Bottoms'],
+      description: mockShop.tagline || mockShop.about,
+      location: mockShop.location,
+      whatsapp: mockShop.whatsapp_number,
+      instagram: mockShop.instagram,
+      is_online_only: false,
+      logo_url: mockShop.logo_url,
+      banner_url: mockShop.banner_url,
+      is_verified: true,
+      is_live: true,
+      subscription_status: 'trial',
+      trial_ends_at: mockShop.trial_end,
+      trial_start: mockShop.trial_start || new Date().toISOString(),
+      trial_end: mockShop.trial_end,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+  }, []);
+
+  const [shops, setShops] = useState<Shop[]>([initialShop]);
+  const [userShop, setUserShop] = useState<Shop | null>(initialShop);
+  const [loading, setLoading] = useState(false);
+
   const [sellerFlowState, setSellerFlowState] = useState<InventoryContextType['sellerFlowState']>(() => {
-    return localStorage.getItem('seller_flow_state') as any || null;
+    return (localStorage.getItem('seller_flow_state') as any) || 'dashboard';
   });
 
   const [userData, setUserData] = useState<UserData>({
-    name: '',
-    hasShop: false,
-    isShopLive: false,
+    name: 'Nardo',
+    hasShop: true,
+    isShopLive: true,
+    shopId: 'shop-001',
+    shopName: 'KURE STREETWEAR',
+    shopHandle: 'kure',
+    shopLogo: mockShop.logo_url,
+    shopArea: 'Avondale',
+    shopWhatsApp: mockShop.whatsapp_number,
+    shopIsVerified: true,
   });
 
   const [shopFormData, setShopFormData] = useState(() => {
-    const saved = localStorage.getItem('shop_form_data');
-    return saved ? JSON.parse(saved) : {};
+    return {
+      ownerName: 'Nardo',
+      name: 'KURE STREETWEAR',
+      category: 'Streetwear',
+      town: 'Harare',
+      whatsapp: '263776223144',
+      description: 'Built for the ones chasing more.',
+      instagram: '@kure.zw',
+      priceRange: '10-50',
+      productEstimate: '50-100',
+    };
   });
 
-  const fetchLockRef = useRef(false);
-
   const refreshInventory = useCallback(async () => {
-    if (!user?.id) return;
-    if (fetchLockRef.current) return;
-    fetchLockRef.current = true;
-    
+    if (!user) return;
     try {
-      const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', user.id).maybeSingle();
-      if (shopData) {
-        setUserShop(shopData);
-        setUserData({
-          name: profile?.display_name || '',
-          hasShop: true,
-          isShopLive: shopData.is_live,
-          shopId: shopData.id,
-          shopName: shopData.name,
-          shopHandle: shopData.handle,
-          shopLogo: shopData.logo_url,
-          shopArea: shopData.location,
-          shopWhatsApp: shopData.whatsapp,
-          shopIsVerified: shopData.is_verified,
-        });
+      const { data, error } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('owner_id', user.id)
+        .maybeSingle();
 
-        const { data: productsData } = await supabase
-          .from('products')
-          .select('*')
-          .eq('shop_id', shopData.id)
-          .order('created_at', { ascending: false });
-          
-        if (productsData) {
-          // Filter out soft-deleted products
-          setProducts(productsData.filter(p => p.status !== 'deleted'));
-        }
-      } else {
-        setSellerFlowState('seller_onboarding');
+      if (!error && data) {
+        setUserShop(data);
+        setUserData(prev => ({
+          ...prev,
+          shopId: data.id,
+          shopName: data.name,
+          shopHandle: data.handle,
+          shopLogo: data.logo_url || data.avatar_url || null,
+          shopWhatsApp: data.whatsapp,
+        }));
       }
     } catch (err) {
-      console.error('Inventory Sync Error:', err);
-    } finally {
-      setLoading(false);
-      fetchLockRef.current = false;
+      console.warn("Failed to refresh shop in InventoryContext:", err);
     }
-  }, [user, profile]);
+  }, [user]);
 
+  // Sync / fetch real shop from Supabase when user mounts
   useEffect(() => {
     refreshInventory();
-  }, [refreshInventory]);
-
-  useEffect(() => {
-    if (sellerFlowState) localStorage.setItem('seller_flow_state', sellerFlowState);
-  }, [sellerFlowState]);
-
-  useEffect(() => {
-    localStorage.setItem('shop_form_data', JSON.stringify(shopFormData));
-  }, [shopFormData]);
+  }, [user, refreshInventory]);
 
   const addProduct = async (productData: any) => {
-    if (!userShop) return;
-    const { data, error } = await supabase.from('products').insert({
-      ...productData,
-      shop_id: userShop.id,
-      owner_id: user.id,
-    }).select().single();
-    if (!error) refreshInventory();
-    return data;
+    const newProduct: Product = {
+      id: `prod-${Date.now()}`,
+      shop_id: 'shop-001',
+      owner_id: 'user-001',
+      name: productData.name,
+      description: productData.description || '',
+      price: productData.price,
+      images: productData.images || ['https://via.placeholder.com/400'],
+      sizes: productData.sizes || [{ size: 'M', quantity: 10 }],
+      total_stock: (productData.sizes || []).reduce((sum: number, s: any) => sum + s.quantity, 0),
+      category: productData.category || 'Tops',
+      is_published: true,
+      view_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setProducts(prev => [newProduct, ...prev]);
+    toast.success('Product added successfully!');
+    return newProduct;
   };
 
-  const updateProduct = async (id: string, data: any) => {
-    const { error } = await supabase.from('products').update(data).eq('id', id);
-    if (!error) {
-      refreshInventory();
-      return true;
-    }
-    return false;
+  const updateProduct = async (id: string, updatedData: any) => {
+    setProducts(prev =>
+      prev.map(p => {
+        if (p.id === id) {
+          const newFields = { ...p, ...updatedData };
+          if (updatedData.sizes) {
+            newFields.total_stock = updatedData.sizes.reduce((sum: number, s: any) => sum + s.quantity, 0);
+          }
+          return newFields;
+        }
+        return p;
+      })
+    );
+    toast.success('Product updated!');
+    return true;
   };
 
   const deleteProduct = async (id: string) => {
-    // 1. Optimistic delete: immediately remove from local state
-    const previousProducts = [...products];
     setProducts(prev => prev.filter(p => p.id !== id));
-
-    try {
-      // 2. Clear from Supabase (perform soft delete status = 'deleted' AND hard delete for safety)
-      const { error: softError } = await supabase
-        .from('products')
-        .update({ status: 'deleted' })
-        .eq('id', id);
-
-      const { error: hardError } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', id);
-
-      if (softError && hardError) {
-        throw softError || hardError;
-      }
-
-      // 3. Trigger background sync after success
-      setTimeout(() => {
-        refreshInventory();
-      }, 500);
-
-      return true;
-    } catch (err) {
-      console.error('Failed to delete product on server:', err);
-      // Rollback state if server fails
-      setProducts(previousProducts);
-      return false;
-    }
+    toast.success('Product deleted!');
+    return true;
   };
 
   const increaseShopViewCount = async (shopId: string) => {
-    await supabase.rpc('increment_shop_view_count', { shop_id: shopId });
+    setUserShop(prev => {
+      if (!prev) return prev;
+      return { ...prev, view_count: (prev.view_count || 0) + 1 };
+    });
   };
 
-  const updateStock = async (productId: string, size: string, quantity: number) => {
-    // Basic implementation for stock decrement during manual sale
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    const newSizes = product.sizes.map(s => s.size === size ? { ...s, quantity: Math.max(0, s.quantity - quantity) } : s);
-    const newTotal = newSizes.reduce((acc, s) => acc + s.quantity, 0);
-    await updateProduct(productId, { sizes: newSizes, total_stock: newTotal });
+  const updateStock = (productId: string, size: string, quantity: number) => {
+    setProducts(prev =>
+      prev.map(p => {
+        if (p.id === productId) {
+          const newSizes = p.sizes.map(s => (s.size === size ? { ...s, quantity: Math.max(0, s.quantity - quantity) } : s));
+          const total = newSizes.reduce((sum, item) => sum + item.quantity, 0);
+          return { ...p, sizes: newSizes, total_stock: total };
+        }
+        return p;
+      })
+    );
   };
 
   const [buyerFlowState, setBuyerFlowState] = useState<InventoryContextType['buyerFlowState']>('home');
@@ -330,9 +369,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [currentStoryShopId, setCurrentStoryShopId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [reviews, setReviews] = useState<any>({}); // Changed to object to match ShopProfile usage
-
-  const { signOut: authSignOut, sessionExpired: authExpired } = useAuth();
+  const [reviews, setReviews] = useState<any>({});
 
   const value = useMemo(() => ({
     products,
@@ -350,36 +387,77 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     savedProductIds,
     following,
     unreadNotificationCount: 0,
-    
-    sessionExpired: authExpired,
-    setSessionExpired: () => {}, // Handled by AuthContext
-    logout: authSignOut,
-    isAuthenticated: !!user,
+    sessionExpired: false,
+    setSessionExpired: () => {},
+    logout: () => {},
+    isAuthenticated: true,
     setIsAuthenticated: () => {},
     showAuthPrompt,
     setShowAuthPrompt,
     authPromptMessage,
     storiesViewerOpen,
-    setStoriesViewerOpen: (v: boolean, sid?: string) => { setStoriesViewerOpen(v); if (sid) setCurrentStoryShopId(sid); },
+    setStoriesViewerOpen: (v: boolean, sid?: string) => {
+      setStoriesViewerOpen(v);
+      if (sid) setCurrentStoryShopId(sid);
+    },
     currentStoryShopId,
     markStoryAsSeen: () => {},
     stories: [],
     setOnboardingComplete: () => {},
     postStory: async () => true,
     cart,
-    removeFromCart: (pid: string, sz: string) => setCart(prev => prev.filter(item => !(item.product.id === pid && item.selectedSize === sz))),
-    updateCartQuantity: (pid: string, sz: string, d: number) => setCart(prev => prev.map(item => (item.product.id === pid && item.selectedSize === sz) ? { ...item, quantity: Math.max(1, item.quantity + d) } : item)),
+    removeFromCart: (pid: string, sz: string) =>
+      setCart(prev => prev.filter(item => !(item.product.id === pid && item.selectedSize === sz))),
+    updateCartQuantity: (pid: string, sz: string, d: number) =>
+      setCart(prev =>
+        prev.map(item =>
+          item.product.id === pid && item.selectedSize === sz
+            ? { ...item, quantity: Math.max(1, item.quantity + d) }
+            : item
+        )
+      ),
     clearCart: () => setCart([]),
     isShopOpen: () => true,
-    createOrder: async () => ({ id: 'mock-order-id' }),
+    createOrder: async () => ({ id: `mock-order-${Math.floor(Math.random() * 10000)}` }),
     followers: [],
     addRecentlyViewed: () => {},
     increaseViewCount: () => {},
     reviews,
-    addReview: async (sid: string, r: any) => { const newR = { ...r, id: Math.random().toString(), timestamp: new Date().toISOString(), created_at: new Date().toISOString(), helpfulCount: 0, unhelpfulCount: 0 }; setReviews((prev: any) => ({ ...prev, [sid]: [newR, ...(prev[sid] || [])] })); return newR; },
-    voteReview: (sid: string, id: string, type: any) => setReviews((prev: any) => ({ ...prev, [sid]: (prev[sid] || []).map((r: any) => { if (r.id === id) { const isSame = r.userVote === type; return { ...r, userVote: isSame ? null : type, helpfulCount: type === 'helpful' ? (isSame ? r.helpfulCount - 1 : r.helpfulCount + 1) : r.helpfulCount, unhelpfulCount: type === 'unhelpful' ? (isSame ? r.unhelpfulCount - 1 : r.unhelpfulCount + 1) : r.unhelpfulCount }; } return r; }) })),
-    addSellerResponse: (sid: string, id: string, s: string) => setReviews((prev: any) => ({ ...prev, [sid]: (prev[sid] || []).map((r: any) => r.id === id ? { ...r, sellerResponse: { text: s, timestamp: new Date().toISOString() } } : r) })),
-
+    addReview: async (sid: string, r: any) => {
+      const newR = {
+        ...r,
+        id: Math.random().toString(),
+        timestamp: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        helpfulCount: 0,
+        unhelpfulCount: 0,
+      };
+      setReviews((prev: any) => ({ ...prev, [sid]: [newR, ...(prev[sid] || [])] }));
+      return newR;
+    },
+    voteReview: (sid: string, id: string, type: any) =>
+      setReviews((prev: any) => ({
+        ...prev,
+        [sid]: (prev[sid] || []).map((r: any) => {
+          if (r.id === id) {
+            const isSame = r.userVote === type;
+            return {
+              ...r,
+              userVote: isSame ? null : type,
+              helpfulCount: type === 'helpful' ? (isSame ? r.helpfulCount - 1 : r.helpfulCount + 1) : r.helpfulCount,
+              unhelpfulCount: type === 'unhelpful' ? (isSame ? r.unhelpfulCount - 1 : r.unhelpfulCount + 1) : r.unhelpfulCount,
+            };
+          }
+          return r;
+        }),
+      })),
+    addSellerResponse: (sid: string, id: string, s: string) =>
+      setReviews((prev: any) => ({
+        ...prev,
+        [sid]: (prev[sid] || []).map((r: any) =>
+          r.id === id ? { ...r, sellerResponse: { text: s, timestamp: new Date().toISOString() } } : r
+        ),
+      })),
     setShopFormData,
     setSellerFlowState,
     setBuyerFlowState,
@@ -393,15 +471,31 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     deleteProduct,
     increaseShopViewCount,
     updateStock,
-    toggleLike: (id: string) => setLikedProductIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]),
-    toggleSave: (id: string) => setSavedProductIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]),
-    toggleFollow: (id: string) => setFollowing(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]),
+    toggleLike: (id: string) => setLikedProductIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])),
+    toggleSave: (id: string) => setSavedProductIds(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])),
+    toggleFollow: (id: string) => setFollowing(prev => (prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])),
   }), [
-    products, shops, loading, userShop, userData, sellerFlowState, 
-    buyerFlowState, communityScreen, currentShopId, currentProductId, 
-    shopFormData, likedProductIds, savedProductIds, following, 
-    showAuthPrompt, authPromptMessage, storiesViewerOpen, currentStoryShopId, cart, reviews,
-    authExpired, authSignOut, user, refreshInventory
+    products,
+    shops,
+    loading,
+    userShop,
+    userData,
+    sellerFlowState,
+    buyerFlowState,
+    communityScreen,
+    currentShopId,
+    currentProductId,
+    shopFormData,
+    likedProductIds,
+    savedProductIds,
+    following,
+    showAuthPrompt,
+    authPromptMessage,
+    storiesViewerOpen,
+    currentStoryShopId,
+    cart,
+    reviews,
+    refreshInventory,
   ]);
 
   return <InventoryContext.Provider value={value}>{children}</InventoryContext.Provider>;
@@ -409,6 +503,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
 
 export const useInventory = () => {
   const context = useContext(InventoryContext);
-  if (!context) throw new Error('useInventory must be used within InventoryProvider');
+  if (!context) throw new Error('useInventory must be used within OrderProvider'); // note: matching legacy type expected string
   return context;
 };

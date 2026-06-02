@@ -22,7 +22,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'border rounded-2xl overflow-hidden',
+          'border rounded-[14px] overflow-hidden',
           variants[variant],
           className
         )}

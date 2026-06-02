@@ -1,3 +1,4 @@
+// THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, Check, X, CreditCard, Clock, Loader2 } from 'lucide-react';
@@ -72,7 +73,7 @@ export const RenewalPaywall: React.FC = () => {
               <h3 className="text-[20px] font-black text-white">Unlimited Products</h3>
             </div>
             <div className="text-right">
-              <span className="text-[28px] font-black text-white leading-none">$9</span>
+              <span className="text-[28px] font-black text-white leading-none">$5</span>
               <span className="text-[12px] text-[#666] block">monthly</span>
             </div>
           </div>
@@ -95,7 +96,7 @@ export const RenewalPaywall: React.FC = () => {
 
           <button 
             onClick={(e) => { e.stopPropagation(); setShowConfirm(true); }}
-            className="w-full h-[60px] bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold rounded-full shadow-xl flex items-center justify-center gap-2 group-active:scale-[0.98] transition-transform"
+            className="w-full h-[60px] bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold rounded-[10px] shadow-xl flex items-center justify-center gap-2 group-active:scale-[0.98] transition-transform"
           >
             Renew Now →
           </button>
@@ -134,7 +135,7 @@ export const RenewalPaywall: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[11px] font-bold text-[#888] uppercase tracking-widest">Monthly Amount</span>
-                  <span className="text-[24px] font-black text-[#FF2D78]">$9.00</span>
+                  <span className="text-[24px] font-black text-[#FF2D78]">$5.00</span>
                 </div>
               </div>
 
@@ -143,13 +144,13 @@ export const RenewalPaywall: React.FC = () => {
                   <CreditCard size={18} className="text-[#FF2D78]" />
                   <span className="text-[15px]">EcoCash or InnBucks</span>
                 </div>
-                <p className="text-[12px] text-[#888] leading-relaxed">You will be redirected to the Shop Centre instructions to send your $9 verification payment.</p>
+                <p className="text-[12px] text-[#888] leading-relaxed">You will be redirected to the Shop Centre instructions to send your $5 verification payment.</p>
               </div>
 
               <button 
                 onClick={handleRenew}
                 disabled={isProcessing}
-                className="w-full h-15 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-black rounded-full shadow-xl flex items-center justify-center gap-2"
+                className="w-full h-15 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-black rounded-[10px] shadow-xl flex items-center justify-center gap-2"
               >
                 {isProcessing ? (
                   <Loader2 className="animate-spin" size={24} />

@@ -3,6 +3,7 @@ export interface Shop {
   owner_id: string;
   name: string;
   handle: string;
+  slug?: string;
   category: string;
   description: string;
   town: string;
@@ -15,7 +16,11 @@ export interface Shop {
   plan: 'trial' | 'active' | 'expired';
   trial_started_at: string;
   trial_ends_at: string;
-  subscription_status: 'trial' | 'pending_payment' | 'active' | 'expired';
+  trial_start?: string | null;
+  trial_end?: string | null;
+  subscription_status: 'trial' | 'active' | 'locked' | 'pending_verification' | 'pending_payment' | 'expired';
+  subscription_start?: string | null;
+  subscription_end?: string | null;
   access_code: string;
   code_expires_at: string;
   monthly_price: number;
@@ -24,11 +29,18 @@ export interface Shop {
   total_sales: number;
   view_count: number;
   created_at: string;
+  manual_lock?: boolean;
+  manual_lock_reason?: string | null;
+  manual_lock_date?: string | null;
+  manual_lock_by?: string | null;
+  payment_overdue_flagged?: boolean;
+  payment_overdue_since?: string | null;
 }
 
 export interface Product {
   id: string;
   shop_id: string;
+  owner_id?: string;
   name: string;
   description: string;
   price: number;
@@ -36,6 +48,9 @@ export interface Product {
   sizes: { size: string; quantity: number }[];
   category: string;
   is_published: boolean;
+  is_featured?: boolean;
+  status?: string;
+  collection?: string | null;
   view_count: number;
   save_count: number;
   total_stock: number;
@@ -75,4 +90,22 @@ export interface Profile {
   whatsapp_number: string;
   onboarding_complete: boolean;
   created_at: string;
+}
+
+export interface Sale {
+  id: string;
+  shop_id: string;
+  product_id: string;
+  product_name: string;
+  size: string;
+  quantity: number;
+  original_price: number;
+  discount_amount: number;
+  final_price: number;
+  payment_method: 'cash' | 'ecocash' | 'innbucks' | 'whatsapp';
+  channel: 'walk-in' | 'whatsapp' | 'instagram' | 'other';
+  notes?: string | null;
+  created_at: string;
+  voided: boolean;
+  offlinePending?: boolean;
 }

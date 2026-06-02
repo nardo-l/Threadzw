@@ -1,3 +1,4 @@
+// THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, X, Smartphone, ShieldCheck, ArrowRight, MessageCircle } from 'lucide-react';
@@ -33,7 +34,7 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
           owner_id: session?.user?.id,
           whatsapp_number: whatsappNumber.trim(),
           plan: 'standard',
-          amount: 10,
+          amount: 5,
           status: 'pending',
           receiving_number: '0776223144'
         });
@@ -70,7 +71,7 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
         <button onClick={() => setSellerFlowState('live')} className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
           <X size={20} />
         </button>
-        <h1 className="text-lg font-black uppercase italic tracking-tighter">Clear Node Balance</h1>
+        <h1 className="text-lg font-black uppercase italic tracking-tighter">Activate your store</h1>
         <div className="w-10" />
       </header>
 
@@ -81,16 +82,16 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
            <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-[#C6FF00]/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-[#C6FF00] shadow-[0_0_40px_rgba(198,255,0,0.1)]">
               <ShieldCheck className="size-7 md:size-8" />
            </div>
-           <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter">Founder Node Access</h2>
-           <p className="text-[#C6FF00] text-[12px] md:text-sm font-black italic uppercase tracking-widest">$10.00 USD / MONTH</p>
+           <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter">Activate your store — $5/month</h2>
+           <p className="text-[#C6FF00] text-[12px] md:text-sm font-black italic uppercase tracking-widest">$5.00 USD / MONTH</p>
         </div>
 
         {/* Manual Instructions */}
         <div className="space-y-6">
            <InstructionStep 
              num="01" 
-             title="Send Transfer" 
-             desc="Send $10.00 via EcoCash or InnBucks to 0776223144 (Founder Routing)." 
+             title="Send $5 to EcoCash +263776223144 or InnBucks" 
+             desc="Send exactly $5.00 USD to help activate your catalog." 
            />
            
            <div className="bg-[#151515] border border-white/5 rounded-3xl p-6 space-y-4">
@@ -107,7 +108,7 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
 
            <InstructionStep 
              num="02" 
-             title="Confirm Origin" 
+             title="Enter your reference info & Tap 'I've Paid'" 
              desc="Input the number used for this transaction below." 
            />
 
@@ -117,14 +118,20 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
                  value={whatsappNumber}
                  onChange={(e) => setWhatsappNumber(e.target.value)}
                  className="w-full h-14 md:h-16 bg-black border border-white/5 rounded-xl md:rounded-2xl pl-12 pr-5 text-sm font-bold focus:border-[#C6FF00] outline-none transition-all placeholder:text-zinc-700"
-                 placeholder="Origin Number"
+                 placeholder="WhatsApp number (Reference)"
               />
            </div>
 
            <InstructionStep 
              num="03" 
-             title="Verification Code" 
-             desc="We will verify and WhatsApp a 6-digit sync code to you within 2 hours." 
+             title="Wait for your 6-digit code on WhatsApp" 
+             desc="Our verify agent will text validation credentials inside 2 hours." 
+           />
+
+           <InstructionStep 
+             num="04" 
+             title="Enter code to unlock your store" 
+             desc="Once received, tap Enter Sync Code dashboard option to unlock." 
            />
         </div>
 
@@ -144,7 +151,7 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
            onClick={handleSubmitPayment}
            className="w-full h-14 md:h-16 bg-[#C6FF00] text-black rounded-2xl md:rounded-3xl font-black uppercase tracking-widest italic flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all text-xs md:text-sm disabled:opacity-30"
          >
-            {loading ? "Transmitting..." : "Initialize Sync"} 
+            {loading ? "Transmitting..." : "I've Paid"} 
             <ArrowRight size={18} strokeWidth={3} />
          </button>
       </div>

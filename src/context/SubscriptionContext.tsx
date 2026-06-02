@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
-import { supabase } from '../lib/supabase';
+import { mockShop } from '../data/mockData';
 
 interface Subscription {
   id: string;
@@ -30,6 +30,7 @@ interface Shop {
   owner_id: string;
   name: string;
   handle: string;
+  slug?: string;
   is_live: boolean;
   product_count: number;
   subscription_id: string | null;
@@ -64,108 +65,87 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [shop, setShop] = useState<Shop | null>(null);
-  const [loading, setLoading] = useState(true);
+  
+  // Custom mock shop mapping
+  const defaultShopData: Shop = {
+    id: mockShop.id,
+    owner_id: 'user-001',
+    name: mockShop.name,
+    handle: 'kure',
+    is_live: true,
+    product_count: 6,
+    subscription_id: 'sub-001',
+    subscription_status: mockShop.subscription_status,
+    trial_ends_at: mockShop.trial_end,
+    plan: 'shop',
+  };
+
+  const defaultSubData: Subscription = {
+    id: 'sub-001',
+    shop_id: mockShop.id,
+    owner_id: 'user-001',
+    plan: 'shop',
+    billing_cycle: 'monthly',
+    status: 'active',
+    amount_paid: 5,
+    currency: 'USD',
+    started_at: new Date().toISOString(),
+    current_period_start: new Date().toISOString(),
+    current_period_end: mockShop.trial_end,
+    cancelled_at: null,
+    paynow_reference: null,
+    payment_method: 'free',
+    ecocash_number: null,
+    payment_status: 'paid',
+    zuripay_transaction_id: null,
+    zuripay_poll_url: null,
+    is_first_month: true,
+    created_at: new Date().toISOString(),
+  };
+
+  const [shop, setShop] = useState<Shop | null>(defaultShopData);
+  const [subscription, setSubscription] = useState<Subscription | null>(defaultSubData);
+  const [loading, setLoading] = useState(false);
   const [showRenewalPaywall, setShowRenewalPaywall] = useState(false);
   const [paywallType, setPaywallType] = useState<'trial' | 'expired'>('expired');
 
   useEffect(() => {
     if (user) {
-      fetchShopAndSubscription();
+      setShop(defaultShopData);
+      setSubscription(defaultSubData);
     } else {
-      setLoading(false);
-      setSubscription(null);
       setShop(null);
+      setSubscription(null);
     }
   }, [user]);
 
   const fetchShopAndSubscription = async () => {
-    if (!user?.id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Fetch shop
-      const { data: shopData } = await supabase
-        .from('shops')
-        .select('*')
-        .eq('owner_id', user.id)
-        .single();
-      
-      if (shopData) {
-        setShop(shopData as any);
-        
-        // Fetch subscription
-        const { data: subData } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('shop_id', shopData.id)
-          .eq('status', 'active')
-          .maybeSingle();
-        
-        if (subData) {
-          setSubscription(subData as any);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching subscription data:', error);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(false);
   };
 
   const createSubscription = async (params: any) => {
-    if (!user?.id) return { data: null, error: new Error('Not authenticated') };
-
-    const now = new Date();
-    const periodEnd = new Date(now);
-    periodEnd.setDate(periodEnd.getDate() + 20);
-
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .insert({
-        shop_id: params.shopId,
-        owner_id: user.id,
-        plan: 'shop',
-        billing_cycle: params.billingCycle || 'monthly',
-        status: 'active',
-        amount_paid: params.amountPaid || 9,
-        currency: 'USD',
-        started_at: now.toISOString(),
-        current_period_start: now.toISOString(),
-        current_period_end: periodEnd.toISOString(),
-        payment_method: params.paymentMethod || 'ecocash',
-        ecocash_number: params.ecocashNumber || null,
-        payment_status: 'paid'
-      })
-      .select()
-      .single();
-
-    if (data) setSubscription(data as any);
-    return { data: data as any, error };
+    const updatedSub: Subscription = {
+      ...defaultSubData,
+      id: `sub-${Date.now()}`,
+      shop_id: params.shopId || defaultShopData.id,
+      billing_cycle: params.billingCycle || 'monthly',
+      status: 'active',
+      amount_paid: params.amountPaid || 5,
+      payment_method: params.paymentMethod || 'ecocash',
+      ecocash_number: params.ecocashNumber || null,
+    };
+    setSubscription(updatedSub);
+    return { data: updatedSub, error: null };
   };
 
   const createShop = async (params: any) => {
-    if (!user?.id) return { data: null, error: new Error('Not authenticated') };
-
-    const { data, error } = await supabase
-      .from('shops')
-      .insert({
-        owner_id: user.id,
-        name: params.name,
-        handle: params.handle,
-        is_live: true,
-        product_count: 0,
-        subscription_status: 'trial',
-        trial_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
-      })
-      .select()
-      .single();
-
-    if (data) setShop(data as any);
-    return { data: data as any, error };
+    const updatedShop: Shop = {
+      ...defaultShopData,
+      name: params.name,
+      handle: params.handle,
+    };
+    setShop(updatedShop);
+    return { data: updatedShop, error: null };
   };
 
   const renewSubscription = async (params: any) => {
@@ -173,33 +153,19 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const cancelSubscription = async () => {
-    if (!subscription?.id) return { error: new Error('No active subscription') };
-    
-    const { error } = await supabase
-      .from('subscriptions')
-      .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
-      .eq('id', subscription.id);
-
-    if (!error) setSubscription(null);
-    return { error };
+    setSubscription(null);
+    return { error: null };
   };
 
   const isTrial = shop?.subscription_status === 'trial';
   const maxProducts = isTrial ? 3 : Infinity;
-  const currentPlan = subscription?.plan || (shop as any)?.plan || (isTrial ? 'shop' : null);
-  const isStarterPlan = false; // Deprecated
-  const isFullPlan = true; // All plans are now effectively full
-  const canAddProduct = shop ? (maxProducts === Infinity || shop.product_count < maxProducts) : false;
-  const isAtProductLimit = shop ? (maxProducts !== Infinity && shop.product_count >= maxProducts) : false;
-  
-  const daysRemaining = subscription
-    ? Math.max(0, Math.ceil(
-        (new Date(subscription.current_period_end).getTime() - new Date().getTime()) /
-        (1000 * 60 * 60 * 24)
-      ))
-    : (shop?.trial_ends_at 
-        ? Math.max(0, Math.ceil((new Date(shop.trial_ends_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
-        : 0);
+  const currentPlan = subscription?.plan || shop?.plan || (isTrial ? 'shop' : null);
+  const isStarterPlan = false;
+  const isFullPlan = true;
+  const canAddProduct = true;
+  const isAtProductLimit = false;
+
+  const daysRemaining = 5; // Fixed mock days remaining for stable prototype
 
   return (
     <SubscriptionContext.Provider value={{

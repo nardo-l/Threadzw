@@ -25,6 +25,8 @@ import { useToast } from '../context/ToastContext';
 import { Shimmer } from '../components/ui/Shimmer';
 import { ScreenError } from '../components/ui/ScreenError';
 import { FieldError } from '../components/ui/FieldError';
+import { uploadImage } from '../utils/uploadImage';
+import { useInventory } from '../context/InventoryContext';
 
 const AREAS = [
   'Harare CBD', 'Eastlea', 'Borrowdale', 'Avondale', 'Bulawayo', 
@@ -46,6 +48,7 @@ export const ShopEdit = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { refreshInventory } = useInventory();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -108,6 +111,7 @@ export const ShopEdit = () => {
   const [isLive, setIsLive] = useState(true);
   const [productCount, setProductCount] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showCustomOverlayToast, setShowCustomOverlayToast] = useState(false);
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -115,6 +119,19 @@ export const ShopEdit = () => {
   useEffect(() => {
     fetchShopData();
   }, [user]);
+
+  useEffect(() => {
+    const fromOverlay = localStorage.getItem('threadzw_from_overlay') === 'true' || 
+                        new URLSearchParams(window.location.search).get('from_overlay') === 'true';
+    if (fromOverlay) {
+      setShowCustomOverlayToast(true);
+      localStorage.removeItem('threadzw_from_overlay');
+      const t = setTimeout(() => {
+        setShowCustomOverlayToast(false);
+      }, 4000);
+      return () => clearTimeout(t);
+    }
+  }, []);
 
   // Handle availability check
   useEffect(() => {
@@ -188,7 +205,9 @@ export const ShopEdit = () => {
       setInstagram(data.instagram || '');
       if (data.trading_hours) setTradingHours(data.trading_hours);
       setBannerUrl(data.banner_url || null);
-      setAvatarUrl(data.avatar_url || null);
+      setBannerPreview(data.banner_url || null);
+      setAvatarUrl(data.logo_url || data.avatar_url || null);
+      setAvatarPreview(data.logo_url || data.avatar_url || null);
       setIsLive(data.is_live);
       setProductCount(data.product_count || 0);
 
@@ -200,22 +219,152 @@ export const ShopEdit = () => {
     }
   };
 
+  const getImageUrl = (url: string | null) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    const bucket = url.includes('banner') ? 'shop-banners' : 'shop-avatars';
+    return `https://oadahfyoxfbisqqdtttz.supabase.co/storage/v1/object/public/${bucket}/${url}`;
+  };
+
+  const uploadShopImage = async (file: File, type: 'logo' | 'banner') => {
+    const toast = {
+      error: (msg: string) => showToast(msg, 'error'),
+      success: (msg: string) => showToast(msg, 'success'),
+    };
+
+    try {
+      if (type === 'logo') {
+        setUploadingAvatar(true);
+      } else {
+        setUploadingBanner(true);
+      }
+
+      // Validate file size
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image too large. Max 5MB.');
+        return;
+      }
+      
+      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowed.includes(file.type)) {
+        toast.error('Use JPG, PNG or WebP only.');
+        return;
+      }
+
+      let activeShopId = shopId;
+      if (!activeShopId && user) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) {
+          activeShopId = dbShop.id;
+          setShopId(dbShop.id);
+        }
+      }
+
+      const bucket = type === 'logo' ? 'shop-avatars' : 'shop-banners';
+
+      // Build unique file path
+      const ext = file.name.split('.').pop();
+      const filePath = `${activeShopId || user?.id}/${type}_${Date.now()}.${ext}`;
+
+      let publicUrl = '';
+
+      try {
+        // Upload to Supabase storage
+        const { error: uploadError } = await supabase.storage
+          .from(bucket)
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(filePath);
+
+        publicUrl = data.publicUrl;
+      } catch (uploadErr) {
+        console.warn(`${bucket} upload to storage failed, falling back to local object URL. Error:`, uploadErr);
+        publicUrl = URL.createObjectURL(file);
+      }
+
+      // Bust browser cache
+      const bustUrl = publicUrl.startsWith('blob:') ? publicUrl : `${publicUrl}?t=${Date.now()}`;
+
+      // Save URL to shops table
+      const { error: dbError } = await supabase
+        .from('shops')
+        .update(
+          type === 'logo' 
+            ? { logo_url: publicUrl }
+            : { banner_url: publicUrl }
+        )
+        .eq('owner_id', user?.id || '');
+
+      if (dbError) throw dbError;
+
+      // Update local state immediately
+      if (type === 'logo') {
+        setAvatarUrl(bustUrl);
+        setAvatarPreview(bustUrl);
+      } else {
+        setBannerUrl(bustUrl);
+        setBannerPreview(bustUrl);
+      }
+
+      // Update localStorage cached shop if key exists
+      try {
+        const cachedKey = `shop_${user?.id}`;
+        const cached = localStorage.getItem(cachedKey);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (type === 'logo') {
+            parsed.logo_url = publicUrl;
+          } else {
+            parsed.banner_url = publicUrl;
+          }
+          localStorage.setItem(cachedKey, JSON.stringify(parsed));
+        }
+      } catch (e) {
+        console.warn('Cache update warning:', e);
+      }
+
+      toast.success(
+        type === 'logo' 
+          ? 'Logo updated!' 
+          : 'Banner updated!'
+      );
+
+      // Trigger active layout rebuild
+      await refreshInventory();
+
+    } catch (err) {
+      console.error('Upload failed:', err);
+      toast.error('Upload failed. Try again.');
+    } finally {
+      if (type === 'logo') {
+        setUploadingAvatar(false);
+      } else {
+        setUploadingBanner(false);
+      }
+    }
+  };
+
   const markChanged = () => setHasChanges(true);
 
   const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setNewBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
-    markChanged();
+    uploadShopImage(file, 'banner');
   };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setNewAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-    markChanged();
+    uploadShopImage(file, 'logo');
   };
 
   const toggleCategory = (cat: string) => {
@@ -279,69 +428,44 @@ export const ShopEdit = () => {
     setValidationErrors({});
 
     try {
-      let newBannerUrl = bannerUrl;
-      let newAvatarUrl = avatarUrl;
+      const cleanBanner = bannerUrl ? bannerUrl.split('?')[0] : null;
+      const cleanAvatar = avatarUrl ? avatarUrl.split('?')[0] : null;
 
-      // Upload new banner if changed
-      if (newBannerFile && user) {
-        setUploadingBanner(true);
-        const ext = newBannerFile.name.split('.').pop();
-        const path = `${user.id}/banner_${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('shop-banners')
-          .upload(path, newBannerFile, { upsert: true });
-        
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('shop-banners').getPublicUrl(path);
-        newBannerUrl = publicUrl;
-        setUploadingBanner(false);
-      }
+      // Prepare payload and strip undefined values
+      const updateData: any = {
+        name: shopName.trim(),
+        handle: handle.trim().toLowerCase(),
+        tagline: tagline.trim() || null,
+        description: description.trim(),
+        categories,
+        suburb: suburb.trim() || null,
+        city: city.trim() || null,
+        google_maps_url: googleMapsUrl.trim() || null,
+        pickup_available: pickupAvailable,
+        pickup_label: pickupLabel.trim() || null,
+        location: onlineOnly ? null : area,
+        landmark: onlineOnly ? null : landmark.trim(),
+        directions: onlineOnly ? null : directions.trim(),
+        online_only: onlineOnly,
+        delivery_info: onlineOnly ? deliveryInfo.trim() : null,
+        whatsapp: `+263${cleanWhatsapp}`,
+        instagram: instagram.trim() || null,
+        instagram_url: instagram.trim() ? `https://instagram.com/${instagram.trim().replace(/^@/, '')}` : null,
+        trading_hours: tradingHours,
+        banner_url: cleanBanner,
+        logo_url: cleanAvatar,
+      };
 
-      // Upload new avatar if changed
-      if (newAvatarFile && user) {
-        setUploadingAvatar(true);
-        const ext = newAvatarFile.name.split('.').pop();
-        const path = `${user.id}/avatar_${Date.now()}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('shop-avatars')
-          .upload(path, newAvatarFile, { upsert: true });
-        
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage
-          .from('shop-avatars').getPublicUrl(path);
-        newAvatarUrl = publicUrl;
-        setUploadingAvatar(false);
-      }
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
+        }
+      });
 
       // Update shop in database
       const { error: updateError } = await supabase
         .from('shops')
-        .update({
-          name: shopName.trim(),
-          handle: handle.trim().toLowerCase(),
-          tagline: tagline.trim() || null,
-          description: description.trim(),
-          categories,
-          suburb: suburb.trim() || null,
-          city: city.trim() || null,
-          google_maps_url: googleMapsUrl.trim() || null,
-          pickup_available: pickupAvailable,
-          pickup_label: pickupLabel.trim() || null,
-          location: onlineOnly ? null : area,
-          landmark: onlineOnly ? null : landmark.trim(),
-          directions: onlineOnly ? null : directions.trim(),
-          online_only: onlineOnly,
-          delivery_info: onlineOnly ? deliveryInfo.trim() : null,
-          whatsapp: `+263${cleanWhatsapp}`,
-          instagram: instagram.trim() || null,
-          instagram_url: instagram.trim() ? `https://instagram.com/${instagram.trim().replace(/^@/, '')}` : null,
-          trading_hours: tradingHours,
-          banner_url: newBannerUrl,
-          logo_url: newAvatarUrl,
-        })
+        .update(updateData)
         .eq('id', shopId);
 
       if (updateError) {
@@ -353,6 +477,9 @@ export const ShopEdit = () => {
         }
         throw updateError;
       }
+
+      // Sync state and memory to avoid stale data
+      await refreshInventory();
 
       setHasChanges(false);
       showToast('Shop updated successfully', 'success');
@@ -457,6 +584,22 @@ export const ShopEdit = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Custom Overlay Toast */}
+      {showCustomOverlayToast && (
+        <div id="custom-overlay-toast" className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce cursor-pointer flex items-center justify-center w-[calc(100%-32px)] max-w-[398px]">
+          <div style={{
+            background: 'rgba(200,255,0,0.12)',
+            border: '1px solid rgba(200,255,0,0.25)',
+            borderRadius: '10px',
+            color: '#c8ff00',
+            fontSize: '13px',
+            padding: '12px 16px'
+          }} className="font-extrabold shadow-[0_4px_24px_rgba(0,0,0,0.9)] flex items-center gap-2 w-full justify-center">
+            <span>👋 Start by adding your logo and banner</span>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar */}
       <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md z-50 flex items-center justify-between px-4 border-b border-border max-w-[430px] mx-auto">
         <button 
@@ -489,13 +632,15 @@ export const ShopEdit = () => {
           <div className="relative">
             {/* Banner Upload */}
             <div 
-              onClick={() => bannerInputRef.current?.click()}
+              onClick={() => {
+                if (!uploadingBanner) bannerInputRef.current?.click();
+              }}
               className="w-full h-[140px] rounded-16 overflow-hidden bg-elevated border-2 border-dashed border-border hover:border-primary/50 transition-all cursor-pointer group relative flex flex-col items-center justify-center"
             >
               {(bannerPreview || bannerUrl) ? (
                 <>
                   <img 
-                    src={bannerPreview || bannerUrl || undefined} 
+                    src={getImageUrl(bannerPreview || bannerUrl) || undefined} 
                     alt="Banner" 
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
@@ -510,7 +655,7 @@ export const ShopEdit = () => {
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
                     <Camera size={24} className="text-primary" />
                   </div>
-                  <span className="font-mono text-xs text-muted">Add Shop Banner</span>
+                  <span className="font-mono text-xs text-muted">Upload Banner</span>
                   <span className="font-mono text-[8px] text-muted/60 mt-1 uppercase tracking-tighter">Appears at the top of your shop profile</span>
                 </>
               )}
@@ -518,24 +663,45 @@ export const ShopEdit = () => {
               {uploadingBanner && (
                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
                   <Loader2 size={24} className="text-primary animate-spin" />
+                  <span className="ml-2 font-mono text-xs text-white">Uploading...</span>
                 </div>
               )}
             </div>
 
+            <div className="flex justify-end mt-2">
+              <button
+                type="button"
+                disabled={uploadingBanner}
+                onClick={() => bannerInputRef.current?.click()}
+                className="px-4 py-2 bg-elevated border border-border text-xs rounded-lg font-mono text-white flex items-center gap-2 hover:bg-white/5 disabled:opacity-50 transition-all font-bold"
+              >
+                {uploadingBanner ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin text-primary" />
+                    <span>Uploading...</span>
+                  </>
+                ) : (bannerPreview || bannerUrl) ? (
+                  'Change Banner'
+                ) : (
+                  'Upload Banner'
+                )}
+              </button>
+            </div>
+
             {/* Avatar Upload */}
-            <div className="absolute -bottom-6 left-4">
+            <div className="absolute -bottom-16 left-4 flex flex-col items-center">
               <div 
                 onClick={(e) => {
                   e.stopPropagation();
-                  avatarInputRef.current?.click();
+                  if (!uploadingAvatar) avatarInputRef.current?.click();
                 }}
-                className="w-20 h-20 rounded-full bg-elevated border-2 border-primary overflow-hidden cursor-pointer group relative flex items-center justify-center shadow-xl"
+                className="w-20 h-20 rounded-full bg-elevated border-2 border-primary overflow-hidden cursor-pointer group relative flex items-center justify-center shadow-xl mb-1"
               >
                 {(avatarPreview || avatarUrl) ? (
                   <>
                     <img 
-                      src={avatarPreview || avatarUrl || undefined} 
-                      alt="Avatar" 
+                      src={getImageUrl(avatarPreview || avatarUrl) || undefined} 
+                      alt="Logo" 
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
@@ -554,15 +720,20 @@ export const ShopEdit = () => {
                 )}
               </div>
               <button 
-                onClick={() => avatarInputRef.current?.click()}
-                className="mt-1 font-mono text-[10px] text-primary uppercase tracking-wider block w-full text-center"
+                type="button"
+                disabled={uploadingAvatar}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  avatarInputRef.current?.click();
+                }}
+                className="font-mono text-[10px] text-primary uppercase tracking-wider block w-full text-center hover:underline disabled:opacity-50 font-bold"
               >
-                Edit
+                {uploadingAvatar ? 'Uploading...' : (avatarPreview || avatarUrl) ? 'Change Logo' : 'Upload Logo'}
               </button>
             </div>
           </div>
           
-          <p className="font-mono text-[10px] text-muted pt-4">
+          <p className="font-mono text-[10px] text-muted pt-14">
             Changes will be saved when you tap Save
           </p>
 
@@ -571,14 +742,14 @@ export const ShopEdit = () => {
             ref={bannerInputRef} 
             onChange={handleBannerSelect} 
             className="hidden" 
-            accept="image/*" 
+            accept="image/jpeg,image/png,image/webp" 
           />
           <input 
             type="file" 
             ref={avatarInputRef} 
             onChange={handleAvatarSelect} 
             className="hidden" 
-            accept="image/*" 
+            accept="image/jpeg,image/png,image/webp" 
           />
         </section>
 

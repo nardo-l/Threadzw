@@ -16,7 +16,7 @@ export const Welcome: React.FC = () => {
     <div className="min-h-screen flex flex-col pt-[60px] pb-12 bg-[#0B0B0B]">
       {/* Top Section */}
       <div className="px-7 flex flex-col items-center">
-        <h1 className="text-[32px] font-pacifico text-[#C6FF00]">
+        <h1 className="threadzw-wordmark text-[32px]">
           ThreadZW
         </h1>
         

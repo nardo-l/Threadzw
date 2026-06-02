@@ -1,3 +1,4 @@
+// THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Check, Rocket, Lock, CreditCard } from 'lucide-react';
@@ -13,7 +14,6 @@ interface UpgradeSheetProps {
 export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { shop, renewSubscription } = useSubscription();
-  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleUpgrade = async () => {
@@ -22,11 +22,10 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
     // Mock Paynow processing
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const amount = billing === 'monthly' ? 9 : 27;
     const { error } = await renewSubscription({
       plan: 'full',
-      billingCycle: billing,
-      amountPaid: amount,
+      billingCycle: 'monthly',
+      amountPaid: 5.00,
       paynowReference: `TZW-UPGRADE-${Date.now()}`,
     });
 
@@ -105,7 +104,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
               <div className="bg-elevated p-4 rounded-xl border border-white/5 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-syne font-bold text-white">
-                    $9/month
+                    $5/month
                   </span>
                   <span className="text-[10px] font-mono text-primary uppercase tracking-widest">
                     Thread ZW Shop

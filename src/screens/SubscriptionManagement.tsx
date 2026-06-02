@@ -141,7 +141,7 @@ export const SubscriptionManagement: React.FC = () => {
 
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-syne font-bold text-primary">
-                $9
+                $5
               </span>
               <span className="text-[10px] font-mono text-muted uppercase">
                 /month

@@ -1,1415 +1,1979 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ArrowLeft, Check, Camera, Image, Search, 
-  MessageSquare, Star, Sparkles, BarChart2, Laptop, 
-  Settings, ShoppingBag, Eye, EyeOff, Edit, Shield, ChevronRight, Pencil
+  ArrowLeft, Check, Camera, Image as ImageIcon, Search, MessageSquare, 
+  Eye, EyeOff, ShoppingBag, Smartphone, Store, Clock, Flame, Send
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
+export const generateSlug = (shopName: string): string => {
+  return shopName
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    // Remove special characters
+    .replace(/\s+/g, '')
+    // Remove all spaces
+    .replace(/-+/g, '-');
+    // Clean up dashes
+};
+
+export const generateUniqueSlug = async (shopName: string): Promise<string> => {
+  const baseSlug = generateSlug(shopName);
+  
+  // Check if slug already exists
+  const { data } = await supabase
+    .from('shops')
+    .select('id, slug')
+    .eq('slug', baseSlug)
+    .maybeSingle();
+  
+  if (!data || (data.id && String(data.id).startsWith('local-'))) {
+    // Slug is available
+    return baseSlug;
+  }
+  
+  // Slug taken, try with numbers
+  let counter = 2;
+  while (counter < 8) { // Prevent infinite loop in local fallback/sandbox mode
+    const newSlug = `${baseSlug}${counter}`;
+    
+    const { data: existing } = await supabase
+      .from('shops')
+      .select('id, slug')
+      .eq('slug', newSlug)
+      .maybeSingle();
+    
+    if (!existing || (existing.id && String(existing.id).startsWith('local-'))) return newSlug;
+    counter++;
+  }
+  return `${baseSlug}${Math.floor(1000 + Math.random() * 9000)}`;
+};
+
 interface OnboardingFlowProps {
-  onboardingStep: number;
-  setOnboardingStep: React.Dispatch<React.SetStateAction<number>>;
-  setAppStage: (stage: 'landing' | 'paywall' | 'onboarding' | 'building' | 'reveal' | 'dashboard' | null) => void;
-  setPaywallScreen?: React.Dispatch<React.SetStateAction<number>>;
-  setPaywallMode?: React.Dispatch<React.SetStateAction<'signup' | 'payment'>>;
-  shopData: {
-    ownerName: string;
-    name: string;
-    category: string;
-    town: string;
-    whatsapp: string;
-    description: string;
-    instagram: string;
-    priceRange: string;
-    productEstimate: string;
-  };
-  setShopData: React.Dispatch<React.SetStateAction<{
-    ownerName: string;
-    name: string;
-    category: string;
-    town: string;
-    whatsapp: string;
-    description: string;
-    instagram: string;
-    priceRange: string;
-    productEstimate: string;
-  }>>;
-  logoFile: File | null;
-  setLogoFile: React.Dispatch<React.SetStateAction<File | null>>;
-  logoPreview: string | null;
-  setLogoPreview: React.Dispatch<React.SetStateAction<string | null>>;
-  bannerFile: File | null;
-  setBannerFile: React.Dispatch<React.SetStateAction<File | null>>;
-  bannerPreview: string | null;
-  setBannerPreview: React.Dispatch<React.SetStateAction<string | null>>;
-  signupAlreadyDone?: boolean;
+  setAppStage: (stage: 'landing' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product') => void;
+  setPaywallScreen?: (screen: number) => void;
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
-  onboardingStep,
-  setOnboardingStep,
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ 
   setAppStage,
-  setPaywallScreen,
-  setPaywallMode,
-  shopData,
-  setShopData,
-  logoFile,
-  setLogoFile,
-  logoPreview,
-  setLogoPreview,
-  bannerFile,
-  setBannerFile,
-  bannerPreview,
-  setBannerPreview,
-  signupAlreadyDone = false
+  setPaywallScreen: setGlobalPaywallScreen
 }) => {
-  // Navigation block indicator the platform requested
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [townSearchQuery, setTownSearchQuery] = useState('');
-  
-  // Custom onboarding screen mock values
-  const [currentChannels, setCurrentChannels] = useState<string[]>([]);
-  const [dmsConstantly, setDmsConstantly] = useState<boolean | null>(null);
-  const [offlineBrowse, setOfflineBrowse] = useState<boolean | null>(null);
-  const [onGoogle, setOnGoogle] = useState<boolean | null>(null);
-  const [trackingProduct, setTrackingProduct] = useState<string | null>(null);
-  const [customChallenge, setCustomChallenge] = useState<string | null>(null);
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [screen, setScreen] = useState(1);
+
+  // Phase tracking
+  // Form responses
+  const [shopName, setShopName] = useState('');
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [priceRange, setPriceRange] = useState('');
+  const [city, setCity] = useState('');
+  const [citySearch, setCitySearch] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+
+  // Selection visual toggles
+  const [q1Answer, setQ1Answer] = useState<string | null>(null);
+  const [q2Answer, setQ2Answer] = useState<string | null>(null);
+  const [q3Answer, setQ3Answer] = useState<string | null>(null);
+
+  // Signup fields
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [signingUp, setSigningUp] = useState(false);
+
+  // Building loader
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [visibleChecks, setVisibleChecks] = useState<number[]>([]);
+
+  // Paywall Step (1 to 4) on custom Phase 5
+  const [paywallStep, setPaywallStep] = useState(1);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch the custom onboarding image URL from DB app_settings
+  // Handle browser back and custom route pop overrides
   useEffect(() => {
-    const fetchOnboardingImage = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('app_settings')
-          .select('value')
-          .eq('key', 'onboarding_preview_image_url')
-          .maybeSingle();
-
-        if (!error && data?.value) {
-          console.log('Onboarding preview image active:', data.value);
-          setPreviewImageUrl(data.value);
+    const handlePopState = () => {
+      if (screen === 1 || screen === 26) return;
+      if (screen >= 27 && screen <= 30) {
+        // Paywall custom back rules
+        if (screen === 27) {
+          setScreen(25);
+        } else if (screen === 30) {
+          // No back on paywall screen 4
+        } else {
+          setScreen(prev => prev - 1);
         }
-      } catch (err) {
-        console.error('Error fetching preview setting:', err);
+      } else {
+        setScreen(prev => prev - 1);
       }
     };
-    fetchOnboardingImage();
-  }, []);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [screen]);
 
-  // Set phase color matching the step
-  const getPhaseColor = () => {
-    if (onboardingStep <= 7) return '#A1A1AA'; // Reality Check (Phase 1)
-    if (onboardingStep <= 12) return '#FF7A00'; // Wake Up (Phase 2)
-    if (onboardingStep <= 17) return '#C6FF00'; // Solution (Phase 3)
-    if (onboardingStep <= 28) return '#FF7A00'; // Build & Review (Phase 4)
-    return '#C6FF00'; // Phase 5: Secure Account
-  };
-
-  const currentPhaseColor = getPhaseColor();
-
-  const updateField = (key: string, value: any) => {
-    setShopData((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleNext = () => {
-    if (isNavigating) return;
-    setIsNavigating(true);
-
-    if (onboardingStep === 28) {
-      if (signupAlreadyDone) {
-        // Go straight to building animation screen
-        setAppStage('building');
-      } else {
-        setOnboardingStep(29);
-      }
-    } else if (onboardingStep === 29) {
-      if (setPaywallScreen) setPaywallScreen(1);
-      if (setPaywallMode) setPaywallMode('signup');
-      setAppStage('paywall');
-    } else {
-      setOnboardingStep((prev) => prev + 1);
+  // Username validation helper
+  useEffect(() => {
+    if (!username) {
+      setUsernameAvailable(null);
+      return;
+    }
+    const cleaned = username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (cleaned.length < 3) {
+      setUsernameAvailable(null);
+      return;
     }
 
-    setTimeout(() => {
-      setIsNavigating(false);
-    }, 450);
-  };
+    setCheckingUsername(true);
+    const timer = setTimeout(async () => {
+      try {
+        const { data } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('handle', cleaned)
+          .maybeSingle();
+        setUsernameAvailable(!data);
+      } catch (err) {
+        setUsernameAvailable(true);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [username]);
+
+  // Sync to auto progress for Screen 2 (DM)
+  useEffect(() => {
+    if (screen === 2 && q1Answer) {
+      const timer = setTimeout(() => setScreen(3), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [screen, q1Answer]);
+
+  // Sync to auto progress for Screen 3 (2am purchase)
+  useEffect(() => {
+    if (screen === 3 && q2Answer) {
+      const timer = setTimeout(() => setScreen(4), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [screen, q2Answer]);
+
+  // Sync to auto progress for Screen 4 (Google search)
+  useEffect(() => {
+    if (screen === 4 && q3Answer) {
+      const timer = setTimeout(() => setScreen(5), 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [screen, q3Answer]);
+
+  // Auto progress for Screen 8 (Competitors list)
+  useEffect(() => {
+    if (screen === 8) {
+      const timer = setTimeout(() => setScreen(9), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [screen]);
+
+  // Live Screen 26 Building Animation ticker (5s)
+  useEffect(() => {
+    if (screen === 26) {
+      setLoadProgress(0);
+      setVisibleChecks([]);
+      
+      const interval = setInterval(() => {
+        setLoadProgress(p => {
+          if (p >= 100) return 100;
+          return p + 2;
+        });
+      }, 100);
+
+      const timers = [
+        setTimeout(() => setVisibleChecks(v => [...v, 0]), 800),
+        setTimeout(() => setVisibleChecks(v => [...v, 1]), 1600),
+        setTimeout(() => setVisibleChecks(v => [...v, 2]), 2400),
+        setTimeout(() => setVisibleChecks(v => [...v, 3]), 3200),
+        setTimeout(() => {
+          setScreen(27); // Advances to Paywall Screen 1 (Phase 5)
+        }, 5000)
+      ];
+
+      return () => {
+        clearInterval(interval);
+        timers.forEach(clearTimeout);
+      };
+    }
+  }, [screen]);
 
   const handleBack = () => {
-    if (isNavigating || onboardingStep <= 1) return;
-    setIsNavigating(true);
-    setOnboardingStep((prev) => prev - 1);
-    
-    setTimeout(() => {
-      setIsNavigating(false);
-    }, 450);
+    if (screen === 1 || screen === 26) return;
+    if (screen === 27) {
+      setScreen(25);
+    } else if (screen === 30) {
+      // Screen 30 (paywall 4) has no back
+    } else {
+      setScreen(prev => prev - 1);
+    }
   };
 
-  // towns listing
-  const ZIMBABWE_TOWNS = [
-    'Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 
-    'Kwekwe', 'Kadoma', 'Masvingo', 'Chinhoyi', 'Norton'
-  ];
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
 
-  const filteredTowns = ZIMBABWE_TOWNS.filter((t) =>
-    t.toLowerCase().includes(townSearchQuery.toLowerCase())
-  );
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSignUpSubmit = async () => {
+    if (signingUp) return;
+    const cleanUsername = username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    
+    if (!cleanUsername || cleanUsername.length < 3) {
+      toast.error('Choose a valid shop handle username.');
+      return;
+    }
+    if (usernameAvailable === false) {
+      toast.error('This shop handle username is already taken.');
+      return;
+    }
+    if (!email.includes('@') || !email.includes('.')) {
+      toast.error('Enter a valid email address.');
+      return;
+    }
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
+    setSigningUp(true);
+    try {
+      // 1. Create supabase Auth account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: email.trim().toLowerCase(),
+        password: password,
+        options: {
+          data: {
+            username: cleanUsername,
+            display_name: shopName || 'ThreadZW Merchant',
+            handle: cleanUsername
+          }
+        }
+      });
+
+      let activeUserId = '';
+      if (authError) {
+        if (authError.message?.toLowerCase().includes('already registered') || authError.message?.toLowerCase().includes('already exists')) {
+          const { data: sData, error: sErr } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password: password
+          });
+          if (sErr) {
+            throw new Error('This email is already registered. Please check credentials or sign in.');
+          }
+          activeUserId = sData.user?.id || '';
+        } else {
+          throw authError;
+        }
+      } else {
+        activeUserId = authData.user?.id || '';
+      }
+
+      if (!activeUserId) {
+        throw new Error('Could not establish secure login session.');
+      }
+
+      // 2. Setup/Upsert user profiles database record
+      await supabase.from('profiles').upsert({
+        id: activeUserId,
+        display_name: shopName || 'ThreadZW Merchant',
+        email: email.trim().toLowerCase(),
+        whatsapp_number: whatsapp || '0776223144',
+        onboarding_complete: false // Retain overlay on dashboard
+      });
+
+      // 3. Connect/Insert shop config
+      const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const generatedSlug = await generateUniqueSlug(shopName || 'My Shop');
+      const { error: shopError } = await supabase.from('shops').upsert({
+        owner_id: activeUserId,
+        name: shopName || 'My Shop',
+        handle: cleanUsername,
+        slug: generatedSlug,
+        categories: [category || 'Clothing'],
+        location: city || 'Harare',
+        whatsapp: whatsapp || '0776223144',
+        instagram: instagram || null,
+        description: description || 'Zim clothing store',
+        logo_url: logoPreview,
+        banner_url: bannerPreview,
+        plan: 'shop',
+        subscription_status: 'trial',
+        trial_started_at: new Date().toISOString(),
+        trial_ends_at: trialEnds.toISOString(),
+        is_live: true
+      });
+
+      if (shopError) throw shopError;
+
+      // 4. Record local stage values
+      localStorage.setItem('threadzw_logged_in', 'true');
+      localStorage.removeItem('threadzw_onboarding_step');
+      localStorage.setItem('threadzw_owner_name', shopName || 'Merchant');
+
+      // Proceed to Building Screen countdown animation state
+      setScreen(26);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'An error occurred during account creation.');
+    } finally {
+      setSigningUp(false);
+    }
+  };
+
+  const handleFinishPaywall = async () => {
+    try {
+      localStorage.setItem('threadzw_onboarding_complete', 'true');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        await supabase.from('profiles').update({
+          onboarding_complete: false // Show dashboard launch overlay first
+        }).eq('id', session.user.id);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAppStage('dashboard');
+    }
+  };
+
+  // Helper values for screen index mapping
+  const currentProgress = screen >= 27 ? 100 : Math.round(((screen - 1) / 25) * 100);
+
+  // ZIM city lists
+  const zimCities = [
+    'Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 'Masvingo', 'Kwekwe', 'Online only'
+  ];
+  const filteredCities = zimCities.filter(c => c.toLowerCase().includes(citySearch.toLowerCase()));
 
   return (
-    <div className="bg-[#0B0B0B] min-h-screen text-white font-sans selection:bg-[#C6FF00]/20 relative flex flex-col justify-between overflow-x-hidden">
+    <div id="threadzw-immersive-onboarding" className="fixed inset-0 bg-[#0a0a0a] text-white flex flex-col font-sans select-none overflow-hidden z-[45] selection:bg-[#c8ff00]/30">
       
-      {/* PHASE PROGRESS STATUS HEADER BAR */}
-      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-[#151515]">
-        <div
-          className="h-full transition-all duration-300"
-          style={{
-            width: `${(onboardingStep / 29) * 100}%`,
-            backgroundColor: currentPhaseColor
-          }}
+      {/* 1. TOP PROGRESS BAR */}
+      <div className="w-full h-[3px] bg-white/5 relative z-50">
+        <div 
+          style={{ width: `${currentProgress}%` }} 
+          className="h-full bg-[#c8ff00] transition-all duration-300 ease-out" 
         />
       </div>
 
-      {/* BACK BUTTON */}
-      {onboardingStep > 1 && (
-        <button
-          onClick={handleBack}
-          className="fixed top-6 left-5 z-40 p-2 text-[#A1A1AA] hover:text-white transition-colors duration-200 cursor-pointer"
-          aria-label="Back to previous onboarding step"
-        >
-          <ArrowLeft className="w-5.5 h-5.5" />
-        </button>
+      {/* 2. HEADER BAR (except first welcome and animation screen) */}
+      {screen > 1 && screen !== 26 && screen !== 30 && (
+        <div className="h-14 px-4 flex items-center justify-between z-50">
+          <button 
+            onClick={handleBack}
+            className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          
+          <span className="threadzw-wordmark text-[#c8ff00] font-black uppercase text-base tracking-tighter">
+            ThreadZW
+          </span>
+          <div className="w-10 h-10" />
+        </div>
       )}
 
-      {/* ONBOARDING SCROLL VIEW WRAPPER */}
-      <div className="w-full max-w-md mx-auto pt-20 px-6 pb-36 flex-1 flex flex-col justify-start">
+      {screen === 1 && (
+        <div className="h-14 flex items-center justify-center pt-5">
+          <span className="threadzw-wordmark text-[#c8ff00] font-black uppercase text-xl tracking-tighter">
+            ThreadZW
+          </span>
+        </div>
+      )}
+
+      {/* 3. SCREENS BODY CONTAINER */}
+      <div className="flex-1 w-full max-w-[430px] mx-auto px-5 flex flex-col justify-between pb-8 pt-4 overflow-y-auto no-scrollbar">
+        
         <AnimatePresence mode="wait">
-          
           <motion.div
-            key={`onboarding-step-${onboardingStep}`}
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
+            key={screen}
+            initial={{ opacity: 0, scale: 0.97, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="flex-1 flex flex-col justify-start"
+            className="flex-1 flex flex-col justify-between"
           >
-            
-            {/* PHASE INDICATORS SUBTITLE */}
-            <span className="text-[11px] font-mono tracking-widest uppercase mb-4 block" style={{ color: currentPhaseColor }}>
-              {onboardingStep <= 7 && "Phase 1: Reality Check"}
-              {onboardingStep > 7 && onboardingStep <= 12 && "Phase 2: Wake Up"}
-              {onboardingStep > 12 && onboardingStep <= 17 && "Phase 3: Solution"}
-              {onboardingStep > 17 && onboardingStep <= 28 && "Phase 4: Design Your Shop"}
-              {onboardingStep === 29 && "Phase 5: Secure Account"}
-            </span>
-
-            {/* SCREEN 1: MERCHANT FULL NAME ENTRY */}
-            {onboardingStep === 1 && (
-              <div className="space-y-6">
-                <span className="text-5xl block animate-bounce" style={{ animationDuration: '4s' }}>Hey 👋</span>
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight -mt-2">
-                  Let's get your clothing shop online.
-                </h1>
-                <p className="text-[#A1A1AA] text-base leading-relaxed">
-                  Answer a few questions and set your shop info. We'll build your online storefront automatically.
-                </p>
-
-                <div className="pt-4">
-                  <label className="text-[#A1A1AA] text-[13px] font-bold block mb-1.5">
-                    What should we call you?
-                  </label>
-                  <input
-                    type="text"
-                    value={shopData.ownerName}
-                    onChange={(e) => updateField('ownerName', e.target.value)}
-                    placeholder="Enter your name..."
-                    className="w-full bg-[#151515] text-white border border-[#2A2A2A] rounded-xl px-4 py-3.5 text-base focus:outline-none focus:border-[#C6FF00] transition-colors"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 2: CURRENT SALES CHANNEL PILLS */}
-            {onboardingStep === 2 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[28px] tracking-tight leading-tight">
-                  How do customers find your products right now, {shopData.ownerName || 'friend'}?
-                </h1>
-                <p className="text-[#A1A1AA] text-sm">Select all that apply:</p>
-
-                <div className="space-y-3">
-                  {[
-                    { id: 'whatsapp', icon: '📱', title: 'WhatsApp messages', detail: 'They DM me for prices and photos' },
-                    { id: 'social', icon: '📸', title: 'Instagram / TikTok', detail: 'They find me on social media' },
-                    { id: 'walkin', icon: '🏪', title: 'Walk-in / word of mouth', detail: 'People know my physical location' },
-                    { id: 'none', icon: '🌐', title: "I don't have online presence", detail: 'Currently no way to find me online' }
-                  ].map((opt) => {
-                    const active = currentChannels.includes(opt.id);
-                    return (
-                      <div
-                        key={opt.id}
-                        onClick={() => {
-                          const updated = active 
-                            ? currentChannels.filter(c => c !== opt.id)
-                            : [...currentChannels, opt.id];
-                          setCurrentChannels(updated);
-                        }}
-                        className={`bg-[#151515] border rounded-2xl p-4 flex items-center gap-4 transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-full bg-[#0B0B0B] flex items-center justify-center text-lg">
-                          {opt.icon}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="text-white font-semibold text-sm">{opt.title}</h4>
-                          <span className="text-[#A1A1AA] text-xs leading-normal mt-0.5 block">{opt.detail}</span>
-                        </div>
-                        {active && (
-                          <div className="w-5 h-5 rounded-full bg-[#C6FF00] flex items-center justify-center">
-                            <Check className="text-black w-3 h-3 stroke-[3]" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 3: DO CUSTOMERS MESSAGE CONSTANTLY */}
-            {onboardingStep === 3 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Do customers message you asking "how much?" all day?
-                </h1>
-                
-                <div className="flex gap-4">
-                  {[
-                    { label: "😤 Yes, constantly", val: true },
-                    { label: "😌 Not really", val: false }
-                  ].map((btn) => {
-                    const active = dmsConstantly === btn.val;
-                    return (
-                      <button
-                        key={'b3-' + btn.val}
-                        onClick={() => {
-                          setDmsConstantly(btn.val);
-                          setTimeout(handleNext, 400);
-                        }}
-                        className={`flex-1 h-28 rounded-2xl bg-[#151515] border p-4 flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <span className="text-2xl">{btn.label.split(' ')[0]}</span>
-                        <span className="font-bold text-sm text-white">{btn.label.split(' ').slice(1).join(' ')}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 4: OFFLINE BROWSE PROBLEM */}
-            {onboardingStep === 4 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Can customers browse your products to buy when you are offline?
-                </h1>
-
-                <div className="flex gap-4">
-                  {[
-                    { label: "✅ Yes, they can", val: true },
-                    { label: "❌ No, they can't", val: false }
-                  ].map((btn) => {
-                    const active = offlineBrowse === btn.val;
-                    return (
-                      <button
-                        key={'b4-' + btn.val}
-                        onClick={() => {
-                          setOfflineBrowse(btn.val);
-                          setTimeout(handleNext, 400);
-                        }}
-                        className={`flex-1 h-28 rounded-2xl bg-[#151515] border p-4 flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <span className="text-2xl">{btn.label.split(' ')[0]}</span>
-                        <span className="font-bold text-sm text-white">{btn.label.split(' ').slice(1).join(' ')}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 5: GOOGLE VISIBILITY CHALLENGE */}
-            {onboardingStep === 5 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Does your clothing shop appear on Google when someone searches "curated drip Harare"?
-                </h1>
-
-                <div className="flex gap-4">
-                  {[
-                    { label: "✅ Yes, it does", val: true },
-                    { label: "❌ No, it doesn't", val: false }
-                  ].map((btn) => {
-                    const active = onGoogle === btn.val;
-                    return (
-                      <button
-                        key={'b5-' + btn.val}
-                        onClick={() => {
-                          setOnGoogle(btn.val);
-                          setTimeout(handleNext, 400);
-                        }}
-                        className={`flex-1 h-28 rounded-2xl bg-[#151515] border p-4 flex flex-col items-center justify-center text-center gap-2 transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <span className="text-2xl">{btn.label.split(' ')[0]}</span>
-                        <span className="font-bold text-sm text-white">{btn.label.split(' ').slice(1).join(' ')}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 6: SALES TRACKING ENGINE */}
-            {onboardingStep === 6 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  How are you tracking which products sell best?
-                </h1>
-
-                <div className="space-y-3">
-                  {[
-                    { id: 'memory', icon: '🧠', title: 'I just remember' },
-                    { id: 'manual', icon: '📝', title: 'I write it down on paper' },
-                    { id: 'none', icon: '❌', title: "I'm not tracking at all right now" },
-                    { id: 'sheet', icon: '📊', title: 'I use an Excel spreadsheet' }
-                  ].map((opt) => {
-                    const active = trackingProduct === opt.id;
-                    return (
-                      <div
-                        key={opt.id}
-                        onClick={() => {
-                          setTrackingProduct(opt.id);
-                          setTimeout(handleNext, 400);
-                        }}
-                        className={`bg-[#151515] border rounded-2xl p-4.5 flex items-center gap-4 transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <div className="text-2xl">{opt.icon}</div>
-                        <h4 className="text-white font-bold text-[15px]">{opt.title}</h4>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 7: BIGGEST CHALLENGE IN SHOPPING */}
-            {onboardingStep === 7 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  What is your biggest daily challenge in running your retail brand?
-                </h1>
-
-                <div className="space-y-3">
-                  {[
-                    { id: 'visibility', icon: '👁️', title: 'No one knows I exist online', sub: 'I need more traffic and reach' },
-                    { id: 'customers', icon: '💸', title: 'I need more customers', sub: 'Weekly sales are inconsistent' },
-                    { id: 'chaos', icon: '⏰', title: 'Managing orders is pure chaos', sub: 'Too many fragmented WhatsApp messages' },
-                    { id: 'ghosts', icon: '😤', title: 'Customers never commit to pay', sub: 'They ask for prices and size then disappear' }
-                  ].map((opt) => {
-                    const active = customChallenge === opt.id;
-                    return (
-                      <div
-                        key={opt.id}
-                        onClick={() => {
-                          setCustomChallenge(opt.id);
-                          setTimeout(handleNext, 500);
-                        }}
-                        className={`bg-[#151515] border rounded-2xl p-4.5 flex items-center gap-4 transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <div className="text-2xl">{opt.icon}</div>
-                        <div className="flex-1">
-                          <h4 className="text-white font-bold text-[15px]">{opt.title}</h4>
-                          <span className="text-[#A1A1AA] text-xs leading-normal mt-0.5 block">{opt.sub}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 8 — PAIN POINTS DRAMATIC TYPING */}
-            {onboardingStep === 8 && (
-              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5 }}
+            {/* SCREEN 1: WELCOME */}
+            {screen === 1 && (
+              <div className="flex-1 flex flex-col justify-center items-center text-center space-y-8 my-auto">
+                <motion.span 
+                  animate={{ rotate: [0, 15, -15, 15, 0] }}
+                  transition={{ repeat: Infinity, duration: 2, repeatDelay: 1 }}
+                  className="text-7xl"
                 >
-                  <h1 className="text-2xl font-black text-[#FF7A00] uppercase tracking-wide">
-                    Here's what's actually happening:
+                  👋
+                </motion.span>
+                <div className="space-y-3">
+                  <h1 className="text-3xl font-[900] tracking-tight text-white leading-tight">
+                    Hey. Quick question.
                   </h1>
-                </motion.div>
+                  <p className="text-white/50 text-base font-medium">
+                    Be honest. It'll take 30 seconds.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setScreen(2)}
+                  className="w-full h-13 mt-6 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer transition-transform"
+                >
+                  Let's go &rarr;
+                </button>
+              </div>
+            )}
 
-                <div className="space-y-4 mt-8">
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
+            {/* SCREEN 2: DM PRICES */}
+            {screen === 2 && (
+              <div className="flex-1 flex flex-col justify-center space-y-8 my-auto">
+                <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block text-center">
+                  PHASE 1: REALITY CHECK
+                </span>
+                <h1 className="text-2xl font-[900] text-center tracking-tight text-white leading-snug">
+                  Customers DM you asking prices all day?
+                </h1>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => setQ1Answer('yes')}
+                    className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
+                      q1Answer === 'yes' 
+                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <span className="text-5xl">😤</span>
+                    <span className="font-extrabold text-sm">Yes, constantly</span>
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setQ1Answer('no');
+                      setTimeout(() => setScreen(3), 800);
+                    }}
+                    className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
+                      q1Answer === 'no' 
+                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        : 'bg-white/5 border-white/10 hover:border-white/20'
+                    }`}
+                  >
+                    <span className="text-5xl">😌</span>
+                    <span className="font-extrabold text-sm">Not really</span>
+                  </button>
+                </div>
+
+                {q1Answer === 'yes' && (
+                  <motion.p 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-[#FF6464] text-center font-bold text-sm tracking-tight"
+                  >
+                    You're losing sales every single day.
+                  </motion.p>
+                )}
+              </div>
+            )}
+
+            {/* SCREEN 3: 2AM BUYING */}
+            {screen === 3 && (
+              <div className="flex-1 flex flex-col justify-center space-y-8 my-auto">
+                <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block text-center">
+                  PHASE 1: REALITY CHECK
+                </span>
+                <h1 className="text-2xl font-[900] text-center tracking-tight text-white leading-snug">
+                  Can customers buy from you at 2am?
+                </h1>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => {
+                      setQ2Answer('yes');
+                      setTimeout(() => setScreen(4), 800);
+                    }}
+                    className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
+                      q2Answer === 'yes' 
+                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    <span className="text-4xl">✅</span>
+                    <span className="font-extrabold text-sm">Yes they can</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setQ2Answer('no')}
+                    className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
+                      q2Answer === 'no' 
+                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    <span className="text-4xl">❌</span>
+                    <span className="font-extrabold text-sm">No they can't</span>
+                  </button>
+                </div>
+
+                {q2Answer === 'no' && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-4 items-center"
+                  >
+                    <span className="text-[40px] leading-none">🌙</span>
+                    <div className="text-left">
+                      <h4 className="font-black text-white text-base">67% of browsing happens after 9pm</h4>
+                      <p className="text-white/50 text-xs">While you sleep, sales disappear.</p>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {/* SCREEN 4: GOOGLE INVISIBLE */}
+            {screen === 4 && (
+              <div className="flex-1 flex flex-col justify-center space-y-8 my-auto">
+                <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block text-center">
+                  PHASE 1: REALITY CHECK
+                </span>
+                <h1 className="text-2xl font-[900] text-center tracking-tight text-white leading-snug">
+                  Does your shop show on Google?
+                </h1>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={() => {
+                      setQ3Answer('yes');
+                      setTimeout(() => setScreen(5), 800);
+                    }}
+                    className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
+                      q3Answer === 'yes' 
+                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    <span className="text-4xl">🔍</span>
+                    <span className="font-extrabold text-sm">Yes it does</span>
+                  </button>
+
+                  <button 
+                    onClick={() => setQ3Answer('no')}
+                    className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
+                      q3Answer === 'no' 
+                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        : 'bg-white/5 border-white/10'
+                    }`}
+                  >
+                    <span className="text-4xl">👻</span>
+                    <span className="font-extrabold text-sm">I'm invisible</span>
+                  </button>
+                </div>
+
+                {q3Answer === 'no' && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="space-y-2 bg-white/5 border border-white/10 rounded-2xl p-4 text-center"
+                  >
+                    <div className="space-y-1.5 font-mono text-[11px] text-left">
+                      <div className="flex justify-between text-white/40 border-b border-white/5 pb-1 gap-2">
+                        <span>🟢 HarareFits</span>
+                        <span className="text-[#22C55E]">ONLINE</span>
+                      </div>
+                      <div className="flex justify-between text-white/40 border-b border-white/5 pb-1 gap-2">
+                        <span>🟢 VintageZim</span>
+                        <span className="text-[#22C55E]">ONLINE</span>
+                      </div>
+                      <div className="flex justify-between text-white border border-[#c8ff00]/30 bg-[#c8ff00]/5 p-1 rounded-md animate-pulse gap-2">
+                        <span className="font-bold text-white">🔴 [Your Store]</span>
+                        <span className="text-[#EF4444] font-bold">NOT FOUND</span>
+                      </div>
+                    </div>
+                    <p className="text-[#c8ff00] font-black text-xs text-center mt-3">
+                      Your competitors are searchable.
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+            )}
+
+            {/* SCREEN 5: STAT BOMB */}
+            {screen === 5 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6">
+                  <motion.span 
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                    className="text-7xl block"
+                  >
+                    💸
+                  </motion.span>
+
+                  <h1 className="text-4xl font-[950] tracking-tighter text-white">
+                    23 customers
+                  </h1>
+                  <p className="text-white/60 text-base max-w-[280px]">
+                    asked for prices on WhatsApp last week and disappeared.
+                  </p>
+
+                  <div className="w-20 h-[1px] bg-white/10" />
+
+                  <h1 className="text-5xl font-[950] tracking-tighter text-[#EF4444]">
+                    $0
+                  </h1>
+                  <p className="text-white/60 text-base">
+                    you made from them.
+                  </p>
+
+                  <span className="text-white/30 text-xs italic block mt-1">
+                    (Average for ZIM fashion sellers)
+                  </span>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(6)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] flex items-center justify-center gap-1"
+                >
+                  That ends today &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 6: ALARM ALARM */}
+            {screen === 6 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center space-y-6">
+                  <div className="text-center">
+                    <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block mb-4">
+                      PHASE 2: WAKE UP
+                    </span>
+                    <motion.span 
+                      animate={{ rotate: [-6, 6, -6, 6, 0] }}
+                      transition={{ repeat: Infinity, duration: 0.5, repeatDelay: 1.5 }}
+                      className="text-7xl block mb-6"
+                    >
+                      ⏰
+                    </motion.span>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/15 rounded-2xl p-5 space-y-3 shadow-lg">
+                    <span className="font-mono text-3xl font-black text-orange-500 tracking-tight block text-center">
+                      2:47 AM
+                    </span>
+                    <p className="text-white/70 text-sm font-bold text-center">
+                      Someone searched for streetwear in Harare.
+                    </p>
+                    <p className="text-[#EF4444] text-xs font-black text-center uppercase tracking-wider">
+                      ✗ Your store was offline.
+                    </p>
+                  </div>
+
+                  <h3 className="text-2xl font-[900] text-center tracking-tight text-white leading-tight mt-2">
+                    You missed that sale.<br/>And the 12 before it.
+                  </h3>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(7)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Show me what I'm losing &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 7: BAR GRAPH */}
+            {screen === 7 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center space-y-8">
+                  <h1 className="text-2xl font-[900] text-center tracking-tight text-white líder-tight">
+                    Here's what an online shop changes.
+                  </h1>
+
+                  {/* Graphic columns */}
+                  <div className="flex justify-center items-end h-40 gap-8 border-b border-white/10 pb-2 px-10">
+                    <div className="flex flex-col items-center flex-1 space-y-2">
+                      <div className="w-full bg-white/20 rounded-t-lg h-8" />
+                      <span className="font-bold text-xs text-white/50">Now</span>
+                    </div>
+
+                    <div className="flex flex-col items-center flex-1 space-y-2">
+                      <motion.div 
+                        initial={{ height: 0 }}
+                        animate={{ height: "130px" }}
+                        transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
+                        className="w-full bg-[#c8ff00] rounded-t-lg"
+                      />
+                      <span className="font-bold text-xs text-[#c8ff00]">Online</span>
+                    </div>
+                  </div>
+
+                  <div className="text-center space-y-1.5 px-4">
+                    <h4 className="font-black text-white text-lg">Shops online sell 3× more.</h4>
+                    <p className="text-white/50 text-sm">Same products. Just visible.</p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(8)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 8: WHILE YOU READ THIS */}
+            {screen === 8 && (
+              <div className="flex-1 flex flex-col justify-center space-y-8 my-auto">
+                <h1 className="text-2xl font-[900] text-center tracking-tight text-white leading-tight">
+                  While you read this...
+                </h1>
+
+                <div className="space-y-3">
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }} 
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold"
+                  >
+                    <span>🟢 KureStreetwear</span>
+                    <span className="text-white/60">just got an order</span>
+                  </motion.div>
+
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }} 
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 }}
-                    className="text-lg text-[#A1A1AA] max-w-[280px]"
+                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold"
                   >
-                    {dmsConstantly ? "Every unpriced DM is a sale you almost missed." : "Customers are searching online and finding other stores."}
-                  </motion.p>
-                  
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.8 }}
-                    className="text-base text-[#A1A1AA]"
-                  >
-                    Your competitors are already online.
-                  </motion.p>
+                    <span>🟢 HarareFits</span>
+                    <span className="text-white/60">just got a WhatsApp</span>
+                  </motion.div>
 
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: 80 }}
-                    transition={{ delay: 2.6, duration: 0.5 }}
-                    className="h-0.5 bg-[#FF7A00] mx-auto mt-6"
-                  />
-
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 3.2 }}
-                    className="pt-6"
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }} 
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 1.4 }}
+                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold"
                   >
-                    <h2 className="text-3xl font-black text-[#C6FF00]">Let's fix this together.</h2>
+                    <span>🟢 ZimDrip</span>
+                    <span className="text-white/60">just got a new follower</span>
+                  </motion.div>
+
+                  <motion.div 
+                    initial={{ opacity: 0, x: -10 }} 
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 2 }}
+                    className="bg-[#EF4444]/5 border border-[#c8ff00]/40 p-4 rounded-xl flex items-center justify-between text-xs font-bold animate-pulse"
+                  >
+                    <span className="text-white font-[900]">🔴 Your store</span>
+                    <span className="text-[#EF4444] font-black">still offline</span>
                   </motion.div>
                 </div>
               </div>
             )}
 
-            {/* SCREEN 9: NIGHT EXPLAINED */}
-            {onboardingStep === 9 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Every single night you sleep, customers try to find your items.
-                </h1>
-
-                <div className="bg-[#151515] border border-[#2A2A2A] rounded-[24px] p-6 text-center shadow-xl">
-                  <span className="text-5xl block">⏰</span>
-                  <div className="text-[32px] font-mono font-black mt-4 text-[#FF7A00]">2:47 AM</div>
-                  <p className="text-[#A1A1AA] text-sm mt-1.5 font-medium">Someone wants to buy your vintage windbreaker.</p>
-                  <div className="text-[#EF4444] text-[13px] font-black mt-3 uppercase tracking-wider">
-                    ✕ Your store is currently offline
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 10: PRICES DM LOSS ANALYSIS */}
-            {onboardingStep === 10 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  "How much?" DMs cost you sales every single week.
-                </h1>
-
-                <div className="text-center bg-[#151515] border border-[#2A2A2A] rounded-2xl py-8 px-4">
-                  <span className="text-5xl block animate-pulse">💸</span>
-                  <h3 className="text-[#C6FF00] font-black text-[34px] leading-none mt-4">
-                    23 customers
-                  </h3>
-                  <p className="text-[#A1A1AA] text-sm mt-2">
-                    asked for prices in WhatsApp last week but disappeared.
-                  </p>
-                  <p className="text-stone-500 font-mono text-[11px] mt-2 italic">
-                    (Standard data average for ZIM apparel merchants)
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 11: COMPETITOR LANDSCAPE OF HARARE */}
-            {onboardingStep === 11 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Other shops around Zimbabwe are getting searched on Google. You are invisible.
-                </h1>
-
-                <div className="space-y-4 pt-4 select-none">
-                  <div className="flex items-center justify-between bg-[#151515] p-3.5 rounded-xl opacity-40 scale-95 border border-[#2A2A2A]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-stone-800 text-sm flex items-center justify-center font-bold">H</div>
-                      <div>
-                        <div className="font-bold text-sm text-white">HarareFits</div>
-                        <div className="text-[11px] text-[#22C55E]">🟢 ONLINE</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-[#C6FF00]/10 border-2 border-[#C6FF00] p-5 rounded-2xl scale-100 shadow-lg shadow-[#C6FF00]/10">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-[#C6FF00] text-black flex items-center justify-center font-bold text-lg">Y</div>
-                      <div>
-                        <div className="font-black text-base text-white">Your Store</div>
-                        <div className="text-[12px] text-[#EF4444] font-bold">🔴 OFFLINE / UNSEARCHABLE</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-[#151515] p-3.5 rounded-xl opacity-40 scale-95 border border-[#2A2A2A]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-stone-800 text-sm flex items-center justify-center font-bold">V</div>
-                      <div>
-                        <div className="font-bold text-sm text-white">VintageZim</div>
-                        <div className="text-[11px] text-[#22C55E]">🟢 ONLINE</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 12: WAKEUP WARNING FINALE */}
-            {onboardingStep === 12 && (
-              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-8">
-                <span className="text-7xl">⚡</span>
-                <h2 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  You have been selling with the wrong tools.
-                </h2>
-                <h3 className="text-[#C6FF00] font-black text-3xl">
-                  ThreadZW fixes this.
-                </h3>
-              </div>
-            )}
-
-            {/* SCREEN 13: FEATURES GRID HORIZONTAL */}
-            {onboardingStep === 13 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Here's what your ThreadZW catalog provides.
-                </h1>
-
-                <div className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x px-1">
-                  {[
-                    { icon: '🌐', title: 'Always Online', desc: 'Customers browse your items 24/7 while you sleep.' },
-                    { icon: '📊', title: 'Real-time Analytics', desc: 'See exactly who viewed what product and when.' },
-                    { icon: '🔗', title: 'Unique Shop Link', desc: 'A custom handle link like threadzw.com/shop/@yourname' },
-                    { icon: '💬', title: 'One-Tap WhatsApp', desc: 'Customers tap "Message Seller" on the product to buy.' },
-                    { icon: '📦', title: 'Inventory count', desc: 'Keep track of stock sizes easily.' }
-                  ].map((feat, i) => (
-                    <div key={'onb13-' + i} className="min-w-[260px] bg-[#151515] border border-[#2A2A2A] rounded-2xl p-6 snap-center">
-                      <div className="w-12 h-12 rounded-full bg-[#C6FF00]/10 flex items-center justify-center text-3xl">
-                        {feat.icon}
-                      </div>
-                      <h4 className="text-white font-black text-lg mt-4">{feat.title}</h4>
-                      <p className="text-[#A1A1AA] text-sm mt-2 leading-relaxed">{feat.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 14: INTERACTIVE PREVIEW */}
-            {onboardingStep === 14 && (
-              <div className="space-y-6 text-center flex flex-col items-center">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Your shop will look like this.
-                </h1>
-
-                {/* Smartphone frame container */}
-                <div className="w-[200px] bg-[#151515] border-2 border-[#2A2A2A] rounded-[32px] p-2 shadow-2xl relative">
-                  {/* Speaker slot */}
-                  <div className="w-16 h-1.5 bg-[#0B0B0B] rounded-full mx-auto mb-2" />
-
-                  {/* Glass pane mock */}
-                  <div className="rounded-2xl overflow-hidden bg-[#0B0B0B] min-h-[300px]">
-                    {previewImageUrl ? (
-                      <img
-                        src={previewImageUrl}
-                        referrerPolicy="no-referrer"
-                        alt="Shop front outline"
-                        className="w-full h-auto object-cover"
-                      />
-                    ) : (
-                      <div className="p-3">
-                        {/* Shimmer header card */}
-                        <div className="flex items-center gap-2 mb-4">
-                          <div className="w-8 h-8 rounded-full bg-[#C6FF00]/20 animate-pulse" />
-                          <div className="flex-1 space-y-1">
-                            <div className="h-2 bg-[#2A2A2A] rounded w-3/4" />
-                            <div className="h-1.5 bg-[#2A2A2A] rounded w-1/2" />
-                          </div>
-                        </div>
-                        {/* Shimmer items grid */}
-                        <div className="grid grid-cols-2 gap-2">
-                          {[1, 2, 3, 4].map((s) => (
-                            <div key={'shim-' + s} className="aspect-square bg-[#151515] rounded-lg animate-pulse" />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <p className="text-[#A1A1AA] text-[13px] mt-2 max-w-[260px]">
-                  A clean, professional page that loads in milliseconds for local shoppers.
-                </p>
-              </div>
-            )}
-
-            {/* SCREEN 15: ANALYTICS PREVIEW CHART */}
-            {onboardingStep === 15 && (
-              <div className="space-y-8 flex flex-col items-center text-center">
-                <h1 className="text-white font-black text-[30px] leading-tight tracking-tight">
-                  Know what's selling. When. How much.
-                </h1>
-
-                {/* Vertical bar charts container mock inside a phone */}
-                <div className="w-[180px] h-[240px] bg-[#151515] border border-[#2A2A2A] rounded-[24px] p-4 flex flex-col justify-end gap-2.5">
-                  <div className="flex items-end justify-center gap-2.5 h-36">
-                    {[3, 6, 4, 8, 5].map((val, idx) => (
-                      <motion.div
-                        key={'bbar-' + idx}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${val * 10}%` }}
-                        transition={{ delay: idx * 0.15, duration: 0.6 }}
-                        className="flex-1 bg-[#C6FF00] rounded-t-sm"
-                      />
-                    ))}
-                  </div>
-                  <div className="border-t border-[#2A2A2A] pt-2 flex justify-between text-[10px] text-stone-500 font-mono">
-                    <span>MON</span>
-                    <span>WED</span>
-                    <span>FRI</span>
-                  </div>
-                </div>
-
-                <p className="text-[#A1A1AA] text-sm max-w-[280px]">
-                  Get actual statistics on view count, hot sellers, and click-through analytics instantly.
-                </p>
-              </div>
-            )}
-
-            {/* SCREEN 16: URL SHOWCASE DESIGN */}
-            {onboardingStep === 16 && (
-              <div className="space-y-8 flex flex-col items-center justify-center text-center">
-                <h1 className="text-white font-black text-[32px] leading-tight tracking-tight">
-                  Your link. Everywhere.
-                </h1>
-
-                <div className="bg-[#151515] border border-[#2A2A2A] rounded-2xl p-5 w-full">
-                  <span className="text-[#A1A1AA] text-[11px] block font-mono">threadzw.com/shop/</span>
-                  <span className="text-[#C6FF00] font-black text-2xl tracking-tight block mt-1">
-                    @{shopData.name.toLowerCase().replace(/\s+/g, '') || 'yourshop'}
+            {/* SCREEN 9: TRANSITION ⚡ */}
+            {screen === 9 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-8">
+                  <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block">
+                    PHASE 3: THE SHIFT
                   </span>
+                  <motion.span 
+                    animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
+                    transition={{ repeat: Infinity, duration: 1 }}
+                    className="text-7xl block"
+                  >
+                    ⚡
+                  </motion.span>
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-[900] leading-tight text-white px-2">
+                      You've been selling with the wrong tools.
+                    </h2>
+                    
+                    <motion.h2 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.8 }}
+                      className="text-2xl font-[950] text-[#c8ff00]"
+                    >
+                      That changes now.
+                    </motion.h2>
+                  </div>
                 </div>
 
-                <p className="text-[#A1A1AA] text-sm max-w-[280px]">
-                  Place it in your Instagram bio, TikTok profiles, or broadcasts. Never type out prices manually again.
-                </p>
-              </div>
-            )}
-
-            {/* SCREEN 17: TRANSITIONAL CTA */}
-            {onboardingStep === 17 && (
-              <div className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-10">
-                <motion.span
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ repeat: Infinity, duration: 2.5 }}
-                  className="text-8xl block"
+                <button 
+                  onClick={() => setScreen(10)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
-                  🚀
-                </motion.span>
-                <h2 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  Ready to build your shop? It takes less than 3 minutes.
-                </h2>
+                  I'm ready &rarr;
+                </button>
               </div>
             )}
 
-            {/* SCREEN 18: CHOOSE SHOP NAME */}
-            {onboardingStep === 18 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  What is your clothing shop called?
-                </h1>
+            {/* SCREEN 10: YOUR LINK */}
+            {screen === 10 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center space-y-6">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center space-y-1">
+                    <span className="text-white/40 text-xs font-bold block uppercase tracking-wider">Your Instant Link</span>
+                    <code className="text-[#c8ff00] font-mono text-md font-black block break-all">
+                      threadzw.vercel.app/shop/<span className="underline select-all">{generateSlug(shopName || 'yourshop')}</span>
+                    </code>
+                  </div>
 
-                <div className="pt-4 relative">
-                  <input
+                  <div className="text-center space-y-3">
+                    <h3 className="text-3xl font-[950] tracking-tight leading-tight">
+                      One link.<br/>Share it everywhere.
+                    </h3>
+                    <p className="text-white/50 text-sm font-bold">
+                      Instagram bio. TikTok. WhatsApp status.
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(11)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 11: WHATSAPP ORDER */}
+            {screen === 11 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center space-y-8">
+                  <div className="text-center">
+                    <span className="text-7xl block animate-pulse">💬</span>
+                  </div>
+
+                  {/* iOS Notification Card */}
+                  <motion.div 
+                    initial={{ y: -30, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ type: 'spring', damping: 15 }}
+                    className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 shadow-xl text-left"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs">🟢</span>
+                      <span className="font-extrabold text-xs text-white">WhatsApp</span>
+                      <span className="text-white/40 text-[10px] ml-auto">now</span>
+                    </div>
+                    <h4 className="font-black text-sm text-white">New order from Customer!</h4>
+                    <p className="text-white/70 text-xs mt-0.5">"Hi I want the cargo pants size M 🙏"</p>
+                  </motion.div>
+
+                  <div className="text-center space-y-3">
+                    <h3 className="text-2xl font-[950] tracking-tight leading-tight">
+                      Customers order.<br/>You just confirm.
+                    </h3>
+                    <p className="text-white/50 text-sm font-bold">
+                      No more explaining sizes 10 times.
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(12)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 12: SALES TRACKING */}
+            {screen === 12 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center space-y-8">
+                  <h3 className="text-xl font-[900] text-center tracking-tight text-white leading-tight">
+                    Know exactly what's selling.
+                  </h3>
+
+                  {/* Bar Chart Weeks */}
+                  <div className="flex justify-between items-end h-32 border-b border-white/10 pb-2 px-6">
+                    {['MON', 'TUE', 'WED', 'THU', 'FRI'].map((day, idx) => {
+                      const heights = ["20%", "45%", "85%", "60%", "30%"];
+                      return (
+                        <div key={day} className="flex flex-col items-center flex-1 space-y-2 relative">
+                          {idx === 2 && (
+                            <span className="absolute -top-7 text-xl animate-bounce">🔥</span>
+                          )}
+                          <div style={{ height: heights[idx] }} className="w-6 bg-[#c8ff00] rounded-sm" />
+                          <span className="font-mono text-[9px] text-white/40 font-bold">{day}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex gap-3 justify-center">
+                    <span className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold">📈 +47% avg revenue</span>
+                    <span className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold">🏆 Best seller tracked</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(13)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 13: PREVIEW mockup */}
+            {screen === 13 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center space-y-4">
+                  <h3 className="text-xl font-[900] text-center tracking-tight text-white">
+                    Your shop will look like this.
+                  </h3>
+
+                  {/* Visual CSS-only mini storefront device framing mockup */}
+                  <div className="w-[200px] h-[280px] bg-[#111] border-[4px] border-white/15 rounded-[22px] mx-auto overflow-hidden shadow-2xl flex flex-col relative text-[10px]">
+                    <div className="h-2 w-16 bg-white/20 rounded-full mx-auto mt-1 mb-1.5" />
+                    
+                    {/* Cover Banner placeholder */}
+                    <div className="h-14 bg-gradient-to-r from-zinc-800 to-stone-800 relative flex items-end px-2 pb-1">
+                      <div className="w-7 h-7 bg-zinc-950 border border-white/20 rounded-full flex items-center justify-center text-[7px] font-black font-mono">TZW</div>
+                    </div>
+                    
+                    {/* Text items */}
+                    <div className="p-2 space-y-1">
+                      <h5 className="font-mono font-black text-white leading-none">Your Brand</h5>
+                      <p className="text-white/40 text-[7px] leading-tight">Harare &bull; clothing category</p>
+                      
+                      {/* Products visual representation */}
+                      <div className="grid grid-cols-2 gap-1 pt-1">
+                        <div className="bg-white/5 aspect-square rounded-md p-1 flex flex-col justify-between border border-white/5">
+                          <div className="w-full h-8 bg-zinc-800 rounded-sm" />
+                          <span className="font-black text-white text-[7px]">$15</span>
+                        </div>
+                        <div className="bg-white/5 aspect-square rounded-md p-1 flex flex-col justify-between border border-white/5">
+                          <div className="w-full h-8 bg-zinc-800 rounded-sm" />
+                          <span className="font-black text-white text-[7px]">$20</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Interactive chat block line */}
+                    <div className="absolute bottom-1.5 left-2 right-2 bg-[#25D366] py-1 text-center font-black text-[7px] text-white rounded-md uppercase">
+                      💬 Chat on WhatsApp
+                    </div>
+                  </div>
+
+                  <p className="text-center text-white/40 text-xs">
+                    Professional. Live in minutes.
+                  </p>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(14)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Build my shop &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 14: TRANSITION 🚀 */}
+            {screen === 14 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center items-center text-center space-y-8">
+                  <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block">
+                    PHASE 4: BUILD YOUR SHOP
+                  </span>
+                  
+                  <motion.span 
+                    animate={{ y: [40, -40], opacity: [0, 1, 0] }}
+                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                    className="text-7xl block"
+                  >
+                    🚀
+                  </motion.span>
+
+                  <div className="space-y-2">
+                    <h2 className="text-3xl font-[950] tracking-tighter text-white">
+                      Let's build it.
+                    </h2>
+                    <p className="text-white/50 text-sm font-bold">
+                      Takes less than 2 minutes.
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(15)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Start &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 15: SHOP NAME SETUP */}
+            {screen === 15 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center space-y-8">
+                  <h2 className="text-2xl font-[900] tracking-tight text-white leading-tight">
+                    What's your shop called?
+                  </h2>
+                  
+                  <input 
                     type="text"
-                    value={shopData.name}
-                    onChange={(e) => updateField('name', e.target.value)}
+                    value={shopName}
+                    onChange={(e) => setShopName(e.target.value)}
                     placeholder="e.g. Harare Vintage"
-                    className="w-full bg-transparent border-t-0 border-x-0 border-b-2 border-[#2A2A2A] focus:border-[#C6FF00] py-4 text-3xl font-black text-white focus:outline-none transition-all placeholder:text-stone-700"
+                    className="w-full border-none border-b-2 border-white/15 focus:border-b-color-[#c8ff00] focus:border-b-2 focus:outline-none bg-transparent text-white font-[900] text-2xl py-3 placeholder:text-white/20 transition-all text-center"
+                    autoFocus
                   />
+                </div>
 
-                  {shopData.name.length >= 3 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-4 font-mono text-[#C6FF00] text-xs"
+                <button 
+                  disabled={!shopName.trim()}
+                  onClick={() => setScreen(16)}
+                  className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    shopName.trim() ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
+                  }`}
+                >
+                  That's the name &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 16: WHAT YOU SELL (grid choice) */}
+            {screen === 16 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center space-y-6">
+                  <h2 className="text-xl font-[900] text-center tracking-tight text-white leading-tight">
+                    What do you sell?
+                  </h2>
+
+                  <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar">
+                    {[
+                      { emoji: "👕", label: "Clothing" },
+                      { emoji: "👟", label: "Sneakers" },
+                      { emoji: "🧥", label: "Thrift & Vintage" },
+                      { emoji: "🔥", label: "Streetwear" },
+                      { emoji: "👗", label: "Women's Fashion" },
+                      { emoji: "👔", label: "Formal Wear" },
+                      { emoji: "💍", label: "Accessories" },
+                      { emoji: "📦", label: "Mixed" }
+                    ].map(item => {
+                      const isSelected = category === item.label;
+                      return (
+                        <button
+                          key={item.label}
+                          onClick={() => setCategory(item.label)}
+                          className={`flex items-center gap-3 p-3.5 rounded-xl border-1.5 transition-all text-sm font-bold ${
+                            isSelected 
+                              ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-white' 
+                              : 'bg-white/5 border-white/5 text-white/70 hover:border-white/10'
+                          }`}
+                        >
+                          <span className="text-2xl">{item.emoji}</span>
+                          <span>{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button 
+                  disabled={!category}
+                  onClick={() => setScreen(17)}
+                  className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    category ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
+                  }`}
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 17: DESCRIBE SHOP */}
+            {screen === 17 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center space-y-4">
+                  <div>
+                    <h2 className="text-xl font-[900] tracking-tight text-white leading-none mb-1">
+                      Describe your shop.
+                    </h2>
+                    <p className="text-white/40 text-xs font-bold">One sentence.</p>
+                  </div>
+
+                  <div className="relative">
+                    <textarea 
+                      value={description}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 120) {
+                          setDescription(e.target.value);
+                        }
+                      }}
+                      placeholder="e.g. Harare's finest collection of vintage items."
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-[#c8ff00] focus:outline-none focus:ring-1 focus:ring-[#c8ff00] transition-colors resize-none mb-1.5"
+                    />
+                    <span className="absolute bottom-3 right-3 text-[10px] font-bold text-white/30 font-mono">
+                      {description.length}/120
+                    </span>
+                  </div>
+
+                  {/* Suggestion Chips */}
+                  <div className="space-y-1.5">
+                    <span className="text-white/30 text-[10px] font-black uppercase tracking-wider block">TAP TO FILL</span>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        "Exclusive streetwear fits.",
+                        "Premium thrift & vintage finds.",
+                        "Fresh drops every week.",
+                        "Harare's best sneaker spot."
+                      ].map(chip => (
+                        <button
+                          key={chip}
+                          onClick={() => setDescription(chip)}
+                          className="bg-white/5 hover:bg-white/10 p-2 py-1.5 rounded-lg text-xs text-white/70 border border-white/5 transition-colors cursor-pointer"
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(18)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 18: PRICE RANGE */}
+            {screen === 18 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center space-y-6 animate-fade-in">
+                  <h2 className="text-xl font-[900] text-center tracking-tight text-white leading-tight">
+                    Your average price?
+                  </h2>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      "Under $10",
+                      "$10 — $30",
+                      "$30 — $100",
+                      "$100+",
+                      "Mixed prices"
+                    ].map(price => {
+                      const isSelected = priceRange === price;
+                      return (
+                        <button
+                          key={price}
+                          onClick={() => setPriceRange(price)}
+                          className={`p-4 rounded-xl text-center border font-bold text-xs transition-all ${
+                            isSelected 
+                              ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-white' 
+                              : 'bg-white/5 border-white/10 text-white/70'
+                          }`}
+                        >
+                          {price}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setScreen(19)}
+                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  >
+                    Continue &rarr;
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setPriceRange('Mixed prices');
+                      setScreen(19);
+                    }}
+                    className="w-full text-white/30 hover:text-white/60 text-xs font-bold transition-colors block text-center cursor-pointer"
+                  >
+                    Skip &rarr;
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN 19: CITY */}
+            {screen === 19 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[400px]">
+                  <h2 className="text-xl font-[900] tracking-tight text-white leading-none">
+                    Which city?
+                  </h2>
+
+                  <div className="relative">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+                    <input 
+                      type="text"
+                      placeholder="Search Zim city..."
+                      value={citySearch}
+                      onChange={(e) => setCitySearch(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm focus:border-[#c8ff00] focus:outline-none focus:ring-1 focus:ring-[#c8ff00] transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 overflow-y-auto max-h-[180px] pr-1.5 no-scrollbar">
+                    {filteredCities.map(item => {
+                      const isSelected = city === item;
+                      return (
+                        <button
+                          key={item}
+                          onClick={() => {
+                            setCity(item);
+                            setTimeout(() => setScreen(20), 500);
+                          }}
+                          className={`w-full p-2.5 rounded-lg border text-left text-xs font-extrabold transition-all flex justify-between items-center ${
+                            isSelected 
+                              ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-white' 
+                              : 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10'
+                          }`}
+                        >
+                          <span>📍 {item}</span>
+                          {isSelected && <span className="text-[#c8ff00]">✓</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button 
+                  disabled={!city}
+                  onClick={() => setScreen(20)}
+                  className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    city ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
+                  }`}
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 20: WHATSAPP PHONE */}
+            {screen === 20 && (
+              <div className="flex-1 flex flex-col justify-between py-4 animate-scale-up">
+                <div className="flex-1 flex flex-col justify-center space-y-5">
+                  <h2 className="text-xl font-[900] tracking-tight text-white leading-none">
+                    Where do customers reach you?
+                  </h2>
+
+                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 focus-within:border-[#c8ff00] transition-colors">
+                    <span className="font-mono text-base font-black px-4 bg-white/5 text-white/45 flex items-center border-r border-white/5 select-none text-[15px]">
+                      +263
+                    </span>
+                    <input 
+                      type="tel"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="77 444 3322"
+                      className="flex-1 px-4 py-3.5 bg-transparent border-none text-white text-lg font-bold font-mono focus:outline-none"
+                    />
+                  </div>
+
+                  {whatsapp.length >= 8 && (
+                    <motion.div 
+                      initial={{ scale: 0.95, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="bg-[#25D366] text-white p-3 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase"
                     >
-                      threadzw.com/shop/@{shopData.name.toLowerCase().replace(/\s+/g, '')}
+                      <span>💬 Orders go here: +263 {whatsapp}</span>
                     </motion.div>
                   )}
                 </div>
+
+                <button 
+                  disabled={whatsapp.length < 8}
+                  onClick={() => setScreen(21)}
+                  className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                    whatsapp.length >= 8 ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
+                  }`}
+                >
+                  Continue &rarr;
+                </button>
               </div>
             )}
 
-            {/* SCREEN 19: SELECT CATEGORIES */}
-            {onboardingStep === 19 && (
-              <div className="space-y-6">
-                <h1 className="text-[#C6FF00] font-black text-[32px] tracking-tight leading-tight">
-                  What do you sell, mainly?
-                </h1>
+            {/* SCREEN 21: INSTAGRAM USERNAME */}
+            {screen === 21 && (
+              <div className="flex-1 flex flex-col justify-between py-6">
+                <div className="flex-1 flex flex-col justify-center space-y-6">
+                  <h2 className="text-xl font-[900] tracking-tight text-white leading-none">
+                    Got an Instagram?
+                  </h2>
 
-                <div className="grid grid-cols-2 gap-3 pb-8">
-                  {[
-                    { emoji: '👕', label: 'Clothing' },
-                    { emoji: '👟', label: 'Sneakers' },
-                    { emoji: '🧥', label: 'Thrift & Vintage' },
-                    { emoji: '🔥', label: 'Streetwear' },
-                    { emoji: '👗', label: "Women's Fashion" },
-                    { emoji: '👔', label: 'Formal Wear' },
-                    { emoji: '💍', label: 'Accessories' },
-                    { emoji: '📦', label: 'Mixed' }
-                  ].map((cat, i) => {
-                    const active = shopData.category === cat.label;
-                    return (
-                      <div
-                        key={i}
-                        onClick={() => {
-                          updateField('category', cat.label);
-                        }}
-                        className={`h-24 bg-[#151515] border rounded-2xl flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <span className="text-2xl">{cat.emoji}</span>
-                        <span className="text-white font-bold text-xs">{cat.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 20: BASED-IN TOWN IN ZIMBABWE */}
-            {onboardingStep === 20 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  Which city are you based in?
-                </h1>
-
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#A1A1AA]">
-                    <Search className="w-5 h-5" />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search city..."
-                    value={townSearchQuery}
-                    onChange={(e) => setTownSearchQuery(e.target.value)}
-                    className="w-full bg-[#151515] text-white border border-[#2A2A2A] rounded-xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-[#C6FF00] transition-colors"
-                  />
-                </div>
-
-                <div className="bg-[#151515] border border-[#2A2A2A] rounded-2xl overflow-hidden divide-y divide-[#2A2A2A] max-h-60 overflow-y-auto no-scrollbar">
-                  {filteredTowns.map((town, idx) => {
-                    const active = shopData.town === town;
-                    return (
-                      <div
-                        key={idx}
-                        onClick={() => {
-                          updateField('town', town);
-                          setTimeout(handleNext, 400);
-                        }}
-                        className="px-5 py-3.5 flex items-center justify-between active:bg-[#202020] cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm">📍</span>
-                          <span className={`text-[15px] ${active ? 'text-[#C6FF00] font-bold' : 'text-white'}`}>
-                            {town}
-                          </span>
-                        </div>
-                        <div className={`w-5 h-5 rounded-full border-1.5 flex items-center justify-center ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]' : 'border-stone-700'
-                        }`}>
-                          {active && <Check className="text-black w-3.5 h-3.5 stroke-[3.5]" />}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {filteredTowns.length === 0 && (
-                    <div className="p-4 text-center text-[#A1A1AA] text-xs">
-                      No matching towns found.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 21: CONTACT WHATSAPP PREFIX DETAILS */}
-            {onboardingStep === 21 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  Where should customers reach you?
-                </h1>
-
-                <div className="space-y-4">
-                  <div className="flex gap-3 bg-[#151515] border border-[#2A2A2A] focus-within:border-[#C6FF00] rounded-xl px-4 py-3 relative items-center transition-all">
-                    <span className="text-stone-400 font-black text-lg select-none">+263</span>
-                    <input
-                      type="tel"
-                      value={shopData.whatsapp}
-                      onChange={(e) => updateField('whatsapp', e.target.value.replace(/[^0-9]/g, ''))}
-                      placeholder="77 444 3322"
-                      className="bg-transparent text-white text-2xl font-black w-full focus:outline-none"
+                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 focus-within:border-[#c8ff00] transition-colors">
+                    <span className="font-mono text-base font-black px-4 bg-white/5 text-white/45 flex items-center border-r border-white/5 select-none text-[15px]">
+                      @
+                    </span>
+                    <input 
+                      type="text"
+                      value={instagram}
+                      onChange={(e) => setInstagram(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
+                      placeholder="yourhandle"
+                      className="flex-1 px-4 py-3.5 bg-transparent border-none text-white text-base font-bold focus:outline-none"
                     />
                   </div>
-
-                  <div className="bg-[#25D366] rounded-full h-[52px] flex items-center justify-center gap-2 text-white font-black cursor-default opacity-50 select-none">
-                    <MessageSquare className="w-5 h-5" /> Chat on WhatsApp →
-                  </div>
                 </div>
-              </div>
-            )}
-
-            {/* SCREEN 22: ONE-SENTENCE DESCRIPTION */}
-            {onboardingStep === 22 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  Describe your shop in one sentence.
-                </h1>
-
-                <div className="relative">
-                  <textarea
-                    value={shopData.description}
-                    onChange={(e) => updateField('description', e.target.value.slice(0, 120))}
-                    placeholder="e.g. Premium thrift finds and limited sneakers."
-                    className="w-full bg-[#151515] border border-[#2A2A2A] rounded-2xl p-5 text-white text-base leading-relaxed min-h-[140px] focus:outline-none focus:border-[#C6FF00] transition-colors"
-                  />
-                  <div className="absolute bottom-4 right-4 text-stone-500 font-mono text-xs">
-                    {shopData.description.length}/120
-                  </div>
-                </div>
-
-                {/* Tags Suggestions */}
-                <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-                  {[
-                    'Exclusive streetwear fits.',
-                    'Premium thrift curated daily.',
-                    'Fresh kicks and accessories.',
-                    'Local boutique designs.'
-                  ].map((sug, i) => (
-                    <div
-                      key={i}
-                      onClick={() => updateField('description', sug)}
-                      className="flex-shrink-0 bg-[#151515] border border-[#2A2A2A] rounded-full px-4 py-2 text-xs text-[#A1A1AA] cursor-pointer hover:border-[#C6FF00] hover:text-[#C6FF00] transition-all"
-                    >
-                      {sug}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 23: ACCESSIBLE INSTAGRAM HANDLE */}
-            {onboardingStep === 23 && (
-              <div className="space-y-8">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  Have an Instagram link or handle?
-                </h1>
-
-                <div className="flex items-center gap-3 bg-[#151515] border border-[#2A2A2A] rounded-xl px-4 h-[60px] focus-within:border-[#C6FF00] transition-all">
-                  <span className="text-stone-400 font-bold text-lg select-none">@</span>
-                  <input
-                    type="text"
-                    value={shopData.instagram}
-                    onChange={(e) => updateField('instagram', e.target.value.replace(/[^a-zA-Z0-9_.]/g, ''))}
-                    placeholder="shop_handle"
-                    className="bg-transparent text-white text-xl font-bold w-full focus:outline-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 24: PRODUCT CATALOG SPEC ESTIMATION */}
-            {onboardingStep === 24 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  How many products are you starting with?
-                </h1>
 
                 <div className="space-y-3">
-                  {[
-                    { id: '1-5', title: '1 — 5', label: 'Just getting started' },
-                    { id: '6-20', title: '6 — 20', label: 'Growing catalogue' },
-                    { id: '21-50', title: '21 — 50', label: 'Established shop' },
-                    { id: '50+', title: '50+', label: 'Large collection' }
-                  ].map((opt) => {
-                    const active = shopData.productEstimate === opt.id;
-                    return (
-                      <div
-                        key={opt.id}
-                        onClick={() => {
-                          updateField('productEstimate', opt.id);
-                          setTimeout(handleNext, 400);
-                        }}
-                        className={`bg-[#151515] border rounded-2xl h-16 px-5 flex items-center justify-between transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <span className="text-white font-bold text-base">{opt.title}</span>
-                        <span className="text-[#A1A1AA] text-xs">{opt.label}</span>
-                      </div>
-                    );
-                  })}
+                  <button 
+                    onClick={() => setScreen(22)}
+                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  >
+                    Continue &rarr;
+                  </button>
+                  <button 
+                    onClick={() => {
+                      setInstagram('');
+                      setScreen(22);
+                    }}
+                    className="w-full text-white/30 hover:text-white/60 text-xs font-bold transition-colors block text-center cursor-pointer"
+                  >
+                    Skip for now &rarr;
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* SCREEN 25: PRICE BAND CHOICES */}
-            {onboardingStep === 25 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  What is your average price range?
-                </h1>
+            {/* SCREEN 22: LOGO */}
+            {screen === 22 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center items-center space-y-5 text-center">
+                  <div>
+                    <h2 className="text-xl font-[900] tracking-tight text-white leading-none mb-1">
+                      Add your logo.
+                    </h2>
+                    <p className="text-white/40 text-xs font-bold">Appears on your shop page.</p>
+                  </div>
 
-                <div className="space-y-3">
-                  {[
-                    { id: '<10', title: 'Under $10' },
-                    { id: '10-30', title: '$10 — $30' },
-                    { id: '30-100', title: '$30 — $100' },
-                    { id: '100+', title: '$100+' },
-                    { id: 'mixed', title: 'Mixed prices' }
-                  ].map((opt) => {
-                    const active = shopData.priceRange === opt.id;
-                    return (
-                      <div
-                        key={opt.id}
-                        onClick={() => {
-                          updateField('priceRange', opt.id);
-                          setTimeout(handleNext, 400);
-                        }}
-                        className={`bg-[#151515] border rounded-2xl h-16 px-5 flex items-center justify-between transition-all cursor-pointer ${
-                          active ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-[#2A2A2A]'
-                        }`}
-                      >
-                        <span className="text-white font-bold text-base">{opt.title}</span>
-                        <span className="w-4 h-4 rounded-full border border-stone-800" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                  <input 
+                    type="file"
+                    ref={logoInputRef}
+                    onChange={handleLogoUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
 
-            {/* SCREEN 26: LOGO PICZONE */}
-            {onboardingStep === 26 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  Add your shop logo.
-                </h1>
-                <p className="text-[#A1A1AA] text-sm">
-                  This appears on your shop page and product listings.
-                </p>
-
-                <div className="pt-8 flex flex-col items-center">
-                  <div
+                  <button 
                     onClick={() => logoInputRef.current?.click()}
-                    className="w-36 h-36 rounded-full bg-[#151515] border-2 border-dashed border-[#2A2A2A] relative flex items-center justify-center cursor-pointer overflow-hidden hover:border-[#C6FF00] transition-colors"
+                    className="w-40 h-40 rounded-full border-2 border-dashed border-white/20 hover:border-[#c8ff00]/40 bg-white/5 flex flex-col items-center justify-center overflow-hidden transition-colors cursor-pointer group relative"
                   >
                     {logoPreview ? (
-                      <>
-                        <img src={logoPreview} className="w-full h-full object-cover" />
-                        <div className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-[#C6FF00] flex items-center justify-center text-black shadow-lg">
-                          <Pencil size={12} className="stroke-[3]" />
-                        </div>
-                      </>
+                      <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="text-center">
-                        <span className="text-white font-bold text-3xl">+</span>
-                        <Camera className="w-5 h-5 mx-auto mt-1 text-[#A1A1AA]" />
+                      <div className="flex flex-col items-center gap-1.5 text-white/45 group-hover:text-[#c8ff00] transition-colors">
+                        <Camera className="w-8 h-8" />
+                        <span className="text-[10px] font-black uppercase">Tap to upload</span>
                       </div>
                     )}
-                    <input
-                      type="file"
-                      ref={logoInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setLogoFile(file);
-                          setLogoPreview(URL.createObjectURL(file));
-                        }
-                      }}
-                    />
-                  </div>
-                  <span className="text-[#A1A1AA] text-xs mt-3">Tap to upload / edit</span>
-                  {logoPreview && (
-                    <span className="text-[#C6FF00] font-bold text-xs mt-2 block animate-pulse">
-                      Logo loaded! 🔥
-                    </span>
-                  )}
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setScreen(23)}
+                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  >
+                    {logoPreview ? 'Next ➔' : 'Skip for now ➔'}
+                  </button>
                 </div>
               </div>
             )}
 
-            {/* SCREEN 27: BANNER COVER FILE */}
-            {onboardingStep === 27 && (
-              <div className="space-y-6">
-                <h1 className="text-white font-black text-[32px] tracking-tight leading-tight">
-                  Add a shop banner.
-                </h1>
-                <p className="text-[#A1A1AA] text-sm">
-                  The cover image at the top of your shop page.
-                </p>
+            {/* SCREEN 23: BANNER */}
+            {screen === 23 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center space-y-4">
+                  <div>
+                    <h2 className="text-xl font-[900] tracking-tight text-white leading-none mb-1">
+                      Add your banner.
+                    </h2>
+                    <p className="text-white/40 text-xs font-bold">The cover image of your shop.</p>
+                  </div>
 
-                <div className="pt-8 space-y-6">
-                  <div
+                  <input 
+                    type="file"
+                    ref={bannerInputRef}
+                    onChange={handleBannerUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+
+                  <button
                     onClick={() => bannerInputRef.current?.click()}
-                    className="w-full h-36 bg-[#151515] border-2 border-dashed border-[#2A2A2A] rounded-2xl relative flex flex-col items-center justify-center cursor-pointer overflow-hidden hover:border-[#C6FF00] transition-colors"
+                    className="w-full h-36 bg-white/5 border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden group hover:border-[#c8ff00]/40"
                   >
                     {bannerPreview ? (
-                      <>
-                        <img src={bannerPreview} className="w-full h-full object-cover" />
-                        <div className="absolute bottom-2 right-2 px-3 py-1 bg-black/80 border border-stone-800 rounded-full flex items-center gap-1.5 text-xs font-bold text-white">
-                          <Pencil size={11} className="stroke-[2.5]" /> Change
-                        </div>
-                      </>
+                      <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="text-center">
-                        <span className="text-3xl block mb-1">🖼️</span>
-                        <span className="text-white font-bold text-sm">+ Add Shop Banner</span>
-                        <span className="text-[#A1A1AA] text-xxs block mt-1">1200x400px recommended</span>
+                      <div className="flex flex-col items-center gap-2 text-white/40 group-hover:text-[#c8ff00] transition-colors">
+                        <ImageIcon className="w-8 h-8" />
+                        <span className="text-[11px] font-black uppercase">🖼️ + Add Banner</span>
+                        <span className="text-[9px] text-white/20">1200 &times; 400px recommended</span>
                       </div>
                     )}
-                    <input
-                      type="file"
-                      ref={bannerInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setBannerFile(file);
-                          setBannerPreview(URL.createObjectURL(file));
-                        }
-                      }}
-                    />
-                  </div>
+                  </button>
 
-                  {bannerPreview && (
-                    <div className="space-y-2">
-                      <span className="text-[#A1A1AA] text-xs font-bold block">Preview layout:</span>
-                      <div className="bg-[#151515] border border-[#2A2A2A] rounded-xl overflow-hidden relative">
-                        <div className="h-20 w-full overflow-hidden relative">
-                          <img src={bannerPreview} className="w-full h-full object-cover" alt="Banner Preview" />
-                          <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full border-2 border-[#C6FF00] overflow-hidden bg-[#151515]">
-                            {logoPreview && <img src={logoPreview} className="w-full h-full object-cover" alt="Logo preview" />}
-                          </div>
-                        </div>
-                        <div className="pt-6 pb-3 text-center">
-                          <span className="text-white font-bold text-sm block">{shopData.name || 'Your Brand'}</span>
-                        </div>
+                  <div className="space-y-1 mt-2">
+                    <span className="text-white/30 text-[9px] font-black uppercase tracking-wider block">PREVIEW LAYOUT</span>
+                    <div className="border border-white/10 rounded-xl p-2.5 bg-zinc-950 flex items-center gap-3 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-cover bg-center opacity-30 filter blur-sm" style={{ backgroundImage: bannerPreview ? `url(${bannerPreview})` : 'none' }}></div>
+                      <div className="w-10 h-10 rounded-full bg-zinc-900 border border-white/10 flex items-center justify-center text-[10px] uppercase font-black font-mono overflow-hidden relative z-10 shrink-0">
+                        {logoPreview ? <img src={logoPreview} alt="" className="w-full h-full object-cover" /> : shopName.substring(0, 2) || 'TZW'}
+                      </div>
+                      <div className="relative z-10 text-left">
+                        <h5 className="font-extrabold text-white text-xs leading-none mb-1">{shopName || 'My Shop'}</h5>
+                        <p className="text-white/50 text-[10px] leading-none"> Harare &bull; {category || 'Clothing'}</p>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
+
+                <button 
+                  onClick={() => setScreen(24)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  {bannerPreview ? 'Next ➔' : 'Skip for now ➔'}
+                </button>
               </div>
             )}
 
-            {/* SCREEN 28: DETAILED REVIEWS INFO CARD SUMMARY */}
-            {onboardingStep === 28 && (
-              <div className="space-y-6 bg-[#0B0B0B] pb-10">
-                <div className="flex items-center gap-2">
-                  <span className="text-5xl animate-spin" style={{ animationDuration: '6s' }}>🎉</span>
+            {/* SCREEN 24: REVIEW */}
+            {screen === 24 && (
+              <div className="flex-1 flex flex-col justify-between py-4">
+                <div className="flex-1 flex flex-col justify-center space-y-4">
                   <div>
-                    <h2 className="text-white font-black text-2xl tracking-tight leading-none">Almost done!</h2>
-                    <p className="text-[#A1A1AA] text-sm mt-1">Verify details before creating shop.</p>
+                    <h2 className="text-xl font-[900] tracking-tight text-white leading-none mb-1">
+                      🎉 Almost done!
+                    </h2>
+                    <p className="text-white/40 text-xs font-bold">Verify before we build.</p>
                   </div>
-                </div>
 
-                {/* SUMMARY ROW SHEET */}
-                <div className="bg-[#151515] border border-[#2A2A2A] rounded-[24px] p-5.5 space-y-4">
-                  {[
-                    { label: "Merchant display name", value: shopData.ownerName },
-                    { label: "Shop page name", value: shopData.name },
-                    { label: "Category", value: shopData.category },
-                    { label: "City", value: shopData.town },
-                    { label: "WhatsApp Contact", value: `+263 ${shopData.whatsapp}` },
-                    { label: "Instagram Link", value: shopData.instagram ? `@${shopData.instagram}` : 'Skipped' },
-                    { label: "Mock Logo Uploaded", value: logoFile ? '✓ Loaded' : 'Skipped' },
-                    { label: "Mock Banner Uploaded", value: bannerFile ? '✓ Loaded' : 'Skipped' }
-                  ].map((row, idx, array) => (
-                    <div 
-                      key={idx} 
-                      className={`flex justify-between items-center text-xs pb-3.5 ${
-                        idx === array.length - 1 ? '' : 'border-b border-[#202020]'
-                      }`}
-                    >
-                      <span className="text-[#A1A1AA]">{row.label}</span>
-                      <span className="text-white font-black max-w-[200px] text-right truncate">
-                        {row.value || 'Not provided'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="text-center p-2 text-stone-500 text-xs">
-                  Everything look correct? Build activates your 3-day trial instantly.
-                </div>
-              </div>
-            )}
-
-            {/* SCREEN 29: ACCOUNT SAVING GREETING SCREEN */}
-            {onboardingStep === 29 && (
-              <div className="space-y-6 bg-[#0B0B0B] pb-10 flex-col justify-center text-center">
-                <div className="text-center space-y-4">
-                  <div className="flex justify-center">
-                    <div className="relative">
-                      {/* Concentric pulse rings */}
-                      <span className="text-7xl block animate-pulse select-none">⚡</span>
-                      <div className="absolute inset-0 bg-[#C6FF00]/10 rounded-full blur-xl animate-ping opacity-70" />
-                    </div>
+                  {/* Summary Card */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-4.5 space-y-3.5 text-xs text-left shadow-lg">
+                    {[
+                      { l: 'Shop name', v: shopName },
+                      { l: 'Category', v: category },
+                      { l: 'City', v: city },
+                      { l: 'WhatsApp', v: `+263 ${whatsapp}` },
+                      { l: 'Instagram', v: instagram ? `@${instagram}` : 'Skipped' },
+                      { l: 'Logo', v: logoPreview ? '✓ Added' : '— Not added' },
+                      { l: 'Banner', v: bannerPreview ? '✓ Added' : '— Not added' }
+                    ].map(row => (
+                      <div key={row.l} className="flex justify-between items-center border-b border-white/5 pb-2.5 last:border-0 last:pb-0 gap-3">
+                        <span className="text-white/45 font-bold uppercase text-[9px] tracking-wider shrink-0">{row.l}</span>
+                        <span className="text-white font-extrabold text-right truncate max-w-[180px]">{row.v}</span>
+                      </div>
+                    ))}
                   </div>
-                  
-                  <h2 className="text-white font-black text-3xl tracking-tight leading-tight pt-2">
-                    While your Shop is being built, let's save your account.
-                  </h2>
-                  
-                  <p className="text-[#A1A1AA] text-sm max-w-sm mx-auto leading-relaxed">
-                    You've designed a powerful showcase. To register your Zimbabwean domain, secure your data, and claim your exclusive <span className="text-[#C6FF00] font-bold">3-Day Free Trial</span>, let's create your merchant profile.
+
+                  <p className="text-center text-white/40 text-[11px] leading-tight font-medium">
+                    Build activates your 3-day trial instantly.
                   </p>
                 </div>
 
-                <div className="bg-[#151515] border border-[#2A2A2A] rounded-[24px] p-5.5 space-y-4 text-left">
-                  <div className="flex items-start gap-3.5">
-                    <div className="mt-1 flex items-center justify-center w-5 h-5 bg-[#C6FF00]/10 text-[#C6FF00] rounded-full text-xs font-bold shrink-0">
-                      ✓
-                    </div>
-                    <div>
-                      <h4 className="text-white font-bold text-xs">Instantly Secures Shop Setup</h4>
-                      <p className="text-[#A1A1AA] text-[11px] mt-0.5">Saves all {shopData.name || 'your'} inventory, price ranges, and locations securely.</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3.5 border-t border-[#202020] pt-4">
-                    <div className="mt-1 flex items-center justify-center w-5 h-5 bg-[#C6FF00]/10 text-[#C6FF00] rounded-full text-xs font-bold shrink-0">
-                      ✓
-                    </div>
-                    <div>
-                      <h4 className="text-white font-bold text-xs">Activates WhatsApp & Socials Link</h4>
-                      <p className="text-[#A1A1AA] text-[11px] mt-0.5">Links +263 {shopData.whatsapp} for real-time customer orders.</p>
-                    </div>
+                <button 
+                  onClick={() => {
+                    // Pre-fill username check with handle version of shopName if empty
+                    const handleCandidate = shopName.toLowerCase().replace(/[^a-z0-9_-]/g, '').substring(0, 15);
+                    setUsername(handleCandidate);
+                    setScreen(25);
+                  }}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                >
+                  Build My Shop 🚀
+                </button>
+              </div>
+            )}
+
+            {/* SCREEN 25: SECURE ACCOUNT SIGN UP */}
+            {screen === 25 && (
+              <div className="flex-1 flex flex-col justify-between py-2">
+                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[500px] overflow-y-auto no-scrollbar pr-0.5">
+                  <div className="flex flex-col items-center text-center space-y-2">
+                    <span className="inline-block bg-[#c8ff00] text-black text-[10px] tracking-wider uppercase font-black px-3 py-1 rounded-full px-4 font-bold scale-95 shadow-md">
+                      🎁 3 days free &bull; No payment needed
+                    </span>
+                    <h2 className="text-xl font-[900] tracking-tight leading-none text-white pt-2.5">
+                      Secure Account
+                    </h2>
                   </div>
 
-                  <div className="flex items-start gap-3.5 border-t border-[#202020] pt-4">
-                    <div className="mt-1 flex items-center justify-center w-5 h-5 bg-[#C6FF00]/10 text-[#C6FF00] rounded-full text-xs font-bold shrink-0">
-                      ✓
+                  <div className="space-y-3 TEXT-LEFT text-xs">
+                    {/* Username Setup */}
+                    <div className="text-left">
+                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-bold block mb-1">Shop Handle / Username</label>
+                      <div className="relative">
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">@</span>
+                        <input 
+                          type="text"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                          placeholder="yourhandle"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                        />
+                      </div>
+                      {username.length >= 3 && (
+                        <div className="mt-1 text-[10px]">
+                          {checkingUsername ? (
+                            <span className="text-white/40">Checking availability...</span>
+                          ) : usernameAvailable === true ? (
+                            <span className="text-[#22C55E]">✓ @{username} is available!</span>
+                          ) : usernameAvailable === false ? (
+                            <span className="text-[#EF4444]">✗ @{username} is already taken</span>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <h4 className="text-white font-bold text-xs">Unlock Live Seller Dashboard</h4>
-                      <p className="text-[#A1A1AA] text-[11px] mt-0.5">Manage stock, add custom products, and track real Zimbabwean store analytics.</p>
+
+                    {/* Email address */}
+                    <div className="text-left">
+                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-bold block mb-1">Email address</label>
+                      <input 
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* Password */}
+                    <div className="text-left">
+                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-bold block mb-1">Password</label>
+                      <div className="relative">
+                        <input 
+                          type={showPassword ? 'text' : 'password'}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder="Min 6 characters"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-10 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Confirm password */}
+                    <div className="text-left">
+                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-bold block mb-1">Confirm password</label>
+                      <div className="relative">
+                        <input 
+                          type={showConfirm ? 'text' : 'password'}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          placeholder="Re-enter password"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-10 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setShowConfirm(!showConfirm)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Terms Card */}
+                    <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/15 rounded-xl p-3.5 text-[11px] text-[#c8ff00] leading-snug font-bold">
+                      🔒 By signing up you agree to our terms. Your 3-day trial starts immediately.
                     </div>
                   </div>
                 </div>
 
-                <div className="text-center text-[#A1A1AA] text-xs">
-                  Takes less than 45 seconds to secure your login.
+                <div className="space-y-4 shadow-xl">
+                  <button 
+                    disabled={
+                      !username.trim() ||
+                      usernameAvailable === false ||
+                      !email.trim() ||
+                      password.length < 6 ||
+                      password !== confirmPassword ||
+                      signingUp
+                    }
+                    onClick={handleSignUpSubmit}
+                    className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                      username.trim() &&
+                      usernameAvailable !== false &&
+                      email.trim() &&
+                      password.length >= 6 &&
+                      password === confirmPassword &&
+                      !signingUp
+                        ? 'bg-[#c8ff00] text-black font-extrabold'
+                        : 'bg-white/5 text-white/30 pointer-events-none'
+                    }`}
+                  >
+                    {signingUp ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        <span>Launching...</span>
+                      </div>
+                    ) : (
+                      'Activate Free Trial →'
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      // Navigate back to landing screen 
+                      setAppStage('landing');
+                    }}
+                    className="w-full text-white/30 hover:text-white/60 text-xs font-bold transition-colors block text-center cursor-pointer mb-2"
+                  >
+                    Already have an account? Sign in &rarr;
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* SCREEN 26: 5-SEC BUILD ANIMATION SCREEN */}
+            {screen === 26 && (
+              <div className="flex-1 flex flex-col justify-between fixed inset-0 bg-[#0a0a0a] z-50 text-center select-none overflow-hidden pb-8 pt-8 px-6 font-sans">
+                {/* WORDMARK */}
+                <span className="threadzw-wordmark text-[#c8ff00] font-black uppercase tracking-widest text-2xl pt-8">
+                  ThreadZW
+                </span>
+
+                {/* ANIMATED BIG SPINNER */}
+                <div className="flex-1 flex flex-col items-center justify-center space-y-12 shrink-0">
+                  <div className="relative">
+                    <motion.div 
+                      animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.45, 0.15] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="absolute w-36 h-36 rounded-full bg-[#c8ff00] -left-6 -top-6"
+                    />
+                    <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 3.5, ease: "linear" }}
+                      className="absolute w-32 h-32 rounded-full border-2 border-dashed border-[#c8ff00] -left-4 -top-4"
+                    />
+                    <div className="relative w-24 h-24 bg-[#121212] border border-white/10 rounded-full flex items-center justify-center text-[#c8ff00] shadow-xl">
+                      <Store className="w-12 h-12" />
+                    </div>
+                  </div>
+
+                  {/* Checklist updates delay checkmarks ticker */}
+                  <div className="w-full max-w-[280px] space-y-3.5 text-left pl-3 text-base">
+                    {[
+                      "Creating your storefront...",
+                      "Setting up your shop link...",
+                      "Connecting WhatsApp orders...",
+                      "Your shop is ready!"
+                    ].map((item, idx) => {
+                      const complete = visibleChecks.includes(idx);
+                      return (
+                        <div key={item} className="h-6">
+                          {complete && (
+                            <motion.div 
+                              initial={{ opacity: 0, x: -8 }} 
+                              animate={{ opacity: 1, x: 0 }}
+                              className="flex items-center gap-3"
+                            >
+                              <span className="text-[#c8ff00] font-black text-lg">✓</span>
+                              <span className="text-white font-extrabold text-[15px]">{item}</span>
+                            </motion.div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <p className="text-white/45 text-xs font-bold leading-none tracking-tight">Just a moment...</p>
+                </div>
+
+                {/* bottom filling bar */}
+                <div className="w-full h-1 bg-white/5 relative mt-auto">
+                  <div style={{ width: `${loadProgress}%` }} className="h-full bg-[#c8ff00]" />
+                </div>
+              </div>
+            )}
+
+            {/* PAYWALL SCREEN 1: FREE TRIAL COPY */}
+            {screen === 27 && (
+              <div className="flex-1 flex flex-col justify-between py-2">
+                <div className="flex-1 flex flex-col justify-center space-y-5">
+                  <div className="flex justify-center gap-1">
+                    {[0, 1, 2, 3].map(dot => (
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 0 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                    ))}
+                  </div>
+
+                  <div className="text-center space-y-1">
+                    <h2 className="text-2xl font-[950] tracking-tight leading-none text-white">
+                      Try ThreadZW free
+                    </h2>
+                    <h2 className="text-2xl font-[950] tracking-tight leading-none text-white">
+                      for 3 days.
+                    </h2>
+                    <span className="text-white/50 text-xs font-bold block pt-1">No payment needed to start.</span>
+                  </div>
+
+                  {/* Everything included list card */}
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4.5 space-y-3 text-xs text-left shadow-lg">
+                    <span className="text-[#c8ff00] text-[9px] font-black uppercase tracking-wider block">EVERYTHING INCLUDED:</span>
+                    
+                    {[
+                      { e: '🏪', t: 'Your own shop page', s: `Live at threadzw.com/shop/@${username || 'handle'}` },
+                      { e: '📦', t: 'Unlimited products', s: 'Upload as many as you need' },
+                      { e: '💬', t: 'WhatsApp orders', s: 'Customers contact you directly' },
+                      { e: '📊', t: 'Analytics', s: 'See views and top products' }
+                    ].map(row => (
+                      <div key={row.t} className="flex gap-3">
+                        <span className="text-lg shrink-0">{row.e}</span>
+                        <div>
+                          <h4 className="font-extrabold text-white leading-tight">{row.t}</h4>
+                          <p className="text-white/45 text-[10px] mt-0.5 leading-tight">{row.s}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Warning reminder card */}
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 flex gap-3 text-left">
+                    <span className="text-lg shrink-0">🔔</span>
+                    <p className="text-amber-500 text-[11px] leading-snug font-bold">
+                      You will receive a WhatsApp reminder on day 3 before your trial ends.
+                    </p>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(28)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] mt-4"
+                >
+                  Get Started &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* PAYWALL SCREEN 2: JUST $5/MONTH ECOCASH */}
+            {screen === 28 && (
+              <div className="flex-1 flex flex-col justify-between py-2">
+                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[500px] overflow-y-auto no-scrollbar">
+                  <div className="flex justify-center gap-1">
+                    {[0, 1, 2, 3].map(dot => (
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 1 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                    ))}
+                  </div>
+
+                  <div className="text-center">
+                    <h2 className="text-xl font-black text-white leading-none">Just $5/month</h2>
+                    <h2 className="text-base font-bold text-white/50 leading-none mt-1">after your trial.</h2>
+
+                    {/* Big Display price badge */}
+                    <div className="mt-2 text-center select-none">
+                      <span className="text-6xl font-[950] tracking-tighter text-[#c8ff00] leading-none uppercase inline-block">
+                        $5
+                      </span>
+                      <span className="text-lg font-black text-white/90">/month</span>
+                      <p className="text-white/40 text-[11px] mt-0.5 font-bold">Less than $0.17 per day</p>
+                    </div>
+                  </div>
+
+                  {/* Payment layout cards */}
+                  <div className="space-y-3 shrink-0">
+                    {/* EcoCash 1 */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2.5">
+                      <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
+                        <span>📱</span> EcoCash App
+                      </h4>
+                      <p className="text-white/50 text-[11px] leading-none">Open EcoCash &rarr; Send Money &rarr; Enter number &rarr; Send $5</p>
+                      
+                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider">
+                        0776 223 144
+                      </div>
+                    </div>
+
+                    {/* EcoCash 2 */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2.5">
+                      <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
+                        <span>📲</span> EcoCash Super App
+                      </h4>
+                      <p className="text-white/50 text-[11px] leading-none">Open Super App &rarr; Send Money &rarr; Enter number &rarr; Send $5</p>
+                      
+                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider">
+                        0776 223 144
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-center text-white/35 text-[10px] py-1 font-bold">
+                    Use your WhatsApp number as payment reference
+                  </p>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(29)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] mt-3"
+                >
+                  Got it &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* PAYWALL SCREEN 3: WHATSAPP CODE */}
+            {screen === 29 && (
+              <div className="flex-1 flex flex-col justify-between py-2">
+                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[500px] overflow-y-auto no-scrollbar">
+                  <div className="flex justify-center gap-1">
+                    {[0, 1, 2, 3].map(dot => (
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 2 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                    ))}
+                  </div>
+
+                  <div className="text-center space-y-1">
+                    <span className="text-5xl block animate-pulse">💬</span>
+                    <h2 className="text-xl font-[950] tracking-tight leading-none text-white">
+                      We send your unlock
+                    </h2>
+                    <h2 className="text-xl font-[950] tracking-tight leading-none text-white">
+                      code on WhatsApp.
+                    </h2>
+                    <p className="text-white/50 text-[11px] max-w-[280px] mx-auto leading-relaxed font-bold">
+                      After you pay, our team verifies and sends your 6-character unlock code directly to your WhatsApp.
+                    </p>
+                  </div>
+
+                  {/* Step explanations */}
+                  <div className="space-y-3 text-left">
+                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs">
+                      <span className="text-lg shrink-0 font-bold">1️⃣</span>
+                      <div>
+                        <h4 className="font-extrabold leading-none">Pay via EcoCash</h4>
+                        <p className="text-white/45 text-[10px] mt-0.5 leading-none">Send $5 to 0776 223 144</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs">
+                      <span className="text-lg shrink-0 font-bold">2️⃣</span>
+                      <div>
+                        <h4 className="font-extrabold leading-none">We verify your payment</h4>
+                        <p className="text-white/45 text-[10px] mt-0.5 leading-none">Usually within 2-4 hours during 8am-8pm ZIM time</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs">
+                      <span className="text-lg shrink-0 font-bold">3️⃣</span>
+                      <div className="flex-1">
+                        <h4 className="font-extrabold leading-none">Code arrives on WhatsApp</h4>
+                        <p className="text-white/45 text-[10px] mt-0.5 leading-none">A 6-character code like this:</p>
+                        
+                        {/* Mock WhatsApp screen */}
+                        <div className="bg-white/5 p-3 rounded-lg border border-white/5 mt-2.5 space-y-1 scale-95 origin-left">
+                          <span className="text-[10px] font-black uppercase text-[#25D366]">THREADZW 🎉</span>
+                          <span className="text-[9px] text-white/50 block leading-none">Your unlock code is:</span>
+                          <span className="font-mono text-base font-black text-[#c8ff00] leading-none tracking-widest block">7823KF</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setScreen(30)}
+                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] mt-3"
+                >
+                  Continue &rarr;
+                </button>
+              </div>
+            )}
+
+            {/* PAYWALL SCREEN 4: COUNTDOWN */}
+            {screen === 30 && (
+              <div className="flex-1 flex flex-col justify-between py-2">
+                <div className="flex-1 flex flex-col justify-center space-y-5">
+                  <div className="flex justify-center gap-1">
+                    {[0, 1, 2, 3].map(dot => (
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 3 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                    ))}
+                  </div>
+
+                  <div className="text-center space-y-1">
+                    <span className="text-6xl block">🔓</span>
+                    <h2 className="text-2xl font-[950] tracking-tight leading-none text-white pt-2">
+                      You're in.
+                    </h2>
+                    <p className="text-white/50 text-xs font-bold leading-none">Your 3-day free trial is active.</p>
+                  </div>
+
+                  {/* Big countdown badge layout card */}
+                  <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/20 rounded-2xl p-6 text-center space-y-3.5 shadow-xl max-w-xs mx-auto w-full">
+                    <span className="text-7xl font-[1000] text-[#c8ff00] leading-none tracking-tighter block font-mono select-none">
+                      3
+                    </span>
+                    <span className="text-white font-[900] text-sm uppercase tracking-wider block">days remaining</span>
+                    
+                    {/* Tiny full loading progress block */}
+                    <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden relative mt-1.5">
+                      <div className="absolute inset-y-0 left-0 bg-[#c8ff00] w-full" />
+                    </div>
+                  </div>
+
+                  <p className="text-center text-white/40 text-xs leading-relaxed font-bold px-3">
+                    After day 3, keep your shop live for $5/month.<br/>Pay via EcoCash or InnBucks anytime.
+                  </p>
+                </div>
+
+                <div className="shadow-2xl pt-2">
+                  <button 
+                    onClick={handleFinishPaywall}
+                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  >
+                    Go to my dashboard &rarr;
+                  </button>
                 </div>
               </div>
             )}
 
           </motion.div>
         </AnimatePresence>
-      </div>
 
-      {/* FIXED NEXT FORWARD ACTION FOOTER */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-[#0B0B0B] z-30 border-t border-[#151515]">
-        <div className="max-w-md mx-auto">
-          {onboardingStep === 1 && (
-            <button
-              onClick={handleNext}
-              disabled={!shopData.ownerName.trim()}
-              className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                shopData.ownerName.trim() ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              Let's Go →
-            </button>
-          )}
-
-          {onboardingStep === 2 && (
-            <button
-              onClick={handleNext}
-              disabled={currentChannels.length === 0}
-              className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                currentChannels.length > 0 ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              Continue
-            </button>
-          )}
-
-          {/* Simple clicks automatically advance, but in case they manually navigate/click */}
-          {((onboardingStep >= 3 && onboardingStep <= 7) || onboardingStep === 24 || onboardingStep === 25) && (
-            <button
-              onClick={handleNext}
-              className="w-full h-[54px] bg-[#1A1A1A] border border-[#2A2A2A] text-[#A1A1AA] font-bold text-sm rounded-full transition-all cursor-pointer hover:text-white"
-            >
-              Skip / Continue →
-            </button>
-          )}
-
-          {onboardingStep >= 8 && onboardingStep <= 17 && (
-            <button
-              onClick={handleNext}
-              className="w-full bg-[#C6FF00] text-[#0B0B0B] h-[54px] rounded-full font-black text-sm hover:opacity-90 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              {onboardingStep === 8 ? 'Show Me How →' : onboardingStep === 12 ? "I'm Ready →" : onboardingStep === 17 ? "Let's Build It 🚀" : 'Continue →'}
-            </button>
-          )}
-
-          {onboardingStep === 18 && (
-            <button
-              onClick={handleNext}
-              disabled={shopData.name.trim().length < 3}
-              className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                shopData.name.trim().length >= 3 ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              That's the name →
-            </button>
-          )}
-
-          {onboardingStep === 19 && (
-            <button
-              onClick={handleNext}
-              disabled={!shopData.category}
-              className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                shopData.category ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              Continue
-            </button>
-          )}
-
-          {onboardingStep === 20 && (
-            <button
-              onClick={handleNext}
-              disabled={!shopData.town}
-              className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                shopData.town ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              Continue
-            </button>
-          )}
-
-          {onboardingStep === 21 && (
-            <button
-              onClick={handleNext}
-              disabled={shopData.whatsapp.length < 9}
-              className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                shopData.whatsapp.length >= 9 ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              Continue
-            </button>
-          )}
-
-          {onboardingStep === 22 && (
-            <button
-              onClick={handleNext}
-              disabled={!shopData.description.trim()}
-              className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                shopData.description.trim() ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              Continue
-            </button>
-          )}
-
-          {onboardingStep === 23 && (
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleNext}
-                disabled={!shopData.instagram.trim()}
-                className={`w-full h-[54px] rounded-full font-black text-sm flex items-center justify-center gap-1.5 transition-all text-black cursor-pointer ${
-                  shopData.instagram.trim() ? 'bg-[#C6FF00] hover:opacity-90' : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-                }`}
-              >
-                Continue
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  updateField('instagram', '');
-                  handleNext();
-                }}
-                className="w-full text-center text-xs text-[#A1A1AA] hover:text-white"
-              >
-                Skip for now →
-              </button>
-            </div>
-          )}
-
-          {onboardingStep === 26 && (
-            <button
-              onClick={handleNext}
-              className="w-full bg-[#C6FF00] text-black h-[54px] rounded-full font-black text-sm hover:opacity-90 transition-all flex items-center justify-center cursor-pointer"
-            >
-              {logoFile ? 'Next →' : 'Skip for now →'}
-            </button>
-          )}
-
-          {onboardingStep === 27 && (
-            <button
-              onClick={handleNext}
-              className="w-full bg-[#C6FF00] text-black h-[54px] rounded-full font-black text-sm hover:opacity-90 transition-all flex items-center justify-center cursor-pointer"
-            >
-              {bannerFile ? 'Next →' : 'Skip for now →'}
-            </button>
-          )}
-
-          {onboardingStep === 28 && (
-            <button
-              onClick={handleNext}
-              className="w-full bg-[#C6FF00] text-black h-[54px] rounded-full font-black text-base hover:brightness-105 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10 font-bold"
-            >
-              Build My Shop 🚀
-            </button>
-          )}
-
-          {onboardingStep === 29 && (
-            <button
-              onClick={handleNext}
-              className="w-full bg-[#C6FF00] text-black h-[54px] rounded-full font-black text-base hover:brightness-105 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10 font-bold animate-pulse"
-              style={{ animationDuration: '4s' }}
-            >
-              Save & Secure Account →
-            </button>
-          )}
-        </div>
       </div>
 
     </div>

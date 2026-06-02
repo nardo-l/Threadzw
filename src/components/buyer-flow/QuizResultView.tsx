@@ -16,7 +16,7 @@ export const QuizResultView: React.FC = () => {
   const [receiptError, setReceiptError] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  const personalityId = profile?.personality_type || userData.personality || 'nonchalant';
+  const personalityId = profile?.personality_type || (userData as any).personality || 'nonchalant';
 
   const result = useMemo(() => {
     const id = personalityId.toLowerCase();

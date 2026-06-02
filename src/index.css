@@ -1,8 +1,10 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;700&family=Syne:wght@700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-syne: 'Syne', sans-serif;
+  --font-grotesk: 'Space Grotesk', sans-serif;
   --font-mono: 'Courier New', monospace;
 
   /* New ThreadZW Brand Colors */
@@ -10,12 +12,183 @@
   --color-card-bg: #151515;
   --color-ele-bg: #1A1A1A;
   --color-border: #2A2A2A;
-  --color-neon: #C6FF00;
+  --color-neon: #c8ff00;
   --color-neon-text: #0B0B0B;
   --color-secondary-text: #A1A1AA;
   --color-success: #22C55E;
   --color-error: #EF4444;
   --color-warm: #FF7A00;
+}
+
+:root {
+  --btn-radius: 10px;
+  --card-radius: 14px;
+  --chip-radius: 8px;
+  --input-radius: 10px;
+  --color-lime: #c8ff00;
+  --color-bg: #0a0a0a;
+  --color-text: #ffffff;
+  --color-subtext: rgba(255,255,255,0.5);
+  --font-wordmark: Courier, 'Courier New', monospace;
+  --font-body: 'Plus Jakarta Sans', 'Inter', ui-sans-serif;
+}
+
+/* Custom Global Typography Overrides for Lime Green Text */
+.threadzw-wordmark,
+[class*="text-[#c8ff00]"],
+[class*="text-[#C6FF00]"],
+[class*="text-neon"],
+[class*="text-lime"],
+[style*="color: rgb(200, 255, 0)"],
+[style*="color: rgb(198, 255, 0)"],
+[style*="color:#c8ff00"],
+[style*="color:#C6FF00"] {
+  font-family: var(--font-wordmark) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.05em !important;
+}
+
+/* Custom Global Action & UI Overrides */
+
+/* General Buttons default override */
+button {
+  border-radius: var(--btn-radius) !important;
+  text-transform: uppercase !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Primary Button Style (lime green background) */
+button[class*="bg-[#c8ff00]"],
+button[class*="bg-[#C6FF00]"],
+button[class*="bg-neon"],
+button[class*="bg-lime"],
+button.bg-neon,
+button.bg-lime {
+  background-color: var(--color-lime) !important;
+  color: #000000 !important;
+  border: none !important;
+  border-radius: var(--btn-radius) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  padding: 10px 24px !important;
+  min-height: 44px !important;
+}
+
+/* Secondary Button Style (outlined / transparent bg with white/light border) */
+button[class*="bg-transparent"][class*="border"],
+button[class*="border-[1.5px]"][class*="border-border"],
+button[class*="border-white"],
+button.border-2 {
+  background-color: transparent !important;
+  color: #ffffff !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.25) !important;
+  border-radius: var(--btn-radius) !important;
+  font-family: var(--font-sans) !important;
+  font-weight: 800 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  padding: 10px 24px !important;
+  min-height: 44px !important;
+}
+
+/* Danger Button Style (red actions) */
+button[class*="text-[#ff4444]"],
+button[class*="text-[#EF4444]"],
+button[class*="text-red-"],
+button[class*="border-red-"],
+button[class*="bg-red-"] {
+  background-color: transparent !important;
+  color: #ff4444 !important;
+  border: 1.5px solid rgba(255, 68, 68, 0.3) !important;
+  border-radius: var(--btn-radius) !important;
+}
+
+/* Ghost Button Style (subtle actions) */
+button[class*="bg-white/[0.05]"],
+button[class*="hover:text-white"][class*="bg-transparent"],
+button[class*="bg-transparent"][class*="text-secondary-text"],
+button[class*="text-white/40"],
+button[class*="bg-white/5"] {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--btn-radius) !important;
+}
+
+/* Small Action Button (chips, tags, filters, size selection) */
+button[class*="px-3"],
+button[class*="px-4"][class*="h-10"],
+button[class*="text-xs"],
+button[class*="text-[10px]"],
+button[class*="text-[12px]"],
+button[class*="h-10"],
+button[class*="h-8"],
+button[class*="h-9"],
+button[class*="w-14"][class*="h-14"] {
+  border-radius: var(--chip-radius) !important;
+  padding: 8px 16px !important;
+  min-height: 36px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+}
+
+/* Icon Button (back arrows, close buttons) */
+button[class*="w-10"][class*="h-10"],
+button[class*="w-11"][class*="h-11"],
+button[class*="w-12"][class*="h-12"],
+button[class*="p-2"][class*="rounded-full"][class*="fixed"] {
+  border-radius: var(--btn-radius) !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  min-height: 40px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Input Fields Override */
+input, select, textarea {
+  border-radius: var(--input-radius) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
+  padding: 14px 16px !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-lime) !important;
+  outline: none !important;
+  background-color: rgba(200, 255, 0, 0.04) !important;
+}
+
+/* Cards and Modals Override */
+div[class*="bg-card-bg"],
+div[class*="bg-[#151515]"],
+div[class*="bg-[#111]"],
+div[class*="bg-[#1a1a1a]"],
+div[class*="bg-[#1A1A1A]"],
+div[class*="bg-ele-bg"],
+div[class*="rounded-3xl"]:not(.rounded-full),
+div[class*="rounded-[24px]"]:not(.rounded-full),
+div[class*="rounded-[28px]"]:not(.rounded-full) {
+  border-radius: var(--card-radius) !important;
+}
+
+/* Ensure circular elements (avatars, checks, etc.) remain rounded */
+div.rounded-full, img.rounded-full {
+  border-radius: 9999px !important;
 }
 
 @layer base {
@@ -26,6 +199,14 @@
 }
 
 @layer utilities {
+  .threadzw-wordmark {
+    font-family: Courier, 'Courier New', monospace !important;
+    font-weight: 950 !important;
+    letter-spacing: -0.05em !important;
+    color: #C6FF00 !important;
+    text-transform: none !important;
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }

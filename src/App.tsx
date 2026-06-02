@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { supabase } from './lib/supabase';
 import { SplashScreen } from './screens/SplashScreen';
-import { Paywall } from './screens/Paywall';
 import { OnboardingFlow } from './screens/OnboardingFlow';
+import { Paywall } from './screens/Paywall';
 import { BuildingScreen } from './screens/BuildingScreen';
-import { RevealScreen } from './screens/RevealScreen';
 import { Dashboard } from './screens/Dashboard';
 import { AddProduct } from './screens/AddProduct';
 import { EditProduct } from './screens/EditProduct';
@@ -13,9 +11,10 @@ import { Inventory } from './screens/Inventory';
 import { Analytics } from './screens/Analytics';
 import { Settings } from './screens/Settings';
 import { ShopEdit } from './screens/ShopEdit';
+import { SalesSystem } from './screens/SalesSystem';
 import { ShopProfileView } from './components/buyer-flow/ShopProfileView';
 import { ProductDetail } from './screens/ProductDetail';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/ToastContainer';
 import { SubscriptionProvider } from './context/SubscriptionContext';
@@ -24,215 +23,190 @@ import { InventoryProvider } from './context/InventoryContext';
 import { Toaster } from 'sonner';
 import { PublicShopPage } from './screens/PublicShopPage';
 import { LandingPage } from './screens/LandingPage';
+import { AdminLeads } from './screens/AdminLeads';
+import { mockShop } from './data/mockData';
+import { SetupShop } from './screens/SetupShop';
+import { ShopProvider, useShopContext } from './context/ShopContext';
 
-type AppStage = 'landing' | 'paywall' | 'onboarding' | 'building' | 'reveal' | 'dashboard';
+type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup';
 
-const getRouteFromURL = () => {
+const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: string } => {
   const path = window.location.pathname;
 
-  // Match /shop/@handle or /shop/handle
-  const shopMatch = path.match(/^\/shop\/@?([a-z0-9_-]+)$/i);
-
+  if (path === '/admin') {
+    return { stage: 'admin' };
+  }
+  if (path === '/dashboard') {
+    return { stage: 'dashboard' };
+  }
+  if (path === '/setup') {
+    return { stage: 'setup' };
+  }
+  
+  // Match /store/:slug or /shop/:handle
+  const shopMatch = path.match(/^\/(?:shop|store)\/@?([a-z0-9_-]+)$/i);
   if (shopMatch) {
     return {
-      type: 'shop',
+      stage: 'shop',
       handle: shopMatch[1].replace(/^@/, '').toLowerCase()
     };
   }
 
-  return { type: 'app' };
+  // Match /product/:id
+  const productMatch = path.match(/^\/product\/([a-z0-9_-]+)$/i);
+  if (productMatch) {
+    return {
+      stage: 'product',
+      id: productMatch[1]
+    };
+  }
+
+  return { stage: 'landing' };
 };
 
 function AppContent() {
-  const [currentRoute] = useState(getRouteFromURL());
+  const initialData = getInitialStageAndParams();
+  const [appStage, setAppStageState] = useState<AppStage>(initialData.stage);
+  const appStageRef = useRef<AppStage>(initialData.stage);
+  
+  const { shop, loading: shopLoading, hasShop, refreshShop } = useShopContext();
 
-  // Render public shop page immediately without requiring auth
-  if (currentRoute.type === 'shop') {
-    return (
-      <PublicShopPage
-        handle={currentRoute.handle}
-      />
-    );
-  }
+  const setAppStage = (stage: AppStage) => {
+    appStageRef.current = stage;
+    setAppStageState(stage);
+    // Synced path push
+    if (stage === 'landing') window.history.pushState({}, '', '/');
+    else if (stage === 'building') window.history.pushState({}, '', '/building');
+    else if (stage === 'paywall') window.history.pushState({}, '', '/paywall');
+    else if (stage === 'dashboard') window.history.pushState({}, '', '/dashboard');
+    else if (stage === 'admin') window.history.pushState({}, '', '/admin');
+    else if (stage === 'setup') window.history.pushState({}, '', '/setup');
+  };
 
-  // Top level view controller states
-  const [appStage, setAppStage] = useState<AppStage | null>(null);
-  const appStageRef = useRef<AppStage | null>(null);
-  useEffect(() => {
-    appStageRef.current = appStage;
-  }, [appStage]);
   const [paywallScreen, setPaywallScreen] = useState(1);
   const [onboardingStep, setOnboardingStep] = useState(1);
-  const [myShop, setMyShop] = useState<any>(null);
+  const [myShop, setMyShop] = useState<any>(mockShop);
   const [paywallMode, setPaywallMode] = useState<'signup' | 'payment'>('signup');
-  const [authLoading, setAuthLoading] = useState(true);
-
-  const [dashboardLocked, setDashboardLocked] = useState(false);
-  const [signupAlreadyDone, setSignupAlreadyDone] = useState(false);
-  const [session, setSession] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(false); // Immediate visual mockup loading
 
   // Consolidated Onboarding Shop Context Data State
   const [shopData, setShopData] = useState({
-    ownerName: '',
-    name: '',
-    category: '',
-    town: '',
-    whatsapp: '',
-    description: '',
-    instagram: '',
-    priceRange: '',
-    productEstimate: ''
+    ownerName: 'Nardo',
+    name: 'KURE STREETWEAR',
+    category: 'Streetwear',
+    town: 'Harare',
+    whatsapp: '263776223144',
+    description: 'Built for the ones chasing more.',
+    instagram: '@kure.zw',
+    priceRange: '10-50',
+    productEstimate: '50-100'
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(mockShop.logo_url);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(mockShop.banner_url);
 
-  const initApp = async () => {
-    setAuthLoading(true);
-    try {
-      console.log('initApp starting view check...');
-      const route = getRouteFromURL();
-      if (route.type === 'shop') {
-        setAuthLoading(false);
-        return;
-      }
+  const { session, loading } = useAuth();
 
-      // Check session
-      const {
-        data: { session: activeSession }
-      } = await supabase.auth.getSession();
-
-      if (!activeSession?.user?.id) {
-        console.log('No active auth session. Routing to Landing Page.');
-        setAppStage('landing');
-        setAuthLoading(false);
-        return;
-      }
-
-      console.log('Auth session detected:', activeSession.user.id);
-      setSession(activeSession);
-
-      const [profileResult, shopResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', activeSession.user.id)
-          .maybeSingle(),
-        supabase
-          .from('shops')
-          .select('*')
-          .eq('owner_id', activeSession.user.id)
-          .maybeSingle()
-      ]);
-
-      const profile = profileResult.data;
-      const shop = shopResult.data;
-
-      // HAS SHOP — go straight to dashboard
-      if (shop) {
-        setMyShop(shop);
-
-        const isExpired =
-          shop.subscription_status === 'expired' ||
-          (shop.subscription_status === 'trial' &&
-            new Date(shop.trial_ends_at) < new Date());
-
-        if (isExpired) {
-          console.log('Subscription has expired. Locking Dashboard.');
-          setAppStage('dashboard');
-          setDashboardLocked(true);
-        } else {
-          console.log('Shop verified active! Routing to Dashboard workspace.');
-          setAppStage('dashboard');
-          setDashboardLocked(false);
-        }
-        return;
-      }
-
-      // HAS ACCOUNT BUT NO SHOP
-      if (profile) {
-        console.log('Profile exists but no shop. Starting onboarding with signup already done.');
-        setAppStage('onboarding');
-        setOnboardingStep(1);
-        setSignupAlreadyDone(true);
-        return;
-      }
-
-      // Account exists but no profile
-      setAppStage('onboarding');
-      setOnboardingStep(1);
-    } catch (err) {
-      console.error('App init security/query fail:', err);
-      setAppStage('landing');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
+  // Sync stage to browser navigation popstate
   useEffect(() => {
-    initApp();
-  }, []);
-
-  // Listen to external auth session terminations or initiations
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('App state auth event listener signal:', event, 'Stage ref:', appStageRef.current);
-      if (event === 'SIGNED_IN') {
-        if (appStageRef.current === 'paywall' || appStageRef.current === 'building' || appStageRef.current === 'reveal') {
-          console.log('Bypassing initApp() since we are in paywall/building/reveal state.');
-          return;
-        }
-        initApp();
-      } else if (event === 'SIGNED_OUT') {
-        setAppStage('landing');
-        setOnboardingStep(1);
-        setMyShop(null);
-        setDashboardLocked(false);
-        setSignupAlreadyDone(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
+    const handlePopState = () => {
+      const data = getInitialStageAndParams();
+      setAppStageState(data.stage);
+      appStageRef.current = data.stage;
     };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Public buyer storefront routing logic (unrestricted shop profiles & product pages)
-  const isPublicPath =
-    window.location.pathname.startsWith('/shop/') ||
-    window.location.pathname.startsWith('/product/');
+  // Route protection and syncing
+  useEffect(() => {
+    if (loading) return;
+    
+    // Allow public routes
+    const path = window.location.pathname;
+    if (path.startsWith('/shop/') || path.startsWith('/store/') || path === '/admin' || path.startsWith('/product/')) {
+      return;
+    }
 
-  if (isPublicPath) {
-    console.log('Public route detected. Bypassing state machine checker.');
+    const loggedIn = localStorage.getItem('threadzw_logged_in') === 'true';
+
+    if (!loggedIn) {
+      if (
+        appStageRef.current !== 'landing' && 
+        appStageRef.current !== 'onboarding' &&
+        appStageRef.current !== 'building' && 
+        appStageRef.current !== 'paywall'
+      ) {
+        setAppStage('landing');
+      }
+    } else {
+      if (shopLoading) return;
+
+      if (!hasShop) {
+        if (appStageRef.current !== 'setup') {
+          setAppStage('setup');
+        }
+      } else {
+        if (appStageRef.current !== 'dashboard') {
+          setAppStage('dashboard');
+        }
+      }
+    }
+  }, [loading, session, shopLoading, hasShop]);
+
+  if (loading || authLoading || (localStorage.getItem('threadzw_logged_in') === 'true' && shopLoading)) {
+    return <SplashScreen />;
+  }
+
+  if (appStage === 'shop') {
+    const handle = initialData.handle || 'kure';
     return (
-      <Router>
-        <Routes>
-          <Route path="/shop/:handle" element={<ShopProfileView />} />
-          <Route path="/product/:id" element={<ProductDetail />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+      <Routes>
+        <Route path="/shop/:shopSlug" element={<PublicShopPage handle={handle} />} />
+        <Route path="/store/:shopSlug" element={<PublicShopPage handle={handle} />} />
+        <Route path="*" element={<PublicShopPage handle={handle} />} />
+      </Routes>
     );
   }
 
-  // Core Merchant state machine router render tree
-  if (authLoading) {
-    return <SplashScreen />;
+  if (appStage === 'product') {
+    return (
+      <Routes>
+        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
+  }
+
+  if (appStage === 'admin') {
+    return <AdminLeads />;
   }
 
   if (appStage === 'landing') {
     return (
       <LandingPage 
         onStartFree={() => {
-          setAppStage('paywall');
-          setPaywallScreen(1);
-          setPaywallMode('signup');
+          localStorage.removeItem('threadzw_logged_in');
+          localStorage.removeItem('threadzw_onboarding_complete');
+          localStorage.removeItem('threadzw_onboarding_step');
+          localStorage.removeItem('threadzw_onboarding_states');
+          localStorage.removeItem('threadzw_owner_name');
+          setAppStage('onboarding');
         }} 
         onLoginSuccess={() => {
-          initApp();
+          setAppStage('dashboard');
         }} 
+      />
+    );
+  }
+
+  if (appStage === 'onboarding') {
+    return (
+      <OnboardingFlow 
+        setAppStage={setAppStage}
+        setPaywallScreen={setPaywallScreen}
       />
     );
   }
@@ -253,65 +227,33 @@ function AppContent() {
     );
   }
 
-  if (appStage === 'onboarding') {
-    return (
-      <OnboardingFlow
-        onboardingStep={onboardingStep}
-        setOnboardingStep={setOnboardingStep}
-        setAppStage={setAppStage}
-        setPaywallScreen={setPaywallScreen}
-        setPaywallMode={setPaywallMode}
-        shopData={shopData}
-        setShopData={setShopData}
-        logoFile={logoFile}
-        setLogoFile={setLogoFile}
-        logoPreview={logoPreview}
-        setLogoPreview={setLogoPreview}
-        bannerFile={bannerFile}
-        setBannerFile={setBannerFile}
-        bannerPreview={bannerPreview}
-        setBannerPreview={setBannerPreview}
-        signupAlreadyDone={signupAlreadyDone}
-      />
-    );
-  }
-
   if (appStage === 'building') {
     return (
       <BuildingScreen
-        shopData={shopData}
-        logoFile={logoFile}
-        bannerFile={bannerFile}
-        setMyShop={setMyShop}
         setAppStage={setAppStage}
+        setPaywallScreen={setPaywallScreen}
       />
     );
   }
 
-  if (appStage === 'reveal') {
-    return (
-      <RevealScreen
-        myShop={myShop}
-        setAppStage={setAppStage}
-      />
-    );
+  if (appStage === 'setup') {
+    return <SetupShop onSetupComplete={refreshShop} />;
   }
 
   if (appStage === 'dashboard') {
     return (
-      <Router>
-        <Routes>
-          <Route path="/" element={<Dashboard initialLocked={dashboardLocked} />} />
-          <Route path="/dashboard" element={<Dashboard initialLocked={dashboardLocked} />} />
-          <Route path="/add-product" element={<AddProduct />} />
-          <Route path="/edit-product/:productId" element={<EditProduct />} />
-          <Route path="/inventory" element={<Inventory />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/edit-shop" element={<ShopEdit />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
+      <Routes>
+        <Route path="/" element={<Dashboard initialLocked={false} />} />
+        <Route path="/dashboard" element={<Dashboard initialLocked={false} />} />
+        <Route path="/add-product" element={<AddProduct />} />
+        <Route path="/edit-product/:productId" element={<EditProduct />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/sales" element={<SalesSystem />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/edit-shop" element={<ShopEdit />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     );
   }
 
@@ -320,19 +262,23 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <ToastProvider>
-        <SubscriptionProvider>
-          <FollowProvider>
-            <InventoryProvider>
-              <AppContent />
-              <ToastContainer />
-              <Toaster position="top-center" theme="dark" expand={false} richColors />
-            </InventoryProvider>
-          </FollowProvider>
-        </SubscriptionProvider>
-      </ToastProvider>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <ToastProvider>
+          <SubscriptionProvider>
+            <FollowProvider>
+              <InventoryProvider>
+                <ShopProvider>
+                  <AppContent />
+                  <ToastContainer />
+                  <Toaster position="top-center" theme="dark" expand={false} richColors />
+                </ShopProvider>
+              </InventoryProvider>
+            </FollowProvider>
+          </SubscriptionProvider>
+        </ToastProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 

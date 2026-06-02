@@ -242,7 +242,7 @@ export const Search: React.FC = () => {
               <section className="px-6">
                  <h3 className="text-[12px] font-bold uppercase tracking-[0.2em] text-[#555555] mb-8 px-1">Verified Partners</h3>
                  <div className="flex flex-col gap-4">
-                    {topShops.map(shop => (
+                    {topShops.map((shop: any) => (
                       <div 
                         key={shop.id}
                         onClick={() => navigate(`/shop/${shop.id}`)}
@@ -341,7 +341,7 @@ export const Search: React.FC = () => {
                   <div className="flex flex-col gap-6">
                      <h4 className="text-[12px] font-bold uppercase tracking-[0.2em] text-[#555555] px-1">Business Entities</h4>
                      <div className="flex flex-col gap-3.5">
-                        {filteredShops.map(shop => (
+                        {filteredShops.map((shop: any) => (
                            <div 
                              key={shop.id}
                              onClick={() => navigate(`/shop/${shop.id}`)}

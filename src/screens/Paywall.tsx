@@ -7,6 +7,44 @@ import {
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
+export const generateSlug = (shopName: string): string => {
+  return shopName
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .split(/\s+/)
+    .join('')
+    .replace(/-+/g, '-');
+};
+
+export const generateUniqueSlug = async (shopName: string): Promise<string> => {
+  const baseSlug = generateSlug(shopName);
+  
+  const { data } = await supabase
+    .from('shops')
+    .select('id, slug')
+    .eq('slug', baseSlug)
+    .maybeSingle();
+  
+  if (!data || (data.id && String(data.id).startsWith('local-'))) {
+    return baseSlug;
+  }
+  
+  let counter = 2;
+  while (counter < 8) { // Prevent infinite loop in local fallback/sandbox mode
+    const newSlug = `${baseSlug}${counter}`;
+    const { data: existing } = await supabase
+      .from('shops')
+      .select('id, slug')
+      .eq('slug', newSlug)
+      .maybeSingle();
+    
+    if (!existing || (existing.id && String(existing.id).startsWith('local-'))) return newSlug;
+    counter++;
+  }
+  return `${baseSlug}${Math.floor(1000 + Math.random() * 9000)}`;
+};
+
 interface PaywallFlowProps {
   paywallScreen: number;
   setPaywallScreen: React.Dispatch<React.SetStateAction<number>>;
@@ -14,7 +52,7 @@ interface PaywallFlowProps {
   setPaywallMode: React.Dispatch<React.SetStateAction<'signup' | 'payment'>>;
   myShop: any;
   setMyShop: (shop: any) => void;
-  setAppStage: (stage: 'paywall' | 'onboarding' | 'building' | 'reveal' | 'dashboard' | null) => void;
+  setAppStage: (stage: any) => void;
   setOnboardingStep: (step: number) => void;
   shopData?: {
     ownerName: string;
@@ -51,6 +89,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
     }
     return '';
   });
+  const [fullName, setFullName] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirm, setSignupConfirm] = useState('');
@@ -77,8 +116,21 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
 
   const isMounted = useRef(true);
 
+  const [currentSessionUser, setCurrentSessionUser] = useState<any>(null);
+
   useEffect(() => {
     isMounted.current = true;
+    
+    const checkUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (isMounted.current && session?.user) {
+        setCurrentSessionUser(session.user);
+        setFullName(session.user.user_metadata?.username || '');
+        setSignupEmail(session.user.email || '');
+      }
+    };
+    checkUserSession();
+
     return () => {
       isMounted.current = false;
     };
@@ -171,8 +223,20 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
     if (signingUp) return;
     
     // Quick validation checks
-    if (signupUsername.length < 3 || !usernameAvailable) {
-      toast.error('Please choose an available username first.');
+    if (!signupUsername.trim()) {
+      toast.error('Please enter a username handle.');
+      return;
+    }
+    if (signupUsername.length < 3) {
+      toast.error('Username must be at least 3 characters.');
+      return;
+    }
+    if (usernameAvailable === false) {
+      toast.error('This handle is already taken.');
+      return;
+    }
+    if (!fullName.trim()) {
+      toast.error('Please enter your full name.');
       return;
     }
     if (!signupEmail.includes('@') || !signupEmail.includes('.')) {
@@ -190,75 +254,111 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
 
     setSigningUp(true);
     try {
-      console.log('Creating auth account with email:', signupEmail);
-      const { data, error } = await supabase.auth.signUp({
+      const usernameHandle = signupUsername.trim().toLowerCase();
+      let activeUserId = '';
+
+      // 1. Sign up user inside Supabase Auth
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: signupEmail.trim().toLowerCase(),
         password: signupPassword,
         options: {
           data: {
-            username: signupUsername
+            username: usernameHandle,
+            display_name: fullName.trim(),
+            handle: usernameHandle
           }
         }
       });
 
-      if (error) throw error;
-      if (!data.user) throw new Error('Sign up failed');
-
-      console.log('Merchant user created in Auth:', data.user.id);
-
-      // Create initial merchant profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: data.user.id,
-          handle: signupUsername,
-          display_name: signupUsername,
-          onboarding_complete: false
-        }, { onConflict: 'id' });
-
-      if (profileError) {
-        console.error('Error during profile creation:', profileError);
-        throw profileError;
-      }
-
-      toast.success('Registration successful! Trial activated.');
-      console.log('Transitioning to shop building state');
-      
-      // Move to shop building state since onboarding is already completed
-      setAppStage('building');
-
-    } catch (err: any) {
-      console.error('Sign up sequence error:', err);
-      if (err.message?.includes('already registered') || err.message?.includes('Email already exists')) {
-        try {
-          console.log('User already registered. Attempting automatic sign-in with provided password...');
-          const { data: signinData, error: signinError } = await supabase.auth.signInWithPassword({
+      if (signUpError) {
+        // Fallback to sign-in if the user already exists in Supabase
+        if (signUpError.message?.toLowerCase().includes('already registered') || signUpError.message?.toLowerCase().includes('already exists')) {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: signupEmail.trim().toLowerCase(),
             password: signupPassword,
           });
 
-          if (signinError) {
-            console.error('Auto sign-in attempt failed:', signinError);
-            toast.error('This email is already registered. Please check your password or use the Sign In form below.');
-            return;
+          if (signInError) {
+            throw new Error('Email is already registered. Please check your credentials and try again.');
           }
-
-          if (signinData?.user) {
-            toast.success('Signed in successfully!');
-            console.log('Logged in successfully. Transitioning to shop building state.');
-            setAppStage('building');
-          }
-        } catch (autoSignInErr: any) {
-          console.error('Auto sign-in custom execution error:', autoSignInErr);
-          toast.error('Email already registered. Tap Sign In instead.');
+          activeUserId = signInData.user?.id || '';
+        } else {
+          throw signUpError;
         }
       } else {
-        toast.error('Error: ' + err.message);
+        activeUserId = signUpData.user?.id || '';
       }
+
+      if (!activeUserId) {
+        throw new Error('Unable to establish user session ID.');
+      }
+
+      // 2. Initialize developer database Profile relation
+      await supabase.from('profiles').upsert({
+        id: activeUserId,
+        display_name: fullName.trim(),
+        email: signupEmail.trim().toLowerCase(),
+        whatsapp_number: '0776223144',
+        onboarding_complete: false // Trigger overlay on dashboard
+      }, { onConflict: 'id' });
+
+      // 3. Connect and INSERT standard shop config
+      const now = new Date();
+      const trialEnds = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+      // Check if user already created a shop during the onboarding flow
+      const { data: existingShop } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('owner_id', activeUserId)
+        .maybeSingle();
+
+      const chosenShopName = shopData?.name || `${fullName.trim()}'s Shop`;
+      const generatedSlug = await generateUniqueSlug(chosenShopName);
+
+      const shopPayload = {
+        owner_id: activeUserId,
+        name: chosenShopName,
+        handle: usernameHandle,
+        slug: existingShop?.slug || generatedSlug,
+        categories: shopData?.category ? [shopData.category] : ['Clothing'],
+        location: shopData?.town || 'Harare (Online)',
+        whatsapp: shopData?.whatsapp || '0776223144',
+        instagram: shopData?.instagram || null,
+        description: shopData?.description || 'Brand new ThreadZW clothing brand',
+        logo_url: null,
+        banner_url: null,
+        plan: 'shop',
+        subscription_status: 'trial',
+        trial_started_at: now.toISOString(),
+        trial_ends_at: trialEnds.toISOString(),
+        is_live: true
+      };
+
+      const { error: shopError } = await supabase.from('shops').upsert(shopPayload, { onConflict: 'owner_id' });
+
+      if (shopError) {
+        console.error('Shop insertion error:', shopError);
+        throw shopError;
+      }
+
+      // 4. Record onboarding complete states locally
+      localStorage.setItem('threadzw_logged_in', 'true');
+      localStorage.setItem('threadzw_onboarding_complete', 'true');
+      localStorage.removeItem('threadzw_onboarding_step');
+      localStorage.removeItem('threadzw_onboarding_states');
+      localStorage.setItem('threadzw_owner_name', fullName.trim());
+      localStorage.setItem('threadzw_signup_email', signupEmail.trim().toLowerCase());
+
+      toast.success('Registration successful! Trial activated. 🚀');
+      
+      // Move to dashboard
+      setAppStage('dashboard');
+    } catch (err: any) {
+      console.error('SignUp Submit Error:', err);
+      toast.error(err.message || 'Error occurred during secure signup.');
     } finally {
-      if (isMounted.current) {
-        setSigningUp(false);
-      }
+      setSigningUp(false);
     }
   };
 
@@ -271,38 +371,23 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
     }
     setSigningIn(true);
     try {
-      console.log('Attempting sign in for email:', signinEmail);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: signinEmail.trim().toLowerCase(),
-        password: signinPassword
+        password: signinPassword,
       });
 
-      if (error) throw error;
-      if (!data.user) throw new Error('Could not retrieve user info.');
+      if (signInError) throw signInError;
 
-      toast.success('Welcome back!');
+      localStorage.setItem('threadzw_logged_in', 'true');
+      localStorage.setItem('threadzw_onboarding_complete', 'true');
+      toast.success(`Welcome back!`);
       setShowSignIn(false);
-
-      // Retrieve profile onboarding progress
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      if (profileData?.onboarding_complete) {
-        setAppStage('dashboard');
-      } else {
-        setAppStage('onboarding');
-        setOnboardingStep(1);
-      }
+      setAppStage('dashboard');
     } catch (err: any) {
-      console.error('Sign-in failed:', err);
-      toast.error('Authentication failed: ' + (err.message || 'Incorrect credentials'));
+      console.error('SignIn Error:', err);
+      toast.error(err.message || 'Invalid email or password.');
     } finally {
-      if (isMounted.current) {
-        setSigningIn(false);
-      }
+      setSigningIn(false);
     }
   };
 
@@ -323,7 +408,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
             owner_id: myShop.owner_id,
             whatsapp_number: whatsAppNumber.trim(),
             plan: 'standard',
-            amount: 9,
+            amount: 5,
             status: 'pending',
             receiving_number: '0776223144'
           });
@@ -446,9 +531,15 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
       </div>
 
       {/* BACK NAVIGATION COMPONENT */}
-      {paywallScreen > 1 && paywallMode === 'signup' && (
+      {paywallScreen >= 1 && paywallMode === 'signup' && (
         <button
-          onClick={() => setPaywallScreen(prev => prev - 1)}
+          onClick={() => {
+            if (paywallScreen === 1) {
+              setAppStage('landing');
+            } else {
+              setPaywallScreen(prev => prev - 1);
+            }
+          }}
           className="fixed top-14 left-5 z-40 text-[#A1A1AA] hover:text-white transition-colors duration-200"
           aria-label="Back to previous screen"
         >
@@ -460,7 +551,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
       <div className="w-full max-w-md mx-auto pt-24 px-6 pb-36 flex-1 flex flex-col justify-start">
         <AnimatePresence mode="wait">
           
-          {/* SCREEN 1: SUBSCRIPTION TRIAL MOTIVATION */}
+          {/* SCREEN 1: ACTIVATE TRIAL */}
           {paywallScreen === 1 && (
             <motion.div
               key="screen-p1"
@@ -468,61 +559,26 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.3 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col items-center text-center justify-center min-h-[50vh]"
             >
               <div className="flex justify-center mt-4">
                 <div className="relative">
                   <span className="text-7xl block animate-bounce" style={{ animationDuration: '3s' }}>🎁</span>
-                  {/* Subtle decorative color glow */}
-                  <div className="absolute inset-0 bg-[#C6FF00]/25 blur-3xl rounded-full scale-125 z-[-1]" />
+                  <div className="absolute inset-0 bg-[#c8ff00]/25 blur-3xl rounded-full scale-125 z-[-1]" />
                 </div>
               </div>
 
               <h2 className="text-white font-black text-4xl tracking-tight text-center mt-8 leading-[1.1]">
-                Try ThreadZW<br />free for 3 days.
+                Your shop is ready. 🎉
               </h2>
               
-              <p className="text-[#A1A1AA] text-base leading-relaxed text-center mt-3 max-w-[300px] mx-auto">
-                No payment needed to start. Experience everything ThreadZW has to offer — completely free.
+              <p className="text-[#A1A1AA] text-base leading-relaxed text-center mt-4 max-w-[300px] mx-auto">
+                Start your 3-day free trial. No payment now.
               </p>
-
-              {/* FEATURES CARD SECTION */}
-              <div className="bg-[#151515] border border-[#2A2A2A] rounded-[20px] p-5 mt-7">
-                <span className="text-[#A1A1AA] text-[11px] uppercase tracking-wider font-bold mb-4 block">
-                  Everything included:
-                </span>
-
-                <div className="space-y-4">
-                  {[
-                    { emoji: "🏪", title: "Your own shop page", detail: "Live at threadzw.com/shop/@you" },
-                    { emoji: "📦", title: "Unlimited products", detail: "Upload as many as you need" },
-                    { emoji: "💬", title: "WhatsApp orders", detail: "Customers contact you directly" },
-                    { emoji: "📊", title: "Analytics", detail: "See views and top products" }
-                  ].map((feat, idx) => (
-                    <div key={'f-' + idx} className="flex gap-3.5 items-start">
-                      <div className="w-9 h-9 rounded-full bg-[#C6FF00] text-black flex items-center justify-center font-bold text-lg flex-shrink-0">
-                        {feat.emoji}
-                      </div>
-                      <div>
-                        <h4 className="text-white font-bold text-sm">{feat.title}</h4>
-                        <p className="text-[#A1A1AA] text-[13px] mt-0.5 leading-normal">{feat.detail}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* DAY 3 ECO-REMINDER WARNING BOX */}
-              <div className="bg-[rgba(255,122,0,0.08)] border border-[rgba(255,122,0,0.2)] rounded-2xl p-4 mt-4 flex gap-3">
-                <span className="text-lg flex-shrink-0">🔔</span>
-                <p className="text-[#FF7A00] text-[13px] leading-relaxed">
-                  You will receive a WhatsApp reminder on day 3 before your trial ends.
-                </p>
-              </div>
             </motion.div>
           )}
 
-          {/* SCREEN 2: PRICING DETAILS AND ECOCASH */}
+          {/* SCREEN 2: HOW IT WORKS */}
           {paywallScreen === 2 && (
             <motion.div
               key="screen-p2"
@@ -533,81 +589,32 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               className="flex-1 flex flex-col"
             >
               <div className="text-center mt-4">
-                <span className="text-7xl block">💸</span>
+                <span className="text-7xl block">💡</span>
               </div>
 
-              <h2 className="text-white font-black text-4.5xl tracking-tight text-center mt-6">
-                Just $9/month<br />after your trial.
+              <h2 className="text-white font-black text-3.5xl tracking-tight text-center mt-6">
+                Here's how ThreadZW works
               </h2>
 
-              <div className="text-center mt-4 flex items-baseline justify-center gap-1.5">
-                <span className="text-[#C6FF00] font-black text-[64px] leading-none">$9</span>
-                <span className="text-[#A1A1AA] text-2xl font-bold">/month</span>
-              </div>
-
-              <p className="text-[#A1A1AA] text-center text-[13px] mt-1">
-                Less than $0.30 per day
-              </p>
-
-              {/* PAYMENT METHOD 1 (ECOCASH APP Direct) */}
-              <div className="bg-[#151515] border border-[#2A2A2A] rounded-2xl p-5 mt-7">
-                <div className="flex gap-3.5 items-start">
-                  <div className="w-11 h-11 bg-[rgba(198,255,0,0.1)] rounded-full flex items-center justify-center flex-shrink-0 text-xl">
-                    📱
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-white font-bold text-base">EcoCash App</h4>
-                    
-                    <p className="text-[#A1A1AA] text-[13px] mt-1.5 leading-relaxed">
-                      Open EcoCash → Send Money → Enter number below → Send $9
-                    </p>
-
-                    <div className="bg-[#0B0B0B] border border-[#C6FF00] rounded-xl py-2 px-3 mt-3.5 flex items-center justify-center max-w-max">
-                      <span className="text-[#C6FF00] font-mono font-bold text-lg select-all">
-                        0776 223 144
-                      </span>
-                    </div>
-
-                    <p className="text-[#A1A1AA] text-xs mt-3 leading-snug">
-                      Use your WhatsApp number as the payment reference
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* PAYMENT METHOD 2 (ECOCASH SUPER APP) */}
-              <div className="bg-[#151515] border border-[#2A2A2A] rounded-2xl p-5 mt-3">
-                <div className="flex gap-3.5 items-start">
-                  <div className="w-11 h-11 bg-[rgba(198,255,0,0.1)] rounded-full flex items-center justify-center flex-shrink-0 text-xl">
-                    📲
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="text-white font-bold text-base">EcoCash Super App</h4>
-                    
-                    <p className="text-[#A1A1AA] text-[13px] mt-1.5 leading-relaxed">
-                      Open Super App → Send Money → Enter number → Send $9
-                    </p>
-
-                    <div className="bg-[#0B0B0B] border border-[#C6FF00] rounded-xl py-2 px-3 mt-3.5 flex items-center justify-center max-w-max">
-                      <span className="text-[#C6FF00] font-mono font-bold text-lg select-all">
-                        0776 223 144
-                      </span>
+              <div className="space-y-3 mt-8">
+                {[
+                  { emoji: "🆓", title: "3 days free", desc: "Explore everything. No payment now." },
+                  { emoji: "💸", title: "Then $5/month", desc: "Cheaper than a single flyer print run." },
+                  { emoji: "📲", title: "Pay via EcoCash or InnBucks", desc: "No card needed. Ever." }
+                ].map((card, idx) => (
+                  <div key={idx} className="bg-[#111] border border-white/5 rounded-[10px] p-5 flex gap-4 items-start">
+                    <span className="text-3xl leading-none shrink-0">{card.emoji}</span>
+                    <div className="text-left">
+                      <h4 className="text-white font-black text-base leading-tight">{card.title}</h4>
+                      <p className="text-[#A1A1AA] text-sm mt-1 leading-normal">{card.desc}</p>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* REFERENCE WARNING DETAIL */}
-              <div className="bg-[rgba(198,255,0,0.06)] border border-[rgba(198,255,0,0.15)] rounded-2xl p-4 mt-4 flex gap-3">
-                <span className="text-sm flex-shrink-0">⚠️</span>
-                <p className="text-[#A1A1AA] text-[13px] leading-relaxed">
-                  Always use your WhatsApp number as reference so we can find your payment.
-                </p>
+                ))}
               </div>
             </motion.div>
           )}
 
-          {/* SCREEN 3: VERIFICATION CODE DELIVERY INSIGHT */}
+          {/* SCREEN 3: PAYMENT INSTRUCTIONS */}
           {paywallScreen === 3 && (
             <motion.div
               key="screen-p3"
@@ -618,74 +625,45 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               className="flex-1 flex flex-col"
             >
               <div className="text-center mt-4">
-                <span className="text-7xl block animate-pulse">💬</span>
+                <span className="text-7xl block">💳</span>
               </div>
 
-              <h2 className="text-white font-black text-[34px] tracking-tight text-center mt-6 leading-tight">
-                We send your<br />unlock code on<br />WhatsApp.
+              <h2 className="text-white font-black text-3.5xl tracking-tight text-center mt-6 leading-tight">
+                After your trial — how to pay
               </h2>
-
-              <p className="text-[#A1A1AA] text-base leading-relaxed text-center mt-3 max-w-[300px] mx-auto">
-                After you pay, our team verifies and sends your 6-character unlock code directly to your WhatsApp.
-              </p>
 
               {/* VERTICAL CONNECTING STEPS PREVIEW CONTAINER */}
               <div className="relative mt-8 select-none">
-                
                 {/* Connecting Line background */}
-                <div className="absolute left-[22px] top-4 bottom-4 w-[1px] bg-[#2A2A2A]" />
+                <div className="absolute left-[22px] top-4 bottom-4 w-[1px] bg-[#222]" />
 
                 <div className="space-y-6">
                   {[
-                    { num: "1", title: "Pay via EcoCash", detail: "Send $9 to 0776 223 144" },
-                    { num: "2", title: "We verify your payment", detail: "Usually within 2-4 hours during 8am-8pm ZIM time" },
-                    { num: "3", title: "Code arrives on WhatsApp", detail: "A 6-character code like this:", whatsappPreview: true },
-                    { num: "4", title: "Enter code in the app", detail: "Shop activates instantly 🚀" }
+                    { num: "1", title: "Send $5 to EcoCash +263776223144", detail: "Or InnBucks using the same number" },
+                    { num: "2", title: "Tap \"I've Paid\" in the app", detail: "Reference your payment easily" },
+                    { num: "3", title: "We send unlock code", detail: "A 6-character code received on WhatsApp" },
+                    { num: "4", title: "Enter code to activate", detail: "Shop unlocks instantly" }
                   ].map((step, idx) => (
-                    <div key={'s-' + idx} className="flex flex-col">
-                      <div className="flex gap-4 items-start">
-                        <div className="w-11 h-11 bg-[#151515] border-1.5 border-[#2A2A2A] rounded-full flex items-center justify-center flex-shrink-0 text-[#C6FF00] font-black text-base">
-                          {step.num}
-                        </div>
-                        <div className="pt-1">
-                          <h4 className="text-white font-bold text-base leading-snug">{step.title}</h4>
-                          <p className="text-[#A1A1AA] text-[13px] mt-1 leading-relaxed">{step.detail}</p>
-                        </div>
+                    <div key={idx} className="flex gap-4 items-start relative z-10">
+                      <div className="w-11 h-11 bg-[#111] border border-white/5 rounded-full flex items-[#0B0B0B] items-center justify-center flex-shrink-0 text-[#c8ff00] font-black text-base">
+                        {step.num}
                       </div>
-
-                      {/* Overlapping Whatsapp card mockup inside step 3 */}
-                      {step.whatsappPreview && (
-                        <div className="ml-[60px] mt-3 mb-2 bg-[#151515] border border-[#2A2A2A] rounded-xl p-4">
-                          <div className="text-[#A1A1AA] text-[11px] font-bold tracking-wide uppercase mb-1">
-                            ThreadZW 🎉
-                          </div>
-                          <span className="text-[#A1A1AA] text-[13px] block">
-                            Your unlock code is:
-                          </span>
-                          <span className="text-[#C6FF00] font-mono font-black text-[28px] leading-tight block mt-1 tracking-[6px]">
-                            8472KX
-                          </span>
-                          <p className="text-[#A1A1AA] text-xs mt-2.5 leading-normal">
-                            Enter this in the app to activate your shop.
-                          </p>
-                        </div>
-                      )}
+                      <div className="pt-1 text-left">
+                        <h4 className="text-white font-black text-base leading-snug">{step.title}</h4>
+                        <p className="text-[#A1A1AA] text-[13px] mt-1 leading-relaxed">{step.detail}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* TIMING ASSURANCE BOX */}
-              <div className="bg-[rgba(34,197,94,0.06)] border border-[rgba(34,197,94,0.15)] rounded-2xl p-4 mt-6 flex gap-3">
-                <span className="text-sm flex-shrink-0">⚡</span>
-                <p className="text-[#22C55E] text-[13px] leading-relaxed">
-                  Payments verified within 2-4 hours · 8am-8pm Zimbabwe time.
-                </p>
-              </div>
+              <p className="text-[#A1A1AA] text-sm text-center font-extrabold uppercase tracking-wider mt-8 leading-relaxed">
+                "No auto-charges. You stay in control."
+              </p>
             </motion.div>
           )}
 
-          {/* SCREEN 4: SIGN UP (Merchant Registration Setup) */}
+          {/* SCREEN 4: CREATE ACCOUNT */}
           {paywallScreen === 4 && (
             <motion.div
               key="screen-p4"
@@ -696,191 +674,190 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               className="flex-1 flex flex-col"
             >
               {paywallMode === 'signup' ? (
-                <>
-                  {/* SIGN UP NEW VISITOR LAYOUT */}
-                  <h2 className="text-white font-black text-[32px] tracking-tight leading-tight mt-2">
-                    Start your free<br />3-day trial.
-                  </h2>
-                  
-                  <p className="text-[#A1A1AA] text-base leading-relaxed mt-2 mb-6">
-                    Create your account to activate your trial and build your shop.
-                  </p>
-
-                  <div className="mb-6">
-                    <div className="bg-[rgba(198,255,0,0.08)] border border-[rgba(198,255,0,0.2)] rounded-full inline-flex py-1.5 px-4 items-center gap-2">
-                      <span className="text-xs">🎁</span>
-                      <span className="text-[#C6FF00] text-xs font-black">
-                        3 days free · No payment needed
-                      </span>
+                currentSessionUser ? (
+                  <>
+                    <div className="text-center mt-4">
+                      <span className="text-7xl block">🎉</span>
                     </div>
-                  </div>
 
-                  {/* FORM FIELDS */}
-                  <div className="space-y-4">
-                    {/* Username setup */}
-                    <div>
-                      <label className="text-[#A1A1AA] text-[13px] font-bold block mb-1.5">
-                        Username
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={signupUsername}
-                          onChange={handleUsernameChange}
-                          placeholder="yourshop"
-                          className="w-full bg-[#151515] text-white border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#C6FF00] transition-colors pr-10 font-mono"
-                        />
-                        {signupUsername && (
-                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">
+                    <h2 className="text-white font-black text-3.5xl tracking-tight leading-tight mt-6 text-center">
+                      Your Account is Secured
+                    </h2>
+                    
+                    <p className="text-[#A1A1AA] text-base leading-relaxed mt-4 mb-6 text-center max-w-[300px] mx-auto">
+                      Logged in as <span className="text-[#c8ff00] font-bold">{signupEmail || currentSessionUser.email}</span>. Tap below to activate your 3-day trial and launch your clothing brand!
+                    </p>
+
+                    <div className="bg-[#111] border border-white/5 rounded-[10px] p-5 mt-4 flex gap-4 items-start">
+                      <span className="text-3xl leading-none shrink-0">🚀</span>
+                      <div className="text-left">
+                        <h4 className="text-white font-black text-base leading-tight">Ready to Sell</h4>
+                        <p className="text-[#A1A1AA] text-sm mt-1 leading-normal">Your custom store domain is locked and live database records are ready.</p>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-white font-black text-3.5xl tracking-tight leading-tight mt-2 text-center">
+                      Create your account
+                    </h2>
+                    
+                    <p className="text-[#A1A1AA] text-base leading-relaxed mt-3 mb-6 text-center">
+                      Starting your 3-day free trial. No payment now.
+                    </p>
+
+                    {/* FORM FIELDS */}
+                    <div className="space-y-4">
+                      {/* Username Setup with Handle availability check */}
+                      <div>
+                        <label className="text-[#A1A1AA] text-xs font-bold block mb-1.5">
+                          Username (Shop handle link)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">@</span>
+                          <input
+                            type="text"
+                            value={signupUsername}
+                            onChange={handleUsernameChange}
+                            placeholder="yourbrand"
+                            className="w-full bg-[#111] text-white border border-[#2a2a2a] focus:border-[#c8ff00] rounded-[10px] pl-8 pr-4.5 py-3.5 text-sm focus:outline-none transition-colors"
+                          />
+                        </div>
+                        {signupUsername.length >= 3 && (
+                          <div className="mt-1.5 text-xs text-left">
                             {checkingUsername ? (
-                              <div className="w-4 h-4 border border-[#C6FF00] border-t-transparent rounded-full animate-spin" />
-                            ) : usernameAvailable ? (
-                              <Check className="w-4.5 h-4.5 text-[#22C55E]" />
-                            ) : (
-                              <X className="w-4.5 h-4.5 text-[#EF4444]" />
-                            )}
+                              <span className="text-[#A1A1AA]">Checking availability...</span>
+                            ) : usernameAvailable === true ? (
+                              <span className="text-[#22C55E]">✓ @{signupUsername} is available!</span>
+                            ) : usernameAvailable === false ? (
+                              <span className="text-[#EF4444]">✗ @{signupUsername} is taken</span>
+                            ) : null}
                           </div>
                         )}
                       </div>
 
-                      {/* Availability Indicators */}
-                      <div className="mt-1.5">
-                        {checkingUsername && (
-                          <span className="text-xs text-[#A1A1AA] flex items-center gap-1.5">
-                            Checking...
-                          </span>
-                        )}
-                        {!checkingUsername && signupUsername && (
-                          <>
-                            {signupUsername.length < 3 ? (
-                              <span className="text-xs text-[#A1A1AA]">
-                                Min 3 characters
-                              </span>
-                            ) : usernameAvailable ? (
-                              <div className="space-y-0.5">
-                                <span className="text-xs text-[#22C55E] block">
-                                  ✓ @{signupUsername} is available
-                                </span>
-                                <span className="text-xs text-[#C6FF00] font-mono block">
-                                  threadzw.com/shop/@{signupUsername}
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-[#EF4444]">
-                                ✕ Username taken
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Email setup */}
-                    <div>
-                      <label className="text-[#A1A1AA] text-[13px] font-bold block mb-1.5">
-                        Email address
-                      </label>
-                      <input
-                        type="email"
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
-                        placeholder="you@example.com"
-                        className="w-full bg-[#151515] text-white border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#C6FF00] transition-colors"
-                      />
-                    </div>
-
-                    {/* Password setup */}
-                    <div>
-                      <label className="text-[#A1A1AA] text-[13px] font-bold block mb-1.5">
-                        Password
-                      </label>
-                      <div className="relative">
+                      {/* Full Name Setup */}
+                      <div>
+                        <label className="text-[#A1A1AA] text-xs font-bold block mb-1.5">
+                          Full name
+                        </label>
                         <input
-                          type={showPassword ? 'text' : 'password'}
-                          value={signupPassword}
-                          onChange={(e) => setSignupPassword(e.target.value)}
-                          placeholder="••••••••"
-                          className="w-full bg-[#151515] text-white border border-[#151515] focus:border-[#C6FF00] rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors border border-[#2A2A2A]"
+                          type="text"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          placeholder="John Doe"
+                          className="w-full bg-[#111] text-white border border-[#2a2a2a] rounded-[10px] px-4.5 py-3.5 text-sm focus:outline-none focus:border-[#c8ff00] transition-colors"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] hover:text-white"
-                        >
-                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
                       </div>
-                    </div>
 
-                    {/* Confirm password setup */}
-                    <div>
-                      <label className="text-[#A1A1AA] text-[13px] font-bold block mb-1.5">
-                        Confirm password
-                      </label>
-                      <div className="relative">
+                      {/* Email setup */}
+                      <div>
+                        <label className="text-[#A1A1AA] text-xs font-bold block mb-1.5">
+                          Email address
+                        </label>
                         <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          value={signupConfirm}
-                          onChange={(e) => setSignupConfirm(e.target.value)}
-                          placeholder="••••••••"
-                          className={`w-full bg-[#151515] text-white border rounded-xl px-4 py-3 text-sm focus:outline-none transition-colors ${
-                            signupConfirm ? (signupPassword === signupConfirm ? 'border-[#22C55E]' : 'border-[#EF4444]') : 'border-[#2A2A2A]'
-                          }`}
+                          type="email"
+                          value={signupEmail}
+                          onChange={(e) => setSignupEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full bg-[#111] text-white border border-[#2a2a2a] rounded-[10px] px-4.5 py-3.5 text-sm focus:outline-none focus:border-[#c8ff00] transition-colors"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] hover:text-white"
-                        >
-                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
                       </div>
-                      
-                      {signupConfirm && (
-                        <div className="mt-1.5 text-xs">
-                          {signupPassword === signupConfirm ? (
-                            <span className="text-[#22C55E]">✓ Passwords match</span>
-                          ) : (
-                            <span className="text-[#EF4444]">Passwords don't match</span>
-                          )}
+
+                      {/* Password setup */}
+                      <div>
+                        <label className="text-[#A1A1AA] text-xs font-bold block mb-1.5">
+                          Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            value={signupPassword}
+                            onChange={(e) => setSignupPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full bg-[#111] text-white border border-[#2a2a2a] focus:border-[#c8ff00] rounded-[10px] px-4.5 py-3.5 text-sm focus:outline-none transition-colors"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] hover:text-white"
+                          >
+                            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
                         </div>
-                      )}
+                      </div>
+
+                      {/* Confirm password setup */}
+                      <div>
+                        <label className="text-[#A1A1AA] text-xs font-bold block mb-1.5">
+                          Confirm password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            value={signupConfirm}
+                            onChange={(e) => setSignupConfirm(e.target.value)}
+                            placeholder="••••••••"
+                            className={`w-full bg-[#111] text-white border rounded-[10px] px-4.5 py-3.5 text-sm focus:outline-none transition-colors ${
+                              signupConfirm ? (signupPassword === signupConfirm ? 'border-[#22C55E]' : 'border-[#EF4444]') : 'border-[#2a2a2a]'
+                            }`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A1A1AA] hover:text-white"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        
+                        {signupConfirm && (
+                          <div className="mt-1.5 text-xs text-left">
+                            {signupPassword === signupConfirm ? (
+                              <span className="text-[#22C55E]">✓ Passwords match</span>
+                            ) : (
+                              <span className="text-[#EF4444]">Passwords don't match</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* TERMS COMPLIANCE PILLET */}
-                  <div className="bg-[rgba(198,255,0,0.04)] border border-[rgba(198,255,0,0.08)] rounded-xl p-3.5 mt-6 flex gap-3">
-                    <span className="text-sm">🔒</span>
-                    <p className="text-[#A1A1AA] text-xs leading-relaxed">
-                      By signing up you agree to our terms. Your 3-day trial starts immediately.
-                    </p>
-                  </div>
+                    {/* NOTE BELOW FORM */}
+                    <div className="bg-[#111] border border-white/5 rounded-[10px] p-4 mt-6 flex gap-3">
+                      <span className="text-sm">🔒</span>
+                      <p className="text-[#A1A1AA] text-xs leading-relaxed text-left">
+                        By signing up you agree to our terms. Your 3-day trial starts immediately.
+                      </p>
+                    </div>
 
-                  {/* SIGN-IN PROMPT */}
-                  <div className="text-center mt-6">
-                    <span className="text-[#A1A1AA] text-[13px]">
-                      Already have an account?{' '}
-                    </span>
-                    <button
-                      onClick={() => setShowSignIn(true)}
-                      className="text-[#C6FF00] font-black text-[13px] hover:underline"
-                    >
-                      Sign in →
-                    </button>
-                  </div>
-                </>
+                    {/* SIGN-IN PROMPT */}
+                    <div className="text-center mt-6">
+                      <span className="text-[#A1A1AA] text-[13px]">
+                        Already have an account?{' '}
+                      </span>
+                      <button
+                        onClick={() => setShowSignIn(false)}
+                        className="text-[#c8ff00] font-black text-[13px] hover:underline"
+                      >
+                        Sign in →
+                      </button>
+                    </div>
+                  </>
+                )
               ) : (
                 <>
                   {/* EXPIRATION MODE BLOCK */}
+                  {/* THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances */}
                   <h2 className="text-white font-black text-3xl tracking-tight leading-tight">
-                    Your trial has ended.
+                    Continue for $5/month
                   </h2>
                   <p className="text-[#A1A1AA] text-sm mt-1 mb-4 leading-relaxed">
-                    Keep your shop live for just $9/month.
+                    Your 3-day free trial has ended
                   </p>
 
                   <div className="flex items-baseline justify-start gap-1 pb-4 border-b border-[#1A1A1A]">
-                    <span className="text-[#C6FF00] font-black text-4xl leading-none">$9</span>
+                    <span className="text-[#C6FF00] font-black text-4xl leading-none">$5</span>
                     <span className="text-[#A1A1AA] text-base font-bold">/month</span>
                   </div>
 
@@ -923,7 +900,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                       <button
                         onClick={handleIPaid}
                         disabled={!whatsAppNumber || submittingPayment}
-                        className={`w-full py-4 rounded-full font-black text-sm flex items-center justify-center gap-2 mt-2 transition-all cursor-pointer ${
+                        className={`w-full py-4 rounded-[10px] font-black text-sm flex items-center justify-center gap-2 mt-2 transition-all cursor-pointer ${
                           whatsAppNumber && !submittingPayment 
                             ? 'bg-[#C6FF00] text-[#0B0B0B] hover:opacity-90' 
                             : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
@@ -935,7 +912,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                             Recording payment...
                           </>
                         ) : (
-                          'I Paid →'
+                          'Pay $5 via EcoCash or InnBucks'
                         )}
                       </button>
                     </div>
@@ -978,7 +955,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                         <button
                           onClick={verifyCode}
                           disabled={otpCode.some(c => !c) || submittingPayment}
-                          className={`w-full py-3.5 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                          className={`w-full py-3.5 rounded-[10px] font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                             !otpCode.some(c => !c) && !submittingPayment
                               ? 'bg-[#C6FF00] text-black hover:opacity-90'
                               : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
@@ -1014,9 +991,9 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                 else if (paywallScreen === 2) setPaywallScreen(3);
                 else if (paywallScreen === 3) setPaywallScreen(4);
               }}
-              className="w-full bg-[#C6FF00] text-[#0B0B0B] font-black text-sm h-[54px] rounded-full hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer"
+              className="w-full bg-[#c8ff00] text-[#0B0B0B] font-black text-sm h-[54px] rounded-[10px] hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              {paywallScreen === 1 ? 'Get Started →' : paywallScreen === 2 ? 'Got it →' : 'Continue →'}
+              {paywallScreen === 1 ? 'Activate Free Trial →' : 'Got it →'}
             </button>
           </div>
         </div>
@@ -1025,37 +1002,83 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
       {/* SIGN UP CONFIRM BUTTON FIXED FOOTER FOR SCREEN 4 */}
       {paywallScreen === 4 && paywallMode === 'signup' && (
         <div className="fixed bottom-0 left-0 right-0 p-6 bg-[#0B0B0B] z-30 border-t border-[#151515]">
-          <div className="max-w-md mx-auto">
-            <button
-              onClick={handleSignUpSubmit}
-              disabled={
-                signupUsername.length < 3 || 
-                !usernameAvailable || 
-                signupPassword.length < 6 || 
-                signupPassword !== signupConfirm || 
-                !signupEmail.includes('@') || 
-                signingUp
-              }
-              className={`w-full font-black text-sm h-[54px] rounded-full flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                signupUsername.length >= 3 && 
-                usernameAvailable && 
-                signupPassword.length >= 6 && 
-                signupPassword === signupConfirm && 
-                signupEmail.includes('@') && 
-                !signingUp
-                  ? 'bg-[#C6FF00] text-black hover:opacity-90'
-                  : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
-              }`}
-            >
-              {signingUp ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  Creating account...
-                </>
-              ) : (
-                'Activate Free Trial →'
-              )}
-            </button>
+          <div className="max-w-md mx-auto mb-2">
+            {currentSessionUser ? (
+              <button
+                onClick={async () => {
+                  setSigningUp(true);
+                  try {
+                    // Update user profile table onboarding_complete to true
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (session?.user?.id) {
+                      await supabase.from('profiles').update({
+                        onboarding_complete: true
+                      }).eq('id', session.user.id);
+                    }
+                    
+                    // Mark onboarding complete in localStorage
+                    localStorage.setItem('threadzw_onboarding_complete', 'true');
+                    localStorage.removeItem('threadzw_onboarding_step');
+                    localStorage.removeItem('threadzw_onboarding_states');
+                    
+                    toast.success('Welcome to ThreadZW! 🚀');
+                    setAppStage('dashboard');
+                  } catch (err) {
+                    console.error('Failed to complete onboarding on paywall confirmation:', err);
+                    setAppStage('dashboard');
+                  } finally {
+                    setSigningUp(false);
+                  }
+                }}
+                disabled={signingUp}
+                className="w-full bg-[#c8ff00] text-[#0B0B0B] font-black text-sm h-[54px] rounded-[10px] hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {signingUp ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    Launching shop...
+                  </>
+                ) : (
+                  'Activate Free Trial →'
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleSignUpSubmit}
+                disabled={
+                  !signupUsername.trim() ||
+                  usernameAvailable === false ||
+                  !fullName.trim() ||
+                  signupPassword.length < 6 ||
+                  signupPassword !== signupConfirm ||
+                  !signupEmail.includes('@') ||
+                  signingUp
+                }
+                className={`w-full font-black text-sm h-[54px] rounded-[10px] flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  signupUsername.trim() &&
+                  usernameAvailable !== false &&
+                  fullName.trim() &&
+                  signupPassword.length >= 6 &&
+                  signupPassword === signupConfirm &&
+                  signupEmail.includes('@') &&
+                  !signingUp
+                    ? 'bg-[#c8ff00] text-black hover:opacity-90'
+                    : 'bg-[#1A1A1A] text-[#A1A1AA] pointer-events-none'
+                }`}
+              >
+                {signingUp ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  'Activate Free Trial →'
+                )}
+              </button>
+            )}
+            <p className="text-[#A1A1AA] text-[10px] mt-2 text-center">
+              By signing up you agree to our terms.
+            </p>
           </div>
         </div>
       )}
@@ -1108,7 +1131,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                     value={signinEmail}
                     onChange={(e) => setSigninEmail(e.target.value)}
                     placeholder="you@example.com"
-                    className="w-full bg-[#0B0B0B] text-white border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#C6FF00] transition-colors"
+                    className="w-full bg-[#0B0B0B] text-white border border-[#2A2A2A] rounded-[10px] px-4 py-3 text-sm focus:outline-none focus:border-[#c8ff00] transition-colors"
                     required
                   />
                 </div>
@@ -1122,7 +1145,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                     value={signinPassword}
                     onChange={(e) => setSigninPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-[#0B0B0B] text-white border border-[#2A2A2A] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#C6FF00] transition-colors"
+                    className="w-full bg-[#0B0B0B] text-white border border-[#2A2A2A] rounded-[10px] px-4 py-3 text-sm focus:outline-none focus:border-[#c8ff00] transition-colors"
                     required
                   />
                 </div>
@@ -1130,7 +1153,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                 <button
                   type="submit"
                   disabled={signingIn}
-                  className="w-full bg-[#C6FF00] text-[#0B0B0B] font-black text-sm h-[52px] rounded-full hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer mt-6"
+                  className="w-full bg-[#c8ff00] text-[#0B0B0B] font-black text-sm h-[52px] rounded-[10px] hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 cursor-pointer mt-6"
                 >
                   {signingIn ? (
                     <>

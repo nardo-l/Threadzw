@@ -1,3 +1,4 @@
+// THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -17,7 +18,7 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
       'https://wa.me/263776223144' +
       '?text=' +
       encodeURIComponent(
-        'Hi ThreadZW! I paid my $9 subscription but haven\'t received my unlock code yet. My WhatsApp number is: '
+        'Hi ThreadZW! I paid my $5 subscription but haven\'t received my unlock code yet. My WhatsApp number is: '
       ),
       '_blank'
     );
@@ -46,9 +47,10 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
             <span className="text-[28px] leading-none">💸</span>
           </div>
           <div>
-            <h2 className="text-white font-bold text-lg">Activate Your Shop</h2>
+            {/* THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances */}
+            <h2 className="text-white font-bold text-lg">Activate your store — $5/month</h2>
             <p className="text-[#A1A1AA] text-sm mt-1 leading-[1.5]">
-              Pay $9/month via EcoCash to keep your shop live.
+              Pay $5/month via EcoCash or InnBucks to keep your shop live.
             </p>
           </div>
         </div>
@@ -58,7 +60,7 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
           <div className="flex justify-between items-center">
             <div>
               <span className="text-[#A1A1AA] text-[13px] block">Monthly subscription</span>
-              <span className="text-white font-bold text-2xl mt-1 block">$9.00 USD</span>
+              <span className="text-white font-bold text-2xl mt-1 block">$5.00 USD</span>
             </div>
             <div className="text-right">
               <span className="text-[#A1A1AA] text-[10px] uppercase tracking-wider block">Send To</span>
@@ -144,7 +146,7 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
               <div className="w-8 h-8 rounded-full bg-[#C6FF00] text-[#0B0B0B] font-bold text-[13px] flex items-center justify-center shrink-0 select-none">6</div>
               <div>
                 <h4 className="text-white font-bold text-[14px]">Enter the amount</h4>
-                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type 9 for $9.00 USD</p>
+                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type 5 for $5.00 USD</p>
               </div>
             </div>
 
@@ -226,8 +228,8 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
             <div className="flex gap-3.5 items-start">
               <div className="w-8 h-8 rounded-full bg-[#C6FF00] text-[#0B0B0B] font-bold text-[13px] flex items-center justify-center shrink-0 select-none">5</div>
               <div>
-                <h4 className="text-white font-bold text-[14px]">Enter $9 as the amount</h4>
-                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type 9 for the $9 monthly subscription fee</p>
+                <h4 className="text-white font-bold text-[14px]">Enter $5 as the amount</h4>
+                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type 5 for the $5 monthly subscription fee</p>
               </div>
             </div>
 

@@ -12,7 +12,7 @@ export const SplashScreen: React.FC = () => {
 
       <div className="flex flex-col items-center justify-center">
         {/* Brand Display Header */}
-        <h1 className="text-[#C6FF00] font-black text-[28px] tracking-[-1px] uppercase">
+        <h1 className="threadzw-wordmark text-[28px]">
           ThreadZW
         </h1>
 

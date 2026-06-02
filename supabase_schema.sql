@@ -33,6 +33,7 @@ create table if not exists public.shops (
   owner_id uuid references auth.users(id) on delete cascade,
   name text not null,
   handle text unique not null,
+  slug text unique,
   description text,
   logo_url text,
   banner_url text,
@@ -50,7 +51,13 @@ create table if not exists public.shops (
   trial_started_at timestamp with time zone default now(),
   trial_ends_at timestamp with time zone default (now() + interval '3 days'),
   created_at timestamp with time zone default now(),
-  updated_at timestamp with time zone default now()
+  updated_at timestamp with time zone default now(),
+  manual_lock boolean default false,
+  manual_lock_reason text,
+  manual_lock_date timestamp with time zone,
+  manual_lock_by uuid,
+  payment_overdue_flagged boolean default false,
+  payment_overdue_since timestamp with time zone
 );
 
 alter table public.shops enable row level security;
@@ -105,17 +112,14 @@ create policy "Owners can update own subscriptions"
   using (auth.uid() = owner_id);
 
 -- Function to calculate period end based on billing cycle
+-- THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
 create or replace function calculate_period_end(
   start_date timestamp with time zone,
   cycle text
 ) returns timestamp with time zone as $$
 begin
-  if cycle = 'monthly' then
-    return start_date + interval '28 days';
-  elsif cycle = 'annual' then
-    return start_date + interval '365 days';
-  end if;
-  return start_date + interval '28 days';
+  -- Strictly 30 days for monthly subscription (no other billing tiers or cycles)
+  return start_date + interval '30 days';
 end;
 $$ language plpgsql;
 

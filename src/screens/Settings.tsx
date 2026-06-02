@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Home, Package, BarChart3, Settings as SettingsIcon, 
+  Home, Package, BarChart3, Settings as SettingsIcon, ShoppingBag,
   LogOut, Shield, ChevronRight, User, Settings as GearIcon,
-  FileText
+  FileText, Globe
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { HowToPay } from './HowToPay';
+import { getShopStatus } from '../utils/shopStatus';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -53,25 +54,32 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const getDaysLeft = (shopData: any) => {
-    if (!shopData?.trial_ends_at) return 0;
-    
-    const now = new Date();
-    const expiry = new Date(shopData.trial_ends_at);
-    
-    const diffMs = expiry.getTime() - now.getTime();
-    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    
-    console.log(
-      'Trial expiry:', shopData.trial_ends_at,
-      'Days left:', days
-    );
-    
-    return Math.max(0, days);
+  const togglePublishState = async () => {
+    if (!shop) return;
+    const nextIsLive = !shop.is_live;
+    try {
+      const { error } = await supabase
+        .from('shops')
+        .update({ is_live: nextIsLive })
+        .eq('id', shop.id);
+      
+      if (error) throw error;
+
+      const updatedShop = { ...shop, is_live: nextIsLive };
+      setShop(updatedShop);
+      localStorage.setItem(`shop_${shop.owner_id}`, JSON.stringify(updatedShop));
+      localStorage.setItem('threadzw_shop', JSON.stringify(updatedShop));
+      
+      toast.success(nextIsLive ? 'Shop published successfully! 🚀' : 'Shop paused successfully.');
+    } catch (err) {
+      console.error('Error updating shop live state:', err);
+      toast.error('Failed to update shop status.');
+    }
   };
 
-  const daysLeft = shop ? getDaysLeft(shop) : 0;
-  const isUrgent = daysLeft <= 3 && (shop?.subscription_status === 'trial' || shop?.subscription_status === 'active');
+  const statusObj = shop ? getShopStatus(shop) : null;
+  const daysLeft = statusObj ? statusObj.daysLeft : 0;
+  const isUrgent = statusObj ? (statusObj.daysLeft <= 3 && (statusObj.status === 'trial' || statusObj.status === 'active')) : false;
 
   if (loading) {
     return (
@@ -144,6 +152,45 @@ export const Settings: React.FC = () => {
               <p className="text-[#A1A1AA] text-xs mt-0.5">Manage shop name, logo & domain info</p>
             </div>
             <ChevronRight size={18} className="text-[#A1A1AA]" />
+          </div>
+
+          {/* 2b. Publish / Pause Shop */}
+          <div 
+            onClick={togglePublishState} 
+            style={{ 
+              background: 'none', 
+              borderBottom: '1px solid #1A1A1A', 
+              padding: '16px 0', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 14, 
+              cursor: 'pointer' 
+            }}
+            className="group active:opacity-80 transition-all"
+          >
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border transition-all ${
+              shop?.is_live 
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                : 'bg-amber-500/10 text-[#c8ff00] border-[#c8ff00]/20'
+            }`}>
+              <Globe size={18} className={shop?.is_live ? 'animate-pulse' : ''} />
+            </div>
+            <div className="flex-1">
+              <div className="text-white font-bold text-[15px] flex items-center gap-2">
+                {shop?.is_live ? 'Shop is Published' : 'Shop is Offline (Draft)'}
+                <span className={`w-2 h-2 rounded-full ${shop?.is_live ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
+              </div>
+              <p className="text-[#A1A1AA] text-xs mt-0.5">
+                {shop?.is_live 
+                  ? 'Your store is live on ThreadZW. Click to pause/unpublish.' 
+                  : 'Your store is hidden. Click to PUBLISH instantly! 🚀'}
+              </p>
+            </div>
+            {shop?.is_live ? (
+              <span className="text-xs text-stone-500 font-bold uppercase tracking-wider border border-stone-800 px-2.5 py-1.5 rounded bg-[#111]">Pause</span>
+            ) : (
+              <span className="text-xs text-black font-black uppercase tracking-wider bg-[#c8ff00] px-2.5 py-1.5 rounded shadow-[0_0_10px_rgba(200,255,0,0.3)]">Publish</span>
+            )}
           </div>
 
           {/* 3. Separator */}
@@ -250,39 +297,46 @@ export const Settings: React.FC = () => {
         </div>
 
         <div className="pt-10 text-center">
-          <p className="text-secondary-text text-[10px] font-mono">ThreadZW Terminal v2.1.0-Production</p>
+          <p className="text-secondary-text text-[10px] font-mono"><span className="threadzw-wordmark text-[10px] uppercase">ThreadZW</span> Terminal v2.1.0-Production</p>
           <p className="text-secondary-text text-[10px] font-mono mt-1">© 2024 Operations Node Zimbabwe</p>
         </div>
       </div>
 
       {/* Nav Bar */}
-      <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-[#0B0B0B] border-t border-[#151515] z-50 flex items-center pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-[#0E0E12] border-t border-white/[0.04] z-50 flex items-center pb-safe">
         <div className="flex items-center justify-around w-full px-4 gap-2">
           <button 
             onClick={() => navigate('/dashboard')}
             className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
           >
-            <Home size={22} />
+            <Home size={20} />
             <span className="text-[10px] font-bold uppercase tracking-widest">Dashboard</span>
+          </button>
+          <button 
+            onClick={() => navigate('/sales')}
+            className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
+          >
+            <ShoppingBag size={20} />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Sales</span>
           </button>
           <button 
             onClick={() => navigate('/inventory')}
             className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
           >
-            <Package size={22} />
+            <Package size={20} />
             <span className="text-[10px] font-bold uppercase tracking-widest">Products</span>
           </button>
           <button 
             onClick={() => navigate('/analytics')}
             className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
           >
-            <BarChart3 size={22} />
+            <BarChart3 size={20} />
             <span className="text-[10px] font-bold uppercase tracking-widest">Analytics</span>
           </button>
           <button 
             className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-neon"
           >
-            <GearIcon size={22} />
+            <GearIcon size={20} />
             <span className="text-[10px] font-bold uppercase tracking-widest">Settings</span>
           </button>
         </div>

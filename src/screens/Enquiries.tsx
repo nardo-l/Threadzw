@@ -139,7 +139,7 @@ export const Enquiries: React.FC = () => {
               <h3 className="text-2xl font-display font-black uppercase italic tracking-tighter leading-none">MULTI-STOP <span className="text-pink">ROUTE</span></h3>
               <div className="flex flex-col gap-3">
                 {shopNames.map((name, idx) => {
-                  const shop = shops.find(s => s.name === name);
+                  const shop: any = shops.find(s => s.name === name);
                   return (
                     <div key={name} className="flex gap-4 text-xs font-black uppercase tracking-widest text-charcoal/40 italic leading-none items-center">
                       <span className="text-pink text-[14px] leading-none">{idx + 1}.</span>
@@ -155,7 +155,7 @@ export const Enquiries: React.FC = () => {
         {/* Shop Groups */}
         {shopNames.map(shopName => {
           const items = groupedItems[shopName];
-          const shop = shops.find(s => s.name === shopName);
+          const shop: any = shops.find(s => s.name === shopName);
           const isOpen = isShopOpen(shopName);
           const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
           const isExpanded = expandedShopDirections[shopName];
@@ -361,10 +361,10 @@ const ProductRow: React.FC<{
         onTouchEnd={handleTouchEnd}
       >
         <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-display font-black text-charcoal italic flex-shrink-0 relative overflow-hidden bg-cream border-2 border-charcoal shadow-inner">
-          {item.imageEmoji?.startsWith('http') ? (
-            <img src={item.imageEmoji} className="w-full h-full object-cover" />
+          {(item as any).imageEmoji?.startsWith('http') ? (
+            <img src={(item as any).imageEmoji} className="w-full h-full object-cover" />
           ) : (
-            item.imageEmoji || '📦'
+            (item as any).imageEmoji || '📦'
           )}
         </div>
         <div className="flex flex-col gap-1.5 min-w-0 flex-1">

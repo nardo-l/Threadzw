@@ -227,6 +227,7 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({ myShop, setAppStage 
         <button
           onClick={() => {
             console.log('User completed reveal view. Entering Dashboard.');
+            localStorage.setItem('threadzw_onboarding_complete', 'true');
             setAppStage('dashboard');
           }}
           className="w-full bg-[#C6FF00] text-[#0B0B0B] font-black text-base h-14 rounded-full flex items-center justify-center gap-1.5 cursor-pointer shadow-lg hover:opacity-95 transition-opacity"

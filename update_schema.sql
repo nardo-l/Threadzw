@@ -312,4 +312,141 @@ create trigger shops_updated_at_trigger
   before update on public.shops
   for each row execute function public.set_shops_updated_at();
 
+-- Add manual_lock columns
+ALTER TABLE public.shops
+ADD COLUMN IF NOT EXISTS manual_lock boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS manual_lock_reason text,
+ADD COLUMN IF NOT EXISTS manual_lock_date timestamptz,
+ADD COLUMN IF NOT EXISTS manual_lock_by uuid;
+
+-- Add overdue tracking columns
+ALTER TABLE public.shops
+ADD COLUMN IF NOT EXISTS payment_overdue_flagged boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS payment_overdue_since timestamptz;
+
+-- Add slug column if missing
+ALTER TABLE public.shops
+ADD COLUMN IF NOT EXISTS slug text UNIQUE;
+
+-- Generate slugs for any existing shops that don't have one
+UPDATE public.shops
+SET slug = LOWER(
+  REGEXP_REPLACE(
+    REGEXP_REPLACE(name, '[^a-zA-Z0-9\s-]', '', 'g'),
+    '\s+', '', 'g'
+  )
+)
+WHERE slug IS NULL;
+
+-- Add unique index
+CREATE UNIQUE INDEX IF NOT EXISTS shops_slug_idx ON public.shops(slug);
+
+-- Fix any shops incorrectly locked that are on active trial
+UPDATE public.shops
+SET manual_lock = false
+WHERE 
+  (trial_end > now() OR trial_ends_at > now())
+  AND manual_lock = true;
+
+-- Create profiles table if missing
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid REFERENCES auth.users(id) PRIMARY KEY,
+  email text,
+  username text,
+  role text DEFAULT 'seller',
+  created_at timestamptz DEFAULT now()
+);
+
+-- Auto-create profile on signup
+CREATE OR REPLACE FUNCTION public.handle_new_setup_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email)
+  VALUES (
+    NEW.id,
+    NEW.email
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop trigger if existing, then recreate
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_new_setup_user();
+
+-- Backfill existing auth users who have no profile
+INSERT INTO public.profiles (id, email)
+SELECT id, email FROM auth.users
+WHERE id NOT IN (
+  SELECT id FROM public.profiles
+)
+ON CONFLICT DO NOTHING;
+
+-- RLS POLICIES FOR SHOPS
+ALTER TABLE public.shops ENABLE ROW LEVEL SECURITY;
+
+-- Drop any existing conflicting policies
+DROP POLICY IF EXISTS "owners_read_own_shop" ON public.shops;
+DROP POLICY IF EXISTS "owners_update_own_shop" ON public.shops;
+DROP POLICY IF EXISTS "owners_insert_shop" ON public.shops;
+DROP POLICY IF EXISTS "public_read_shops" ON public.shops;
+
+-- Setup exact specified policies
+CREATE POLICY "owners_read_own_shop"
+ON public.shops FOR SELECT
+TO authenticated
+USING (owner_id = auth.uid());
+
+CREATE POLICY "owners_update_own_shop"
+ON public.shops FOR UPDATE
+TO authenticated
+USING (owner_id = auth.uid())
+WITH CHECK (owner_id = auth.uid());
+
+CREATE POLICY "owners_insert_shop"
+ON public.shops FOR INSERT
+TO authenticated
+WITH CHECK (owner_id = auth.uid());
+
+CREATE POLICY "public_read_shops"
+ON public.shops FOR SELECT
+TO public
+USING (true);
+
+-- CREATE PAYMENT_CLAIMS TABLE WITH ROBUST RLS POLICIES
+CREATE TABLE IF NOT EXISTS public.payment_claims (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  shop_id uuid REFERENCES public.shops(id) ON DELETE CASCADE,
+  whatsapp_number text NOT NULL,
+  ecocash_number text NOT NULL,
+  status text DEFAULT 'pending',
+  submitted_at timestamptz DEFAULT now(),
+  created_at timestamptz DEFAULT now()
+);
+
+-- Enable RLS on payment_claims
+ALTER TABLE public.payment_claims ENABLE ROW LEVEL SECURITY;
+
+-- Setup policies for payment_claims
+DROP POLICY IF EXISTS "public_read_payment_claims" ON public.payment_claims;
+CREATE POLICY "public_read_payment_claims"
+ON public.payment_claims FOR SELECT
+USING (true);
+
+DROP POLICY IF EXISTS "auth_insert_payment_claims" ON public.payment_claims;
+CREATE POLICY "auth_insert_payment_claims"
+ON public.payment_claims FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
+DROP POLICY IF EXISTS "auth_update_payment_claims" ON public.payment_claims;
+CREATE POLICY "auth_update_payment_claims"
+ON public.payment_claims FOR UPDATE
+TO authenticated
+USING (true);
+
 

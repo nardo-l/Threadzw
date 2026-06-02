@@ -260,3 +260,165 @@ export const QUIZ_QUESTIONS = [
     options: ["Straight to the Gram", "Wait for a special event", "Rock it quietly", "Tell the close circle only"] 
   }
 ];
+
+// SHOP
+export const mockShop = {
+  id: 'shop-001',
+  name: 'KURE STREETWEAR',
+  tagline: 'Built for the ones chasing more.',
+  logo_url: 'https://via.placeholder.com/80',
+  banner_url: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800',
+  whatsapp_number: '263776223144',
+  location: 'Avondale, Harare',
+  instagram: '@kure.zw',
+  hours: 'Mon–Sat, 9am–6pm',
+  about: 'Harare-based brand built for the ones who move different.',
+  google_maps_link: 'https://maps.google.com',
+  subscription_status: 'trial',
+  trial_start: new Date().toISOString(),
+  trial_end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+};
+
+// PRODUCTS
+export const mockProducts = [
+  {
+    id: 'prod-001',
+    name: 'Oversized Cargo Tee',
+    price: 18,
+    category: 'Tops',
+    tag: 'New Drop',
+    sizes: ['S','M','L','XL'],
+    colors: ['Black','White'],
+    images: ['https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400'],
+    description: 'Premium oversized tee. Relaxed fit, breathable fabric.',
+    stock: { S: 3, M: 5, L: 2, XL: 1 },
+    visible: true,
+    is_featured: true,
+  },
+  {
+    id: 'prod-002',
+    name: 'Wide Leg Cargos',
+    price: 35,
+    category: 'Bottoms',
+    tag: 'Best Seller',
+    sizes: ['S','M','L'],
+    colors: ['Khaki','Black'],
+    images: ['https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400'],
+    description: 'Wide leg cargo pants. Multiple pockets, street ready.',
+    stock: { S: 2, M: 4, L: 3 },
+    visible: true,
+    is_featured: false,
+  },
+  {
+    id: 'prod-003',
+    name: 'Acid Wash Hoodie',
+    price: 42,
+    category: 'Hoodies',
+    tag: 'Limited',
+    sizes: ['M','L','XL'],
+    colors: ['Washed Grey'],
+    images: ['https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=400'],
+    description: 'Limited acid wash hoodie. Only 10 made.',
+    stock: { M: 1, L: 2, XL: 1 },
+    visible: true,
+    is_featured: false,
+  },
+  {
+    id: 'prod-004',
+    name: 'Utility Vest',
+    price: 28,
+    category: 'Tops',
+    tag: 'New Drop',
+    sizes: ['S','M','L','XL'],
+    colors: ['Olive','Black'],
+    images: ['https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400'],
+    description: 'Multi-pocket utility vest. Wear over anything.',
+    stock: { S: 4, M: 3, L: 5, XL: 2 },
+    visible: true,
+    is_featured: false,
+  },
+  {
+    id: 'prod-005',
+    name: 'Slim Fit Joggers',
+    price: 30,
+    category: 'Bottoms',
+    tag: 'Best Seller',
+    sizes: ['S','M','L','XL','XXL'],
+    colors: ['Black','Grey'],
+    images: ['https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=400'],
+    description: 'Slim fit joggers with tapered ankle. Daily essential.',
+    stock: { S: 6, M: 8, L: 5, XL: 3, XXL: 2 },
+    visible: true,
+    is_featured: false,
+  },
+  {
+    id: 'prod-006',
+    name: 'Cropped Zip Hoodie',
+    price: 38,
+    category: 'Hoodies',
+    tag: 'Limited',
+    sizes: ['XS','S','M'],
+    colors: ['Pink','White'],
+    images: ['https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400'],
+    description: 'Cropped zip-up hoodie. Festival and street ready.',
+    stock: { XS: 2, S: 3, M: 2 },
+    visible: true,
+    is_featured: false,
+  },
+];
+
+// SALES HISTORY
+export const mockSales = [
+  {
+    id: 'sale-001',
+    product_name: 'Oversized Cargo Tee',
+    size: 'M',
+    quantity: 1,
+    final_price: 18,
+    payment_method: 'cash',
+    channel: 'walk-in',
+    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'sale-002',
+    product_name: 'Wide Leg Cargos',
+    size: 'L',
+    quantity: 1,
+    final_price: 35,
+    payment_method: 'ecocash',
+    channel: 'whatsapp',
+    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'sale-003',
+    product_name: 'Acid Wash Hoodie',
+    size: 'M',
+    quantity: 1,
+    final_price: 42,
+    payment_method: 'cash',
+    channel: 'walk-in',
+    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+  },
+  {
+    id: 'sale-004',
+    product_name: 'Slim Fit Joggers',
+    size: 'L',
+    quantity: 2,
+    final_price: 60,
+    payment_method: 'innbucks',
+    channel: 'instagram',
+    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+];
+
+// PAYMENT CLAIM
+export const mockPaymentClaim = null;
+
+// USER
+export const mockUser = {
+  id: 'user-001',
+  name: 'Nardo',
+  email: 'nardo@threadzw.app',
+  onboarding_complete: true,
+};
+

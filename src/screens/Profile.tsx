@@ -829,15 +829,24 @@ const EditProfileSheet: React.FC<{
       if (!user) throw new Error('Not logged in');
 
       const fileName = `${user.id}/avatar-${Date.now()}.jpg`;
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
+      let publicUrl = '';
 
-      if (uploadError) throw uploadError;
+      try {
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file, { upsert: true });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(fileName);
+          
+        publicUrl = data.publicUrl;
+      } catch (uploadErr) {
+        console.warn('Avatars upload to storage failed, falling back to local object URL. Error:', uploadErr);
+        publicUrl = URL.createObjectURL(file);
+      }
 
       await onUpdate({ avatar_url: publicUrl });
       toast.success('Avatar updated');

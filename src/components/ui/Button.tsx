@@ -15,23 +15,23 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', fullWidth, ...props }, ref) => {
     const variants = {
-      primary: 'bg-neon text-neon-text font-extrabold hover:opacity-90 active:scale-95 shadow-[0_4px_20px_rgba(198,255,0,0.2)]',
-      secondary: 'bg-transparent border-[1.5px] border-border text-white font-medium hover:bg-white/5 active:scale-95',
-      ghost: 'bg-transparent text-secondary-text font-medium hover:text-white',
+      primary: 'bg-neon text-neon-text font-bold hover:opacity-90 active:scale-95 shadow-[0_4px_15px_rgba(200,255,0,0.12)] text-[14px] tracking-[0.5px] uppercase border-none',
+      secondary: 'bg-transparent border-[1.5px] border-white/25 text-white font-bold hover:bg-white/5 active:scale-95 text-[14px] tracking-[0.5px] uppercase',
+      ghost: 'bg-transparent text-secondary-text font-bold hover:text-white text-xs uppercase',
     };
 
     const sizes = {
-      sm: 'h-10 px-4 text-sm rounded-full',
-      md: 'h-[48px] px-6 text-[15px] rounded-full',
-      lg: 'h-[52px] px-8 text-[16px] rounded-full',
-      xl: 'h-[56px] px-10 text-[17px] rounded-full',
+      sm: 'h-8 px-3 text-[11px] rounded-[8px]',
+      md: 'min-h-[44px] h-[44px] px-5 text-[14px] rounded-[10px]',
+      lg: 'min-h-[46px] h-[46px] px-6 text-[14px] rounded-[10px]',
+      xl: 'min-h-[50px] h-[50px] px-8 text-[15px] rounded-[10px]',
     };
 
     return (
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center transition-all disabled:opacity-50 disabled:pointer-events-none',
+          'inline-flex items-center justify-center transition-all disabled:opacity-50 disabled:pointer-events-none uppercase font-bold tracking-wider rounded-[10px] font-sans',
           variants[variant],
           sizes[size],
           fullWidth && 'w-full',

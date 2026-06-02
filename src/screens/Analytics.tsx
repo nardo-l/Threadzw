@@ -22,12 +22,13 @@ export const Analytics: React.FC = () => {
           </div>
        </div>
 
-      <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-page-bg border-t border-ele-bg z-50 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth flex items-center pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-[#0E0E12] border-t border-white/[0.04] z-50 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth flex items-center pb-safe">
         <div className="flex items-center justify-around w-full min-w-max px-4 gap-2">
-          <NavTab icon={<Home size={22} />} label="Dashboard" onClick={() => navigate('/dashboard')} />
-          <NavTab icon={<Package size={22} />} label="Products" onClick={() => navigate('/inventory')} />
-          <NavTab icon={<BarChart3 size={22} />} label="Analytics" active />
-          <NavTab icon={<SettingsIcon size={22} />} label="Settings" onClick={() => navigate('/settings')} />
+          <NavTab icon={<Home size={20} />} label="Dashboard" onClick={() => navigate('/dashboard')} />
+          <NavTab icon={<ShoppingBag size={20} />} label="Sales" onClick={() => navigate('/sales')} />
+          <NavTab icon={<Package size={20} />} label="Products" onClick={() => navigate('/inventory')} />
+          <NavTab icon={<BarChart3 size={20} />} label="Analytics" active />
+          <NavTab icon={<SettingsIcon size={20} />} label="Settings" onClick={() => navigate('/settings')} />
         </div>
       </div>
     </div>

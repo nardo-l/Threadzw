@@ -1,62 +1,36 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { mockShop } from '../data/mockData';
 
 export const useShops = (searchQuery = '', filters: any = {}) => {
   const [shops, setShops] = useState<any[]>([]);
   const [newShops, setNewShops] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchShops = async () => {
-    setLoading(true);
-    setError(null);
-    
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoading(false);
-        setError('Request timed out');
-      }
-    }, 12000);
-
-    try {
-      let query = supabase
-        .from('shops')
-        .select('*')
-        .eq('is_live', true)
-        .order('created_at', { ascending: false });
-
-      if (searchQuery) {
-        query = query.or(`name.ilike.%${searchQuery}%,handle.ilike.%${searchQuery}%`);
-      }
-
-      if (filters.category) {
-        query = query.contains('categories', [filters.category]);
-      }
-
-      if (filters.area) {
-        query = query.eq('location', filters.area);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      setShops(data || []);
-      
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      setNewShops((data || []).filter(s => new Date(s.created_at) >= weekAgo));
-    } catch (err) {
-      console.error('Error fetching shops:', err);
-      setError('Failed to load shops');
-    } finally {
-      clearTimeout(timeoutId);
-      setLoading(false);
-    }
-  };
+  const [loading, setLoading] = useState(false);
+  const [error] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchShops();
-  }, [searchQuery, JSON.stringify(filters)]);
+    const mapped = {
+      id: mockShop.id,
+      name: mockShop.name,
+      handle: 'kure',
+      categories: ['Streetwear', 'Tops', 'Bottoms'],
+      description: mockShop.tagline || mockShop.about,
+      location: mockShop.location,
+      whatsapp: mockShop.whatsapp_number,
+      whatsapp_number: mockShop.whatsapp_number,
+      instagram: mockShop.instagram,
+      is_online_only: false,
+      logo_url: mockShop.logo_url,
+      banner_url: mockShop.banner_url,
+      is_verified: true,
+      is_live: true,
+      subscription_status: mockShop.subscription_status,
+      trial_ends_at: mockShop.trial_end,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setShops([mapped]);
+    setNewShops([mapped]);
+  }, [searchQuery]);
 
-  return { shops, newShops, loading, error, refetch: fetchShops };
+  return { shops, newShops, loading, error, refetch: async () => {} };
 };

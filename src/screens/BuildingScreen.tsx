@@ -1,400 +1,143 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, AlertTriangle, RefreshCw } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { toast } from 'sonner';
+import { Store } from 'lucide-react';
 
 interface BuildingScreenProps {
-  shopData: {
-    ownerName: string;
-    name: string;
-    category: string;
-    town: string;
-    whatsapp: string;
-    description: string;
-    instagram: string;
-    priceRange: string;
-    productEstimate: string;
-  };
-  logoFile: File | null;
-  bannerFile: File | null;
-  setMyShop: (shop: any) => void;
-  setAppStage: (stage: 'paywall' | 'onboarding' | 'building' | 'reveal' | 'dashboard' | null) => void;
+  setAppStage: (stage: any) => void;
+  setPaywallScreen?: (screen: number) => void;
 }
 
 const CHECKLIST_ITEMS = [
-  "Reserving your shop URL...",
-  "Configuring database links...",
-  "Creating security access...",
-  "Building your custom domain...",
-  "Finalizing live setup..."
+  "Setting up your storefront...",
+  "Generating your shop link...",
+  "Configuring WhatsApp orders...",
+  "Almost ready..."
 ];
 
 export const BuildingScreen: React.FC<BuildingScreenProps> = ({
-  shopData,
-  logoFile,
-  bannerFile,
-  setMyShop,
-  setAppStage
+  setAppStage,
+  setPaywallScreen
 }) => {
-  const [activeItemIdx, setActiveItemIdx] = useState(0);
-  const [completedItems, setCompletedItems] = useState<number[]>([]);
-  const [activeItemProgress, setActiveItemProgress] = useState(0);
-  const [isDbFailed, setIsDbFailed] = useState(false);
-  const [dbErrorMsg, setDbErrorMsg] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  
-  const savedShopRef = useRef<any>(null);
-  const isMountedRef = useRef(true);
+  const [itemsVisible, setItemsVisible] = useState<number[]>([]);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
+    // Prevent default back button behavior / popstate override for safety on this page
+    const handlePushState = () => {
+      window.history.pushState(null, '', window.location.pathname);
     };
-  }, []);
+    window.history.pushState(null, '', window.location.pathname);
+    window.addEventListener('popstate', handlePushState);
 
-  // 1. Core Supabase Database Upload & Insert Trigger
-  useEffect(() => {
-    let active = true;
+    // Staggered check item appearance: 0.8s, 1.6s, 2.4s, 3.2s
+    const timers: NodeJS.Timeout[] = [];
+    CHECKLIST_ITEMS.forEach((_, idx) => {
+      const timer = setTimeout(() => {
+        setItemsVisible(prev => [...prev, idx]);
+      }, idx * 800);
+      timers.push(timer);
+    });
 
-    const handleBuildShop = async () => {
-      try {
-        console.log('Building shop in database trigger initialized. RetryCount:', retryCount);
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
-        if (!currentSession?.user?.id) {
-          throw new Error('User session not recovered. Please sign in.');
-        }
+    // Animate progress bar from 0 to 100% over 5 seconds
+    const intervalTime = 50; // 50ms intervals
+    const totalDuration = 5000;
+    const steps = totalDuration / intervalTime;
+    const increment = 100 / steps;
 
-        // Upload logo (non-blocking)
-        let avatarUrl = null;
-        if (logoFile) {
-          try {
-            const ext = logoFile.name.split('.').pop();
-            const path = `${currentSession.user.id}/logo_${Date.now()}.${ext}`;
-            
-            const { error: logoError } = await supabase.storage
-              .from('shop-avatars')
-              .upload(path, logoFile, {
-                upsert: true,
-                contentType: logoFile.type
-              });
-            
-            if (!logoError) {
-              const { data: urlData } = supabase.storage
-                .from('shop-avatars')
-                .getPublicUrl(path);
-              avatarUrl = urlData.publicUrl;
-              console.log('Logo uploaded to buckets:', avatarUrl);
-            } else {
-              console.error('Logo upload error:', logoError);
-            }
-          } catch (err) {
-            console.error('Logo upload failed (non-blocking):', err);
-          }
-        }
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        const next = prev + increment;
+        return next >= 100 ? 100 : next;
+      });
+    }, intervalTime);
 
-        // Upload banner (non-blocking)
-        let bannerUrl = null;
-        if (bannerFile) {
-          try {
-            const ext = bannerFile.name.split('.').pop();
-            const path = `${currentSession.user.id}/banner_${Date.now()}.${ext}`;
-            
-            const { error: bannerError } = await supabase.storage
-              .from('shop-banners')
-              .upload(path, bannerFile, {
-                upsert: true,
-                contentType: bannerFile.type
-              });
-            
-            if (!bannerError) {
-              const { data: urlData } = supabase.storage
-                .from('shop-banners')
-                .getPublicUrl(path);
-              bannerUrl = urlData.publicUrl;
-              console.log('Banner uploaded to buckets:', bannerUrl);
-            } else {
-              console.error('Banner upload error:', bannerError);
-            }
-          } catch (err) {
-            console.error('Banner upload failed (non-blocking):', err);
-          }
-        }
-
-        // Generate unique handle
-        const baseHandle = (shopData.name || 'shop')
-          .toLowerCase()
-          .replace(/\s+/g, '')
-          .replace(/[^a-z0-9]/g, '')
-          .substring(0, 16);
-
-        const handle = baseHandle + '_' + Date.now().toString(36).slice(-4);
-
-        // Create shop — this CAN throw because without a shop the reveal screen won't work
-        console.log('Upserting shops record...');
-        const { data: shop, error: shopError } = await supabase
-          .from('shops')
-          .upsert({
-            owner_id: currentSession.user.id,
-            name: shopData.name || 'My Shop',
-            handle: handle,
-            category: shopData.category || null,
-            town: shopData.town || null,
-            whatsapp: shopData.whatsapp || null,
-            instagram: shopData.instagram || null,
-            description: shopData.description || null,
-            avatar_url: avatarUrl,
-            banner_url: bannerUrl,
-            plan: 'shop',
-            subscription_status: 'trial',
-            trial_started_at: new Date().toISOString(),
-            trial_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-            is_live: true
-          }, { onConflict: 'owner_id' })
-          .select()
-          .single();
-
-        if (shopError) {
-          console.error('Shop creation failed:', shopError);
-          throw shopError;
-        }
-
-        console.log('New shop generated in Supabase:', shop.id);
-
-        // Update Profiles onboarding status and info — non-blocking
-        // If this fails the shop still exists so we continue
-        try {
-          await supabase
-            .from('profiles')
-            .update({
-              display_name: shopData.ownerName || null,
-              town: shopData.town || null,
-              whatsapp_number: shopData.whatsapp || null,
-              onboarding_complete: true
-              // NO updated_at here
-            })
-            .eq('id', currentSession.user.id);
-
-          console.log('Profile updated ✓');
-        } catch (profileErr) {
-          console.error('Profile update failed (non-blocking):', profileErr);
-        }
-
-        if (active && isMountedRef.current) {
-          savedShopRef.current = shop;
-        }
-
-      } catch (err: any) {
-        console.error('Build shop exception caught:', err?.message || err, err);
-        if (active && isMountedRef.current) {
-          setIsDbFailed(true);
-          // Friendly text on screen:
-          setDbErrorMsg(err?.message || 'Database error occurred');
-        }
+    // Redirect to Paywall Screen 1 after exactly 5 seconds
+    const redirectTimer = setTimeout(() => {
+      if (setPaywallScreen) {
+        setPaywallScreen(1);
       }
-    };
-
-    handleBuildShop();
+      setAppStage('paywall');
+    }, 5000);
 
     return () => {
-      active = false;
+      window.removeEventListener('popstate', handlePushState);
+      timers.forEach(clearTimeout);
+      clearInterval(progressInterval);
+      clearTimeout(redirectTimer);
     };
-  }, [shopData, logoFile, bannerFile, retryCount]);
-
-  // 2. Incremental Checklist and Progress animation loop (1.5s per item)
-  useEffect(() => {
-    let animFrame: number;
-    let lastTime = performance.now();
-    const duration = 1500; // 1.5 seconds per item
-
-    const tick = (now: number) => {
-      if (!isMountedRef.current) return;
-      if (isDbFailed) return;
-
-      const elapsed = now - lastTime;
-      const progress = Math.min((elapsed / duration) * 100, 100);
-      setActiveItemProgress(progress);
-
-      if (elapsed >= duration) {
-        // Complete current item
-        setCompletedItems((prev) => [...prev, activeItemIdx]);
-        
-        if (activeItemIdx < CHECKLIST_ITEMS.length - 1) {
-          // Increment item
-          setActiveItemIdx((prev) => prev + 1);
-          setActiveItemProgress(0);
-          lastTime = performance.now();
-          animFrame = requestAnimationFrame(tick);
-        } else {
-          // Last item completed -> verify database save availability
-          const checkReady = setInterval(() => {
-            if (isDbFailed) {
-              clearInterval(checkReady);
-              return;
-            }
-            if (savedShopRef.current) {
-              clearInterval(checkReady);
-              console.log('Checklist animation and DB write successful! Redirecting to stage 4 reveal...');
-              setMyShop(savedShopRef.current);
-              setAppStage('reveal');
-            }
-          }, 300);
-        }
-      } else {
-        animFrame = requestAnimationFrame(tick);
-      }
-    };
-
-    animFrame = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(animFrame);
-    };
-  }, [activeItemIdx, isDbFailed, setMyShop, setAppStage]);
-
-  if (isDbFailed) {
-    return (
-      <div className="bg-[#0B0B0B] min-h-screen text-white flex flex-col items-center justify-center p-10 px-6 text-center select-none font-sans">
-        {/* Red circle 80px centered */}
-        <div className="w-20 h-20 rounded-full bg-red-500/15 border-2 border-red-500/30 flex items-center justify-center mb-6">
-          <span className="text-[36px] select-none text-red-500">⚠️</span>
-        </div>
-        
-        {/* "Setup interrupted" heading */}
-        <h2 className="text-[#FFFFFF] font-bold text-[28px] text-center mt-6 tracking-tight">
-          Setup interrupted
-        </h2>
-        
-        {/* Subtitle / friendly message */}
-        <p className="text-[#A1A1AA] text-[15px] text-center mt-3 leading-relaxed max-w-[280px]">
-          Something went wrong while building your shop. Your account has been created — tap below to try again.
-        </p>
-
-        {/* Technical detail box (development environments of AIS) */}
-        {(process.env.NODE_ENV === 'development' || !process.env.NODE_ENV) && dbErrorMsg && (
-          <div className="bg-[#151515] border border-[#2A2A2A] rounded-[10px] p-3 px-3.5 mt-4 max-w-[300px] w-full text-left">
-            <span className="text-[#A1A1AA] text-[11px] font-mono break-all leading-relaxed">
-              {dbErrorMsg}
-            </span>
-          </div>
-        )}
-
-        {/* "Retry Setup" button */}
-        <button
-          onClick={() => {
-            setDbErrorMsg('');
-            setIsDbFailed(false);
-            setActiveItemIdx(0);
-            setCompletedItems([]);
-            setActiveItemProgress(0);
-            setRetryCount((prev) => prev + 1);
-          }}
-          className="mt-7 bg-[#151515] hover:bg-[#1D1D1D] active:scale-[0.98] border border-[#2A2A2A] rounded-full w-full max-w-xs h-[52px] flex items-center justify-center gap-2.5 transition ease-out duration-150 cursor-pointer"
-        >
-          <span className="text-[#FFFFFF] text-[18px]">↺</span>
-          <span className="text-[#FFFFFF] font-bold text-[14px] uppercase tracking-wider">
-            RETRY SETUP
-          </span>
-        </button>
-
-        {/* "Contact Support" button */}
-        <button
-          onClick={() => {
-            window.open(
-              'https://wa.me/263776223144' +
-              '?text=' +
-              encodeURIComponent(
-                'Hi ThreadZW, I need help with my shop setup.'
-              )
-            );
-          }}
-          className="mt-3 text-[#A1A1AA] text-[13px] underline hover:text-white transition bg-transparent border-0 cursor-pointer"
-        >
-          Contact Support
-        </button>
-      </div>
-    );
-  }
+  }, [setAppStage, setPaywallScreen]);
 
   return (
-    <div className="bg-[#0B0B0B] min-h-screen text-white flex flex-col justify-center items-center p-6 select-none font-sans">
-      <div className="w-full max-w-sm flex flex-col items-start space-y-10">
-        
-        {/* TOP STATUS LOGO HEADER */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <span className="text-4xl animate-pulse">⚡</span>
-            <h1 className="text-white font-black text-[28px] tracking-tight leading-none">
-              Creating your shop...
-            </h1>
+    <div id="shop-building-screen" className="fixed inset-0 bg-[#0a0a0a] text-white flex flex-col justify-between z-50 font-sans selection:bg-[#c8ff00]/30 select-none overflow-hidden">
+      
+      {/* WORDMARK TOP CENTER */}
+      <div className="pt-12 text-center">
+        <span className="threadzw-wordmark text-[#c8ff00] text-3xl tracking-tighter uppercase inline-block">
+          ThreadZW
+        </span>
+      </div>
+
+      {/* LARGE ANIMATED ICON CENTER SCREEN & CHECKLIST */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 space-y-12">
+        {/* Spinner/pulsing ring with Store Icon */}
+        <div className="relative flex items-center justify-center">
+          {/* Outer Pulsing Glow */}
+          <motion.div 
+            animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.4, 0.15] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            className="absolute w-32 h-32 rounded-full bg-[#c8ff00]"
+          />
+          {/* Spinning dashed circle border */}
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+            className="absolute w-28 h-28 rounded-full border-2 border-dashed border-[#c8ff00]"
+          />
+          {/* Inner Badge */}
+          <div className="relative w-22 h-22 bg-[#121212] border border-white/10 rounded-full flex items-center justify-center text-[#c8ff00]">
+            <Store className="w-10 h-10" />
           </div>
-          <p className="text-[#A1A1AA] text-xs">
-            Please wait. We are wiring up your real database and saving assets.
-          </p>
         </div>
 
-        {/* SEQUENTIAL CHECKLIST GRID */}
-        <div className="w-full space-y-6">
-          {CHECKLIST_ITEMS.map((item, idx) => {
-            const isCompleted = completedItems.includes(idx);
-            const isActive = activeItemIdx === idx;
-            const isPending = idx > activeItemIdx;
-
-            return (
-              <div
-                key={idx}
-                className="flex items-center gap-4 transition-all duration-300"
-                style={{ opacity: isPending ? 0.35 : 1 }}
-              >
-                {/* SVG CIRCLE LOADER */}
-                <div className="relative w-7 h-7 flex-shrink-0 flex items-center justify-center">
-                  {isCompleted ? (
-                    <div className="w-7 h-7 rounded-full bg-[#C6FF00] flex items-center justify-center text-black shadow-lg shadow-[#C6FF00]/10">
-                      <Check className="w-4.5 h-4.5 stroke-[3.5]" />
-                    </div>
-                  ) : isActive ? (
-                    <>
-                      <svg className="w-7 h-7 transform -rotate-90">
-                        <circle
-                          cx="14"
-                          cy="14"
-                          r="11"
-                          fill="none"
-                          stroke="#1A1A1A"
-                          strokeWidth="2.5"
-                        />
-                        <motion.circle
-                          cx="14"
-                          cy="14"
-                          r="11"
-                          fill="none"
-                          stroke="#C6FF00"
-                          strokeWidth="2.5"
-                          strokeDasharray={2 * Math.PI * 11}
-                          strokeDashoffset={2 * Math.PI * 11 - (activeItemProgress / 100) * (2 * Math.PI * 11)}
-                        />
-                      </svg>
-                      {/* Inner dot */}
-                      <div className="absolute w-2 h-2 rounded-full bg-[#C6FF00]" />
-                    </>
-                  ) : (
-                    <div className="w-6 h-6 rounded-full border border-stone-800" />
+        {/* Staggered Checklist */}
+        <div className="w-full max-w-[280px] space-y-4">
+          <AnimatePresence>
+            {CHECKLIST_ITEMS.map((item, idx) => {
+              const visible = itemsVisible.includes(idx);
+              return (
+                <div key={idx} className="h-6">
+                  {visible && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center gap-3"
+                    >
+                      <span className="text-[#c8ff00] text-lg font-bold">✓</span>
+                      <span className="text-white font-bold text-base tracking-tight">
+                        {item}
+                      </span>
+                    </motion.div>
                   )}
                 </div>
-
-                <span className={`text-[15px] font-medium leading-none ${
-                  isCompleted ? 'text-stone-500 line-through' : isActive ? 'text-white font-bold' : 'text-stone-700'
-                }`}>
-                  {item}
-                </span>
-
-              </div>
-            );
-          })}
+              );
+            })}
+          </AnimatePresence>
         </div>
 
+        {/* Subtext below checklist */}
+        <p className="text-white/40 text-xs text-center font-medium">
+          This takes just a moment.
+        </p>
       </div>
+
+      {/* FULL WIDTH PROGRESS BAR AT BOTTOM */}
+      <div className="w-full h-[3px] bg-white/5 relative">
+        <div 
+          style={{ width: `${progress}%` }} 
+          className="h-full bg-[#c8ff00] transition-all duration-75 ease-out" 
+        />
+      </div>
+
     </div>
   );
 };

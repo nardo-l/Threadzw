@@ -18,10 +18,10 @@ export const ShopsView: React.FC = () => {
 
   const categories = ["All", ...SHOP_CATEGORIES.map(c => c.label)];
 
-  const filteredShops = shops.filter(shop => {
+  const filteredShops = shops.filter((shop: any) => {
     const matchesFilter = filter === 'All' || shop.category === filter;
     const matchesSearch = shop.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          shop.area.toLowerCase().includes(searchQuery.toLowerCase());
+                          (shop.area || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTown = !selectedTown || selectedTown === 'Zimbabwe' || shop.area === selectedTown;
     return matchesFilter && matchesSearch && matchesTown;
   });
@@ -244,7 +244,7 @@ export const ShopsView: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5 mt-1.5 text-white/20">
                   <MapPin size={11} />
-                  <p className="text-[11px] truncate">{shop.area}</p>
+                  <p className="text-[11px] truncate">{(shop as any).area}</p>
                 </div>
               </div>
             </div>

@@ -103,9 +103,9 @@ export const TownSelector: React.FC<OnboardingProps> = ({
         try {
           await supabase
             .from('profiles')
-            .update({ town: selectedTown })
+            .update({ style_preferences: { town: selectedTown } })
             .eq('id', session.user.id);
-          console.log('Town saved to profile:', selectedTown);
+          console.log('Town saved to profile style_preferences:', selectedTown);
         } catch (err) {
           console.error('Town save error (non-blocking):', err);
         }
