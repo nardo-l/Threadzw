@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Check, Copy, Share2, ArrowRight, MessageSquare, ExternalLink } from 'lucide-react';
+import { Check, Copy, Share2, ArrowRight, MessageSquare, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface RevealScreenProps {
@@ -63,7 +63,7 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({ myShop, setAppStage 
   };
 
   const handleWhatsAppShare = () => {
-    const text = `Check out my new online clothing shop on ThreadZW! 🛍️✨ Browse our items live at: https://${shopUrl}`;
+    const text = `Check out my new online clothing shop on ThreadZW! Browse our items live at: https://${shopUrl}`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noreferrer,noopener');
     toast.success('WhatsApp sharing initialized.');
@@ -115,9 +115,9 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({ myShop, setAppStage 
             initial={{ scale: 0.1, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', damping: 15, stiffness: 100 }}
-            className="w-20 h-20 bg-[#C6FF00]/10 border border-[#C6FF00]/30 rounded-full flex items-center justify-center text-4xl mx-auto shadow-2xl shadow-[#C6FF00]/10"
+            className="w-20 h-20 bg-[#C6FF00]/10 border border-[#C6FF00]/30 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-[#C6FF00]/10"
           >
-            🎉
+            <Sparkles className="text-[#C6FF00]" size={36} />
           </motion.div>
           
           <motion.h1
@@ -153,8 +153,8 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({ myShop, setAppStage 
             ) : (
               <div className="w-full h-full bg-gradient-to-tr from-[#151515] to-stone-900" />
             )}
-            <div className="absolute top-3 right-3 bg-black/60 border border-white/5 text-[11px] font-bold text-[#C6FF00] px-3 py-1 rounded-full uppercase tracking-wider">
-              🟢 Trial Active
+            <div className="absolute top-3 right-3 bg-black/60 border border-white/5 text-[11px] font-bold text-[#C6FF00] px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 leading-none">
+              <span className="w-2 h-2 rounded-full bg-[#00c864] shrink-0" /> Trial Active
             </div>
           </div>
 

@@ -36,7 +36,7 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
           plan: 'standard',
           amount: 5,
           status: 'pending',
-          receiving_number: '0776223144'
+          receiving_number: '0789113734'
         });
       
       if (paymentError) throw paymentError;
@@ -90,14 +90,14 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
         <div className="space-y-6">
            <InstructionStep 
              num="01" 
-             title="Send $5 to EcoCash +263776223144 or InnBucks" 
+             title="Send $5 to EcoCash +263789113734 or InnBucks" 
              desc="Send exactly $5.00 USD to help activate your catalog." 
            />
            
            <div className="bg-[#151515] border border-white/5 rounded-3xl p-6 space-y-4">
               <div className="flex justify-between items-center">
                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Recipient</span>
-                 <span className="text-sm font-bold text-white">0776223144</span>
+                 <span className="text-sm font-bold text-white">0789113734</span>
               </div>
               <div className="h-px bg-white/5" />
               <div className="flex justify-between items-center">
@@ -137,7 +137,7 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
 
         {/* Support Link */}
         <button 
-          onClick={() => window.open('https://wa.me/263776223144', '_blank')}
+          onClick={() => window.open('https://wa.me/263789113734', '_blank')}
           className="w-full h-14 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-xs font-black uppercase tracking-widest italic text-zinc-400"
         >
           <MessageCircle size={18} className="text-[#C6FF00]" /> Direct Support Routing

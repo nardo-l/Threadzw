@@ -79,7 +79,7 @@ export const PaymentReceivedView: React.FC<{ myShop: any; onActivated: () => voi
         .update({ is_used: true, used_at: new Date().toISOString() })
         .eq('id', validCode.id);
 
-      toast.success('Shop reactivated! 🎉');
+      toast.success('Shop reactivated!');
       onActivated();
     } catch (err) {
       console.error(err);
@@ -157,7 +157,7 @@ export const PaymentReceivedView: React.FC<{ myShop: any; onActivated: () => voi
 
       <div className="p-8 text-center">
          <button 
-            onClick={() => window.open('https://wa.me/263776223144', '_blank')}
+            onClick={() => window.open('https://wa.me/263789113734', '_blank')}
             className="text-[#888] text-[13px] font-medium underline"
           >
             Need help? Chat with Admin

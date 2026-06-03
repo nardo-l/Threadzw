@@ -9,13 +9,13 @@ interface HowToPayProps {
 
 export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
   const handleCopyNumber = () => {
-    navigator.clipboard.writeText('0776223144');
+    navigator.clipboard.writeText('0789113734');
     toast.success('Number copied ✓');
   };
 
   const handleSupportClick = () => {
     window.open(
-      'https://wa.me/263776223144' +
+      'https://wa.me/263789113734' +
       '?text=' +
       encodeURIComponent(
         'Hi ThreadZW! I paid my $5 subscription but haven\'t received my unlock code yet. My WhatsApp number is: '
@@ -64,7 +64,7 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
             </div>
             <div className="text-right">
               <span className="text-[#A1A1AA] text-[10px] uppercase tracking-wider block">Send To</span>
-              <span className="text-[#C6FF00] font-bold text-xl monospace mt-1 block">0776 223 144</span>
+              <span className="text-[#C6FF00] font-bold text-xl monospace mt-1 block">0789 113 734</span>
             </div>
           </div>
 
@@ -138,7 +138,7 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
               <div className="w-8 h-8 rounded-full bg-[#C6FF00] text-[#0B0B0B] font-bold text-[13px] flex items-center justify-center shrink-0 select-none">5</div>
               <div>
                 <h4 className="text-white font-bold text-[14px]">Enter the number</h4>
-                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type: 0776 223 144 (ThreadZW payment number)</p>
+                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type: 0789 113 734 (ThreadZW payment number)</p>
               </div>
             </div>
 
@@ -221,7 +221,7 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
               <div className="w-8 h-8 rounded-full bg-[#C6FF00] text-[#0B0B0B] font-bold text-[13px] flex items-center justify-center shrink-0 select-none">4</div>
               <div>
                 <h4 className="text-white font-bold text-[14px]">Enter the number</h4>
-                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type or select 0776 223 144 as the recipient</p>
+                <p className="text-[#A1A1AA] text-[13px] mt-1 leading-[1.5]">Type or select 0789 113 734 as the recipient</p>
               </div>
             </div>
 
@@ -266,7 +266,7 @@ export const HowToPay: React.FC<HowToPayProps> = ({ onBack }) => {
           <div className="flex gap-2.5 items-start">
             <span className="text-[#C6FF00] font-bold text-base leading-none shrink-0">•</span>
             <p className="text-[#A1A1AA] text-sm leading-[1.5]">
-              Always double-check the number 0776 223 144 before confirming — typos cannot be automatically reversed.
+              Always double-check the number 0789 113 734 before confirming — typos cannot be automatically reversed.
             </p>
           </div>
 

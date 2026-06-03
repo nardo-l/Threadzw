@@ -18,6 +18,20 @@ import { useShopContext } from '../context/ShopContext';
 
 import { LockOverlay } from '../components/paywall/LockOverlay';
 import { getShopStatus, parseDate } from '../utils/shopStatus';
+import { ShopFrontOnboarding } from '../components/dashboard/ShopFrontOnboarding';
+
+// Official WhatsApp SVG icon component
+const WhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 const OwnerStatusBanner = ({
   statusObj,
@@ -35,21 +49,21 @@ const OwnerStatusBanner = ({
     let content = '';
 
     if (daysLeft === 3) {
-      content = '⏳ 3-day free trial active. Your shop is live.';
+      content = '3-day free trial active. Your shop is live.';
     } else if (daysLeft === 2) {
-      content = '⏳ 2 days left in your trial. Keep your shop live for $5.';
+      content = '2 days left in your trial. Keep your shop live for $5.';
     } else if (daysLeft === 1) {
       bg = 'rgba(245,158,11,0.08)';
       border = '1px solid rgba(245,158,11,0.3)';
       color = '#f59e0b';
-      content = '⚠️ Trial ends tomorrow. Pay $5 to stay live.';
+      content = 'Trial ends tomorrow. Pay $5 to stay live.';
     } else if (hoursLeft && hoursLeft < 24) {
       bg = 'rgba(239,68,68,0.08)';
       border = '1px solid rgba(239,68,68,0.3)';
       color = '#ff4444';
-      content = `🚨 Trial ends in ${hoursLeft} hours!`;
+      content = `Trial ends in ${hoursLeft} hours!`;
     } else {
-      content = `⏳ ${daysLeft} days left in your free trial.`;
+      content = `${daysLeft} days left in your free trial.`;
     }
 
     return (
@@ -63,9 +77,12 @@ const OwnerStatusBanner = ({
           color: color,
           cursor: 'pointer'
         }}
-        className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs font-bold leading-relaxed transition-opacity hover:opacity-95 select-none"
+        className="mb-5 flex items-center justify-between gap-3 text-xs font-bold leading-relaxed transition-opacity hover:opacity-95 select-none w-full"
       >
-        <span>{content}</span>
+        <div className="flex items-center gap-2">
+          <Clock size={15} className="shrink-0" />
+          <span>{content}</span>
+        </div>
         <span className="text-[#c8ff00] uppercase tracking-wider text-[10px] font-mono whitespace-nowrap bg-white/5 px-2.5 py-1 rounded-md hover:bg-white/10">
           Keep My Shop Live →
         </span>
@@ -85,7 +102,10 @@ const OwnerStatusBanner = ({
         }}
         className="mb-5 text-xs font-bold leading-relaxed select-none"
       >
-        <span>✅ Shop live — {daysLeft} days remaining</span>
+        <div className="flex items-center gap-2">
+          <CheckCircle2 size={15} className="shrink-0 text-[#00c864]" />
+          <span>Shop live — {daysLeft} days remaining</span>
+        </div>
       </div>
     );
   }
@@ -264,7 +284,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
         // Compute correct lock status via our getShopStatus utility
         const statusObj = getShopStatus(shopData, claimsData);
-        const isLocked = statusObj.status === 'locked';
+        const isLocked = statusObj.status === 'expired';
         setIsLockedOnFetch(initialLocked || isLocked);
 
         // Determine setup overlay presence with database status protection
@@ -342,7 +362,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
           if (updated) {
             // Check if manual_lock changes to true
             if (updated.manual_lock === true && shop.manual_lock !== true) {
-              toast.error("⚠️ Your storefront has been taken offline. Please make payment.");
+              toast.error("Your storefront has been taken offline. Please make payment.");
             }
 
             // Check if subscription_status changes to 'active' (code entered)
@@ -477,7 +497,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
       if (error) throw error;
 
-      toast.success(`Product is now ${nextPublished ? 'visible' : 'hidden'} on storefront! 👁️`);
+      toast.success(`Product is now ${nextPublished ? 'visible' : 'hidden'} on storefront!`);
       setShowOptionsSheet(false);
       setRefreshTrigger(prev => prev + 1);
     } catch (err: any) {
@@ -495,7 +515,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
       if (error) throw error;
 
-      toast.success('Product deleted successfully! ✓');
+      toast.success('Product deleted successfully!');
       setShowDeleteConfirm(false);
       setShowOptionsSheet(false);
       setRefreshTrigger(prev => prev + 1);
@@ -522,7 +542,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
       if (error) throw error;
 
-      toast.success('Stock levels updated successfully! 📦');
+      toast.success('Stock levels updated successfully!');
       setShowRestockModal(false);
       setShowOptionsSheet(false);
       setRefreshTrigger(prev => prev + 1);
@@ -705,86 +725,55 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
   const daysLeft = statusObj.daysLeft;
   const isTrial = statusObj.status === 'trial';
 
+  const isShopSetupCompleted = shop?.id ? (
+    localStorage.getItem(`threadzw_shop_front_setup_${shop.id}`) === 'true' ||
+    !!(shop.logo_url || shop.instagram || (shop.description && shop.description !== 'Brand new ThreadZW clothing brand'))
+  ) : false;
+
   if (currentScreen === 'howToPay') {
     return <HowToPay onBack={() => setCurrentScreen('dashboard')} />;
   }
 
+  // Render the lock screen before rendering the dashboard if it is locked
+  if (isLockedOnFetch) {
+    return (
+      <LockOverlay 
+        shop={shop} 
+        onUnlockSuccess={(updatedShop) => {
+          setShop(updatedShop);
+          setIsLockedOnFetch(false);
+          setBannerPaywallOpen(false);
+        }}
+        onOpenHowToPayDirectly={false}
+        onCloseDirectHowToPay={() => {}}
+      />
+    );
+  }
+
   return (
     <div className="relative min-h-screen overflow-y-auto bg-[#0a0a0a]">
-      {/* FIRST TIME SETUP OVERLAY */}
+      {/* FIRST TIME SETUP OVERLAY - 5 SCREEN SHOPFRONT ONBOARDING */}
       <AnimatePresence>
-        {showSetupOverlay && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-sm bg-[#161616] border border-[#c8ff00]/20 p-7 rounded-2xl text-center shadow-2xl flex flex-col items-center"
-            >
-              <span className="text-[48px] leading-none mb-4">🎉</span>
-
-              <h3 className="text-white font-[900] text-[22px] leading-tight">
-                Your shop is live!
-              </h3>
-
-              <p className="text-white/60 text-sm leading-relaxed mt-2 text-center">
-                Now let's make it yours. Head to the Edit Shop page to add your logo, banner, products and shop details.
-              </p>
-
-              <div className="mt-4 bg-[#c8ff00]/10 border border-[#c8ff00]/25 rounded-lg py-2.5 px-3.5 flex items-center gap-1.5 justify-center text-[#c8ff00] text-[13px] font-bold">
-                <span>⏳ 3-day free trial active</span>
-              </div>
-
-              <button
-                onClick={async () => {
-                  try {
-                    localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
-                    localStorage.setItem('threadzw_from_overlay', 'true');
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session?.user?.id) {
-                      await supabase.from('profiles').update({
-                        onboarding_complete: true
-                      }).eq('id', session.user.id);
-                    }
-                  } catch (err) {
-                    console.error("Error setting first-time overlay done:", err);
-                  } finally {
-                    setShowSetupOverlay(false);
-                    navigate('/edit-shop?from_overlay=true');
-                  }
-                }}
-                className="w-full h-12 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] mt-5 hover:bg-[#c8ff00]/90 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                Customise My Shop &rarr;
-              </button>
-
-              <button
-                onClick={async () => {
-                  try {
-                    localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (session?.user?.id) {
-                      await supabase.from('profiles').update({
-                        onboarding_complete: true
-                      }).eq('id', session.user.id);
-                    }
-                  } catch (err) {
-                    console.error("Error setting first-time overlay done:", err);
-                  } finally {
-                    setShowSetupOverlay(false);
-                  }
-                }}
-                className="text-white/35 text-[13px] mt-3 hover:text-white transition-colors cursor-pointer"
-              >
-                I'll do this later
-              </button>
-            </motion.div>
-          </div>
+        {showSetupOverlay && shop && (
+          <ShopFrontOnboarding 
+            shop={shop}
+            onClose={() => {
+              setShowSetupOverlay(false);
+              localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
+              localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
+            }}
+            onComplete={(updatedShop) => {
+              setShop(updatedShop);
+              setShowSetupOverlay(false);
+              localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
+              localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
+            }}
+          />
         )}
       </AnimatePresence>
 
-      {/* If locked or banner opened, show the lock screen overlay in appropriate screen */}
-      {(isLockedOnFetch || bannerPaywallOpen) && (
+      {/* If banner paywall trigger is opened manually by user on active dashboard */}
+      {bannerPaywallOpen && (
         <LockOverlay 
           shop={shop} 
           onUnlockSuccess={(updatedShop) => {
@@ -798,15 +787,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
       )}
 
       {/* Main dashboard body, conditionally blurred */}
-      <div className={`min-h-screen bg-page-bg text-white pb-32 overflow-y-auto transition-all duration-300 ${(isLockedOnFetch || showSetupOverlay) ? 'filter blur-[10px] opacity-[0.35] pointer-events-none select-none' : ''}`}>
+      <div className={`min-h-screen bg-page-bg text-white pb-32 overflow-y-auto transition-all duration-300 ${showSetupOverlay ? 'filter blur-[10px] opacity-[0.35] pointer-events-none select-none' : ''}`}>
         {/* Top Profile Section */}
         <div className="px-5 pt-8">
           
           {!isLockedOnFetch && (
-            <OwnerStatusBanner
-              statusObj={statusObj}
-              onTap={() => setBannerPaywallOpen(true)}
-            />
+            <>
+              <OwnerStatusBanner
+                statusObj={statusObj}
+                onTap={() => setBannerPaywallOpen(true)}
+              />
+
+              {/* STOREFRONT SETUP NOTICE BANNER */}
+              {!isShopSetupCompleted && !showSetupOverlay && (
+                <div 
+                  id="banner_storefront_unconfigured"
+                  className="mb-5 p-4 rounded-xl bg-[#c8ff00]/5 border border-[#c8ff00]/15 text-white text-xs flex flex-row items-center justify-between gap-4 select-none shadow-md"
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">🏡</span>
+                    <div>
+                      <h4 className="font-extrabold text-[#c8ff00] uppercase tracking-wider text-[11px]">your shop front is not setup</h4>
+                      <p className="text-zinc-400 mt-0.5 leading-relaxed">Customize your design, logo and WhatsApp hotline to go live.</p>
+                    </div>
+                  </div>
+                  <button
+                    id="btn_launch_notice_onboarding"
+                    onClick={() => setShowSetupOverlay(true)}
+                    className="px-3.5 py-2 bg-[#c8ff00] hover:bg-[#b0df00] text-black font-extrabold rounded-lg uppercase tracking-wider text-[9.5px] hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-pointer whitespace-nowrap"
+                  >
+                    Setup Now &rarr;
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <div className="flex items-center justify-between">
@@ -957,12 +971,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
           }}>
             <Share2 size={14} className="mr-2" /> Share My Shop
           </Button>
-          <Button variant="secondary" fullWidth className="h-11 text-[13px]" onClick={() => {
+          <Button variant="secondary" fullWidth className="h-11 text-[13px] flex items-center justify-center gap-2" onClick={() => {
             const shopLink = `https://threadzw.vercel.app/shop/${shop.slug || shop.handle}`;
-            const shareMessage = `Check out my shop on ThreadZW! 🛍️\n\n${shopLink}`;
+            const shareMessage = `Check out my shop on ThreadZW!\n\n${shopLink}`;
             window.open('https://wa.me/?text=' + encodeURIComponent(shareMessage), '_blank');
           }}>
-            💬 Share WhatsApp
+            <WhatsAppIcon size={16} className="text-[#25D366] shrink-0" /> Share WhatsApp
           </Button>
         </div>
       </div>
@@ -993,21 +1007,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         <div className="space-y-2.5">
           {products.length === 0 && (
             <SignalCard 
-              icon="📦" color="bg-warm/10" iconColor="text-warm"
+              icon={<Package size={18} />} color="bg-warm/10" iconColor="text-warm"
               title="Your shop is empty" action="Add your first product"
               onTap={() => navigate('/add-product')} 
             />
           )}
           {products.length > 0 && products.length < 3 && (
             <SignalCard 
-              icon="📸" color="bg-neon/10" iconColor="text-neon"
+              icon={<ImageIcon size={18} />} color="bg-neon/10" iconColor="text-neon"
               title="Add more products" action="Shops with 5+ products get 3x more views"
               onTap={() => navigate('/add-product')} 
             />
           )}
           {!(shop.logo_url || shop.avatar_url) && (
             <SignalCard 
-              icon="🖼️" color="bg-white/5" iconColor="text-secondary-text"
+              icon={<ImageIcon size={18} />} color="bg-white/5" iconColor="text-secondary-text"
               title="Add a shop photo" action="Shops with photos get more customers"
               onTap={() => navigate('/settings')} 
             />
@@ -1038,7 +1052,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         <div className="space-y-3">
           {products.length === 0 ? (
             <div className="bg-card-bg border-2 border-border border-dashed rounded-[24px] py-20 flex flex-col items-center text-center px-10">
-              <div className="w-16 h-16 rounded-3xl bg-ele-bg mb-6 flex items-center justify-center text-4xl opacity-30">📦</div>
+              <div className="w-16 h-16 rounded-3xl bg-ele-bg mb-6 flex items-center justify-center opacity-30">
+                <Package size={32} className="text-secondary-text" />
+              </div>
               <h4 className="font-bold text-lg mb-2">No products yet</h4>
               <p className="text-secondary-text text-sm leading-relaxed">Add your first product to start selling online with <span className="threadzw-wordmark text-[11px] font-mono leading-none">ThreadZW</span>.</p>
             </div>
@@ -1145,7 +1161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   }}
                   className="w-full p-3.5 bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.99] transition-all rounded-xl border border-white/[0.04] text-left flex items-start gap-3.5 cursor-pointer"
                 >
-                  <span className="text-xl leading-none">📝</span>
+                  <Edit size={16} className="text-neon mt-0.5 shrink-0" />
                   <div>
                     <div className="font-bold text-sm text-white">Record Sale</div>
                     <div className="text-white/40 text-xs mt-0.5 font-medium">Log a sale for this product manually</div>
@@ -1160,7 +1176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   }}
                   className="w-full p-3.5 bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.99] transition-all rounded-xl border border-white/[0.04] text-left flex items-start gap-3.5 cursor-pointer"
                 >
-                  <span className="text-xl leading-none">✏️</span>
+                  <Edit size={16} className="text-neon mt-0.5 shrink-0" />
                   <div>
                     <div className="font-bold text-sm text-white">Edit Product</div>
                     <div className="text-white/40 text-xs mt-0.5 font-medium">Update prices, stock types, or photos</div>
@@ -1172,7 +1188,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   onClick={() => handleToggleVisibility(selectedProduct)}
                   className="w-full p-3.5 bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.99] transition-all rounded-xl border border-white/[0.04] text-left flex items-start gap-3.5 cursor-pointer"
                 >
-                  <span className="text-xl leading-none">👁️</span>
+                  <Eye size={16} className="text-neon mt-0.5 shrink-0" />
                   <div>
                     <div className="font-bold text-sm text-white">Toggle Visibility</div>
                     <div className="text-white/40 text-xs mt-0.5 font-medium">
@@ -1191,7 +1207,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   }}
                   className="w-full p-3.5 bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.99] transition-all rounded-xl border border-white/[0.04] text-left flex items-start gap-3.5 cursor-pointer"
                 >
-                  <span className="text-xl leading-none">📦</span>
+                  <Package size={16} className="text-neon mt-0.5 shrink-0" />
                   <div>
                     <div className="font-bold text-sm text-white">Restock</div>
                     <div className="text-white/40 text-xs mt-0.5 font-medium">Update current available stock levels</div>
@@ -1203,7 +1219,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   onClick={() => setShowDeleteConfirm(true)}
                   className="w-full p-3.5 bg-white/[0.02] hover:bg-white/[0.06] active:scale-[0.99] transition-all rounded-xl border border-white/[0.04] text-left flex items-start gap-3.5 cursor-pointer"
                 >
-                  <span className="text-xl leading-none">🗑️</span>
+                  <Trash2 size={16} className="text-red-400 mt-0.5 shrink-0" />
                   <div>
                     <div className="font-bold text-sm text-red-400">Delete Product</div>
                     <div className="text-red-400/40 text-xs mt-0.5 font-medium">Remove product from storefront permanently</div>
@@ -1226,7 +1242,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               className="w-full max-w-sm bg-[#161616] border border-white/[0.08] p-6 rounded-2xl text-left shadow-2xl flex flex-col text-white"
             >
               <h3 className="font-extrabold text-[18px] text-white flex items-center gap-2 mb-1">
-                <span>📦</span> Restock Product
+                <Package size={18} className="text-neon" /> Restock Product
               </h3>
               <p className="text-white/40 text-[12px] font-semibold mb-6 truncate">{selectedProduct.name}</p>
 
@@ -1308,7 +1324,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               className="w-full max-w-sm bg-[#161616] border border-white/[0.08] p-6 rounded-2xl text-left shadow-2xl flex flex-col text-white"
             >
               <h3 className="font-extrabold text-[18px] text-red-550 flex items-center gap-2 mb-1">
-                <span>⚠️</span> Delete Product?
+                <AlertTriangle size={18} className="text-red-500" /> Delete Product?
               </h3>
               <p className="text-white/40 text-[12px] font-semibold mb-4 truncate">{selectedProduct.name}</p>
 
@@ -1515,7 +1531,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                       </span>
                       {stockAfter === 0 && (
                         <span className="text-red-500 text-[12px] font-black mt-1.5 flex items-center gap-1">
-                          ⚠️ This will mark size as sold out
+                          <AlertTriangle size={12} className="shrink-0 text-red-500" /> This will mark size as sold out
                         </span>
                       )}
                     </div>
@@ -1678,10 +1694,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                     {(['cash', 'ecocash', 'innbucks', 'whatsapp'] as const).map((method, idx) => {
                       const isSelected = paymentMethod === method;
                       const labelMap: Record<string, string> = {
-                        cash: '💵 Cash',
-                        ecocash: '📱 EcoCash',
-                        innbucks: '🏦 InnBucks',
-                        whatsapp: '💬 WhatsApp'
+                        cash: 'Cash',
+                        ecocash: 'EcoCash',
+                        innbucks: 'InnBucks',
+                        whatsapp: 'WhatsApp'
                       };
 
                       return (
@@ -1710,10 +1726,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                     {(['walk-in', 'whatsapp', 'instagram', 'other'] as const).map((channel, idx) => {
                       const isSelected = orderChannel === channel;
                       const labelMap: Record<string, string> = {
-                        'walk-in': '🚶 Walk-in',
-                        whatsapp: '💬 WhatsApp',
-                        instagram: '📸 Instagram',
-                        other: '🔗 Shop link'
+                        'walk-in': 'Walk-in',
+                        whatsapp: 'WhatsApp',
+                        instagram: 'Instagram',
+                        other: 'Shop link'
                       };
 
                       return (

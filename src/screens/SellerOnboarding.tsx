@@ -21,7 +21,7 @@ import { supabase } from '../lib/supabase';
 import { ZIMBABWE_TOWNS, SHOP_CATEGORIES } from '../constants';
 import { toast } from 'sonner';
 
-const WHATSAPP_NUMBER = "0776223144";
+const WHATSAPP_NUMBER = "0789113734";
 
 interface TradingHours {
   [key: string]: { isOpen: boolean; from: string; to: string };

@@ -2,10 +2,90 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Check, Camera, Image as ImageIcon, Search, MessageSquare, 
-  Eye, EyeOff, ShoppingBag, Smartphone, Store, Clock, Flame, Send
+  Eye, EyeOff, ShoppingBag, Smartphone, Store, Clock, Flame, Send,
+  ArrowRight, Lock, AlertCircle, TrendingUp, CheckCircle, Package,
+  DollarSign, BarChart2, MapPin, Tag, Trophy, AlertTriangle, RefreshCw, HelpCircle, Shirt, Briefcase, Gem, Sparkles
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+
+// Hero icon component
+interface HeroIconProps {
+  icon: React.ComponentType<any>;
+  color: string;
+}
+
+const HeroIcon: React.FC<HeroIconProps> = ({ icon: Icon, color }) => (
+  <div style={{
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    background: `rgba(${color}, 0.1)`,
+    border: `1.5px solid rgba(${color}, 0.2)`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 24px'
+  }}>
+    <Icon 
+      size={44} 
+      color={`rgba(${color}, 1)`}
+      strokeWidth={1.5}
+    />
+  </div>
+);
+
+// Official WhatsApp SVG icon component
+const WhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M17.472 14.382c-.297
+      -.149-1.758-.867-2.03-.967
+      -.273-.099-.471-.148-.67.15
+      -.197.297-.767.966-.94 1.164
+      -.173.199-.347.223-.644.075
+      -.297-.15-1.255-.463-2.39-1.475
+      -.883-.788-1.48-1.761-1.653
+      -2.059-.173-.297-.018-.458.13
+      -.606.134-.133.298-.347.446
+      -.52.149-.174.198-.298.298
+      -.497.099-.198.05-.371-.025
+      -.52-.075-.149-.669-1.612
+      -.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371
+      -.01-.57-.01-.198 0-.52.074
+      -.792.372-.272.297-1.04 
+      1.016-1.04 2.479 0 1.462
+      1.065 2.875 1.213 3.074.149
+      .198 2.096 3.2 5.077 4.487
+      .709.306 1.262.489 1.694.625
+      .712.227 1.36.195 1.871.118
+      .571-.085 1.758-.719 2.006
+      -1.413.248-.694.248-1.289
+      .173-1.413-.074-.124-.272
+      -.198-.57-.347m-5.421 7.403h
+      -.004a9.87 9.87 0 01-5.031
+      -1.378l-.361-.214-3.741.982
+      .998-3.648-.235-.374a9.86 9.86
+      0 01-1.51-5.26c.001-5.45 
+      4.436-9.884 9.888-9.884 2.64
+      0 5.122 1.03 6.988 2.898a9.825
+      9.825 0 012.893 6.994c-.003
+      5.45-4.437 9.884-9.885 
+      9.884m8.413-18.297A11.815 
+      11.815 0 0012.05 0C5.495 0 
+      .16 5.335.157 11.892c0 2.096
+      .547 4.142 1.588 5.945L.057 
+      24l6.305-1.654a11.882 11.882
+      0 005.683 1.448h.005c6.554 0
+      11.89-5.335 11.893-11.893a11.821
+      11.821 0 00-3.48-8.413z"/>
+  </svg>
+);
 
 export const generateSlug = (shopName: string): string => {
   return shopName
@@ -523,7 +603,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
-                    <span className="text-4xl">✅</span>
+                               <CheckCircle className="text-[#c8ff00] w-10 h-10" />
                     <span className="font-extrabold text-sm">Yes they can</span>
                   </button>
 
@@ -535,7 +615,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
-                    <span className="text-4xl">❌</span>
+                    <div className="w-10 h-10 rounded-full border-2 border-red-500/50 flex items-center justify-center text-red-500">
+                      <X size={20} />
+                    </div>
                     <span className="font-extrabold text-sm">No they can't</span>
                   </button>
                 </div>
@@ -546,7 +628,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-4 items-center"
                   >
-                    <span className="text-[40px] leading-none">🌙</span>
+                    <Clock size={28} className="text-[#c8ff00] shrink-0" />
                     <div className="text-left">
                       <h4 className="font-black text-white text-base">67% of browsing happens after 9pm</h4>
                       <p className="text-white/50 text-xs">While you sleep, sales disappear.</p>
@@ -578,7 +660,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
-                    <span className="text-4xl">🔍</span>
+                    <Search className="text-[#c8ff00] w-10 h-10" />
                     <span className="font-extrabold text-sm">Yes it does</span>
                   </button>
 
@@ -590,7 +672,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
-                    <span className="text-4xl">👻</span>
+                    <EyeOff className="text-[#FF6464] w-10 h-10" />
                     <span className="font-extrabold text-sm">I'm invisible</span>
                   </button>
                 </div>
@@ -602,16 +684,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     className="space-y-2 bg-white/5 border border-white/10 rounded-2xl p-4 text-center"
                   >
                     <div className="space-y-1.5 font-mono text-[11px] text-left">
-                      <div className="flex justify-between text-white/40 border-b border-white/5 pb-1 gap-2">
-                        <span>🟢 HarareFits</span>
-                        <span className="text-[#22C55E]">ONLINE</span>
+                      <div className="flex justify-between text-white/40 border-b border-white/5 pb-1 gap-2 items-center">
+                        <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> HarareFits</span>
+                        <span className="text-[#22C55E] font-bold">ONLINE</span>
                       </div>
-                      <div className="flex justify-between text-white/40 border-b border-white/5 pb-1 gap-2">
-                        <span>🟢 VintageZim</span>
-                        <span className="text-[#22C55E]">ONLINE</span>
+                      <div className="flex justify-between text-white/40 border-b border-white/5 pb-1 gap-2 items-center">
+                        <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> VintageZim</span>
+                        <span className="text-[#22C55E] font-bold">ONLINE</span>
                       </div>
-                      <div className="flex justify-between text-white border border-[#c8ff00]/30 bg-[#c8ff00]/5 p-1 rounded-md animate-pulse gap-2">
-                        <span className="font-bold text-white">🔴 [Your Store]</span>
+                      <div className="flex justify-between text-white border border-[#c8ff00]/30 bg-[#c8ff00]/5 p-1 rounded-md animate-pulse gap-2 items-center">
+                        <span className="font-bold text-white flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff4444' }} className="inline-block" /> [Your Store]</span>
                         <span className="text-[#EF4444] font-bold">NOT FOUND</span>
                       </div>
                     </div>
@@ -627,13 +709,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 5 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="flex-1 flex flex-col justify-center items-center text-center space-y-6">
-                  <motion.span 
+                  <motion.div 
                     animate={{ y: [0, -10, 0] }}
                     transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                    className="text-7xl block"
                   >
-                    💸
-                  </motion.span>
+                    <HeroIcon icon={DollarSign} color="255,68,68" />
+                  </motion.div>
 
                   <h1 className="text-4xl font-[950] tracking-tighter text-white">
                     23 customers
@@ -673,13 +754,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block mb-4">
                       PHASE 2: WAKE UP
                     </span>
-                    <motion.span 
+                    <motion.div 
                       animate={{ rotate: [-6, 6, -6, 6, 0] }}
                       transition={{ repeat: Infinity, duration: 0.5, repeatDelay: 1.5 }}
-                      className="text-7xl block mb-6"
                     >
-                      ⏰
-                    </motion.span>
+                      <HeroIcon icon={Clock} color="255,170,0" />
+                    </motion.div>
                   </div>
 
                   <div className="bg-white/5 border border-white/15 rounded-2xl p-5 space-y-3 shadow-lg">
@@ -761,9 +841,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     initial={{ opacity: 0, x: -10 }} 
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold"
+                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold font-sans"
                   >
-                    <span>🟢 KureStreetwear</span>
+                    <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> KureStreetwear</span>
                     <span className="text-white/60">just got an order</span>
                   </motion.div>
 
@@ -771,9 +851,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     initial={{ opacity: 0, x: -10 }} 
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 }}
-                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold"
+                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold font-sans"
                   >
-                    <span>🟢 HarareFits</span>
+                    <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> HarareFits</span>
                     <span className="text-white/60">just got a WhatsApp</span>
                   </motion.div>
 
@@ -781,9 +861,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     initial={{ opacity: 0, x: -10 }} 
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 1.4 }}
-                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold"
+                    className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold font-sans"
                   >
-                    <span>🟢 ZimDrip</span>
+                    <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> ZimDrip</span>
                     <span className="text-white/60">just got a new follower</span>
                   </motion.div>
 
@@ -791,9 +871,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     initial={{ opacity: 0, x: -10 }} 
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 2 }}
-                    className="bg-[#EF4444]/5 border border-[#c8ff00]/40 p-4 rounded-xl flex items-center justify-between text-xs font-bold animate-pulse"
+                    className="bg-[#EF4444]/5 border border-[#c8ff00]/40 p-4 rounded-xl flex items-center justify-between text-xs font-bold animate-pulse font-sans"
                   >
-                    <span className="text-white font-[900]">🔴 Your store</span>
+                    <span className="text-white font-[950] flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff4444' }} className="inline-block" /> Your store</span>
                     <span className="text-[#EF4444] font-black">still offline</span>
                   </motion.div>
                 </div>
@@ -874,7 +954,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="flex-1 flex flex-col justify-center space-y-8">
                   <div className="text-center">
-                    <span className="text-7xl block animate-pulse">💬</span>
+                    <HeroIcon icon={MessageCircle} color="200,255,0" />
                   </div>
 
                   {/* iOS Notification Card */}
@@ -885,12 +965,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-4 shadow-xl text-left"
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs">🟢</span>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" />
                       <span className="font-extrabold text-xs text-white">WhatsApp</span>
                       <span className="text-white/40 text-[10px] ml-auto">now</span>
                     </div>
                     <h4 className="font-black text-sm text-white">New order from Customer!</h4>
-                    <p className="text-white/70 text-xs mt-0.5">"Hi I want the cargo pants size M 🙏"</p>
+                    <p className="text-white/70 text-xs mt-0.5">"Hi I want the cargo pants size M"</p>
                   </motion.div>
 
                   <div className="text-center space-y-3">
@@ -927,7 +1007,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       return (
                         <div key={day} className="flex flex-col items-center flex-1 space-y-2 relative">
                           {idx === 2 && (
-                            <span className="absolute -top-7 text-xl animate-bounce">🔥</span>
+                            <span className="absolute -top-7 text-[#c8ff00] animate-bounce"><Flame size={20} /></span>
                           )}
                           <div style={{ height: heights[idx] }} className="w-6 bg-[#c8ff00] rounded-sm" />
                           <span className="font-mono text-[9px] text-white/40 font-bold">{day}</span>
@@ -936,9 +1016,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     })}
                   </div>
 
-                  <div className="flex gap-3 justify-center">
-                    <span className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold">📈 +47% avg revenue</span>
-                    <span className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold">🏆 Best seller tracked</span>
+                  <div className="flex gap-2 justify-center">
+                    <span className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold flex items-center gap-1"><TrendingUp size={14} className="text-[#c8ff00]" /> +47% avg revenue</span>
+                    <span className="bg-white/5 border border-[#c8ff00]/20 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold flex items-center gap-1"><Trophy size={14} className="text-[#c8ff00]" /> Best seller tracked</span>
                   </div>
                 </div>
 
@@ -987,8 +1067,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     </div>
                     
                     {/* Interactive chat block line */}
-                    <div className="absolute bottom-1.5 left-2 right-2 bg-[#25D366] py-1 text-center font-black text-[7px] text-white rounded-md uppercase">
-                      💬 Chat on WhatsApp
+                    <div className="absolute bottom-1.5 left-2 right-2 bg-[#25D366] py-1 flex items-center justify-center gap-1 font-black text-[7px] text-white rounded-md uppercase">
+                      <WhatsAppIcon size={8} /> Chat on WhatsApp
                     </div>
                   </div>
 
@@ -1081,16 +1161,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                   <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar">
                     {[
-                      { emoji: "👕", label: "Clothing" },
-                      { emoji: "👟", label: "Sneakers" },
-                      { emoji: "🧥", label: "Thrift & Vintage" },
-                      { emoji: "🔥", label: "Streetwear" },
-                      { emoji: "👗", label: "Women's Fashion" },
-                      { emoji: "👔", label: "Formal Wear" },
-                      { emoji: "💍", label: "Accessories" },
-                      { emoji: "📦", label: "Mixed" }
+                      { icon: Shirt, label: "Clothing" },
+                      { icon: ShoppingBag, label: "Sneakers" },
+                      { icon: Tag, label: "Thrift & Vintage" },
+                      { icon: Flame, label: "Streetwear" },
+                      { icon: Sparkles, label: "Women's Fashion" },
+                      { icon: Briefcase, label: "Formal Wear" },
+                      { icon: Gem, label: "Accessories" },
+                      { icon: Package, label: "Mixed" }
                     ].map(item => {
                       const isSelected = category === item.label;
+                      const IconComponent = item.icon;
                       return (
                         <button
                           key={item.label}
@@ -1101,7 +1182,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                               : 'bg-white/5 border-white/5 text-white/70 hover:border-white/10'
                           }`}
                         >
-                          <span className="text-2xl">{item.emoji}</span>
+                          <IconComponent size={20} className="text-[#c8ff00] shrink-0" />
                           <span>{item.label}</span>
                         </button>
                       );
@@ -1316,7 +1397,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       animate={{ scale: 1, opacity: 1 }}
                       className="bg-[#25D366] text-white p-3 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase"
                     >
-                      <span>💬 Orders go here: +263 {whatsapp}</span>
+                      <span className="flex items-center gap-1.5"><WhatsAppIcon size={14} /> Orders go here: +263 {whatsapp}</span>
                     </motion.div>
                   )}
                 </div>
@@ -1484,7 +1565,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex-1 flex flex-col justify-center space-y-4">
                   <div>
                     <h2 className="text-xl font-[900] tracking-tight text-white leading-none mb-1">
-                      🎉 Almost done!
+                      Almost done!
                     </h2>
                     <p className="text-white/40 text-xs font-bold">Verify before we build.</p>
                   </div>
@@ -1759,24 +1840,27 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <span className="text-[#c8ff00] text-[9px] font-black uppercase tracking-wider block">EVERYTHING INCLUDED:</span>
                     
                     {[
-                      { e: '🏪', t: 'Your own shop page', s: `Live at threadzw.com/shop/@${username || 'handle'}` },
-                      { e: '📦', t: 'Unlimited products', s: 'Upload as many as you need' },
-                      { e: '💬', t: 'WhatsApp orders', s: 'Customers contact you directly' },
-                      { e: '📊', t: 'Analytics', s: 'See views and top products' }
-                    ].map(row => (
-                      <div key={row.t} className="flex gap-3">
-                        <span className="text-lg shrink-0">{row.e}</span>
-                        <div>
-                          <h4 className="font-extrabold text-white leading-tight">{row.t}</h4>
-                          <p className="text-white/45 text-[10px] mt-0.5 leading-tight">{row.s}</p>
+                      { icon: Store, t: 'Your own shop page', s: `Live at threadzw.com/shop/@${username || 'handle'}` },
+                      { icon: Package, t: 'Unlimited products', s: 'Upload as many as you need' },
+                      { icon: MessageSquare, t: 'WhatsApp orders', s: 'Customers contact you directly' },
+                      { icon: BarChart2, t: 'Analytics', s: 'See views and top products' }
+                    ].map(row => {
+                      const IconComponent = row.icon;
+                      return (
+                        <div key={row.t} className="flex gap-3 items-start">
+                          <IconComponent size={16} className="text-[#c8ff00] shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-extrabold text-white leading-tight">{row.t}</h4>
+                            <p className="text-white/45 text-[10px] mt-0.5 leading-tight">{row.s}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Warning reminder card */}
                   <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 flex gap-3 text-left">
-                    <span className="text-lg shrink-0">🔔</span>
+                    <AlertCircle size={16} className="text-amber-500 shrink-0 mt-0.5" />
                     <p className="text-amber-500 text-[11px] leading-snug font-bold">
                       You will receive a WhatsApp reminder on day 3 before your trial ends.
                     </p>
@@ -1821,24 +1905,24 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     {/* EcoCash 1 */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2.5">
                       <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
-                        <span>📱</span> EcoCash App
+                        <Smartphone size={16} className="text-[#c8ff00]" /> EcoCash App
                       </h4>
                       <p className="text-white/50 text-[11px] leading-none">Open EcoCash &rarr; Send Money &rarr; Enter number &rarr; Send $5</p>
                       
-                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider">
-                        0776 223 144
+                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider font-sans">
+                        0789 113 734
                       </div>
                     </div>
 
                     {/* EcoCash 2 */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2.5">
                       <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
-                        <span>📲</span> EcoCash Super App
+                        <Smartphone size={16} className="text-[#c8ff00]" /> EcoCash Super App
                       </h4>
                       <p className="text-white/50 text-[11px] leading-none">Open Super App &rarr; Send Money &rarr; Enter number &rarr; Send $5</p>
                       
-                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider">
-                        0776 223 144
+                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider font-sans">
+                        0789 113 734
                       </div>
                     </div>
                   </div>
@@ -1868,8 +1952,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   <div className="text-center space-y-1">
-                    <span className="text-5xl block animate-pulse">💬</span>
-                    <h2 className="text-xl font-[950] tracking-tight leading-none text-white">
+                    <HeroIcon icon={MessageSquare} color="37,211,102" />
+                    <h2 className="text-xl font-[950] tracking-tight leading-none text-white pt-2">
                       We send your unlock
                     </h2>
                     <h2 className="text-xl font-[950] tracking-tight leading-none text-white">
@@ -1882,31 +1966,31 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                   {/* Step explanations */}
                   <div className="space-y-3 text-left">
-                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs">
-                      <span className="text-lg shrink-0 font-bold">1️⃣</span>
+                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs items-center">
+                      <div className="w-5 h-5 rounded-full bg-[#c8ff00] text-black text-[10px] font-black flex items-center justify-center shrink-0">1</div>
                       <div>
                         <h4 className="font-extrabold leading-none">Pay via EcoCash</h4>
-                        <p className="text-white/45 text-[10px] mt-0.5 leading-none">Send $5 to 0776 223 144</p>
+                        <p className="text-white/45 text-[10px] mt-0.5 leading-none">Send $5 to 0789 113 734</p>
                       </div>
                     </div>
 
-                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs">
-                      <span className="text-lg shrink-0 font-bold">2️⃣</span>
+                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs items-center">
+                      <div className="w-5 h-5 rounded-full bg-[#c8ff00] text-black text-[10px] font-black flex items-center justify-center shrink-0">2</div>
                       <div>
                         <h4 className="font-extrabold leading-none">We verify your payment</h4>
                         <p className="text-white/45 text-[10px] mt-0.5 leading-none">Usually within 2-4 hours during 8am-8pm ZIM time</p>
                       </div>
                     </div>
 
-                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs">
-                      <span className="text-lg shrink-0 font-bold">3️⃣</span>
+                    <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs items-start">
+                      <div className="w-5 h-5 rounded-full bg-[#c8ff00] text-black text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">3</div>
                       <div className="flex-1">
                         <h4 className="font-extrabold leading-none">Code arrives on WhatsApp</h4>
                         <p className="text-white/45 text-[10px] mt-0.5 leading-none">A 6-character code like this:</p>
                         
                         {/* Mock WhatsApp screen */}
                         <div className="bg-white/5 p-3 rounded-lg border border-white/5 mt-2.5 space-y-1 scale-95 origin-left">
-                          <span className="text-[10px] font-black uppercase text-[#25D366]">THREADZW 🎉</span>
+                          <span className="text-[10px] font-black uppercase text-[#25D366]">THREADZW</span>
                           <span className="text-[9px] text-white/50 block leading-none">Your unlock code is:</span>
                           <span className="font-mono text-base font-black text-[#c8ff00] leading-none tracking-widest block">7823KF</span>
                         </div>
@@ -1935,7 +2019,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   <div className="text-center space-y-1">
-                    <span className="text-6xl block">🔓</span>
+                    <HeroIcon icon={Unlock} color="200,255,0" />
                     <h2 className="text-2xl font-[950] tracking-tight leading-none text-white pt-2">
                       You're in.
                     </h2>

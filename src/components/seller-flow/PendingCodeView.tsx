@@ -41,7 +41,7 @@ export const PendingCodeView: React.FC<PendingCodeViewProps> = ({ myShop, onActi
         </button>
         
         <button 
-          onClick={() => window.open('https://wa.me/263776223144', '_blank')}
+          onClick={() => window.open('https://wa.me/263789113734', '_blank')}
           className="w-full h-14 bg-[#111] border border-[#222] text-[#888] font-bold rounded-full text-[15px]"
         >
           Message Admin on WhatsApp

@@ -119,7 +119,7 @@ export const CodeEntryView: React.FC<CodeEntryViewProps> = ({ myShop, onActivate
             </button>
 
             <button 
-              onClick={() => window.open('https://wa.me/263776223144', '_blank')}
+              onClick={() => window.open('https://wa.me/263789113734', '_blank')}
               className="w-full text-zinc-600 text-[10px] font-black uppercase tracking-widest italic hover:text-[#C6FF00] transition-colors flex items-center justify-center gap-2"
             >
                <MessageCircle size={14} /> Haven't received my code

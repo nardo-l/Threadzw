@@ -380,7 +380,7 @@ export const AdminLeads: React.FC = () => {
         console.warn("Could not update local storage:", e);
       }
 
-      toast.success(`Verified claim and unlocked ${targetShop.name}! 🏪✓`);
+      toast.success(`Verified claim and unlocked ${targetShop.name}!`);
       fetchShopsAndClaims();
     } catch (err: any) {
       console.error(err);
@@ -602,7 +602,7 @@ export const AdminLeads: React.FC = () => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold text-orange-500 uppercase flex items-center gap-2">
-                  ⚠️ Overdue Shops ({getOverdueShops().length})
+                  <AlertTriangle size={18} className="text-orange-500 shrink-0" /> Overdue Shops ({getOverdueShops().length})
                 </h2>
                 <button 
                   onClick={fetchShopsAndClaims}
@@ -614,7 +614,7 @@ export const AdminLeads: React.FC = () => {
 
               {getOverdueShops().length === 0 ? (
                 <div className="bg-[#111] border border-[#222] rounded-3xl p-8 text-center text-[#888] text-sm">
-                  No shops are currently overdue by &gt; 3 days. 🎉
+                  No shops are currently overdue by &gt; 3 days.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -630,7 +630,7 @@ export const AdminLeads: React.FC = () => {
                             {shop.logo_url ? (
                               <img src={shop.logo_url} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
                             ) : (
-                              <span className="text-xl">🏪</span>
+                            <Store size={22} className="text-stone-400 shrink-0" />
                             )}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -670,7 +670,7 @@ export const AdminLeads: React.FC = () => {
                             }}
                             className="w-full h-11 bg-[#c8ff00] text-black hover:bg-[#b0df00] rounded-xl text-xs uppercase tracking-wider font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#c8ff00]/10"
                           >
-                            <span>📱 WhatsApp Owner</span>
+                            <span>WhatsApp Owner</span>
                           </button>
 
                           <div className="flex gap-2">
@@ -699,7 +699,7 @@ export const AdminLeads: React.FC = () => {
             {/* Grid 2: Manually Locked Shops */}
             <div className="space-y-4 pt-4">
               <h2 className="text-lg font-bold text-red-500 uppercase flex items-center gap-2">
-                🔒 Manually Locked Shops ({getManuallyLockedShops().length})
+                <Lock size={18} className="text-red-500 shrink-0" /> Manually Locked Shops ({getManuallyLockedShops().length})
               </h2>
 
               {getManuallyLockedShops().length === 0 ? (
@@ -715,7 +715,7 @@ export const AdminLeads: React.FC = () => {
                           {shop.logo_url ? (
                             <img src={shop.logo_url} className="w-full h-full object-cover" alt="" referrerPolicy="no-referrer" />
                           ) : (
-                            <span className="text-xl">🏪</span>
+                            <Store size={22} className="text-stone-400 shrink-0" />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -981,7 +981,7 @@ export const AdminLeads: React.FC = () => {
                       onClick={() => updateStatus(selectedLead.id, 'built')}
                       className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold text-xs uppercase"
                     >
-                      Mark as Built 🏪
+                      Mark as Built
                     </button>
                   )}
                 </div>

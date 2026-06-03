@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Check, Lock, Smartphone, 
-  AlertCircle, Clock, ArrowRight, Eye, EyeOff, X, HelpCircle, AlertTriangle
+  AlertCircle, Clock, ArrowRight, Eye, EyeOff, X, HelpCircle, AlertTriangle,
+  Gift, Lightbulb, CreditCard, Zap
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -298,7 +299,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
         id: activeUserId,
         display_name: fullName.trim(),
         email: signupEmail.trim().toLowerCase(),
-        whatsapp_number: '0776223144',
+        whatsapp_number: '0789113734',
         onboarding_complete: false // Trigger overlay on dashboard
       }, { onConflict: 'id' });
 
@@ -323,7 +324,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
         slug: existingShop?.slug || generatedSlug,
         categories: shopData?.category ? [shopData.category] : ['Clothing'],
         location: shopData?.town || 'Harare (Online)',
-        whatsapp: shopData?.whatsapp || '0776223144',
+        whatsapp: shopData?.whatsapp || '0789113734',
         instagram: shopData?.instagram || null,
         description: shopData?.description || 'Brand new ThreadZW clothing brand',
         logo_url: null,
@@ -410,7 +411,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
             plan: 'standard',
             amount: 5,
             status: 'pending',
-            receiving_number: '0776223144'
+            receiving_number: '0789113734'
           });
 
         if (paymentError) throw paymentError;
@@ -563,13 +564,13 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
             >
               <div className="flex justify-center mt-4">
                 <div className="relative">
-                  <span className="text-7xl block animate-bounce" style={{ animationDuration: '3s' }}>🎁</span>
+                  <span className="leading-none animate-bounce flex items-center justify-center p-4 bg-[#c8ff00]/10 rounded-3xl border border-[#c8ff00]/20"><Gift size={44} className="text-[#c8ff00]" /></span>
                   <div className="absolute inset-0 bg-[#c8ff00]/25 blur-3xl rounded-full scale-125 z-[-1]" />
                 </div>
               </div>
 
               <h2 className="text-white font-black text-4xl tracking-tight text-center mt-8 leading-[1.1]">
-                Your shop is ready. 🎉
+                Your shop is ready.
               </h2>
               
               <p className="text-[#A1A1AA] text-base leading-relaxed text-center mt-4 max-w-[300px] mx-auto">
@@ -589,27 +590,30 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               className="flex-1 flex flex-col"
             >
               <div className="text-center mt-4">
-                <span className="text-7xl block">💡</span>
+                <span className="leading-none flex items-center justify-center w-16 h-16 mx-auto bg-[#c8ff00]/10 rounded-full border border-[#c8ff00]/20"><Lightbulb size={28} className="text-[#c8ff00]" /></span>
               </div>
 
-              <h2 className="text-white font-black text-3.5xl tracking-tight text-center mt-6">
+              <h2 className="text-white font-black text-4xl tracking-tight text-center mt-6">
                 Here's how ThreadZW works
               </h2>
 
               <div className="space-y-3 mt-8">
                 {[
-                  { emoji: "🆓", title: "3 days free", desc: "Explore everything. No payment now." },
-                  { emoji: "💸", title: "Then $5/month", desc: "Cheaper than a single flyer print run." },
-                  { emoji: "📲", title: "Pay via EcoCash or InnBucks", desc: "No card needed. Ever." }
-                ].map((card, idx) => (
-                  <div key={idx} className="bg-[#111] border border-white/5 rounded-[10px] p-5 flex gap-4 items-start">
-                    <span className="text-3xl leading-none shrink-0">{card.emoji}</span>
-                    <div className="text-left">
-                      <h4 className="text-white font-black text-base leading-tight">{card.title}</h4>
-                      <p className="text-[#A1A1AA] text-sm mt-1 leading-normal">{card.desc}</p>
+                  { icon: Gift, title: "3 days free", desc: "Explore everything. No payment now." },
+                  { icon: Zap, title: "Then $5/month", desc: "Cheaper than a single flyer print run." },
+                  { icon: Smartphone, title: "Pay via EcoCash or InnBucks", desc: "No card needed. Ever." }
+                ].map((card, idx) => {
+                  const IconComponent = card.icon;
+                  return (
+                    <div key={idx} className="bg-[#111] border border-white/5 rounded-[10px] p-5 flex gap-4 items-start">
+                      <IconComponent size={24} className="text-[#c8ff00] shrink-0" />
+                      <div className="text-left">
+                        <h4 className="text-white font-black text-base leading-tight">{card.title}</h4>
+                        <p className="text-[#A1A1AA] text-sm mt-1 leading-normal">{card.desc}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           )}
@@ -625,7 +629,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               className="flex-1 flex flex-col"
             >
               <div className="text-center mt-4">
-                <span className="text-7xl block">💳</span>
+                <span className="leading-none flex items-center justify-center w-16 h-16 mx-auto bg-[#c8ff00]/10 rounded-full border border-[#c8ff00]/20"><CreditCard size={28} className="text-[#c8ff00]" /></span>
               </div>
 
               <h2 className="text-white font-black text-3.5xl tracking-tight text-center mt-6 leading-tight">
@@ -639,10 +643,10 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
 
                 <div className="space-y-6">
                   {[
-                    { num: "1", title: "Send $5 to EcoCash +263776223144", detail: "Or InnBucks using the same number" },
-                    { num: "2", title: "Tap \"I've Paid\" in the app", detail: "Reference your payment easily" },
-                    { num: "3", title: "We send unlock code", detail: "A 6-character code received on WhatsApp" },
-                    { num: "4", title: "Enter code to activate", detail: "Shop unlocks instantly" }
+                    { num: "1", title: "Send $5 to EcoCash +263789113734", detail: "Or InnBucks using the same number" },
+                    { num: "2", title: "Submit Transaction Claim Form", detail: "Log your payment in the application" },
+                    { num: "3", title: "Automated WhatsApp Link", detail: "Submit details in one-click to the team" },
+                    { num: "4", title: "Direct Admin Activation", detail: "System unlocks your shopfront dynamically" }
                   ].map((step, idx) => (
                     <div key={idx} className="flex gap-4 items-start relative z-10">
                       <div className="w-11 h-11 bg-[#111] border border-white/5 rounded-full flex items-[#0B0B0B] items-center justify-center flex-shrink-0 text-[#c8ff00] font-black text-base">
@@ -677,10 +681,10 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                 currentSessionUser ? (
                   <>
                     <div className="text-center mt-4">
-                      <span className="text-7xl block">🎉</span>
+                      <span className="leading-none flex items-center justify-center w-16 h-16 mx-auto bg-green-500/10 rounded-full border border-green-500/20"><Check size={32} className="text-green-400" /></span>
                     </div>
 
-                    <h2 className="text-white font-black text-3.5xl tracking-tight leading-tight mt-6 text-center">
+                    <h2 className="text-white font-black text-3.5xl tracking-tight leading-tight mt-6 text-center animate-pulse">
                       Your Account is Secured
                     </h2>
                     
@@ -689,7 +693,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                     </p>
 
                     <div className="bg-[#111] border border-white/5 rounded-[10px] p-5 mt-4 flex gap-4 items-start">
-                      <span className="text-3xl leading-none shrink-0">🚀</span>
+                      <Zap size={24} className="text-[#c8ff00] shrink-0 mt-0.5" />
                       <div className="text-left">
                         <h4 className="text-white font-black text-base leading-tight">Ready to Sell</h4>
                         <p className="text-[#A1A1AA] text-sm mt-1 leading-normal">Your custom store domain is locked and live database records are ready.</p>
@@ -871,7 +875,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                     </p>
                     <div className="bg-[#0B0B0B] border border-[#C6FF00]/60 rounded-lg py-1.5 px-3 max-w-max">
                       <span className="text-[#C6FF00] font-mono font-bold text-base select-all">
-                        0776 223 144
+                        0789 113 734
                       </span>
                     </div>
                   </div>

@@ -243,3 +243,84 @@ div.rounded-full, img.rounded-full {
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
+
+/* --- GLOBAL TRANSITIONS & TYPOGRAPHY OVERRIDES --- */
+
+/* Remove italic everywhere */
+* {
+  font-style: normal !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fix placeholder italic */
+::placeholder {
+  font-style: normal;
+  color: rgba(255,255,255,0.25);
+}
+
+/* Smooth all interactive elements */
+button, a, [role="button"], 
+[role="tab"], input, select {
+  transition: 
+    transform 0.15s ease,
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+/* Press effect on all buttons */
+button:active,
+[role="button"]:active {
+  transform: scale(0.97);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Remove tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Smooth image loading */
+img {
+  transition: opacity 0.3s ease;
+}
+
+img[loading] {
+  opacity: 0;
+}
+
+img.loaded {
+  opacity: 1;
+}
+
+/* Success Checkmark Entrance Animation */
+@keyframes checkIn {
+  0% { 
+    transform: scale(0); 
+    opacity: 0; 
+  }
+  60% { 
+    transform: scale(1.15); 
+  }
+  100% { 
+    transform: scale(1); 
+    opacity: 1; 
+  }
+}
+.animate-checkIn {
+  animation: checkIn 0.4s ease-out forwards;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-smooth {
+  animation: spin 0.7s linear infinite;
+}

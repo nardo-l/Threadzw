@@ -15,7 +15,7 @@ export const SUBSCRIPTION_DAYS = 28;
 export const SUBSCRIPTION_PRICE = 5;
 
 export interface ShopStatusResult {
-  status: 'trial' | 'active' | 'pending_verification' | 'locked';
+  status: 'trial' | 'active' | 'pending_verification' | 'expired';
   isLive: boolean;
   label: string;
   daysLeft: number;
@@ -55,7 +55,7 @@ export const parseDate = (dateVal: any): Date | null => {
 export const getShopStatus = (shop: any, claims?: any[]): ShopStatusResult => {
   if (!shop) {
     return {
-      status: 'locked',
+      status: 'expired',
       isLive: false,
       label: 'Locked',
       daysLeft: 0
@@ -64,17 +64,19 @@ export const getShopStatus = (shop: any, claims?: any[]): ShopStatusResult => {
 
   const now = new Date();
 
-  // 1. Awaiting code entry (Admin approved, code emitted)
-  if (shop.subscription_status === 'awaiting_code_entry') {
+  // 1. Check direct active field or explicit active status (Primary Source of truth)
+  if (shop.subscription_status === 'active') {
+    const parsedSubEnd = parseDate(shop.subscription_end || shop.subscription_ends_at || shop.current_period_end);
+    const daysLeft = parsedSubEnd ? Math.max(0, Math.ceil((parsedSubEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 28;
     return {
-      status: 'locked',
-      isLive: false,
-      label: 'Awaiting Code Entry',
-      daysLeft: 0
+      status: 'active',
+      isLive: true,
+      label: 'Active',
+      daysLeft
     };
   }
 
-  // 1.5. Active paid subscription
+  // 1.5. Explicit active by expiration dates
   const parsedSubEnd = parseDate(shop.subscription_end || shop.subscription_ends_at || shop.current_period_end);
   if (parsedSubEnd && parsedSubEnd > now) {
     return {
@@ -87,7 +89,20 @@ export const getShopStatus = (shop: any, claims?: any[]): ShopStatusResult => {
     };
   }
 
-  // 2. Free trial running
+  // 2. Pending payment verification check
+  const pendingClaim = claims?.find(c => c.status === 'pending');
+  if (shop.subscription_status === 'pending_verification' || pendingClaim) {
+    return {
+      status: 'pending_verification',
+      isLive: true, // Let them navigate while pending, or restrict gently depending on client configuration
+      label: 'Awaiting Verification',
+      claimId: pendingClaim?.id,
+      submittedAt: pendingClaim?.submitted_at || shop.updated_at,
+      daysLeft: 0
+    };
+  }
+
+  // 3. Free trial state running
   let trialEndVal = shop.trial_end || shop.trial_ends_at;
   const trialStart = shop.trial_started_at || shop.trial_start || shop.created_at;
 
@@ -122,24 +137,11 @@ export const getShopStatus = (shop: any, claims?: any[]): ShopStatusResult => {
     };
   }
 
-  // 3. Pending payment verification
-  const pendingClaim = claims?.find(c => c.status === 'pending');
-  if (pendingClaim || shop.subscription_status === 'pending_verification') {
-    return {
-      status: 'pending_verification',
-      isLive: true,
-      label: 'Awaiting Verification',
-      claimId: pendingClaim?.id,
-      submittedAt: pendingClaim?.submitted_at,
-      daysLeft: 0
-    };
-  }
-
-  // 4. Locked — trial expired, no subscription, no pending claim
+  // 4. Trial expired, no active sub, no pending payment verification -> Expired (Locked out)
   return {
-    status: 'locked',
+    status: 'expired',
     isLive: false,
-    label: 'Locked',
+    label: 'Expired',
     daysLeft: 0
   };
 };

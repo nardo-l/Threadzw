@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Check, Loader2 } from 'lucide-react';
+import { X, Check, Loader2, Trophy } from 'lucide-react';
 import { useInventory } from '../../context/InventoryContext';
 
 export const BestDresserEntry: React.FC = () => {
@@ -49,7 +49,9 @@ export const BestDresserEntry: React.FC = () => {
       <div className="px-5 py-6">
         {/* Info Card */}
         <div className="rounded-[16px] bg-linear-to-br from-[#9B27AF] to-[#FF2D78] p-5 mb-8">
-           <h3 className="text-white font-bold text-[16px]">🏆 April 2026 Contest</h3>
+           <h3 className="text-white font-bold text-[16px] flex items-center gap-1.5 leading-none">
+              <Trophy size={16} className="text-[#C6FF00]" /> April 2026 Contest
+           </h3>
            <p className="text-white/70 text-[13px] mt-1">Submissions close in 17 days</p>
            <div className="mt-4 flex items-center gap-1.5">
              <span className="text-[#f59e0b] font-bold text-[14px]">$30 cash prize</span>
@@ -134,7 +136,7 @@ export const BestDresserEntry: React.FC = () => {
                <div className="w-14 h-14 bg-linear-to-br from-[#9B27AF] to-[#FF2D78] rounded-full flex items-center justify-center mb-6">
                   <Check className="text-white" size={32} />
                </div>
-               <h2 className="text-white font-bold text-[22px]">Entry Submitted! 🎉</h2>
+               <h2 className="text-white font-bold text-[22px]">Entry Submitted!</h2>
                <p className="text-[#888] text-[13px] mt-2 max-w-[280px]">
                   Your entry is under review. We'll notify you within 48 hours.
                </p>
