@@ -92,13 +92,13 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
         }
         .eq-bar {
           width: 3px;
-          background: #FF2D78;
+          background: #C6FF00;
           border-radius: 1px;
           animation: eqBar 0.5s ease-in-out infinite;
         }
         .waveform-bar {
           width: 2px;
-          background: #FF2D78;
+          background: #C6FF00;
           border-radius: 1px;
           transition: height 0.2s ease;
         }
@@ -158,7 +158,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
               className={`
                 h-2 rounded-full transition-all duration-300
                 ${i === currentIndex 
-                  ? 'w-6 bg-[#FF2D78]' 
+                  ? 'w-6 bg-[#C6FF00]' 
                   : q.userAnswer 
                     ? q.isCorrect ? 'w-2 bg-green-500' : 'w-2 bg-red-500'
                     : 'w-2 bg-zinc-800'}
@@ -170,7 +170,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
         {/* Central Card */}
         <div className="mx-6 mt-6 rounded-[32px] bg-[#121212] border border-white/5 p-6 shadow-2xl relative overflow-hidden flex-shrink-0 min-h-[340px]">
           {/* Subtle Pink Glow */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#FF2D78]/10 blur-[60px] rounded-full" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#C6FF00]/10 blur-[60px] rounded-full" />
           
           <div className="relative z-10 flex flex-col items-center w-full">
             {/* Image Area - Robust Aspect Ratio */}
@@ -232,7 +232,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
                 return (
                   <div 
                     key={`waveform-bar-${i}`} 
-                    className={`w-[2px] rounded-full transition-all duration-200 ${isActive ? 'bg-[#FF2D78]' : 'bg-white/10'}`}
+                    className={`w-[2px] rounded-full transition-all duration-200 ${isActive ? 'bg-[#C6FF00]' : 'bg-white/10'}`}
                     style={{ height: `${2 + randomHeight}px` }}
                   />
                 );
@@ -268,7 +268,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
                     </span>
                   </div>
                   <h4 className="text-white text-2xl font-black tracking-tighter leading-none truncate w-full px-2">{currentQuestion.correctTrack?.title}</h4>
-                  <p className="text-[#FF2D78] text-sm font-bold mt-1 uppercase tracking-wider">{currentQuestion.correctTrack?.artist}</p>
+                  <p className="text-[#C6FF00] text-sm font-bold mt-1 uppercase tracking-wider">{currentQuestion.correctTrack?.artist}</p>
                 </motion.div>
               )}
             </div>
@@ -292,7 +292,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
                   w-full py-4.5 rounded-full flex items-center justify-center gap-3 font-black text-lg transition-all relative overflow-hidden
                   ${isPlaying 
                     ? 'bg-zinc-800 text-zinc-500' 
-                    : 'bg-gradient-to-r from-[#FF2D78] to-[#922DFF] text-white'
+                    : 'bg-gradient-to-r from-[#C6FF00] to-[#922DFF] text-white'
                   }
                 `}
               >
@@ -350,7 +350,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
               <motion.span 
                 animate={{ opacity: [0.3, 1, 0.3] }}
                 transition={{ duration: 2, repeat: Infinity }}
-                className="text-[#FF2D78] text-[10px] font-bold uppercase tracking-wider"
+                className="text-[#C6FF00] text-[10px] font-bold uppercase tracking-wider"
               >
                 Listen first
               </motion.span>
@@ -402,7 +402,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
                     w-10 h-10 rounded-full flex items-center justify-center transition-all border border-white/5
                     ${state === 'correct' ? 'bg-green-500 text-white' : ''}
                     ${state === 'wrong' ? 'bg-red-500 text-white' : ''}
-                    ${state === 'default' ? 'bg-zinc-800 text-zinc-400 group-hover:bg-[#FF2D78] group-hover:text-white group-hover:scale-110' : ''}
+                    ${state === 'default' ? 'bg-zinc-800 text-zinc-400 group-hover:bg-[#C6FF00] group-hover:text-white group-hover:scale-110' : ''}
                     ${state === 'fade' ? 'bg-transparent text-zinc-600' : ''}
                   `}>
                     {state === 'correct' ? <Check size={18} strokeWidth={3} /> : 
@@ -443,7 +443,7 @@ export const MusifyQuiz: React.FC<MusifyQuizProps> = ({
                 animate={{ y: 0, opacity: 1 }}
                 className="mt-6 text-center"
               >
-                <p className="text-[#FF2D78] font-black text-3xl italic tracking-tighter uppercase drop-shadow-[0_0_10px_rgba(255,45,120,0.4)]">
+                <p className="text-[#C6FF00] font-black text-3xl italic tracking-tighter uppercase drop-shadow-[0_0_10px_rgba(255,45,120,0.4)]">
                   🔥 {streakCelebration} IN A ROW!
                 </p>
                 <p className="text-white text-sm font-bold uppercase tracking-widest mt-1">Certified Fan</p>

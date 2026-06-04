@@ -61,7 +61,7 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
           <ArrowLeft size={20} className="text-white" />
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-[#FF2D78] font-mono text-[18px] font-bold tracking-[-1px]">musify</span>
+          <span className="text-[#C6FF00] font-mono text-[18px] font-bold tracking-[-1px]">musify</span>
         </div>
       </div>
 
@@ -93,9 +93,9 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
       <div className="mt-8 px-6">
         <div className={`
           flex items-center h-14 bg-[#111] border-[1.5px] rounded-2xl px-4 transition-all
-          ${searchQuery ? 'border-[#FF2D78] shadow-[0_0_0_3px_rgba(255,45,120,0.1)]' : 'border-[#222]'}
+          ${searchQuery ? 'border-[#C6FF00] shadow-[0_0_0_3px_rgba(255,45,120,0.1)]' : 'border-[#222]'}
         `}>
-          <Search size={18} className="text-[#FF2D78] mr-3" />
+          <Search size={18} className="text-[#C6FF00] mr-3" />
           <input 
             type="text"
             value={searchQuery}
@@ -125,7 +125,7 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
             className={`
               flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all border
               ${musifyMode === 'shell' 
-                ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white border-transparent shadow-lg shadow-[#FF2D78]/20' 
+                ? 'bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white border-transparent shadow-lg shadow-[#C6FF00]/20' 
                 : 'bg-[#111] border-[#222] text-[#888]'}
             `}
           >
@@ -138,7 +138,7 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
             className={`
               flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-xs transition-all border
               ${musifyMode === 'native' 
-                ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white border-transparent shadow-lg shadow-[#FF2D78]/20' 
+                ? 'bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white border-transparent shadow-lg shadow-[#C6FF00]/20' 
                 : 'bg-[#111] border-[#222] text-[#888]'}
             `}
           >
@@ -165,7 +165,7 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
           className={`
             w-full h-[52px] rounded-full flex items-center justify-center font-bold text-[15px] transition-all
             ${searchQuery.trim() 
-              ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white' 
+              ? 'bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white' 
               : 'bg-[#1a1a1a] text-[#555]'}
           `}
         >
@@ -175,16 +175,16 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
         {musifyMode === 'shell' && (
           <button
             onClick={openMuzifyHome}
-            className="w-full mt-3 bg-[#111] border-[1.5px] border-[#FF2D78] rounded-[14px] p-4 flex items-center gap-3.5 group active:scale-[0.98] transition-all"
+            className="w-full mt-3 bg-[#111] border-[1.5px] border-[#C6FF00] rounded-[14px] p-4 flex items-center gap-3.5 group active:scale-[0.98] transition-all"
           >
-            <div className="w-11 h-11 rounded-full bg-linear-to-br from-[#9B27AF] to-[#FF2D78] flex items-center justify-center text-xl shadow-lg shadow-[#FF2D78]/20 flex-shrink-0">
+            <div className="w-11 h-11 rounded-full bg-linear-to-br from-[#9B27AF] to-[#C6FF00] flex items-center justify-center text-xl shadow-lg shadow-[#C6FF00]/20 flex-shrink-0">
               🎵
             </div>
             <div className="flex-1 text-left ml-0.5">
               <p className="text-white font-bold text-[15px]">Open Muzify</p>
               <p className="text-[#888] text-[12px] mt-0.5">Browse all artists & quizzes</p>
             </div>
-            <div className="text-[#FF2D78] text-xl font-bold group-hover:translate-x-1 transition-transform">
+            <div className="text-[#C6FF00] text-xl font-bold group-hover:translate-x-1 transition-transform">
               →
             </div>
           </button>
@@ -204,7 +204,7 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
               }}
               className="flex items-center gap-2 bg-[#111] border border-[#222] rounded-full py-2 px-4 whitespace-nowrap active:scale-95 transition-transform"
             >
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#FF2D78] to-[#9B27AF] flex items-center justify-center text-white text-[13px] font-bold">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#C6FF00] to-[#9B27AF] flex items-center justify-center text-white text-[13px] font-bold">
                 {artist[0]}
               </div>
               <span className="text-white text-[13px] font-bold">{artist}</span>
@@ -231,7 +231,7 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
                   {item.artist_image ? (
                     <img src={item.artist_image} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#FF2D78] font-bold text-lg">
+                    <div className="w-full h-full flex items-center justify-center text-[#C6FF00] font-bold text-lg">
                       {item.artist_name[0]}
                     </div>
                   )}
@@ -240,7 +240,7 @@ export const MusifyHome: React.FC<MusifyHomeProps> = ({
                   <p className="text-white text-[14px] font-bold">{item.artist_name}</p>
                   <p className="text-[#888] text-[12px] mt-0.5">Best: {item.score_percentage}%</p>
                 </div>
-                <div className="text-[#FF2D78] text-[20px] font-bold group-hover:translate-x-1 transition-transform">
+                <div className="text-[#C6FF00] text-[20px] font-bold group-hover:translate-x-1 transition-transform">
                   ›
                 </div>
               </button>

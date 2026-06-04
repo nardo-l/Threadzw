@@ -249,7 +249,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
         <button 
           onClick={handleSave}
           disabled={loading}
-          className="bg-[#FF2D78] text-white px-4 py-1.5 rounded-full font-bold text-[13px] shadow-lg disabled:opacity-50"
+          className="bg-[#C6FF00] text-white px-4 py-1.5 rounded-full font-bold text-[13px] shadow-lg disabled:opacity-50"
         >
           {loading ? '...' : 'Save'}
         </button>
@@ -292,7 +292,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
           <div className="relative flex justify-center -mt-10">
             <div 
               onClick={() => avatarInputRef.current?.click()}
-              className="w-20 h-20 rounded-full border-[3px] border-black overflow-hidden relative cursor-pointer bg-gradient-to-tr from-[#9B27AF] to-[#FF2D78] flex items-center justify-center shadow-xl"
+              className="w-20 h-20 rounded-full border-[3px] border-black overflow-hidden relative cursor-pointer bg-gradient-to-tr from-[#9B27AF] to-[#C6FF00] flex items-center justify-center shadow-xl"
             >
               {avatarPreview ? (
                 <img 
@@ -304,7 +304,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                 <Plus className="text-white w-7 h-7" strokeWidth={3} />
               )}
               
-              <div className="absolute bottom-0 right-0 w-6 h-6 bg-[#FF2D78] rounded-full border-2 border-black flex items-center justify-center">
+              <div className="absolute bottom-0 right-0 w-6 h-6 bg-[#C6FF00] rounded-full border-2 border-black flex items-center justify-center">
                 <Edit2 className="text-white w-2.5 h-2.5" />
               </div>
               
@@ -330,7 +330,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#FF2D78] outline-none"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#C6FF00] outline-none"
                 />
               </div>
 
@@ -341,7 +341,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="e.g. Premium sneakers in Mutare"
-                  className="w-full bg-[#111] border border-[#222] rounded-[12px] p-4 text-[15px] focus:border-[#FF2D78] outline-none resize-none"
+                  className="w-full bg-[#111] border border-[#222] rounded-[12px] p-4 text-[15px] focus:border-[#C6FF00] outline-none resize-none"
                 />
               </div>
             </div>
@@ -356,7 +356,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                 <button 
                   type="button"
                   onClick={() => setShowTownPicker(true)}
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] flex items-center justify-between text-left focus:border-[#FF2D78] outline-none"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] flex items-center justify-between text-left focus:border-[#C6FF00] outline-none"
                 >
                   <span className={town ? 'text-white' : 'text-[#444]'}>{town || 'Select Town'}</span>
                   <Edit2 size={14} className="text-[#888]" />
@@ -370,7 +370,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                   value={directions}
                   onChange={(e) => setDirections(e.target.value)}
                   placeholder="e.g. Next to OK Supermarket"
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#FF2D78] outline-none"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#C6FF00] outline-none"
                 />
               </div>
             </div>
@@ -395,7 +395,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                           ...prev, 
                           [day]: { ...prev[day], open: !prev[day].open } 
                         }))}
-                        className={`w-9 h-5 rounded-full relative transition-all duration-300 ${h.open ? 'bg-[#FF2D78]' : 'bg-[#333]'}`}
+                        className={`w-9 h-5 rounded-full relative transition-all duration-300 ${h.open ? 'bg-[#C6FF00]' : 'bg-[#333]'}`}
                       >
                         <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all duration-300 ${h.open ? 'left-5' : 'left-1'}`} />
                       </button>
@@ -462,7 +462,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
                   placeholder="+263..."
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#FF2D78] outline-none"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#C6FF00] outline-none"
                 />
               </div>
 
@@ -473,7 +473,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                   value={instagram}
                   onChange={(e) => setInstagram(e.target.value)}
                   placeholder="@myshop"
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#FF2D78] outline-none"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[12px] px-4 text-[15px] focus:border-[#C6FF00] outline-none"
                 />
               </div>
             </div>
@@ -483,7 +483,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
         <button
           onClick={handleSave}
           disabled={loading}
-          className="w-full h-14 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold rounded-full mt-12 flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all"
+          className="w-full h-14 bg-linear-to-r from-[#9B27AF] to-[#C6FF00] text-white font-bold rounded-full mt-12 flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all"
         >
           {loading ? (
             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full" />
@@ -525,7 +525,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                     value={townSearch}
                     onChange={(e) => setTownSearch(e.target.value)}
                     placeholder="Search town..."
-                    className="w-full h-12 bg-[#111] border border-[#222] rounded-[14px] pl-11 pr-4 text-white placeholder:text-[#444] focus:border-[#FF2D78] outline-none"
+                    className="w-full h-12 bg-[#111] border border-[#222] rounded-[14px] pl-11 pr-4 text-white placeholder:text-[#444] focus:border-[#C6FF00] outline-none"
                     autoFocus
                   />
                 </div>
@@ -541,7 +541,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
                         setTownSearch('');
                       }}
                       className={`w-full p-4 rounded-2xl flex items-center justify-between text-left transition-all ${
-                        town === t ? 'bg-[#FF2D78] text-white' : 'bg-[#111] text-[#888] border border-[#222]'
+                        town === t ? 'bg-[#C6FF00] text-white' : 'bg-[#111] text-[#888] border border-[#222]'
                       }`}
                     >
                       <span className="font-bold">{t}</span>

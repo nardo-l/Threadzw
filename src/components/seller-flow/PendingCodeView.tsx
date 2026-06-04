@@ -19,7 +19,7 @@ export const PendingCodeView: React.FC<PendingCodeViewProps> = ({ myShop, onActi
             opacity: [0.5, 1, 0.5]
           }}
           transition={{ repeat: Infinity, duration: 2 }}
-          className="absolute inset-0 bg-[#FF2D78] blur-[40px] rounded-full opacity-20"
+          className="absolute inset-0 bg-[#C6FF00] blur-[40px] rounded-full opacity-20"
         />
         <span className="text-[72px] relative z-10">⏳</span>
       </div>
@@ -35,7 +35,7 @@ export const PendingCodeView: React.FC<PendingCodeViewProps> = ({ myShop, onActi
       <div className="w-full space-y-4 max-w-[300px]">
         <button 
           onClick={() => setSellerFlowState('enter_code')}
-          className="w-full h-14 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold rounded-full text-[15px] shadow-lg"
+          className="w-full h-14 bg-linear-to-r from-[#9B27AF] to-[#C6FF00] text-white font-bold rounded-full text-[15px] shadow-lg"
         >
           I have my code →
         </button>
@@ -51,7 +51,7 @@ export const PendingCodeView: React.FC<PendingCodeViewProps> = ({ myShop, onActi
       <div className="mt-12 p-5 bg-[#111] rounded-[16px] border border-[#222] w-full max-w-[300px]">
          <div className="flex justify-between items-center text-[12px] mb-3">
             <span className="text-[#888]">Shop Status:</span>
-            <span className="text-[#FF2D78] font-bold px-2 py-0.5 bg-[#FF2D781A] rounded-full">Pending Verification</span>
+            <span className="text-[#C6FF00] font-bold px-2 py-0.5 bg-[#C6FF001A] rounded-full">Pending Verification</span>
          </div>
          <div className="flex justify-between items-center text-[12px]">
             <span className="text-[#888]">Plan:</span>

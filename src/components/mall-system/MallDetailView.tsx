@@ -59,7 +59,7 @@ export const MallDetailView: React.FC = () => {
     if (id) fetchMallData();
   }, [id]);
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 rounded-full border-4 border-[#FF5FA2] border-t-transparent animate-spin" /></div>;
+  if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="w-8 h-8 rounded-full border-4 border-[#C6FF00] border-t-transparent animate-spin" /></div>;
   if (!mall) return <div className="p-10 text-center">Mall not found</div>;
 
   return (
@@ -95,7 +95,7 @@ export const MallDetailView: React.FC = () => {
                {mall.logo_url ? (
                  <img src={mall.logo_url} className="w-full h-full object-cover rounded-2xl" />
                ) : (
-                 <div className="w-full h-full bg-[#111] flex items-center justify-center text-3xl font-black text-[#FF5FA2]">
+                 <div className="w-full h-full bg-[#111] flex items-center justify-center text-3xl font-black text-[#C6FF00]">
                    {mall.name[0]}
                  </div>
                )}

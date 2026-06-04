@@ -78,7 +78,7 @@ export const OnboardingView: React.FC = () => {
               key={`onboarding-dot-${i}`}
               animate={{ 
                 width: i === currentSlide ? 24 : 8,
-                backgroundColor: i === currentSlide ? '#FF5FA2' : '#EEEEEE'
+                backgroundColor: i === currentSlide ? '#C6FF00' : '#EEEEEE'
               }}
               className="h-2 rounded-full"
             />
@@ -88,7 +88,7 @@ export const OnboardingView: React.FC = () => {
         {/* CTA Button */}
         <button 
           onClick={handleNext}
-          className="w-full h-16 rounded-[24px] bg-gradient-to-br from-[#9B27AF] to-[#FF5FA2] text-white font-bold text-[16px] shadow-xl shadow-pink-500/20 flex items-center justify-center active:scale-[0.98] transition-all"
+          className="w-full h-16 rounded-[24px] bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] text-white font-bold text-[16px] shadow-xl shadow-[#C6FF00]/20 flex items-center justify-center active:scale-[0.98] transition-all"
         >
           {currentSlide === slides.length - 1 ? "Start Shopping" : "Next Step"}
         </button>

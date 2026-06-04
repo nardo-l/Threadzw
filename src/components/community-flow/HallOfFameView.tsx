@@ -24,7 +24,7 @@ export const HallOfFameView: React.FC = () => {
       month: 'February 2026', 
       emoji: '👗', 
       wins: 1, 
-      color: 'from-[#9B27AF] to-[#FF2D78]',
+      color: 'from-[#9B27AF] to-[#C6FF00]',
       title: 'Style Icon'
     },
     { 
@@ -101,8 +101,8 @@ export const HallOfFameView: React.FC = () => {
                 </div>
 
                 <div className="mt-3 flex items-center gap-3">
-                   <div className="px-3 py-1 border border-[#FF2D78]/20 rounded-full bg-[#FF2D78]/5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF2D78]">{winner.title}</span>
+                   <div className="px-3 py-1 border border-[#C6FF00]/20 rounded-full bg-[#C6FF00]/5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#C6FF00]">{winner.title}</span>
                    </div>
                    <div className="h-4 w-[1px] bg-[#EFEFEF]" />
                    <span className="text-[11px] font-medium text-[#888888]">{winner.month}</span>
@@ -119,14 +119,14 @@ export const HallOfFameView: React.FC = () => {
       {/* Footer CTA */}
       <div className="mt-12 px-5 pb-[120px]">
         <div className="border border-[#EFEFEF] rounded-[32px] p-8 flex flex-col items-center text-center bg-white shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF2D78]/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#C6FF00]/5 rounded-full -mr-16 -mt-16 blur-3xl" />
             <h3 className="font-bold text-[22px] text-[#111111] relative z-10">Your Name Here?</h3>
             <p className="text-[14px] mt-2 mb-8 text-[#888888] relative z-10">
                Enter next month's Best Dresser contest and start your journey to legend status.
             </p>
             <button 
               onClick={() => setCommunityScreen('bestDresserEntry')}
-              className="w-full h-[60px] rounded-full text-white font-bold text-[16px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] relative z-10"
+              className="w-full h-[60px] rounded-full text-white font-bold text-[16px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] relative z-10"
             >
                Enter Contest Now <ChevronRight size={20} />
             </button>

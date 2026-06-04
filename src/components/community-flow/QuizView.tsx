@@ -144,7 +144,7 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
   
   const DURATION = 2000;
 
-  const ACCENT_COLOR = '#FF2D78';
+  const ACCENT_COLOR = '#C6FF00';
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -227,7 +227,7 @@ const BallAnimation: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
         </svg>
         
         <div 
-          className="absolute w-5 h-5 rounded-full bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] pointer-events-none"
+          className="absolute w-5 h-5 rounded-full bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] pointer-events-none"
           style={{
             boxShadow: `0 0 20px ${ACCENT_COLOR}66`,
             left: ballState.x,
@@ -256,7 +256,7 @@ export const QuizView: React.FC = () => {
   
   const isMounted = useRef(true);
 
-  const ACCENT_COLOR = '#FF2D78';
+  const ACCENT_COLOR = '#C6FF00';
 
   useEffect(() => {
     isMounted.current = true;
@@ -426,7 +426,7 @@ export const QuizView: React.FC = () => {
   if (loadingQuiz) {
     return (
       <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white">
-        <div className="w-10 h-10 border-4 rounded-full animate-spin border-[#FF2D78]/10 border-t-[#FF2D78]" />
+        <div className="w-10 h-10 border-4 rounded-full animate-spin border-[#C6FF00]/10 border-t-[#C6FF00]" />
         <p className="mt-6 font-bold text-[13px] tracking-widest uppercase text-[#888888]">Reading your vibe...</p>
       </div>
     );
@@ -438,7 +438,7 @@ export const QuizView: React.FC = () => {
         <p className="font-bold text-[#111111]">Something went wrong loading the quiz.</p>
         <button 
           onClick={handleClose}
-          className="mt-6 px-8 h-14 rounded-full text-white font-bold bg-[#FF2D78] shadow-lg"
+          className="mt-6 px-8 h-14 rounded-full text-white font-bold bg-[#C6FF00] shadow-lg"
         >
           Go Back
         </button>
@@ -488,7 +488,7 @@ export const QuizView: React.FC = () => {
                 width: idx < currentStep ? '100%' : (idx === currentStep ? '100%' : '0%') 
               }}
               transition={{ duration: idx === currentStep ? 0.4 : 0 }}
-              className="h-full bg-[#FF2D78]"
+              className="h-full bg-[#C6FF00]"
             />
           </div>
         ))}
@@ -527,7 +527,7 @@ export const QuizView: React.FC = () => {
                       onClick={() => !isAnySelected && handleSelect(currentQuestion.id, answer.answer_key)}
                       className={`
                         relative aspect-[4/5] rounded-[24px] overflow-hidden transition-all duration-300 border-2
-                        ${isSelected ? 'border-[#FF2D78]' : 'border-transparent'}
+                        ${isSelected ? 'border-[#C6FF00]' : 'border-transparent'}
                       `}
                       style={{ 
                         opacity: isAnySelected && !isSelected ? 0.5 : 1,
@@ -563,7 +563,7 @@ export const QuizView: React.FC = () => {
                           <motion.div 
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="absolute top-4 right-4 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shadow-lg bg-[#FF2D78]"
+                            className="absolute top-4 right-4 w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shadow-lg bg-[#C6FF00]"
                           >
                             <span className="text-white font-bold text-[16px]">✓</span>
                           </motion.div>

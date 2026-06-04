@@ -68,7 +68,7 @@ export const BracketView: React.FC = () => {
             onClick={() => setActiveRound(round.id)}
             className={`
               px-6 h-10 rounded-full text-[13px] font-bold whitespace-nowrap transition-all flex items-center gap-2 border
-              ${activeRound === round.id ? 'bg-[#FF2D78] text-white border-[#FF2D78] shadow-md' : 'bg-white text-[#888888] border-[#EFEFEF]'}
+              ${activeRound === round.id ? 'bg-[#C6FF00] text-white border-[#C6FF00] shadow-md' : 'bg-white text-[#888888] border-[#EFEFEF]'}
             `}
           >
             {round.name}
@@ -97,13 +97,13 @@ export const BracketView: React.FC = () => {
                       </div>
                    </div>
 
-                   <div className={`border rounded-[32px] p-6 pt-10 overflow-hidden relative transition-all shadow-sm bg-white ${match.status === 'active' ? 'border-[#FF2D78]' : 'border-[#EFEFEF]'}`}
+                   <div className={`border rounded-[32px] p-6 pt-10 overflow-hidden relative transition-all shadow-sm bg-white ${match.status === 'active' ? 'border-[#C6FF00]' : 'border-[#EFEFEF]'}`}
                    >
                       {match.status === 'active' && (
                         <div className="absolute top-0 right-0 p-4">
-                           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FF2D78]/10">
-                             <div className="w-2 h-2 rounded-full animate-pulse bg-[#FF2D78]" />
-                             <span className="text-[9px] font-bold uppercase tracking-wide text-[#FF2D78]">Voting Live</span>
+                           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#C6FF00]/10">
+                             <div className="w-2 h-2 rounded-full animate-pulse bg-[#C6FF00]" />
+                             <span className="text-[9px] font-bold uppercase tracking-wide text-[#C6FF00]">Voting Live</span>
                            </div>
                         </div>
                       )}
@@ -119,7 +119,7 @@ export const BracketView: React.FC = () => {
                                   </div>
                                )}
                             </div>
-                            <span className={`text-[14px] mt-3 font-bold truncate w-full text-center ${match.p1.winner ? 'text-[#FF2D78]' : 'text-[#111111]'}`}>
+                            <span className={`text-[14px] mt-3 font-bold truncate w-full text-center ${match.p1.winner ? 'text-[#C6FF00]' : 'text-[#111111]'}`}>
                                {match.p1.name || 'TBD'}
                             </span>
                          </div>
@@ -146,7 +146,7 @@ export const BracketView: React.FC = () => {
                          <div className="mt-8">
                             <div className="flex justify-between items-end mb-2 px-1">
                                <div className="flex flex-col">
-                                  <span className={`text-[12px] font-bold ${match.status === 'active' ? 'text-[#FF2D78]' : 'text-[#888888]'}`}>{match.p1.votes} votes</span>
+                                  <span className={`text-[12px] font-bold ${match.status === 'active' ? 'text-[#C6FF00]' : 'text-[#888888]'}`}>{match.p1.votes} votes</span>
                                 </div>
                                <div className="flex flex-col items-end">
                                   <span className="text-[12px] font-bold text-[#888888]">{match.p2.votes} votes</span>
@@ -157,7 +157,7 @@ export const BracketView: React.FC = () => {
                                  className={`h-full`} 
                                  style={{ 
                                    width: `${(match.p1.votes / (match.p1.votes + match.p2.votes)) * 100}%`,
-                                   background: match.status === 'active' ? '#FF2D78' : '#888888'
+                                   background: match.status === 'active' ? '#C6FF00' : '#888888'
                                  }} 
                                 />
                                <div className="h-full flex-1" />
@@ -166,7 +166,7 @@ export const BracketView: React.FC = () => {
                       )}
 
                       {match.status === 'active' && (
-                        <button className="mt-8 w-full h-[56px] rounded-full text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]">
+                        <button className="mt-8 w-full h-[56px] rounded-full text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]">
                           <Instagram size={18} /> VOTE ON IG STORIES
                         </button>
                       )}

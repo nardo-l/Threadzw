@@ -162,7 +162,7 @@ export const QuizResultView: React.FC = () => {
             <span className="text-[36px] font-bold tracking-tight text-[#111111]">
               {result.prefix}
             </span>
-            <span className="text-[48px] font-black tracking-tight bg-clip-text text-transparent italic bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]">
+            <span className="text-[48px] font-black tracking-tight bg-clip-text text-transparent italic bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]">
               {result.name}
             </span>
           </div>
@@ -188,7 +188,7 @@ export const QuizResultView: React.FC = () => {
                   <motion.div 
                     animate={{ rotate: 360 }}
                     transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-                    className="w-8 h-8 border-[3px] rounded-full border-[#FF2D78]/20 border-t-[#FF2D78]"
+                    className="w-8 h-8 border-[3px] rounded-full border-[#C6FF00]/20 border-t-[#C6FF00]"
                   />
                   <span className="text-[12px] font-bold text-[#888888]">Printing receipt...</span>
                 </div>
@@ -217,7 +217,7 @@ export const QuizResultView: React.FC = () => {
           transition={{ duration: 0.4, delay: 0.35 }}
           className="mt-12 px-8"
         >
-          <span className="text-[44px] font-serif leading-[0.6] block mb-2 text-[#FF2D78]">"</span>
+          <span className="text-[44px] font-serif leading-[0.6] block mb-2 text-[#C6FF00]">"</span>
           <p className="text-[16px] leading-[1.8] font-medium text-[#111111]/80 italic">
             {result.message}
           </p>
@@ -233,7 +233,7 @@ export const QuizResultView: React.FC = () => {
           <div className="flex gap-3">
             <button 
               onClick={handleShare}
-              className="flex-1 h-[56px] rounded-full text-white font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xl bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]"
+              className="flex-1 h-[56px] rounded-full text-white font-bold text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-xl bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]"
             >
               Share Drip 📸
             </button>
@@ -249,7 +249,7 @@ export const QuizResultView: React.FC = () => {
             <button 
               onClick={handleDownload}
               disabled={downloading}
-              className="text-[14px] font-bold flex items-center gap-2 text-[#FF2D78] hover:opacity-80 transition-opacity"
+              className="text-[14px] font-bold flex items-center gap-2 text-[#C6FF00] hover:opacity-80 transition-opacity"
             >
               {downloading ? <Loader2 size={16} className="animate-spin" /> : '⬇️'} Download Receipt
             </button>

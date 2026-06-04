@@ -103,7 +103,7 @@ export const CreateMallFlow: React.FC = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Harare Streetwear Hub"
-                  className="w-full bg-transparent border-b-[2.5px] border-[#EFEFEF] py-4 text-[#111] text-[24px] font-bold focus:border-[#FF5FA2] outline-none transition-all"
+                  className="w-full bg-transparent border-b-[2.5px] border-[#EFEFEF] py-4 text-[#111] text-[24px] font-bold focus:border-[#C6FF00] outline-none transition-all"
                  />
               </div>
             </motion.div>
@@ -129,14 +129,14 @@ export const CreateMallFlow: React.FC = () => {
                       onClick={() => setFormData({ ...formData, town })}
                       className={`
                         w-full bg-white border-2 rounded-[22px] p-5 flex items-center justify-between transition-all
-                        ${formData.town === town ? 'border-[#FF5FA2] bg-pink-50/10' : 'border-[#EFEFEF]'}
+                        ${formData.town === town ? 'border-[#C6FF00] bg-[#C6FF00]-50/10' : 'border-[#EFEFEF]'}
                       `}
                      >
                         <div className="flex items-center gap-3">
-                           <MapPin size={18} className={formData.town === town ? 'text-[#FF5FA2]' : 'text-[#888]'} />
+                           <MapPin size={18} className={formData.town === town ? 'text-[#C6FF00]' : 'text-[#888]'} />
                            <span className="text-[#111] font-bold">{town}</span>
                         </div>
-                        {formData.town === town && <Check size={18} className="text-[#FF5FA2]" strokeWidth={4} />}
+                        {formData.town === town && <Check size={18} className="text-[#C6FF00]" strokeWidth={4} />}
                      </button>
                    ))}
                 </div>

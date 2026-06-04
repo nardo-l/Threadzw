@@ -98,7 +98,7 @@ export const PaymentReceivedView: React.FC<{ myShop: any; onActivated: () => voi
   return (
     <div className="flex flex-col min-h-screen bg-black text-sans">
       <div className="flex-1 flex flex-col items-center pt-[60px] px-10 text-center">
-        <h1 className="text-[#FF2D78] font-pacifico text-[32px] mb-[32px]">thread</h1>
+        <h1 className="text-[#C6FF00] font-pacifico text-[32px] mb-[32px]">thread</h1>
         
         <div className="text-[72px] mb-8 animate-pulse">⏳</div>
         
@@ -142,14 +142,14 @@ export const PaymentReceivedView: React.FC<{ myShop: any; onActivated: () => voi
               onChange={e => handleChange(i, e.target.value)}
               onKeyDown={e => handleKeyDown(i, e)}
               className={`w-10 h-10 bg-[#111] border rounded-[10px] text-center text-white text-[16px] font-bold outline-none uppercase transition-all
-                ${error ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'border-[#222] focus:border-[#FF2D78]'}`}
+                ${error ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.2)]' : 'border-[#222] focus:border-[#C6FF00]'}`}
             />
           ))}
         </div>
 
         {loading && (
-          <div className="flex items-center gap-3 text-[#FF2D78] font-bold text-[14px]">
-             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-4 h-4 border-2 border-[#FF2D7822] border-t-[#FF2D78] rounded-full" />
+          <div className="flex items-center gap-3 text-[#C6FF00] font-bold text-[14px]">
+             <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-4 h-4 border-2 border-[#C6FF0022] border-t-[#C6FF00] rounded-full" />
              Verifying...
           </div>
         )}

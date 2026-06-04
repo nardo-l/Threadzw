@@ -379,7 +379,7 @@ export const NewListing: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-cream text-charcoal pb-32 overflow-x-hidden font-sans">
       {/* Immersive Background Decor */}
       <div className="fixed inset-0 pointer-events-none opacity-10 z-0">
-          <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-pink/10 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-[#C6FF00]/10 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2" />
           <div className="absolute bottom-1/4 left-0 w-[100vw] h-[100vw] bg-lime/10 blur-[200px] rounded-full -translate-x-1/2" />
       </div>
 
@@ -393,14 +393,14 @@ export const NewListing: React.FC = () => {
             <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic leading-none mb-1">New Intent</h1>
             <span className="text-sm font-display font-black uppercase tracking-tight italic">Curate Unit</span>
           </div>
-          <button onClick={handleSaveDraft} className="text-[10px] font-black uppercase tracking-widest text-charcoal italic border-b-2 border-pink pb-0.5">
+          <button onClick={handleSaveDraft} className="text-[10px] font-black uppercase tracking-widest text-charcoal italic border-b-2 border-[#C6FF00] pb-0.5">
             Save Draft
           </button>
         </div>
         {/* Progress Bar */}
         <div className="h-1 bg-charcoal/5 w-full">
           <motion.div 
-            className="h-full bg-pink shadow-[0_0_10px_rgba(244,166,193,0.5)]"
+            className="h-full bg-[#C6FF00] shadow-[0_0_10px_rgba(244,166,193,0.5)]"
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
             transition={{ type: 'spring', damping: 20, stiffness: 100 }}
@@ -445,7 +445,7 @@ export const NewListing: React.FC = () => {
                <div className="h-px flex-1 bg-charcoal/10" />
             </div>
             <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8] mb-2">Digital Exhibit</h3>
-            <p className="text-[11px] font-black text-pink uppercase tracking-widest italic">High-fidelity visual verification required</p>
+            <p className="text-[11px] font-black text-[#C6FF00] uppercase tracking-widest italic">High-fidelity visual verification required</p>
           </div>
 
           <div className="grid grid-cols-2 gap-5">
@@ -516,7 +516,7 @@ export const NewListing: React.FC = () => {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center gap-6 relative group cursor-pointer">
                       <div className="absolute top-8 left-8 text-[12px] font-black text-charcoal/5 italic leading-none">0{slot.id}</div>
-                      <div className="w-20 h-20 rounded-full bg-cream-dark flex items-center justify-center text-charcoal/10 group-hover:bg-pink/20 group-hover:text-pink transition-all duration-700 border-2 border-charcoal/5 group-hover:border-pink/20">
+                      <div className="w-20 h-20 rounded-full bg-cream-dark flex items-center justify-center text-charcoal/10 group-hover:bg-[#C6FF00]/20 group-hover:text-[#C6FF00] transition-all duration-700 border-2 border-charcoal/5 group-hover:border-[#C6FF00]/20">
                         <Plus size={isMain ? 40 : 32} strokeWidth={3} />
                       </div>
                       <div className="flex flex-col items-center gap-2">
@@ -538,12 +538,12 @@ export const NewListing: React.FC = () => {
               </div>
               <div className="flex gap-2">
                 {[...Array(6)].map((_, i) => (
-                  <div key={`upload-progress-dot-${i}`} className={`w-2.5 h-2.5 rounded-full transition-all duration-700 ${i < filledPhotosCount ? 'bg-pink shadow-[0_0_12px_rgba(244,166,193,0.5)] scale-125' : 'bg-charcoal/10 flex-shrink-0'}`} />
+                  <div key={`upload-progress-dot-${i}`} className={`w-2.5 h-2.5 rounded-full transition-all duration-700 ${i < filledPhotosCount ? 'bg-[#C6FF00] shadow-[0_0_12px_rgba(244,166,193,0.5)] scale-125' : 'bg-charcoal/10 flex-shrink-0'}`} />
                 ))}
               </div>
             </div>
             {filledPhotosCount < 6 && (
-               <p className="text-[10px] font-black text-pink uppercase tracking-widest italic leading-none pt-2 border-t border-charcoal/5">Pending critical visual vectors</p>
+               <p className="text-[10px] font-black text-[#C6FF00] uppercase tracking-widest italic leading-none pt-2 border-t border-charcoal/5">Pending critical visual vectors</p>
             )}
           </div>
         </section>
@@ -585,8 +585,8 @@ export const NewListing: React.FC = () => {
             <div className="flex items-center justify-between px-2">
               <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Product Title</label>
               <div className="flex items-center gap-2">
-                 <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${productName.trim() ? 'bg-pink shadow-[0_0_10px_rgba(244,166,193,0.8)]' : 'bg-charcoal/5'}`} />
-                 <span className="text-pink text-xs font-black italic">*</span>
+                 <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${productName.trim() ? 'bg-[#C6FF00] shadow-[0_0_10px_rgba(244,166,193,0.8)]' : 'bg-charcoal/5'}`} />
+                 <span className="text-[#C6FF00] text-xs font-black italic">*</span>
               </div>
             </div>
             <div className="relative group">
@@ -596,7 +596,7 @@ export const NewListing: React.FC = () => {
                 onChange={(e) => setProductName(e.target.value.slice(0, 80))}
                 placeholder="Declare product name..."
                 className={`w-full bg-white border-2 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 ${
-                  publishAttempted && !productName ? 'border-pink' : 'border-charcoal/5 focus:border-pink/40 focus:ring-8 focus:ring-pink/5'
+                  publishAttempted && !productName ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
                 }`}
               />
               <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
@@ -610,7 +610,7 @@ export const NewListing: React.FC = () => {
           <div id="error-category" className="flex flex-col gap-6">
             <div className="flex items-center justify-between px-2">
                <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Classification</label>
-               <span className="text-pink text-xs font-black italic">*</span>
+               <span className="text-[#C6FF00] text-xs font-black italic">*</span>
             </div>
             <div className={`flex gap-4 overflow-x-auto no-scrollbar pb-6 -mx-8 px-8 ${publishAttempted && !category ? 'animate-shake' : ''}`}>
               {PRODUCT_CATEGORIES.map(cat => (
@@ -642,7 +642,7 @@ export const NewListing: React.FC = () => {
                 value={collection}
                 onChange={(e) => setCollection(e.target.value.slice(0, 50))}
                 placeholder="e.g. Corteiz RTW, Essentials 2026..."
-                className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 focus:border-pink/40 focus:ring-8 focus:ring-pink/5 font-sans"
+                className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 font-sans"
               />
               <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
                 <span className="text-[10px] font-black text-charcoal/30 italic leading-none">{collection.length}/50</span>
@@ -654,7 +654,7 @@ export const NewListing: React.FC = () => {
           <div id="error-condition" className="flex flex-col gap-6">
             <div className="flex items-center justify-between px-2">
               <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Condition State</label>
-              <span className="text-pink text-xs font-black italic">*</span>
+              <span className="text-[#C6FF00] text-xs font-black italic">*</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {CONDITIONS.map(c => (
@@ -698,7 +698,7 @@ export const NewListing: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value.slice(0, 400))}
                 placeholder="Write a description that sells... (Sent to buyers on WhatsApp)"
-                className="w-full bg-white border-2 border-charcoal/5 rounded-[40px] p-8 text-sm font-medium text-charcoal/80 placeholder:text-charcoal/5 focus:outline-none focus:border-pink/40 focus:ring-8 focus:ring-pink/5 transition-all duration-700 h-56 resize-none italic leading-relaxed"
+                className="w-full bg-white border-2 border-charcoal/5 rounded-[40px] p-8 text-sm font-medium text-charcoal/80 placeholder:text-charcoal/5 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700 h-56 resize-none italic leading-relaxed"
               />
               <div className="absolute bottom-8 right-10 flex flex-col items-end">
                 <span className="text-[10px] font-black text-charcoal/20 italic">{description.length}/400</span>
@@ -723,7 +723,7 @@ export const NewListing: React.FC = () => {
             <div id="error-price" className="flex flex-col gap-4">
               <div className="flex items-center justify-between px-2">
                 <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Ask Price</label>
-                <span className="text-pink text-xs font-black italic">*</span>
+                <span className="text-[#C6FF00] text-xs font-black italic">*</span>
               </div>
               <div className="relative group">
                 <span className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-display font-black text-charcoal/10 italic">$</span>
@@ -733,7 +733,7 @@ export const NewListing: React.FC = () => {
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="0.00"
                   className={`w-full bg-white border-2 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal focus:outline-none transition-all duration-500 ${
-                    publishAttempted && !price ? 'border-pink' : 'border-charcoal/5 focus:border-pink/40 focus:ring-8 focus:ring-pink/5'
+                    publishAttempted && !price ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
                   }`}
                 />
               </div>
@@ -750,7 +750,7 @@ export const NewListing: React.FC = () => {
                   value={originalPrice}
                   onChange={(e) => setOriginalPrice(e.target.value)}
                   placeholder="0.00"
-                  className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal/20 focus:outline-none focus:border-pink/40 focus:ring-8 focus:ring-pink/5 transition-all duration-700"
+                  className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal/20 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700"
                 />
               </div>
             </div>
@@ -771,7 +771,7 @@ export const NewListing: React.FC = () => {
                   </motion.div>
                 )}
                 {discountPercent && (
-                  <div className="px-5 py-2.5 bg-pink text-white text-[10px] font-black italic rounded-full shadow-[0_15px_30px_rgba(244,166,193,0.3)] uppercase tracking-widest">
+                  <div className="px-5 py-2.5 bg-[#C6FF00] text-white text-[10px] font-black italic rounded-full shadow-[0_15px_30px_rgba(244,166,193,0.3)] uppercase tracking-widest">
                     {discountPercent}% OFF
                   </div>
                 )}
@@ -786,9 +786,9 @@ export const NewListing: React.FC = () => {
           )}
 
           <div className="bg-charcoal p-10 rounded-[48px] flex items-center gap-8 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-pink/10 blur-[60px] rounded-full translate-x-1/2 -translate-y-1/2" />
+            <div className="absolute top-0 right-0 w-48 h-48 bg-[#C6FF00]/10 blur-[60px] rounded-full translate-x-1/2 -translate-y-1/2" />
             <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-all duration-700 border border-white/10">
-               <Info size={28} className="text-pink" />
+               <Info size={28} className="text-[#C6FF00]" />
             </div>
             <div className="flex flex-col gap-2">
                <h4 className="text-[10px] font-black text-white uppercase tracking-[0.4em] italic">Market Logic</h4>
@@ -885,7 +885,7 @@ export const NewListing: React.FC = () => {
                     </div>
                     <button 
                       onClick={() => removeSizeVariant(idx)} 
-                      className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-pink transition-all active:scale-90"
+                      className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#C6FF00] transition-all active:scale-90"
                     >
                       <Trash2 size={24} strokeWidth={3} />
                     </button>
@@ -895,9 +895,9 @@ export const NewListing: React.FC = () => {
               
               <button 
                 onClick={addSizeVariant}
-                className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-pink/5 hover:border-pink/40 transition-all active:scale-[0.98] group mt-4"
+                className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group mt-4"
               >
-                <Plus size={28} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-pink" />
+                <Plus size={28} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-[#C6FF00]" />
                 <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Register Size Unit</span>
               </button>
 
@@ -972,7 +972,7 @@ export const NewListing: React.FC = () => {
                       className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
                     />
                   </div>
-                  <button onClick={() => removeColour(idx)} className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-pink transition-all active:scale-90">
+                  <button onClick={() => removeColour(idx)} className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#C6FF00] transition-all active:scale-90">
                     <X size={24} strokeWidth={3} />
                   </button>
                 </motion.div>
@@ -982,9 +982,9 @@ export const NewListing: React.FC = () => {
             {colours.length < 6 && (
               <button 
                 onClick={addColour}
-                className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-pink/5 hover:border-pink/40 transition-all active:scale-[0.98] group"
+                className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group"
               >
-                <Plus size={28} strokeWidth={4} className="text-pink group-hover:rotate-180 transition-transform duration-700" />
+                <Plus size={28} strokeWidth={4} className="text-[#C6FF00] group-hover:rotate-180 transition-transform duration-700" />
                 <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Inject Hue Variant</span>
               </button>
             )}
@@ -1159,7 +1159,7 @@ export const NewListing: React.FC = () => {
           >
             {/* Immersive Background */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180vw] h-[180vw] bg-pink/5 blur-[200px] rounded-full animate-pulse" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180vw] h-[180vw] bg-[#C6FF00]/5 blur-[200px] rounded-full animate-pulse" />
             </div>
 
             <motion.div 
@@ -1173,14 +1173,14 @@ export const NewListing: React.FC = () => {
 
             <div className="relative z-10 flex flex-col items-center max-w-sm mb-20">
                <h2 className="text-7xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-[0.8] mb-6">Unit Logged.</h2>
-               <div className="oval-sticker !bg-pink !text-white !text-xl mb-4">{productName}</div>
+               <div className="oval-sticker !bg-[#C6FF00] !text-white !text-xl mb-4">{productName}</div>
                <p className="text-[12px] font-black text-charcoal/30 tracking-[0.4em] uppercase italic leading-tight text-center px-10">Data committed to global inventory node successfully.</p>
             </div>
 
             <div className="flex flex-col gap-5 w-full max-w-xs relative z-10">
               <button 
                 onClick={() => navigate(`/product/${createdProductId || ''}`)}
-                className="w-full h-20 bg-charcoal text-cream text-lg font-display font-black uppercase italic tracking-[0.2em] rounded-full shadow-[12px_12px_0_#F4A6C1] active:translate-y-1 active:shadow-none transition-all"
+                className="w-full h-20 bg-charcoal text-cream text-lg font-display font-black uppercase italic tracking-[0.2em] rounded-full shadow-[12px_12px_0_#C6FF00] active:translate-y-1 active:shadow-none transition-all"
               >
                 Inspect Listing
               </button>

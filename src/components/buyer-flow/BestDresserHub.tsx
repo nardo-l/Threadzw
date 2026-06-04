@@ -9,7 +9,7 @@ export const BestDresserHub: React.FC = () => {
 
   const winners = [
     { name: 'Tatenda', month: 'March 2026', color: 'from-[#FFC107] to-[#FF9800]' },
-    { name: 'Nyasha', month: 'February 2026', color: 'from-[#9B27AF] to-[#FF2D78]' },
+    { name: 'Nyasha', month: 'February 2026', color: 'from-[#9B27AF] to-[#C6FF00]' },
     { name: 'Kelvin', month: 'January 2026', color: 'from-[#2196F3] to-[#00BCD4]' },
   ];
 
@@ -25,7 +25,7 @@ export const BestDresserHub: React.FC = () => {
       </div>
 
       {/* Current Round Card */}
-      <div className="mx-5 mt-4 rounded-[16px] bg-linear-to-br from-[#f59e0b1f] to-[#FF2D781f] border border-[#f59e0b4d] p-5">
+      <div className="mx-5 mt-4 rounded-[16px] bg-linear-to-br from-[#f59e0b1f] to-[#C6FF001f] border border-[#f59e0b4d] p-5">
         <div className="flex justify-between items-center">
           <span className="text-[#f59e0b] text-[11px] font-bold tracking-widest uppercase">APRIL 2026</span>
           <span className="text-[#888] text-[12px]">3 days left</span>
@@ -39,7 +39,7 @@ export const BestDresserHub: React.FC = () => {
             <span className="text-[#888] text-[11px]">Day 11 of 14</span>
           </div>
           <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
-             <div className="h-full bg-linear-to-r from-[#f59e0b] to-[#FF2D78]" style={{ width: '78%' }} />
+             <div className="h-full bg-linear-to-r from-[#f59e0b] to-[#C6FF00]" style={{ width: '78%' }} />
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export const BestDresserHub: React.FC = () => {
                       <div className="w-[52px] h-[52px] rounded-full bg-linear-to-br from-[#1a1a1a] to-[#222] flex items-center justify-center text-[24px]">👤</div>
                       <span className="text-white font-bold text-[13px] mt-2">Dwayne</span>
                       <span className="text-[#888] text-[11px] mt-0.5">@dwaynex</span>
-                      <span className="text-[#FF2D78] font-bold text-[15px] mt-1.5">64%</span>
+                      <span className="text-[#C6FF00] font-bold text-[15px] mt-1.5">64%</span>
                    </div>
                    
                    {/* VS */}
@@ -88,7 +88,7 @@ export const BestDresserHub: React.FC = () => {
                       <div className="w-[52px] h-[52px] rounded-full bg-linear-to-br from-[#1a1a1a] to-[#222] flex items-center justify-center text-[24px]">👤</div>
                       <span className="text-white font-bold text-[13px] mt-2">Simba</span>
                       <span className="text-[#888] text-[11px] mt-0.5">@simbalion</span>
-                      <span className="text-[#FF2D78] font-bold text-[15px] mt-1.5">36%</span>
+                      <span className="text-[#C6FF00] font-bold text-[15px] mt-1.5">36%</span>
                    </div>
                 </div>
                 <button className="mt-5 w-full h-11 bg-[#f59e0b] rounded-full text-black font-bold text-[13px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
@@ -98,7 +98,7 @@ export const BestDresserHub: React.FC = () => {
            ))}
         </div>
         <div className="text-center mt-6">
-           <button className="text-[#FF2D78] text-[13px] font-bold">View All Matchups</button>
+           <button className="text-[#C6FF00] text-[13px] font-bold">View All Matchups</button>
         </div>
       </div>
 
@@ -114,8 +114,8 @@ export const BestDresserHub: React.FC = () => {
              { n: 3, t: "Submit your entry in the app" }
            ].map(step => (
              <div key={step.n} className="flex gap-3 items-center">
-                <div className="w-[22px] h-[22px] rounded-full border border-[#FF2D78] flex items-center justify-center shrink-0">
-                   <span className="text-[#FF2D78] text-[11px] font-bold">{step.n}</span>
+                <div className="w-[22px] h-[22px] rounded-full border border-[#C6FF00] flex items-center justify-center shrink-0">
+                   <span className="text-[#C6FF00] text-[11px] font-bold">{step.n}</span>
                 </div>
                 <p className="text-[#888] text-[13px]">{step.t}</p>
              </div>
@@ -124,7 +124,7 @@ export const BestDresserHub: React.FC = () => {
 
         <button 
           onClick={() => setBuyerFlowState('bestDresserEntry')}
-          className="mt-6 w-full h-[52px] bg-linear-to-r from-[#9B27AF] to-[#FF2D78] rounded-full text-white font-bold text-[15px] flex items-center justify-center active:scale-[0.98] transition-transform shadow-lg"
+          className="mt-6 w-full h-[52px] bg-linear-to-r from-[#9B27AF] to-[#C6FF00] rounded-full text-white font-bold text-[15px] flex items-center justify-center active:scale-[0.98] transition-transform shadow-lg"
         >
           Enter This Month →
         </button>

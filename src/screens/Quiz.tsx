@@ -232,12 +232,12 @@ export const Quiz: React.FC = () => {
     const getGradient = (id: string) => {
       switch (id) {
         case 'nonchalant': return 'from-gray-400 via-gray-100 to-gray-500';
-        case 'creative': return 'from-[#9F33FF] via-[#FF2D78] to-[#FF8A00]';
-        case 'party': return 'from-[#FF2D78] to-[#FF8A00]';
+        case 'creative': return 'from-[#9F33FF] via-[#C6FF00] to-[#FF8A00]';
+        case 'party': return 'from-[#C6FF00] to-[#FF8A00]';
         case 'hustler': return 'from-[#22c55e] to-[#10b981]';
         case 'ghost': return 'from-[#3b82f6] to-[#1d4ed8]';
         case 'chill': return 'from-[#f59e0b] to-[#ea580c]';
-        default: return 'from-[#FF2D78] to-[#9F33FF]';
+        default: return 'from-[#C6FF00] to-[#9F33FF]';
       }
     };
 
@@ -257,7 +257,7 @@ export const Quiz: React.FC = () => {
     };
 
     return (
-      <div className="min-h-screen bg-black flex flex-col overflow-y-auto no-scrollbar font-sans selection:bg-[#FF2D78]/30">
+      <div className="min-h-screen bg-black flex flex-col overflow-y-auto no-scrollbar font-sans selection:bg-[#C6FF00]/30">
         <main className="flex-1 px-8 pt-20 pb-12 flex flex-col items-center">
           <motion.div 
             variants={container}
@@ -281,7 +281,7 @@ export const Quiz: React.FC = () => {
               <div className="rounded-[24px] overflow-hidden shadow-[0_40px_100px_-20px_rgba(255,45,120,0.15)] bg-[#111] border border-white/5 relative">
                 {receiptLoading ? (
                   <div className="aspect-[3/5] flex flex-col items-center justify-center bg-[#050505]">
-                    <div className="w-10 h-10 border-[3px] border-white/10 border-t-[#FF2D78] rounded-full animate-spin" />
+                    <div className="w-10 h-10 border-[3px] border-white/10 border-t-[#C6FF00] rounded-full animate-spin" />
                     <span className="text-[#444] text-[11px] font-mono mt-4 uppercase tracking-widest">Printing Receipt...</span>
                   </div>
                 ) : receiptError ? (
@@ -303,8 +303,8 @@ export const Quiz: React.FC = () => {
 
             {/* QUOTE CARD */}
             <motion.div variants={item} className="w-full max-w-[340px] bg-[#111] border border-white/5 rounded-[24px] p-8 mb-12 text-left relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-[#FF2D78] opacity-5 blur-3xl -mr-16 -mt-16" />
-               <span className="text-[#FF2D78] text-[48px] font-serif absolute top-2 right-6 opacity-20">"</span>
+               <div className="absolute top-0 right-0 w-32 h-32 bg-[#C6FF00] opacity-5 blur-3xl -mr-16 -mt-16" />
+               <span className="text-[#C6FF00] text-[48px] font-serif absolute top-2 right-6 opacity-20">"</span>
                <p className="text-white text-[18px] font-medium leading-[1.6] relative z-10 italic">
                  {result.description}
                </p>
@@ -350,7 +350,7 @@ export const Quiz: React.FC = () => {
   if (isRevealing) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center p-8 text-center font-sans tracking-tight">
-        <div className="w-16 h-16 border-[3px] border-[#222] border-t-[#FF2D78] rounded-full animate-spin mb-8" />
+        <div className="w-16 h-16 border-[3px] border-[#222] border-t-[#C6FF00] rounded-full animate-spin mb-8" />
         <h2 className="text-[22px] font-bold text-white">Analyzing your drip...</h2>
         <p className="mt-2 text-[#888] text-[14px]">Calculing style score from your answers.</p>
       </div>
@@ -367,7 +367,7 @@ export const Quiz: React.FC = () => {
           <button onClick={() => navigate(-1)} className="text-white">
             <ArrowLeft size={24} />
           </button>
-          <span className="text-[#FF2D78] font-pacifico text-[18px]">thread</span>
+          <span className="text-[#C6FF00] font-pacifico text-[18px]">thread</span>
           <div className="w-6" />
         </div>
         
@@ -378,7 +378,7 @@ export const Quiz: React.FC = () => {
           </div>
           <div className="h-1 w-full bg-[#111] rounded-full overflow-hidden">
             <div 
-              className="h-full bg-[#FF2D78] transition-all duration-500" 
+              className="h-full bg-[#C6FF00] transition-all duration-500" 
               style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}
             />
           </div>
@@ -395,9 +395,9 @@ export const Quiz: React.FC = () => {
             <button
               key={option}
               onClick={() => handleAnswer(idx)}
-              className="w-full p-4 bg-[#111] border border-[#222] rounded-[16px] flex items-center gap-4 text-left hover:border-[#FF2D7814] active:scale-[0.98] transition-all group"
+              className="w-full p-4 bg-[#111] border border-[#222] rounded-[16px] flex items-center gap-4 text-left hover:border-[#C6FF0014] active:scale-[0.98] transition-all group"
             >
-              <div className="w-8 h-8 rounded-full bg-[#222] flex items-center justify-center text-[13px] font-bold text-[#555] group-hover:bg-[#FF2D78] group-hover:text-white transition-colors">
+              <div className="w-8 h-8 rounded-full bg-[#222] flex items-center justify-center text-[13px] font-bold text-[#555] group-hover:bg-[#C6FF00] group-hover:text-white transition-colors">
                 {optionLabels[idx]}
               </div>
               <span className="flex-1 text-white text-[15px] font-medium leading-snug">

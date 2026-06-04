@@ -19,7 +19,7 @@ export const Avatar: React.FC<AvatarProps> = ({
 }) => {
   const [error, setError] = useState(false);
   
-  const resolvedRingColor = ringColor || '#FF2D78';
+  const resolvedRingColor = ringColor || '#C6FF00';
   
   return (
     <div 
@@ -34,7 +34,7 @@ export const Avatar: React.FC<AvatarProps> = ({
           ? `2px solid ${resolvedRingColor}` 
           : `2px solid #222`,
         boxShadow: ring 
-          ? `0 0 0 2px rgba(255,45,120,0.1)`
+          ? `0 0 0 2px rgba(198,255,0,0.1)`
           : 'none',
         background: '#1a1a1a',
         ...style

@@ -40,7 +40,7 @@ export const RenewalPaywall: React.FC = () => {
         </div>
       </div>
 
-      <div className="h-[3px] w-full bg-linear-to-r from-[#9B27AF] to-[#FF2D78]" />
+      <div className="h-[3px] w-full bg-[#C6FF00]" />
 
       {/* What's Paused Card */}
       <div className="p-6">
@@ -65,11 +65,11 @@ export const RenewalPaywall: React.FC = () => {
       <div className="px-6 flex flex-col gap-4 pb-12">
         <div 
           onClick={() => setShowConfirm(true)}
-          className="bg-[#111] rounded-[24px] p-8 border border-[#FF2D78] shadow-[0_0_30px_#FF2D781A] transition-all cursor-pointer relative overflow-hidden group"
+          className="bg-[#111] rounded-[24px] p-8 border border-[#C6FF00] shadow-[0_0_30px_rgba(198,255,0,0.15)] transition-all cursor-pointer relative overflow-hidden group"
         >
           <div className="flex justify-between items-start mb-6">
             <div className="flex flex-col">
-              <span className="text-[11px] font-black text-[#FF2D78] uppercase tracking-[0.2em] mb-1">Thread ZW Shop</span>
+              <span className="text-[11px] font-black text-[#C6FF00] uppercase tracking-[0.2em] mb-1">Thread ZW Shop</span>
               <h3 className="text-[20px] font-black text-white">Unlimited Products</h3>
             </div>
             <div className="text-right">
@@ -86,8 +86,8 @@ export const RenewalPaywall: React.FC = () => {
               "Verified shop badge"
             ].map((feature, i) => (
               <div key={`plan-feature-${i}`} className="flex items-center gap-3">
-                <div className="w-5 h-5 rounded-full bg-[#FF2D78] flex items-center justify-center">
-                  <Check size={12} className="text-white" strokeWidth={3} />
+                <div className="w-5 h-5 rounded-full bg-[#C6FF00] flex items-center justify-center">
+                  <Check size={12} className="text-black" strokeWidth={3} />
                 </div>
                 <span className="text-sm text-white font-medium">{feature}</span>
               </div>
@@ -96,7 +96,7 @@ export const RenewalPaywall: React.FC = () => {
 
           <button 
             onClick={(e) => { e.stopPropagation(); setShowConfirm(true); }}
-            className="w-full h-[60px] bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold rounded-[10px] shadow-xl flex items-center justify-center gap-2 group-active:scale-[0.98] transition-transform"
+            className="w-full h-[60px] bg-[#C6FF00] text-black hover:bg-[#b0df00] font-bold rounded-[10px] shadow-xl flex items-center justify-center gap-2 group-active:scale-[0.98] transition-transform"
           >
             Renew Now →
           </button>
@@ -135,13 +135,13 @@ export const RenewalPaywall: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[11px] font-bold text-[#888] uppercase tracking-widest">Monthly Amount</span>
-                  <span className="text-[24px] font-black text-[#FF2D78]">$5.00</span>
+                  <span className="text-[24px] font-black text-[#C6FF00]">$5.00</span>
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-3 text-white font-bold">
-                  <CreditCard size={18} className="text-[#FF2D78]" />
+                  <CreditCard size={18} className="text-[#C6FF00]" />
                   <span className="text-[15px]">EcoCash or InnBucks</span>
                 </div>
                 <p className="text-[12px] text-[#888] leading-relaxed">You will be redirected to the Shop Centre instructions to send your $5 verification payment.</p>
@@ -150,7 +150,7 @@ export const RenewalPaywall: React.FC = () => {
               <button 
                 onClick={handleRenew}
                 disabled={isProcessing}
-                className="w-full h-15 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white font-black rounded-[10px] shadow-xl flex items-center justify-center gap-2"
+                className="w-full h-15 bg-[#C6FF00] text-black hover:bg-[#b0df00] font-black rounded-[10px] shadow-xl flex items-center justify-center gap-2"
               >
                 {isProcessing ? (
                   <Loader2 className="animate-spin" size={24} />

@@ -131,7 +131,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
           <h2 className="text-white font-bold text-[24px]">Setup Your Shop</h2>
           <p className="text-[#888] text-[14px]">Let's get your store looking professional.</p>
         </div>
-        <div className="text-[#FF2D78] font-bold text-[14px] bg-[#FF2D781A] px-3 py-1 rounded-full">
+        <div className="text-[#C6FF00] font-bold text-[14px] bg-[#C6FF001A] px-3 py-1 rounded-full">
           Step {step}/3
         </div>
       </div>
@@ -157,7 +157,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                   )}
                 </div>
                 <input id="logo-input" type="file" hidden accept="image/*" onChange={handleAvatarChange} />
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#FF2D78] rounded-full flex items-center justify-center text-white border-4 border-black">
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-[#C6FF00] rounded-full flex items-center justify-center text-white border-4 border-black">
                   <Camera size={14} />
                 </div>
               </div>
@@ -171,7 +171,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
                   placeholder="e.g. KickZone Harare"
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-4 text-white text-[15px] focus:outline-none focus:border-[#FF2D78]"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-4 text-white text-[15px] focus:outline-none focus:border-[#C6FF00]"
                 />
               </div>
               <div>
@@ -180,7 +180,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                   value={formData.handle}
                   onChange={(e) => setFormData({...formData, handle: e.target.value})}
                   placeholder="kickzone_zw"
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-4 text-white text-[15px] focus:outline-none focus:border-[#FF2D78]"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-4 text-white text-[15px] focus:outline-none focus:border-[#C6FF00]"
                 />
               </div>
               <div>
@@ -191,7 +191,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                       key={c}
                       onClick={() => setFormData({...formData, category: c})}
                       className={`px-4 py-2 rounded-full text-[12px] font-bold transition-all
-                        ${formData.category === c ? 'bg-[#FF2D78] text-white' : 'bg-[#111] border border-[#333] text-[#888]'}`}
+                        ${formData.category === c ? 'bg-[#C6FF00] text-white' : 'bg-[#111] border border-[#333] text-[#888]'}`}
                     >
                       {c}
                     </button>
@@ -204,7 +204,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   placeholder="What do you sell?"
-                  className="w-full h-24 bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#FF2D78] resize-none"
+                  className="w-full h-24 bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#C6FF00] resize-none"
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                       key={a}
                       onClick={() => setFormData({...formData, area: a})}
                       className={`px-4 py-2 rounded-full text-[12px] font-bold transition-all
-                        ${formData.area === a ? 'bg-[#FF2D78] text-white' : 'bg-[#111] border border-[#333] text-[#888]'}`}
+                        ${formData.area === a ? 'bg-[#C6FF00] text-white' : 'bg-[#111] border border-[#333] text-[#888]'}`}
                     >
                       {a}
                     </button>
@@ -239,7 +239,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                   value={formData.landmark}
                   onChange={(e) => setFormData({...formData, landmark: e.target.value})}
                   placeholder="e.g. Opposite Joina City"
-                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-4 text-white text-[15px] focus:outline-none focus:border-[#FF2D78]"
+                  className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-4 text-white text-[15px] focus:outline-none focus:border-[#C6FF00]"
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -248,7 +248,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                   id="online-only"
                   checked={formData.is_online_only}
                   onChange={(e) => setFormData({...formData, is_online_only: e.target.checked})}
-                  className="w-5 h-5 accent-[#FF2D78]"
+                  className="w-5 h-5 accent-[#C6FF00]"
                 />
                 <label htmlFor="online-only" className="text-white text-[14px]">Online Only / Delivery Based</label>
               </div>
@@ -259,7 +259,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                     value={formData.directions}
                     onChange={(e) => setFormData({...formData, directions: e.target.value})}
                     placeholder="e.g. First floor, Room 102..."
-                    className="w-full h-24 bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#FF2D78] resize-none"
+                    className="w-full h-24 bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#C6FF00] resize-none"
                   />
                 </div>
               )}
@@ -294,7 +294,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
             <div className="space-y-4">
               <div>
                 <label className="text-white font-bold text-[13px] block mb-2">Instagram Handle</label>
-                <div className="flex items-center bg-[#111] border border-[#222] rounded-[10px] px-4 focus-within:border-[#FF2D78]">
+                <div className="flex items-center bg-[#111] border border-[#222] rounded-[10px] px-4 focus-within:border-[#C6FF00]">
                   <span className="text-[#444] mr-1">@</span>
                   <input 
                     value={formData.instagram}
@@ -310,7 +310,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
                   value={formData.delivery_info}
                   onChange={(e) => setFormData({...formData, delivery_info: e.target.value})}
                   placeholder="e.g. Free delivery in Hre CBD, $5 outside..."
-                  className="w-full h-24 bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#FF2D78] resize-none"
+                  className="w-full h-24 bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#C6FF00] resize-none"
                 />
               </div>
             </div>
@@ -334,7 +334,7 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
             if (step < 3) setStep(step + 1);
             else handleSubmit();
           }}
-          className={`h-14 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] rounded-full text-white font-bold transition-all flex items-center justify-center gap-2
+          className={`h-14 bg-linear-to-r from-[#9B27AF] to-[#C6FF00] rounded-full text-white font-bold transition-all flex items-center justify-center gap-2
             ${step === 1 ? 'w-full' : 'flex-[2]'} 
             ${(loading || (step === 1 && (!formData.name || !formData.handle || !formData.category))) ? 'opacity-50 grayscale' : ''}`}
         >

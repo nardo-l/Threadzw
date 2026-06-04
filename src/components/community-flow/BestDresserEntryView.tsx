@@ -13,7 +13,7 @@ export const BestDresserEntryView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const ACCENT_COLOR = '#FF2D78';
+  const ACCENT_COLOR = '#C6FF00';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +68,7 @@ export const BestDresserEntryView: React.FC = () => {
 
       <div className="px-6 py-8">
         <div className="mb-8 text-center">
-           <div className="w-20 h-20 bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] rounded-[24px] mx-auto flex items-center justify-center shadow-lg transform rotate-3">
+           <div className="w-20 h-20 bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] rounded-[24px] mx-auto flex items-center justify-center shadow-lg transform rotate-3">
               <Instagram size={40} className="text-white" />
            </div>
            <h2 className="text-[28px] font-bold mt-6 tracking-tight text-[#111111]">Submit Your Fit</h2>
@@ -82,13 +82,13 @@ export const BestDresserEntryView: React.FC = () => {
               INSTAGRAM HANDLE
             </label>
             <div className="relative group">
-               <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#FF2D78]">@</div>
+               <div className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-[#C6FF00]">@</div>
                <input 
                  type="text"
                  value={handle}
                  onChange={(e) => setHandle(e.target.value)}
                  placeholder="your.handle"
-                 className="w-full h-[56px] border border-[#EFEFEF] rounded-[16px] pl-9 pr-4 font-medium outline-none transition-all bg-white text-[#111111] focus:border-[#FF2D78] shadow-sm"
+                 className="w-full h-[56px] border border-[#EFEFEF] rounded-[16px] pl-9 pr-4 font-medium outline-none transition-all bg-white text-[#111111] focus:border-[#C6FF00] shadow-sm"
                />
             </div>
           </div>
@@ -107,7 +107,7 @@ export const BestDresserEntryView: React.FC = () => {
                  value={link}
                  onChange={(e) => setLink(e.target.value)}
                  placeholder="https://instagram.com/p/..."
-                 className="w-full h-[56px] border border-[#EFEFEF] rounded-[16px] pl-11 pr-4 font-medium outline-none transition-all bg-white text-[#111111] focus:border-[#FF2D78] shadow-sm"
+                 className="w-full h-[56px] border border-[#EFEFEF] rounded-[16px] pl-11 pr-4 font-medium outline-none transition-all bg-white text-[#111111] focus:border-[#C6FF00] shadow-sm"
                />
             </div>
             <p className="text-[11px] mt-2 text-[#888888]">
@@ -124,8 +124,8 @@ export const BestDresserEntryView: React.FC = () => {
                "Your account is public",
              ].map((rule, i) => (
                 <div key={`contest-rule-${i}`} className="flex gap-3 items-center">
-                   <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#FF2D78]/10">
-                      <Check size={12} className="text-[#FF2D78]" />
+                   <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-[#C6FF00]/10">
+                      <Check size={12} className="text-[#C6FF00]" />
                    </div>
                    <span className="text-[13px] text-[#888888]">{rule}</span>
                 </div>
@@ -165,7 +165,7 @@ export const BestDresserEntryView: React.FC = () => {
             disabled={isLoading}
             className={`
               w-full h-[64px] rounded-full font-bold text-[16px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all
-              ${isLoading ? 'bg-white border border-[#EFEFEF] text-[#888888] cursor-not-allowed' : 'bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] text-white cursor-pointer'}
+              ${isLoading ? 'bg-white border border-[#EFEFEF] text-[#888888] cursor-not-allowed' : 'bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] text-white cursor-pointer'}
             `}
           >
             {isLoading ? (

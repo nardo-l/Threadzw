@@ -378,7 +378,7 @@ export const ProductDetail: React.FC = () => {
             className="p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-[28px] flex items-center justify-between group cursor-pointer transition-all duration-300"
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-[#0d0d0d] border border-white/10 overflow-hidden shrink-0 flex items-center justify-center font-bold text-[#f72585]">
+              <div className="w-12 h-12 rounded-2xl bg-[#0d0d0d] border border-white/10 overflow-hidden shrink-0 flex items-center justify-center font-bold text-[#C6FF00]">
                 {shop.avatar_url ? (
                   <img src={shop.avatar_url} className="w-full h-full object-cover" alt="" />
                 ) : (
@@ -396,15 +396,15 @@ export const ProductDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* PERSISTENT BUY BAR - Full width Hot Pink WhatsApp CTA */}
+      {/* PERSISTENT BUY BAR - Full width Neon Green WhatsApp CTA */}
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-xl border-t border-white/5 px-6 py-4 pb-safe max-w-lg mx-auto">
         <button 
           onClick={handleWhatsApp}
           disabled={isSoldOut}
-          className={`w-full h-14 bg-[#f72585] hover:bg-[#d61c6d] text-white rounded-2xl flex items-center justify-center gap-2.5 font-bold uppercase text-[13px] tracking-widest transition-transform active:scale-[0.98] cursor-pointer shadow-[0_12px_40px_rgba(247,37,133,0.35)] disabled:bg-zinc-800 disabled:text-zinc-500 disabled:shadow-none disabled:cursor-not-allowed`}
+          className={`w-full h-14 bg-[#C6FF00] hover:bg-[#b5e600] text-black rounded-2xl flex items-center justify-center gap-2.5 font-bold uppercase text-[13px] tracking-widest transition-transform active:scale-[0.98] cursor-pointer shadow-[0_12px_40px_rgba(198,255,0,0.25)] disabled:bg-zinc-800 disabled:text-zinc-500 disabled:shadow-none disabled:cursor-not-allowed`}
         >
           <span>{isSoldOut ? 'sold out' : 'order on whatsapp'}</span>
-          <MessageCircle size={15} className="fill-white" />
+          <MessageCircle size={15} className="fill-black" />
         </button>
       </footer>
 

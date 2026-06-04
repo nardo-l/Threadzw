@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Shield, Eye, EyeOff, Lock, X } from 'lucide-react';
+import { useDemoShop } from '../hooks/useDemoShop';
 
 interface LandingPageProps {
   onStartFree: () => void;
@@ -10,6 +11,7 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSuccess }) => {
+  const { demoShop, demoProducts, loading: demoLoading } = useDemoShop();
   const [showSignIn, setShowSignIn] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -111,7 +113,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
 
           <button 
             onClick={() => {
-              window.location.href = '/shop/@kure';
+              window.location.href = '/shop/demo';
             }}
             className="w-full h-12.5 bg-transparent border-1.5 border-[#2A2A2A] text-white font-black text-sm rounded-full flex items-center justify-center gap-2 hover:bg-white/[0.04] active:scale-95 cursor-pointer"
           >
@@ -315,57 +317,113 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
           </h2>
           <p className="text-[#A1A1AA] text-sm font-semibold mb-8">Professional. Beautiful. Yours.</p>
 
-          {/* PHONE MOCKUP FOR KURE STREETWEAR */}
+          {/* PHONE MOCKUP FOR LIVE DEMO SHOP */}
           <div className="relative max-w-[260px] mx-auto mb-8">
             <div className="bg-[#151515] border-2 border-[#2A2A2A] rounded-[36px] p-2.5 shadow-[0_40px_80px_rgba(0,0,0,0.6)] select-none">
               {/* NOTCH */}
               <div className="w-[60px] h-1.5 bg-[#0B0B0B] rounded-full mx-auto mb-2" />
               
               {/* SCREEN */}
-              <div className="bg-[#0B0B0B] rounded-[26px] overflow-hidden text-left pb-3">
-                {/* Mock Banner */}
-                <div 
-                  style={{
-                    height: 100,
-                    background: 'linear-gradient(135deg, #1C1917, #44403C)'
-                  }}
-                  className="relative flex items-center justify-center font-black text-[#C6FF00] text-xs tracking-widest opacity-80"
-                >
-                  KURE STREETWEAR
-                  {/* Avatar circle */}
-                  <div className="absolute bottom-[-18px] left-4 w-12 h-12 rounded-full bg-[#1A1A1A] border-[3px] border-[#0B0B0B] flex items-center justify-center text-xl shadow-lg font-bold">
-                    ✨
-                  </div>
-                </div>
-
-                {/* Shop Info */}
-                <div className="pt-7 px-3.5">
-                  <h3 className="text-white font-black text-sm leading-none">KURE STREETWEAR</h3>
-                  <p className="text-[#A1A1AA] text-[10px] mt-1 font-semibold">@kure · Harare</p>
-                </div>
-
-                {/* Grid Items */}
-                <div className="grid grid-cols-2 gap-1.5 px-3.5 mt-2.5">
-                  {[
-                    { emoji: '👟', price: '$25' },
-                    { emoji: '👕', price: '$15' },
-                    { emoji: '🧢', price: '$12' },
-                    { emoji: '👖', price: '$20' }
-                  ].map((item, i) => (
-                    <div 
-                      key={i}
-                      className="bg-[#151515] rounded-[10px] h-[72px] flex flex-col items-center justify-center gap-1 border border-[#222222]"
-                    >
-                      <span className="text-lg">{item.emoji}</span>
-                      <span className="text-[#C6FF00] font-black text-[10px]">{item.price}</span>
+              <div className="bg-[#0B0B0B] rounded-[26px] overflow-hidden text-left pb-3 min-h-[300px]">
+                {demoLoading ? (
+                  /* SHIMMER SKELETON WHILE LOADING */
+                  <div className="flex flex-col h-[320px]">
+                    <div className="w-full h-[100px] animate-shimmer" />
+                    <div className="relative px-3.5">
+                      <div className="absolute top-[-18px] left-4 w-12 h-12 rounded-full border-[3px] border-[#0B0B0B] animate-shimmer bg-white/[0.04]" />
                     </div>
-                  ))}
-                </div>
+                    <div className="pt-9 px-3.5 space-y-2">
+                      <div className="w-28 h-4 rounded animate-shimmer bg-white/[0.04]" />
+                      <div className="w-16 h-1.5 rounded animate-shimmer bg-white/[0.04]" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5 px-3.5 mt-4 flex-1">
+                      <div className="rounded-[10px] h-[55px] animate-shimmer bg-white/[0.04]" />
+                      <div className="rounded-[10px] h-[55px] animate-shimmer bg-white/[0.04]" />
+                    </div>
+                  </div>
+                ) : (
+                  /* RENDER LIVE DEMO DATA */
+                  <div>
+                    {/* Banner */}
+                    <div 
+                      style={{
+                        height: 100,
+                        backgroundImage: demoShop?.banner_url ? `url(${demoShop.banner_url})` : 'none',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        backgroundColor: '#1E1B4B'
+                      }}
+                      className="relative flex items-center justify-center text-xs tracking-widest opacity-80"
+                    >
+                      {!demoShop?.banner_url && (
+                        <span className="font-sans font-black text-white/40 tracking-wider">
+                          {demoShop?.name ? demoShop.name.toUpperCase() : 'DEMO SHOP'}
+                        </span>
+                      )}
+                      {/* Avatar circle */}
+                      <div 
+                        style={{
+                          backgroundImage: demoShop?.logo_url ? `url(${demoShop.logo_url})` : 'none',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          backgroundColor: '#1A1A1A'
+                        }}
+                        className="absolute bottom-[-18px] left-4 w-12 h-12 rounded-full border-[3px] border-[#0B0B0B] flex items-center justify-center shadow-lg"
+                      >
+                        {!demoShop?.logo_url && (
+                          <span className="text-white font-sans font-black text-[10px]">
+                            {demoShop?.name ? demoShop.name.charAt(0).toUpperCase() : 'D'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                {/* WhatsApp Button */}
-                <div className="mx-3.5 mt-2.5 bg-[#25D366] text-white font-extrabold text-[10px] py-2 rounded-[10px] text-center shadow-md">
-                  💬 Chat on WhatsApp
-                </div>
+                    {/* Shop Info */}
+                    <div className="pt-7 px-3.5">
+                      <h3 className="text-white font-black text-sm leading-none truncate">
+                        {demoShop?.name || 'Demo Store'}
+                      </h3>
+                      <p className="text-[#A1A1AA] text-[10px] mt-1 font-semibold truncate">
+                        @{demoShop?.handle || 'demo'} · {demoShop?.location || 'Harare'}
+                      </p>
+                    </div>
+
+                    {/* Grid Items */}
+                    <div className="px-3.5 mt-2.5">
+                      {demoProducts.length === 0 ? (
+                        <div className="py-8 text-center text-[10px] font-sans font-black text-white/30 tracking-tight">
+                          No products in stock
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {demoProducts.slice(0, 4).map((product, i) => (
+                            <div 
+                              key={product.id || i}
+                              className="bg-[#151515] rounded-[10px] h-[72px] flex flex-col items-center justify-center gap-1 border border-[#222222] overflow-hidden p-1 text-center"
+                            >
+                              {product.image_url ? (
+                                <img 
+                                  src={product.image_url} 
+                                  alt="" 
+                                  className="w-8 h-8 object-cover rounded-md mx-auto"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-md bg-[#222] animate-shimmer" />
+                              )}
+                              <span className="text-[#C6FF00] font-black text-[10px]">${product.price}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* WhatsApp Button */}
+                    <div className="mx-3.5 mt-2.5 bg-[#25D366] text-white font-extrabold text-[10px] py-2 rounded-[10px] text-center shadow-md">
+                      Chat on WhatsApp
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -373,7 +431,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
           <div className="flex justify-center animate-fade-in">
             <button 
               onClick={() => {
-                window.location.href = '/shop/@kure';
+                window.location.href = '/shop/demo';
               }}
               className="w-full max-w-[200px] h-12.5 bg-transparent border-1.5 border-[#2A2A2A] text-white font-black text-sm rounded-full flex items-center justify-center gap-2 hover:bg-white/[0.04] transition-all cursor-pointer"
             >

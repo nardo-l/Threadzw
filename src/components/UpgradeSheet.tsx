@@ -73,7 +73,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
                 <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Limit reached</span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
-                <div className="w-full h-full gradient-pink-purple" />
+                <div className="w-full h-full bg-[#C6FF00] text-black" />
               </div>
               <p className="text-xs text-muted leading-relaxed">Activate your full shop subscription to list unlimited products and appear in the feed.</p>
             </div>
@@ -120,7 +120,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
                 <button 
                   onClick={handleUpgrade}
                   disabled={isProcessing}
-                  className="w-full py-4 gradient-pink-purple text-white font-syne font-bold rounded-pill shadow-xl flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-[#C6FF00] text-black text-white font-syne font-bold rounded-pill shadow-xl flex items-center justify-center gap-2"
                 >
                   {isProcessing ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

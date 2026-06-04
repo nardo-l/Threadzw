@@ -62,7 +62,7 @@ export const SavedItems: React.FC = () => {
           </div>
           <button 
             onClick={() => navigate('/')}
-            className="px-8 py-3 text-white font-bold rounded-pill shadow-lg mt-2 bg-[#FF5FA2] shadow-[#FF5FA2]/20"
+            className="px-8 py-3 text-white font-bold rounded-pill shadow-lg mt-2 bg-[#C6FF00] shadow-[#C6FF00]/20"
           >
             Explore Feed
           </button>
@@ -99,7 +99,7 @@ export const SavedItems: React.FC = () => {
                   <p className="text-[10px] font-mono uppercase tracking-wider truncate text-[#555]">{product.shop_name}</p>
                   <h4 className="text-sm font-bold truncate text-white">{product.name}</h4>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="font-syne font-bold text-[#FF5FA2]">${product.price}</span>
+                    <span className="font-syne font-bold text-[#C6FF00]">${product.price}</span>
                   </div>
                 </div>
               </div>

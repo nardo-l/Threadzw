@@ -241,7 +241,7 @@ export const Profile: React.FC = () => {
              >
                 <Bell size={24} strokeWidth={3} />
                 {unreadNotificationCount > 0 && (
-                   <div className="absolute -top-2 -right-2 w-8 h-8 bg-pink border-4 border-charcoal rounded-full flex items-center justify-center text-white text-[10px] font-black italic">
+                   <div className="absolute -top-2 -right-2 w-8 h-8 bg-[#C6FF00] border-4 border-charcoal rounded-full flex items-center justify-center text-white text-[10px] font-black italic">
                       {unreadNotificationCount}
                    </div>
                 )}
@@ -251,7 +251,7 @@ export const Profile: React.FC = () => {
 
         {/* Avatar Container */}
         <div className="relative mt-12 group/avatar">
-          <div className="w-[150px] h-[150px] rounded-[48px] border-4 border-charcoal bg-white p-2 overflow-hidden shadow-[12px_12px_0_#F4A6C1] transition-transform group-hover/avatar:scale-105 duration-500">
+          <div className="w-[150px] h-[150px] rounded-[48px] border-4 border-charcoal bg-white p-2 overflow-hidden shadow-[12px_12px_0_#C6FF00] transition-transform group-hover/avatar:scale-105 duration-500">
              <div className="w-full h-full rounded-[40px] overflow-hidden bg-cream flex items-center justify-center">
                {profile?.avatar_url ? (
                  <img src={profile.avatar_url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -278,7 +278,7 @@ export const Profile: React.FC = () => {
             <h1 className="text-5xl md:text-6xl font-display font-black italic tracking-tighter leading-none mb-1 text-charcoal">
               {profile?.display_name || 'anonymous'}
             </h1>
-            <span className="text-2xl font-display font-black text-pink italic tracking-tighter leading-none">@{profile?.handle || 'user'}</span>
+            <span className="text-2xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none">@{profile?.handle || 'user'}</span>
           </div>
           
           <div className="flex flex-wrap justify-center gap-3">
@@ -313,10 +313,10 @@ export const Profile: React.FC = () => {
         <div className="w-full mt-10 grid grid-cols-2 gap-4">
            <button 
              onClick={() => setActiveTab('saved')}
-             className="flex flex-col p-6 rounded-[32px] bg-white border-4 border-charcoal shadow-[8px_8px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all group"
+             className="flex flex-col p-6 rounded-[32px] bg-white border-4 border-charcoal shadow-[8px_8px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all group"
            >
               <div className="flex justify-between items-start mb-4">
-                 <div className="w-10 h-10 rounded-full bg-pink/10 flex items-center justify-center text-pink">
+                 <div className="w-10 h-10 rounded-full bg-[#C6FF00]/10 flex items-center justify-center text-[#C6FF00]">
                     <Heart size={20} strokeWidth={4} />
                  </div>
                  <span className="text-4xl font-display font-black text-charcoal italic tracking-tighter leading-none">{formatCount(savedProducts.length)}</span>
@@ -502,7 +502,7 @@ const SideDrawer: React.FC<{
           <X size={20} strokeWidth={4} />
         </button>
         <div className="flex flex-col gap-8">
-          <div className="w-[100px] h-[100px] rounded-[32px] border-4 border-charcoal bg-white p-1 overflow-hidden shadow-[8px_8px_0_#F4A6C1]">
+          <div className="w-[100px] h-[100px] rounded-[32px] border-4 border-charcoal bg-white p-1 overflow-hidden shadow-[8px_8px_0_#C6FF00]">
              <div className="w-full h-full rounded-[26px] overflow-hidden bg-cream flex items-center justify-center">
                {profile?.avatar_url ? (
                  <img src={profile.avatar_url} className="w-full h-full object-cover" />
@@ -515,7 +515,7 @@ const SideDrawer: React.FC<{
           </div>
           <div className="flex flex-col min-w-0">
              <span className="text-4xl font-display font-black italic truncate leading-tight uppercase tracking-tighter text-charcoal">{profile?.display_name || 'User'}</span>
-             <span className="text-xl font-display font-black text-pink italic tracking-tighter leading-none mt-1">@{profile?.handle || 'user'}</span>
+             <span className="text-xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none mt-1">@{profile?.handle || 'user'}</span>
           </div>
         </div>
       </div>
@@ -533,7 +533,7 @@ const SideDrawer: React.FC<{
             </div>
             <span className="text-[13px] font-black uppercase tracking-[0.2em] flex-1 text-left italic">{item.label}</span>
             {item.badge && item.badge > 0 ? (
-              <div className="w-8 h-8 rounded-full bg-pink border-4 border-charcoal flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-[#C6FF00] border-4 border-charcoal flex items-center justify-center">
                 <span className="text-[10px] font-black text-white">{item.badge}</span>
               </div>
             ) : (
@@ -546,7 +546,7 @@ const SideDrawer: React.FC<{
 
         <button 
           onClick={onSignOut}
-          className="w-full p-6 rounded-[28px] flex items-center gap-6 hover:bg-red-500 hover:text-white transition-all text-pink border-4 border-transparent hover:border-charcoal hover:shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none font-black italic uppercase tracking-[0.2em] text-[13px]"
+          className="w-full p-6 rounded-[28px] flex items-center gap-6 hover:bg-red-500 hover:text-white transition-all text-[#C6FF00] border-4 border-transparent hover:border-charcoal hover:shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none font-black italic uppercase tracking-[0.2em] text-[13px]"
         >
           <div className="w-12 h-12 rounded-[16px] bg-red-500/10 flex items-center justify-center group-hover:bg-white">
              <LogOut size={20} strokeWidth={4} />
@@ -557,7 +557,7 @@ const SideDrawer: React.FC<{
 
       {/* Footer */}
       <div className="p-10 pb-16 border-t-4 border-charcoal bg-white">
-         <span className="text-3xl font-display font-black tracking-[-0.08em] italic text-charcoal">thread<span className="text-pink">zw</span></span>
+         <span className="text-3xl font-display font-black tracking-[-0.08em] italic text-charcoal">thread<span className="text-[#C6FF00]">zw</span></span>
          <div className="flex items-center gap-2 mt-4">
             <div className="w-2 h-2 rounded-full bg-lime animate-pulse" />
             <p className="text-charcoal/30 text-[9px] font-black uppercase tracking-[0.4em] italic">V.2.1.0-EDITION</p>
@@ -581,7 +581,7 @@ const SavedTab: React.FC<{ products: SaveItem[], loading: boolean, navigate: (p:
   if (products.length === 0) {
     return (
       <div className="py-24 flex flex-col items-center text-center gap-8 border-8 border-dashed border-charcoal/5 rounded-[54px] bg-white/40">
-        <div className="w-24 h-24 rounded-[32px] bg-cream border-4 border-charcoal flex items-center justify-center text-pink shadow-[8px_8px_0_rgba(0,0,0,1)]">
+        <div className="w-24 h-24 rounded-[32px] bg-cream border-4 border-charcoal flex items-center justify-center text-[#C6FF00] shadow-[8px_8px_0_rgba(0,0,0,1)]">
            <Heart size={44} strokeWidth={4} />
         </div>
         <div className="flex flex-col gap-3">
@@ -592,7 +592,7 @@ const SavedTab: React.FC<{ products: SaveItem[], loading: boolean, navigate: (p:
         </div>
         <button 
           onClick={() => navigate('/home')}
-           className="px-10 py-5 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-xl rounded-[24px] shadow-[8px_8px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all"
+           className="px-10 py-5 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-xl rounded-[24px] shadow-[8px_8px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all"
         >
           Launch Feed
         </button>
@@ -619,13 +619,13 @@ const SavedTab: React.FC<{ products: SaveItem[], loading: boolean, navigate: (p:
               referrerPolicy="no-referrer"
             />
             <div className="absolute top-4 right-4">
-               <div className="oval-sticker !bg-pink !text-white !p-2 !px-4 !shadow-none border-none uppercase font-black italic tracking-widest text-[9px] translate-y-[-20%] group-hover:translate-y-0 transition-transform">Registry OK</div>
+               <div className="oval-sticker !bg-[#C6FF00] !text-white !p-2 !px-4 !shadow-none border-none uppercase font-black italic tracking-widest text-[9px] translate-y-[-20%] group-hover:translate-y-0 transition-transform">Registry OK</div>
             </div>
             <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <div className="flex flex-col gap-1 px-4">
-            <h4 className="text-2xl font-display font-black uppercase italic tracking-tighter truncate leading-none text-charcoal group-hover:text-pink transition-colors">{item.products.name}</h4>
-            <span className="text-3xl font-display font-black text-pink italic tracking-tighter leading-none">${item.products.price}</span>
+            <h4 className="text-2xl font-display font-black uppercase italic tracking-tighter truncate leading-none text-charcoal group-hover:text-[#C6FF00] transition-colors">{item.products.name}</h4>
+            <span className="text-3xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none">${item.products.price}</span>
           </div>
         </motion.div>
       ))}
@@ -670,7 +670,7 @@ const FollowingTab: React.FC<{ follows: FollowItem[], loading: boolean, navigate
           onClick={() => navigate(`/shop/${follow.shops.handle || follow.shops.id}`)}
           className="bg-white border-4 border-charcoal rounded-[40px] p-6 flex items-center gap-6 active:translate-y-[2px] transition-all cursor-pointer shadow-[8px_8px_0_rgba(0,0,0,1)] hover:shadow-[12px_12px_0_rgba(0,0,0,1)] hover:translate-y-[-2px] group"
         >
-          <div className="w-[80px] h-[80px] rounded-[28px] overflow-hidden border-4 border-charcoal bg-white flex items-center justify-center shrink-0 shadow-[4px_4px_0_#F4A6C1]">
+          <div className="w-[80px] h-[80px] rounded-[28px] overflow-hidden border-4 border-charcoal bg-white flex items-center justify-center shrink-0 shadow-[4px_4px_0_#C6FF00]">
              {(follow.shops.logo_url || follow.shops.avatar_url) ? (
                 <img src={follow.shops.logo_url || follow.shops.avatar_url || undefined} className="w-full h-full object-cover" />
              ) : (
@@ -678,7 +678,7 @@ const FollowingTab: React.FC<{ follows: FollowItem[], loading: boolean, navigate
              )}
           </div>
           <div className="flex-1 min-w-0">
-             <h4 className="text-3xl font-display font-black uppercase italic truncate tracking-tighter text-charcoal leading-none mb-2 group-hover:text-pink transition-colors">{follow.shops.name}</h4>
+             <h4 className="text-3xl font-display font-black uppercase italic truncate tracking-tighter text-charcoal leading-none mb-2 group-hover:text-[#C6FF00] transition-colors">{follow.shops.name}</h4>
              <div className="flex flex-wrap items-center gap-2">
                 <div className="oval-sticker !bg-charcoal/5 !text-charcoal/40 !p-1 !px-3 !shadow-none !text-[8.5px] border-none uppercase font-black italic tracking-widest">{follow.shops.category}</div>
                 <div className="oval-sticker !bg-lime !text-charcoal !p-1 !px-3 !shadow-none !text-[8.5px] border-none uppercase font-black italic tracking-widest">{follow.shops.town}</div>
@@ -686,7 +686,7 @@ const FollowingTab: React.FC<{ follows: FollowItem[], loading: boolean, navigate
           </div>
           <button 
             onClick={(e) => { e.stopPropagation(); onUnfollow(follow.shop_id); }}
-            className="w-12 h-12 rounded-[16px] bg-charcoal/5 border-2 border-charcoal/10 flex items-center justify-center text-charcoal/20 hover:bg-pink hover:text-white hover:border-charcoal transition-all active:scale-90"
+            className="w-12 h-12 rounded-[16px] bg-charcoal/5 border-2 border-charcoal/10 flex items-center justify-center text-charcoal/20 hover:bg-[#C6FF00] hover:text-white hover:border-charcoal transition-all active:scale-90"
             title="Unfollow"
           >
              <X size={20} strokeWidth={4} />
@@ -890,7 +890,7 @@ const EditProfileSheet: React.FC<{
            <div className="flex flex-col gap-4">
               <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.3em] italic pl-2">Neural Avatar</label>
               <div className="bg-white border-4 border-charcoal rounded-[40px] p-6 flex items-center gap-8 shadow-[8px_8px_0_rgba(0,0,0,0.05)]">
-                 <div className="w-24 h-24 rounded-[32px] border-4 border-charcoal p-1 bg-cream overflow-hidden shadow-[4px_4px_0_#F4A6C1]">
+                 <div className="w-24 h-24 rounded-[32px] border-4 border-charcoal p-1 bg-cream overflow-hidden shadow-[4px_4px_0_#C6FF00]">
                     <div className="w-full h-full rounded-[24px] overflow-hidden bg-white flex items-center justify-center">
                        {profile?.avatar_url ? (
                          <img src={profile.avatar_url} className="w-full h-full object-cover" />
@@ -920,14 +920,14 @@ const EditProfileSheet: React.FC<{
            {/* Fields */}
            <div className="flex flex-col gap-8">
               <div className="flex flex-col gap-3 group">
-                 <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.3em] italic pl-2 group-focus-within:text-pink transition-colors">Digital Handle</label>
+                 <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.3em] italic pl-2 group-focus-within:text-[#C6FF00] transition-colors">Digital Handle</label>
                  <div className="relative">
                     <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl font-display font-black text-charcoal/20">@</span>
                     <input 
                        type="text"
                        value={handle}
                        onChange={(e) => setHandle(e.target.value.replace(/\s+/g, '').toLowerCase())}
-                       className="w-full h-20 bg-white border-4 border-charcoal rounded-[28px] pl-12 pr-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[8px_8px_0_#F4A6C1] transition-all outline-none"
+                       className="w-full h-20 bg-white border-4 border-charcoal rounded-[28px] pl-12 pr-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[8px_8px_0_#C6FF00] transition-all outline-none"
                     />
                     {handle.length > 0 && handle !== profile?.handle && (
                        <div className={`absolute right-6 top-1/2 -translate-y-1/2 px-3 py-1 rounded-full text-[9px] font-black uppercase italic ${isHandleAvailable ? 'bg-lime text-charcoal' : 'bg-red-500 text-white'}`}>
@@ -938,18 +938,18 @@ const EditProfileSheet: React.FC<{
               </div>
 
               <div className="flex flex-col gap-3 group">
-                 <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.3em] italic pl-2 group-focus-within:text-pink transition-colors">Neural Alias</label>
+                 <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.3em] italic pl-2 group-focus-within:text-[#C6FF00] transition-colors">Neural Alias</label>
                  <input 
                     type="text"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
-                    className="w-full h-20 bg-white border-4 border-charcoal rounded-[28px] px-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[8px_8px_0_#F4A6C1] transition-all outline-none"
+                    className="w-full h-20 bg-white border-4 border-charcoal rounded-[28px] px-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[8px_8px_0_#C6FF00] transition-all outline-none"
                     placeholder="Identity Label"
                  />
               </div>
 
               <div className="flex flex-col gap-3 group">
-                 <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.3em] italic pl-2 group-focus-within:text-pink transition-colors">Stationary Node</label>
+                 <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.3em] italic pl-2 group-focus-within:text-[#C6FF00] transition-colors">Stationary Node</label>
                  <button 
                     onClick={() => setShowTownPicker(true)}
                     className="w-full h-20 bg-white border-4 border-charcoal rounded-[28px] px-8 flex items-center justify-between text-2xl font-display font-black italic text-charcoal tracking-tight hover:shadow-[8px_8px_0_#C6FF00] transition-all"

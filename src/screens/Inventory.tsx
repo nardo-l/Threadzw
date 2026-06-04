@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Plus, Search, Edit3, Copy, Star, AlertCircle, ShoppingBag, Trash2, CheckCircle, 
+  Plus, Search, Edit3, Copy, Star, AlertCircle, ShoppingBag, Trash2, CheckCircle2, 
   X, Filter, Home, Package, BarChart3, Settings, Eye, ChevronRight, Sparkles, LogOut, Check
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -509,7 +509,7 @@ export const Inventory: React.FC = () => {
                   {selectedProduct.total_stock === 0 ? (
                     <>
                       <div className="w-10 h-10 bg-[#C6FF00]/10 text-[#C6FF00] rounded-xl flex items-center justify-center">
-                        <CheckCircle size={16} />
+                        <CheckCircle2 size={16} />
                       </div>
                       <div className="flex-1">
                         <h4 className="text-xs font-mono uppercase tracking-wider text-[#C6FF00] font-extrabold">Mark In Stock</h4>

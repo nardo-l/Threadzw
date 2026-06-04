@@ -152,7 +152,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block drop-shadow-lg">📡</span>
                 <h1 className="text-4xl md:text-5xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none mb-6">
-                  Initiate <br/><span className="text-pink">Operational</span> <br/>Node.
+                  Initiate <br/><span className="text-[#C6FF00]">Operational</span> <br/>Node.
                 </h1>
                 <p className="text-2xl italic-accent text-charcoal/40 leading-tight">
                   Deploy your business entity on the ThreadZW global storefront network.
@@ -161,7 +161,7 @@ export const SellerOnboarding: React.FC = () => {
               <input 
                 type="text" 
                 placeholder="PROVISION LEGAL NAME"
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-pink outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] placeholder:text-charcoal/10"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-[#C6FF00] outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] placeholder:text-charcoal/10"
                 value={formData.contact_name}
                 onChange={(e) => updateForm('contact_name', e.target.value)}
                 autoFocus
@@ -181,14 +181,14 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block drop-shadow-lg">🏢</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Entity <br/><span className="text-pink">Branding</span>.
+                  Entity <br/><span className="text-[#C6FF00]">Branding</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Define the commercial identity for your storefront registry.</p>
               </div>
               <input 
                 type="text" 
                 placeholder="BUSINESS NAME"
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-pink outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] placeholder:text-charcoal/10"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-[#C6FF00] outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] placeholder:text-charcoal/10"
                 value={formData.business_name}
                 onChange={(e) => updateForm('business_name', e.target.value)}
                 autoFocus
@@ -196,7 +196,7 @@ export const SellerOnboarding: React.FC = () => {
               <button 
                 onClick={nextStep}
                 disabled={!formData.business_name}
-                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-20"
+                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-20"
               >
                 Parameters Locked <ChevronRight size={24} strokeWidth={3} />
               </button>
@@ -208,7 +208,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">🏷️</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Commercial <br/><span className="text-pink">Archetype</span>.
+                  Commercial <br/><span className="text-[#C6FF00]">Archetype</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Classify your primary inventory protocol.</p>
               </div>
@@ -239,7 +239,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">📍</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Geographic <br/><span className="text-pink">Node</span>.
+                  Geographic <br/><span className="text-[#C6FF00]">Node</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Select your operational base within the Zimbabwe cluster.</p>
               </div>
@@ -248,7 +248,7 @@ export const SellerOnboarding: React.FC = () => {
                 className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-charcoal font-black flex items-center justify-between text-2xl italic tracking-tighter transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)]"
               >
                 <span>{formData.town || 'Locate Node'}</span>
-                <MapPin size={32} className="text-pink" />
+                <MapPin size={32} className="text-[#C6FF00]" />
               </button>
               
               <button 
@@ -266,13 +266,13 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">🏪</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Spatial <br/><span className="text-pink">Presence</span>.
+                  Spatial <br/><span className="text-[#C6FF00]">Presence</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Define your physical versus digital operational capacity.</p>
               </div>
               <textarea 
                 placeholder="e.g. Online only, OR Eastlea Shopping Centre, Shop 4"
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-charcoal font-black italic focus:border-pink outline-none text-xl transition-all min-h-[160px] resize-none shadow-[8px_8px_0_rgba(0,0,0,0.05)]"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-charcoal font-black italic focus:border-[#C6FF00] outline-none text-xl transition-all min-h-[160px] resize-none shadow-[8px_8px_0_rgba(0,0,0,0.05)]"
                 value={formData.physical_location}
                 onChange={(e) => updateForm('physical_location', e.target.value)}
                 autoFocus
@@ -280,7 +280,7 @@ export const SellerOnboarding: React.FC = () => {
               <button 
                 onClick={nextStep}
                 disabled={!formData.physical_location}
-                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-20"
+                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-20"
               >
                 Spatial Sync <ChevronRight size={24} />
               </button>
@@ -292,7 +292,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">⏰</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Uptime <br/><span className="text-pink">Protocol</span>.
+                  Uptime <br/><span className="text-[#C6FF00]">Protocol</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Synchronize your operational windows with global demand.</p>
               </div>
@@ -320,7 +320,7 @@ export const SellerOnboarding: React.FC = () => {
                             const newHours = { ...formData.trading_hours, [day]: { ...hours, from: e.target.value } };
                             updateForm('trading_hours', newHours);
                           }}
-                          className="w-16 bg-cream border-2 border-charcoal/10 rounded-xl p-2 text-center text-[10px] font-black text-charcoal uppercase outline-none focus:border-pink" 
+                          className="w-16 bg-cream border-2 border-charcoal/10 rounded-xl p-2 text-center text-[10px] font-black text-charcoal uppercase outline-none focus:border-[#C6FF00]" 
                         />
                         <span className="text-charcoal/20 font-black">-</span>
                         <input 
@@ -330,11 +330,11 @@ export const SellerOnboarding: React.FC = () => {
                             const newHours = { ...formData.trading_hours, [day]: { ...hours, to: e.target.value } };
                             updateForm('trading_hours', newHours);
                           }}
-                          className="w-16 bg-cream border-2 border-charcoal/10 rounded-xl p-2 text-center text-[10px] font-black text-charcoal uppercase outline-none focus:border-pink" 
+                          className="w-16 bg-cream border-2 border-charcoal/10 rounded-xl p-2 text-center text-[10px] font-black text-charcoal uppercase outline-none focus:border-[#C6FF00]" 
                         />
                       </div>
                     ) : (
-                      <span className="text-[10px] font-black text-pink uppercase italic tracking-widest">Inert</span>
+                      <span className="text-[10px] font-black text-[#C6FF00] uppercase italic tracking-widest">Inert</span>
                     )}
                   </div>
                 ))}
@@ -353,14 +353,14 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block drop-shadow-lg">💬</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Comms <br/><span className="text-pink">Signal</span>.
+                  Comms <br/><span className="text-[#C6FF00]">Signal</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Configure your WhatsApp routing for high-speed client engagement.</p>
               </div>
               <input 
                 type="tel" 
                 placeholder="MOBILE PROTOCOL"
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-charcoal font-black italic focus:border-pink outline-none text-2xl transition-all shadow-[10px_10px_0_rgba(0,0,0,0.05)]"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-charcoal font-black italic focus:border-[#C6FF00] outline-none text-2xl transition-all shadow-[10px_10px_0_rgba(0,0,0,0.05)]"
                 value={formData.whatsapp_number}
                 onChange={(e) => updateForm('whatsapp_number', e.target.value)}
                 autoFocus
@@ -380,7 +380,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">📸</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Social <br/><span className="text-pink">Node</span>.
+                  Social <br/><span className="text-[#C6FF00]">Node</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Integrate your Instagram handle for verified cross-platform presence.</p>
               </div>
@@ -389,7 +389,7 @@ export const SellerOnboarding: React.FC = () => {
                 <input 
                   type="text" 
                   placeholder="HANDLE"
-                  className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 pl-16 text-charcoal font-black italic focus:border-pink outline-none text-2xl transition-all shadow-[10px_10px_0_rgba(0,0,0,0.05)]"
+                  className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 pl-16 text-charcoal font-black italic focus:border-[#C6FF00] outline-none text-2xl transition-all shadow-[10px_10px_0_rgba(0,0,0,0.05)]"
                   value={formData.instagram}
                   onChange={(e) => updateForm('instagram', e.target.value)}
                   autoFocus
@@ -397,7 +397,7 @@ export const SellerOnboarding: React.FC = () => {
               </div>
               <button 
                 onClick={nextStep}
-                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4"
+                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4"
               >
                 Link Sequence <ChevronRight size={24} />
               </button>
@@ -409,13 +409,13 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">📦</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Inventory <br/><span className="text-pink">Blueprint</span>.
+                  Inventory <br/><span className="text-[#C6FF00]">Blueprint</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Outline the primary units your storefront will provision.</p>
               </div>
               <textarea 
                 placeholder="DESCRIBE STOCK..."
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-charcoal font-black italic focus:border-pink outline-none text-xl transition-all min-h-[160px] resize-none shadow-[10px_10px_0_rgba(0,0,0,0.05)]"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-charcoal font-black italic focus:border-[#C6FF00] outline-none text-xl transition-all min-h-[160px] resize-none shadow-[10px_10px_0_rgba(0,0,0,0.05)]"
                 value={formData.product_description}
                 onChange={(e) => updateForm('product_description', e.target.value)}
                 autoFocus
@@ -435,7 +435,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">💰</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Price <br/><span className="text-pink">Scale</span>.
+                  Price <br/><span className="text-[#C6FF00]">Scale</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Define the fiscal boundaries of your storefront inventory.</p>
               </div>
@@ -445,7 +445,7 @@ export const SellerOnboarding: React.FC = () => {
                   <input 
                     type="number" 
                     placeholder="10"
-                    className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-pink outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)]"
+                    className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-[#C6FF00] outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)]"
                     value={formData.price_range.from || ''}
                     onChange={(e) => updateForm('price_range', { ...formData.price_range, from: Number(e.target.value) })}
                     autoFocus
@@ -456,7 +456,7 @@ export const SellerOnboarding: React.FC = () => {
                   <input 
                     type="number" 
                     placeholder="200"
-                    className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-pink outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)]"
+                    className="w-full bg-white border-4 border-charcoal rounded-[32px] p-6 text-charcoal font-black focus:border-[#C6FF00] outline-none text-xl transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)]"
                     value={formData.price_range.to || ''}
                     onChange={(e) => updateForm('price_range', { ...formData.price_range, to: Number(e.target.value) })}
                   />
@@ -465,7 +465,7 @@ export const SellerOnboarding: React.FC = () => {
               <button 
                 onClick={nextStep}
                 disabled={!formData.price_range.to}
-                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-20"
+                className="mt-12 w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full shadow-[12px_12px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-4 disabled:opacity-20"
               >
                 Scale Defined <ChevronRight size={24} />
               </button>
@@ -477,7 +477,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">📊</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Stock <br/><span className="text-pink">Volume</span>.
+                  Stock <br/><span className="text-[#C6FF00]">Volume</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Quantify your current operational bandwidth.</p>
               </div>
@@ -507,7 +507,7 @@ export const SellerOnboarding: React.FC = () => {
               <div className="mb-10">
                 <span className="text-6xl mb-6 block">🔍</span>
                 <h2 className="text-4xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-none">
-                  Discovery <br/><span className="text-pink">Path</span>.
+                  Discovery <br/><span className="text-[#C6FF00]">Path</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-4 italic leading-tight">Final parameters: How did you interface with the Thread node?</p>
               </div>
@@ -539,7 +539,7 @@ export const SellerOnboarding: React.FC = () => {
                   <Check size={56} strokeWidth={4} />
                 </div>
                 <h2 className="text-4xl font-display font-black text-charcoal leading-none uppercase italic tracking-tighter">
-                  Configuration <br/><span className="text-pink">Absolute</span>.
+                  Configuration <br/><span className="text-[#C6FF00]">Absolute</span>.
                 </h2>
                 <p className="italic-accent text-xl text-charcoal/40 mt-8 italic leading-tight max-w-[300px] mx-auto">
                   Transmit these parameters to the ThreadZW master node. Your Entity ID will be live within 24 standard cycles.
@@ -595,7 +595,7 @@ export const SellerOnboarding: React.FC = () => {
                       setShowTownPicker(false);
                     }}
                     className={`w-full p-6 rounded-[32px] text-left font-black transition-all border-4 text-xl italic tracking-tighter uppercase ${
-                      formData.town === town ? 'bg-charcoal border-charcoal text-cream shadow-[6px_6px_0_#F4A6C1]' : 'bg-white border-charcoal/5 text-charcoal/30'
+                      formData.town === town ? 'bg-charcoal border-charcoal text-cream shadow-[6px_6px_0_#C6FF00]' : 'bg-white border-charcoal/5 text-charcoal/30'
                     }`}
                   >
                     {town}

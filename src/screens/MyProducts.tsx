@@ -152,7 +152,7 @@ export const MyProducts: React.FC = () => {
               <ArrowLeft size={24} />
             </button>
             <h1 className="text-4xl md:text-5xl font-display font-black uppercase italic tracking-tighter leading-none">
-               the <span className="text-pink">vault</span>
+               the <span className="text-[#C6FF00]">vault</span>
             </h1>
           </div>
           <p className="italic-accent text-lg mt-1">Inventory Management Protocol</p>
@@ -174,9 +174,9 @@ export const MyProducts: React.FC = () => {
               placeholder="Query catalog..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-16 pr-8 text-charcoal placeholder:text-charcoal/20 focus:shadow-[8px_8px_0_#F4A6C1] transition-all outline-none italic font-display font-black text-xl uppercase tracking-tighter"
+              className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-16 pr-8 text-charcoal placeholder:text-charcoal/20 focus:shadow-[8px_8px_0_#C6FF00] transition-all outline-none italic font-display font-black text-xl uppercase tracking-tighter"
             />
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/30 group-focus-within:text-pink transition-colors" size={24} />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/30 group-focus-within:text-[#C6FF00] transition-colors" size={24} />
           </div>
 
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -203,7 +203,7 @@ export const MyProducts: React.FC = () => {
               return (
                 <div 
                   key={product.id}
-                  className={`bg-white rounded-[32px] overflow-hidden border-2 border-charcoal group relative transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[12px_12px_0_#F4A6C1] hover:translate-y-[-4px] ${isSoldOut ? 'grayscale' : ''}`}
+                  className={`bg-white rounded-[32px] overflow-hidden border-2 border-charcoal group relative transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[12px_12px_0_#C6FF00] hover:translate-y-[-4px] ${isSoldOut ? 'grayscale' : ''}`}
                 >
                   <div className="aspect-square bg-cream relative flex items-center justify-center text-4xl overflow-hidden border-b-2 border-charcoal">
                     {product.images?.[0] ? (
@@ -215,7 +215,7 @@ export const MyProducts: React.FC = () => {
                     <div className="absolute top-4 left-4 flex flex-col gap-2">
                       <div className={`oval-sticker !text-[8.5px] border-none !shadow-none ${
                         product.status === 'active' ? '!bg-lime !text-charcoal' : 
-                        product.status === 'paused' ? '!bg-amber-100 !text-amber-700' : '!bg-pink !text-charcoal'
+                        product.status === 'paused' ? '!bg-amber-100 !text-amber-700' : '!bg-[#C6FF00] !text-charcoal'
                       }`}>
                          {product.status}
                       </div>
@@ -233,7 +233,7 @@ export const MyProducts: React.FC = () => {
                           e.stopPropagation();
                           handleDelete(product.id, product.name);
                         }}
-                        className="w-12 h-12 rounded-full bg-pink text-charcoal flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] active:scale-95 transition-all"
+                        className="w-12 h-12 rounded-full bg-[#C6FF00] text-charcoal flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] active:scale-95 transition-all"
                       >
                         <Trash2 size={20} />
                       </button>
@@ -244,7 +244,7 @@ export const MyProducts: React.FC = () => {
                     <div>
                       <h4 className="text-xl font-display font-black uppercase italic tracking-tighter truncate leading-none">{product.name}</h4>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-2xl font-display font-black text-pink italic tracking-tighter leading-none">${product.price}</span>
+                        <span className="text-2xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none">${product.price}</span>
                         <span className="text-[9px] font-black uppercase tracking-widest text-charcoal/30 italic">{totalStock} in base</span>
                       </div>
                     </div>
@@ -267,7 +267,7 @@ export const MyProducts: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-32 h-32 rounded-[40px] bg-white border-2 border-charcoal flex items-center justify-center text-7xl mb-8 shadow-[12px_12px_0_#F4A6C1] -rotate-3">
+            <div className="w-32 h-32 rounded-[40px] bg-white border-2 border-charcoal flex items-center justify-center text-7xl mb-8 shadow-[12px_12px_0_#C6FF00] -rotate-3">
                 📦
             </div>
             <h3 className="text-4xl font-display font-black uppercase italic tracking-tighter leading-none mb-4">Zero Units Found</h3>

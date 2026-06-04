@@ -136,7 +136,7 @@ export const SubscriptionManagement: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="text-3xl text-[#FF2D78]">⚡</div>
+              <div className="text-3xl text-[#C6FF00]">⚡</div>
             </div>
 
             <div className="flex items-baseline gap-2">

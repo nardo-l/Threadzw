@@ -70,7 +70,7 @@ export const HowToUse: React.FC = () => {
             placeholder="Search for guides..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-12 bg-[#111] border border-[#222] rounded-full pl-12 pr-6 text-sm text-white placeholder-[#444] focus:border-[#FF2D78] transition-all outline-none"
+            className="w-full h-12 bg-[#111] border border-[#222] rounded-full pl-12 pr-6 text-sm text-white placeholder-[#444] focus:border-[#C6FF00] transition-all outline-none"
           />
         </div>
       </header>
@@ -88,18 +88,18 @@ export const HowToUse: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="group relative bg-[#111] border border-[#222] p-5 rounded-[24px] hover:border-[#FF2D78]/20 transition-all active:scale-[0.98]"
+                className="group relative bg-[#111] border border-[#222] p-5 rounded-[24px] hover:border-[#C6FF00]/20 transition-all active:scale-[0.98]"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-[#FF2D7810] flex items-center justify-center text-[#FF2D78] group-hover:bg-[#FF2D78] group-hover:text-white transition-all">
+                    <div className="w-12 h-12 rounded-2xl bg-[#C6FF00]/10 flex items-center justify-center text-[#C6FF00] group-hover:bg-[#C6FF00] group-hover:text-black transition-all">
                       {guide.category === 'buying' ? <BookOpen size={24} /> : 
                        guide.category === 'selling' ? <PlayCircle size={24} /> : 
                        guide.category === 'profile' ? <HelpCircle size={24} /> : 
                        <MessageCircle size={24} />}
                     </div>
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-[17px] font-bold text-white group-hover:text-[#FF2D78] transition-colors">{guide.title}</h3>
+                      <h3 className="text-[17px] font-bold text-white group-hover:text-[#C6FF00] transition-colors">{guide.title}</h3>
                       <p className="text-xs text-[#888] leading-relaxed">{guide.description}</p>
                     </div>
                   </div>

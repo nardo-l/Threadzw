@@ -4,7 +4,7 @@ import { ArrowRight, Star, Heart, Sparkles, Zap, Smartphone, Package, ShieldChec
 
 const slides = [
   {
-    icon: <Smartphone size={40} className="text-pink" />,
+    icon: <Smartphone size={40} className="text-[#C6FF00]" />,
     title: "the operational node.",
     body: "Transform your vision into a high-performance digital terminal designed for the modern elite."
   },
@@ -14,7 +14,7 @@ const slides = [
     body: "Minimal configuration, maximum throughput. Your inventory broadcasts globally via WhatsApp routing."
   },
   {
-    icon: <Package size={40} className="text-pink" />,
+    icon: <Package size={40} className="text-[#C6FF00]" />,
     title: "inventory engine.",
     body: "Manage stock units and capture sales with an operating system built for high-demand storefronts."
   },
@@ -24,7 +24,7 @@ const slides = [
     body: "Build trust with curated aesthetics. Designed to close sales, not just showcase them."
   },
   {
-    icon: <Globe size={40} className="text-pink" />,
+    icon: <Globe size={40} className="text-[#C6FF00]" />,
     title: "sync once. live.",
     body: "Your commerce node is ready for initial deployment. The future of commerce is curated."
   }
@@ -54,12 +54,12 @@ export const SellerOnboarding: React.FC<SellerOnboardingProps> = ({ onComplete }
   return (
     <div className="fixed inset-0 bg-cream z-50 flex flex-col items-center justify-between py-16 px-8 overflow-hidden font-sans">
       {/* Background Decor */}
-      <div className="absolute top-10 left-10 text-pink/10 -rotate-12"><Star size={100} fill="currentColor" /></div>
+      <div className="absolute top-10 left-10 text-[#C6FF00]/10 -rotate-12"><Star size={100} fill="currentColor" /></div>
       <div className="absolute bottom-10 right-10 text-charcoal/5 rotate-45"><Sparkles size={120} /></div>
 
       <header className="w-full flex justify-between items-center relative z-10">
-        <span className="text-xl font-display font-black tracking-tighter italic">thread<span className="text-pink">zw</span></span>
-        <button onClick={handleSkip} className="text-charcoal/40 text-[10px] font-black uppercase tracking-widest italic hover:text-pink transition-colors">
+        <span className="text-xl font-display font-black tracking-tighter italic">thread<span className="text-[#C6FF00]">zw</span></span>
+        <button onClick={handleSkip} className="text-charcoal/40 text-[10px] font-black uppercase tracking-widest italic hover:text-[#C6FF00] transition-colors">
            Bypass Protocol
         </button>
       </header>
@@ -75,10 +75,10 @@ export const SellerOnboarding: React.FC<SellerOnboardingProps> = ({ onComplete }
             className="flex flex-col items-center"
           >
             <div className="mb-12 relative">
-               <div className="w-28 h-28 glass rounded-full flex items-center justify-center border-charcoal border-2 shadow-[8px_8px_0_#F4A6C1]">
+               <div className="w-28 h-28 glass rounded-full flex items-center justify-center border-charcoal border-2 shadow-[8px_8px_0_#C6FF00]">
                   {slides[currentSlide].icon}
                </div>
-               <div className="absolute -top-4 -right-4"><Heart size={24} className="text-pink" fill="currentColor" /></div>
+               <div className="absolute -top-4 -right-4"><Heart size={24} className="text-[#C6FF00]" fill="currentColor" /></div>
             </div>
             
             <h2 className="text-5xl md:text-6xl font-display font-black mb-6 italic leading-[0.9]">
@@ -99,7 +99,7 @@ export const SellerOnboarding: React.FC<SellerOnboardingProps> = ({ onComplete }
           {slides.map((_, i) => (
             <div 
               key={`onboarding-slide-dot-${i}`}
-              className={`h-2 rounded-full transition-all duration-500 border border-charcoal/20 ${currentSlide === i ? 'w-12 bg-pink' : 'w-2 bg-charcoal/10'}`}
+              className={`h-2 rounded-full transition-all duration-500 border border-charcoal/20 ${currentSlide === i ? 'w-12 bg-[#C6FF00]' : 'w-2 bg-charcoal/10'}`}
             />
           ))}
         </div>

@@ -16,7 +16,7 @@ export const BestDresserMainView: React.FC = () => {
 
   const winners = [
     { name: 'Tatenda', month: 'March 2026', color: 'from-[#FFC107] to-[#FF9800]' },
-    { name: 'Nyasha', month: 'February 2026', color: 'from-[#9B27AF] to-[#FF2D78]' },
+    { name: 'Nyasha', month: 'February 2026', color: 'from-[#9B27AF] to-[#C6FF00]' },
     { name: 'Kelvin', month: 'January 2026', color: 'from-[#2196F3] to-[#00BCD4]' },
   ];
 
@@ -59,7 +59,7 @@ export const BestDresserMainView: React.FC = () => {
             <span className="text-[11px] text-[#888888]">78% Complete</span>
           </div>
           <div className="h-1.5 rounded-full overflow-hidden bg-[#F5F5F5]">
-             <div className="h-full bg-gradient-to-r from-[#9B27AF] to-[#FF2D78]" style={{ width: '78%' }} />
+             <div className="h-full bg-gradient-to-r from-[#9B27AF] to-[#C6FF00]" style={{ width: '78%' }} />
           </div>
         </div>
 
@@ -74,7 +74,7 @@ export const BestDresserMainView: React.FC = () => {
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#888888]">Votes</span>
            </div>
            <div className="flex flex-col">
-              <span className="font-bold text-[20px] text-[#FF2D78] tracking-tighter">$30</span>
+              <span className="font-bold text-[20px] text-[#C6FF00] tracking-tighter">$30</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#888888]">Prize Pool</span>
            </div>
         </div>
@@ -103,7 +103,7 @@ export const BestDresserMainView: React.FC = () => {
                          <Star size={10} className="text-[#FFC107]" fill="currentColor" />
                          <span className="text-white font-bold text-[10px]">{n.votes}</span>
                       </div>
-                      <div className="px-2 py-0.5 rounded-full border bg-[#FF2D78]/20 border-white/20 backdrop-blur-sm">
+                      <div className="px-2 py-0.5 rounded-full border bg-[#C6FF00]/20 border-white/20 backdrop-blur-sm">
                          <span className="text-[9px] font-bold text-white">TOP 10</span>
                       </div>
                    </div>
@@ -117,7 +117,7 @@ export const BestDresserMainView: React.FC = () => {
       <div className="mt-10 px-5">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-[16px] text-[#111111]">Live Matchups 🔥</h3>
-          <button onClick={() => setCommunityScreen('bracket')} className="text-[13px] font-bold flex items-center gap-1 text-[#FF2D78]">
+          <button onClick={() => setCommunityScreen('bracket')} className="text-[13px] font-bold flex items-center gap-1 text-[#C6FF00]">
             See Full Bracket <ChevronRight size={14} />
           </button>
         </div>
@@ -130,7 +130,7 @@ export const BestDresserMainView: React.FC = () => {
                    <div className="flex flex-col items-center flex-1">
                       <div className="relative">
                         <div className="w-[64px] h-[64px] rounded-full border flex items-center justify-center text-[28px] relative z-10 bg-[#F5F5F5] border-[#EFEFEF] shadow-sm">👤</div>
-                        <div className="absolute inset-0 blur-lg bg-[#FF2D78]/20" />
+                        <div className="absolute inset-0 blur-lg bg-[#C6FF00]/20" />
                       </div>
                       <span className="font-bold text-[14px] mt-2.5 text-[#111111]">Dwayne</span>
                       <span className="text-[11px] text-[#888888]">@dwaynex</span>
@@ -138,8 +138,8 @@ export const BestDresserMainView: React.FC = () => {
                    
                    {/* VS */}
                    <div className="flex flex-col items-center">
-                      <div className="w-10 h-10 rounded-full border flex items-center justify-center mb-1 border-[#FF2D78] bg-[#FF2D78]/10">
-                         <span className="font-black text-[12px] text-[#FF2D78]">VS</span>
+                      <div className="w-10 h-10 rounded-full border flex items-center justify-center mb-1 border-[#C6FF00] bg-[#C6FF00]/10">
+                         <span className="font-black text-[12px] text-[#C6FF00]">VS</span>
                       </div>
                       <div className="h-4 w-[1px] bg-[#EFEFEF]" />
                    </div>
@@ -157,11 +157,11 @@ export const BestDresserMainView: React.FC = () => {
                 {/* Vote Indicator */}
                 <div className="mt-6">
                    <div className="flex justify-between items-center mb-1.5 px-1">
-                      <span className="font-bold text-[16px] text-[#FF2D78]">64%</span>
+                      <span className="font-bold text-[16px] text-[#C6FF00]">64%</span>
                       <span className="font-bold text-[16px] text-[#888888]">36%</span>
                    </div>
                    <div className="h-1.5 rounded-full overflow-hidden flex bg-[#F5F5F5]">
-                      <div className="h-full bg-[#FF2D78]" style={{ width: '64%' }} />
+                      <div className="h-full bg-[#C6FF00]" style={{ width: '64%' }} />
                       <div className="h-full bg-[#888888]/20" style={{ width: '36%' }} />
                    </div>
                 </div>
@@ -187,8 +187,8 @@ export const BestDresserMainView: React.FC = () => {
             { n: 3, t: "Submit in-app", d: "Fill out the entry form with your post link to be reviewed." }
           ].map(step => (
             <div key={step.n} className="flex gap-4">
-              <div className="w-10 h-10 rounded-full border flex items-center justify-center shrink-0 bg-[#FF2D78]/10 border-[#FF2D78]/20">
-                 <span className="font-bold text-[14px] text-[#FF2D78]">{step.n}</span>
+              <div className="w-10 h-10 rounded-full border flex items-center justify-center shrink-0 bg-[#C6FF00]/10 border-[#C6FF00]/20">
+                 <span className="font-bold text-[14px] text-[#C6FF00]">{step.n}</span>
               </div>
               <div className="flex flex-col">
                  <h4 className="font-bold text-[15px] text-[#111111]">{step.t}</h4>
@@ -199,7 +199,7 @@ export const BestDresserMainView: React.FC = () => {
           
           <button 
             onClick={() => setCommunityScreen('bestDresserEntry')}
-            className="w-full h-[56px] rounded-full text-white font-bold text-[16px] flex items-center justify-center shadow-lg active:scale-[0.98] transition-transform bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]"
+            className="w-full h-[56px] rounded-full text-white font-bold text-[16px] flex items-center justify-center shadow-lg active:scale-[0.98] transition-transform bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]"
           >
             Enter Contest Now →
           </button>
@@ -210,7 +210,7 @@ export const BestDresserMainView: React.FC = () => {
       <div className="mt-10">
         <div className="px-5 flex justify-between items-center mb-4">
           <h3 className="font-bold text-[16px] text-[#111111]">Hall Of Fame 🏆</h3>
-          <button onClick={() => setCommunityScreen('hallOfFame')} className="text-[13px] font-bold uppercase tracking-wider text-[#FF2D78]">
+          <button onClick={() => setCommunityScreen('hallOfFame')} className="text-[13px] font-bold uppercase tracking-wider text-[#C6FF00]">
             View All
           </button>
         </div>

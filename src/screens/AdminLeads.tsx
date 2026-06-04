@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
+import { getShops } from '../lib/db';
 
 interface ShopLead {
   id: string;
@@ -105,9 +106,8 @@ export const AdminLeads: React.FC = () => {
   const fetchShopsAndClaims = async () => {
     setLoadingShops(true);
     try {
-      const { data: shopsData, error: sErr } = await supabase
-        .from('shops')
-        .select('*');
+      const shopsData = await getShops();
+      const sErr = null;
       
       let claimsList: any[] = [];
       const claimIds = new Set<string>();
@@ -485,10 +485,10 @@ export const AdminLeads: React.FC = () => {
       <div className="flex items-center gap-4 border-b border-[#1a1a1a]">
         <button 
           onClick={() => setActiveTab('leads')}
-          className={`pb-4 px-2 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'leads' ? 'text-[#FF2D78]' : 'text-[#888]'}`}
+          className={`pb-4 px-2 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'leads' ? 'text-[#C6FF00]' : 'text-[#888]'}`}
         >
           <Store size={18} /> Shop Leads
-          {activeTab === 'leads' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF2D78]" />}
+          {activeTab === 'leads' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C6FF00]" />}
         </button>
         <button 
           onClick={() => setActiveTab('overdue')}
@@ -506,10 +506,10 @@ export const AdminLeads: React.FC = () => {
         </button>
         <button 
           onClick={() => setActiveTab('branding')}
-          className={`pb-4 px-2 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'branding' ? 'text-[#FF2D78]' : 'text-[#888]'}`}
+          className={`pb-4 px-2 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'branding' ? 'text-[#C6FF00]' : 'text-[#888]'}`}
         >
           <Palette size={18} /> Branding
-          {activeTab === 'branding' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF2D78]" />}
+          {activeTab === 'branding' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C6FF00]" />}
         </button>
       </div>
 
@@ -529,7 +529,7 @@ export const AdminLeads: React.FC = () => {
                 <input 
                   type="text" 
                   placeholder="Search by name or town..."
-                  className="w-full bg-[#111] border border-[#222] rounded-xl p-4 pl-12 text-white focus:border-[#FF2D78] outline-none transition-all font-sans text-sm"
+                  className="w-full bg-[#111] border border-[#222] rounded-xl p-4 pl-12 text-white focus:border-[#C6FF00] outline-none transition-all font-sans text-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -541,7 +541,7 @@ export const AdminLeads: React.FC = () => {
                     key={f}
                     onClick={() => setFilter(f)}
                     className={`px-6 py-4 rounded-xl border font-bold text-xs uppercase tracking-widest transition-all whitespace-nowrap ${
-                      filter === f ? 'bg-[#FF2D78] border-[#FF2D78] text-white' : 'bg-[#111] border-[#222] text-[#888]'
+                      filter === f ? 'bg-[#C6FF00] border-[#C6FF00] text-white' : 'bg-[#111] border-[#222] text-[#888]'
                     }`}
                   >
                     {f}
@@ -606,7 +606,7 @@ export const AdminLeads: React.FC = () => {
                 </h2>
                 <button 
                   onClick={fetchShopsAndClaims}
-                  className="text-[11px] text-[#FF2D78] uppercase tracking-widest font-bold hover:underline"
+                  className="text-[11px] text-[#C6FF00] uppercase tracking-widest font-bold hover:underline"
                 >
                   Refresh Lists
                 </button>
@@ -771,7 +771,7 @@ export const AdminLeads: React.FC = () => {
               </h2>
               <button 
                 onClick={fetchShopsAndClaims}
-                className="text-[11px] text-[#FF2D78] uppercase tracking-widest font-bold hover:underline"
+                className="text-[11px] text-[#C6FF00] uppercase tracking-widest font-bold hover:underline"
               >
                 Refresh claims
               </button>
@@ -883,7 +883,7 @@ export const AdminLeads: React.FC = () => {
                     value={bannerUrl}
                     onChange={(e) => setBannerUrl(e.target.value)}
                     placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-black border border-[#222] rounded-xl p-4 text-white focus:border-[#FF2D78] outline-none transition-all font-mono text-xs"
+                    className="w-full bg-black border border-[#222] rounded-xl p-4 text-white focus:border-[#C6FF00] outline-none transition-all font-mono text-xs"
                   />
                 </div>
 
@@ -900,7 +900,7 @@ export const AdminLeads: React.FC = () => {
                 <button 
                   onClick={saveBranding}
                   disabled={savingBranding}
-                  className="w-full h-14 bg-[#FF2D78] text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-[#FF2D78]/90 transition-all disabled:opacity-50"
+                  className="w-full h-14 bg-[#C6FF00] text-white rounded-full font-bold flex items-center justify-center gap-2 hover:bg-[#C6FF00]/90 transition-all disabled:opacity-50"
                 >
                   {savingBranding ? <div className="spinner-10 border-t-white animate-spin" /> : <><Save size={18} /> Save Branding</>}
                 </button>
@@ -940,7 +940,7 @@ export const AdminLeads: React.FC = () => {
 
                 <div className="flex flex-col gap-2">
                   <h2 className="text-3xl font-syne font-bold text-white">{selectedLead.business_name}</h2>
-                  <p className="text-[#FF2D78] font-bold text-lg">{selectedLead.contact_name}</p>
+                  <p className="text-[#C6FF00] font-bold text-lg">{selectedLead.contact_name}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -990,7 +990,7 @@ export const AdminLeads: React.FC = () => {
                     const message = `Hi ${selectedLead.contact_name}! I'm Jack from thread. I received your request for ${selectedLead.business_name}. Let's get started!`;
                     window.open(`https://wa.me/${selectedLead.whatsapp_number}?text=${encodeURIComponent(message)}`, '_blank');
                   }}
-                  className="w-full py-4 bg-[#FF2D78] text-white rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-[#C6FF00] text-white rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-2"
                 >
                   <MessageCircle size={18} /> Chat on WhatsApp
                 </button>
@@ -1009,7 +1009,7 @@ const LeadCard: React.FC<{ lead: ShopLead; onClick: () => void; isSelected: bool
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={`p-6 rounded-3xl border cursor-pointer transition-all ${
-        isSelected ? 'bg-[#FF2D78]/10 border-[#FF2D78]' : 'bg-white/5 border-white/10 hover:border-white/20'
+        isSelected ? 'bg-[#C6FF00]/10 border-[#C6FF00]' : 'bg-white/5 border-white/10 hover:border-white/20'
       }`}
     >
       <div className="flex justify-between items-start mb-4">
@@ -1022,10 +1022,10 @@ const LeadCard: React.FC<{ lead: ShopLead; onClick: () => void; isSelected: bool
       
       <div className="flex items-center gap-4 text-[10px] font-mono text-muted uppercase">
         <div className="flex items-center gap-1">
-          <MapPin size={10} className="text-[#FF2D78]" /> {lead.town}
+          <MapPin size={10} className="text-[#C6FF00]" /> {lead.town}
         </div>
         <div className="flex items-center gap-1">
-          <Tag size={10} className="text-[#FF2D78]" /> {lead.category}
+          <Tag size={10} className="text-[#C6FF00]" /> {lead.category}
         </div>
       </div>
     </motion.div>
@@ -1055,13 +1055,13 @@ const StatMini: React.FC<{ label: string; count: number; color: string }> = ({ l
 
 const DetailItem: React.FC<{ icon: React.ReactNode; label: string; value: string; isLink?: boolean; link?: string }> = ({ icon, label, value, isLink, link }) => (
   <div className="flex gap-4">
-    <div className="p-2 bg-white/5 rounded-lg text-[#FF2D78] shrink-0 h-fit mt-1">
+    <div className="p-2 bg-white/5 rounded-lg text-[#C6FF00] shrink-0 h-fit mt-1">
       {icon}
     </div>
     <div className="flex flex-col gap-1">
       <span className="text-[10px] font-mono text-muted uppercase tracking-widest">{label}</span>
       {isLink ? (
-        <a href={link} target="_blank" rel="noreferrer" className="text-sm font-bold text-white flex items-center gap-1 hover:text-[#FF2D78] underline decoration-[#FF2D78]/30 font-sans">
+        <a href={link} target="_blank" rel="noreferrer" className="text-sm font-bold text-white flex items-center gap-1 hover:text-[#C6FF00] underline decoration-[#C6FF00]/30 font-sans">
           {value} <ExternalLink size={10} />
         </a>
       ) : (

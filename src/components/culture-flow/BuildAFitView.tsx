@@ -314,12 +314,12 @@ export const BuildAFitView: React.FC = () => {
                onClick={randomizeFit}
                className="w-16 h-16 rounded-[24px] bg-white text-black flex items-center justify-center shadow-xl hover:shadow-2xl active:scale-90 transition-all"
             >
-               <Sparkles size={28} className="text-[#FF5FA2]" />
+               <Sparkles size={28} className="text-[#C6FF00]" />
             </button>
             <button 
                onClick={handleSaveOutfit}
                disabled={saving}
-               className="w-16 h-16 rounded-[24px] bg-[#FF5FA2] text-white flex items-center justify-center shadow-xl hover:shadow-2xl active:scale-95 transition-all disabled:opacity-50"
+               className="w-16 h-16 rounded-[24px] bg-[#C6FF00] text-white flex items-center justify-center shadow-xl hover:shadow-2xl active:scale-95 transition-all disabled:opacity-50"
             >
                {saving ? <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" /> : <Check size={32} strokeWidth={3} />}
             </button>
@@ -339,7 +339,7 @@ export const BuildAFitView: React.FC = () => {
                  >
                    {cat}
                    {activeCategory === cat && (
-                     <motion.div layoutId="cat-indicator" className="absolute -bottom-2 left-0 right-0 h-1 bg-[#FF5FA2] rounded-full" />
+                     <motion.div layoutId="cat-indicator" className="absolute -bottom-2 left-0 right-0 h-1 bg-[#C6FF00] rounded-full" />
                    )}
                  </button>
                ))}
@@ -387,10 +387,10 @@ export const BuildAFitView: React.FC = () => {
               <div className="w-12 h-1.5 bg-[#EFEFEF] rounded-full mx-auto mb-10" />
               <div className="space-y-4">
                 <button onClick={() => { handleSaveOutfit(); setShowOptions(false); }} className="w-full h-18 bg-[#F5F5F5] rounded-3xl flex items-center px-8 gap-5 text-[#111111] font-bold active:scale-[0.98] transition-all">
-                   <div className="w-12 h-12 rounded-2xl bg-white border border-[#EFEFEF] flex items-center justify-center text-[#FF2D78] shadow-sm"><Sparkles size={24} /></div>
+                   <div className="w-12 h-12 rounded-2xl bg-white border border-[#EFEFEF] flex items-center justify-center text-[#C6FF00] shadow-sm"><Sparkles size={24} /></div>
                    <span className="text-[17px] tracking-tight">Export Editorial</span>
                 </button>
-                <button onClick={() => { clearCanvas(); setShowOptions(false); }} className="w-full h-18 bg-[#F5F5F5] rounded-3xl flex items-center px-8 gap-5 text-[#FF2D78] font-bold active:scale-[0.98] transition-all">
+                <button onClick={() => { clearCanvas(); setShowOptions(false); }} className="w-full h-18 bg-[#F5F5F5] rounded-3xl flex items-center px-8 gap-5 text-[#C6FF00] font-bold active:scale-[0.98] transition-all">
                    <div className="w-12 h-12 rounded-2xl bg-white border border-[#EFEFEF] flex items-center justify-center"><Trash2 size={24} /></div>
                    <span className="text-[17px] tracking-tight text-red-500">Clear Studio Workspace</span>
                 </button>
@@ -416,7 +416,7 @@ export const BuildAFitView: React.FC = () => {
                  <button 
                   onClick={handlePostToFeed}
                   disabled={posting}
-                  className="h-18 bg-[#FF2D78] text-white rounded-[28px] font-bold text-[15px] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-pink-500/20"
+                  className="h-18 bg-[#C6FF00] text-white rounded-[28px] font-bold text-[15px] active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl shadow-[#C6FF00]/20"
                  >
                    {posting ? <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin" /> : <span>PUBLISH TO FEED</span>}
                  </button>
@@ -531,7 +531,7 @@ const ItemComponent = ({ item, category, isSelected, onClick }: any) => {
         {isSelected && (
           <motion.div 
             layoutId="selection-dot"
-            className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#FF5FA2] rounded-full shadow-sm"
+            className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-[#C6FF00] rounded-full shadow-sm"
           />
         )}
       </motion.button>
@@ -581,7 +581,7 @@ const SuccessSheet = ({ build, onShare, onPost, posting, onClose }: any) => {
           <button 
             onClick={onPost}
             disabled={posting}
-            className="w-full h-14 rounded-full bg-linear-to-r from-[#FF5FA2] to-[#FF2D78] text-white font-bold text-[14px] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full h-14 rounded-full bg-linear-to-r from-[#C6FF00] to-[#C6FF00] text-white font-bold text-[14px] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {posting ? (
                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

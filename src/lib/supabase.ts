@@ -61,12 +61,39 @@ function getLoggedUserId(): string {
 function getFallbackForRelation(relation: string, isSingle: boolean, filterOwnerId?: string) {
   const activeUserId = filterOwnerId || getLoggedUserId();
   
+  const demoShopRecord = {
+    id: 'demo-shop',
+    owner_id: 'demo-owner',
+    name: 'Kure Streetwear',
+    handle: 'demo',
+    slug: 'demo',
+    whatsapp: '263776223144',
+    whatsapp_number: '263776223144',
+    is_live: true,
+    subscription_status: 'active',
+    trial_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10).toISOString(),
+    description: 'Zim clothing store - built for the ones chasing more.',
+    categories: ['Clothing', 'Streetwear'],
+    location: 'Harare',
+    instagram: 'kure.zw',
+    logo_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
+    banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+    manual_lock: false,
+    payment_overdue_flagged: false,
+    created_at: new Date().toISOString()
+  };
+
+  if (activeUserId === 'demo-owner' || activeUserId === 'demo-shop') {
+    return isSingle ? demoShopRecord : [demoShopRecord];
+  }
+  
   if (relation === 'shops') {
     try {
       const cached = localStorage.getItem(`shop_${activeUserId}`) || localStorage.getItem('threadzw_shop');
       if (cached) {
         const parsed = JSON.parse(cached);
-        return isSingle ? parsed : [parsed];
+        const list = [parsed, demoShopRecord];
+        return isSingle ? (parsed.handle === 'demo' ? demoShopRecord : parsed) : list;
       }
     } catch (e) {
       console.warn("Error reading cached shop:", e);
@@ -75,13 +102,13 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
     const defaultShop = {
       id: 'local-shop-' + activeUserId,
       owner_id: activeUserId,
-      name: localStorage.getItem('threadzw_owner_name') ? `${localStorage.getItem('threadzw_owner_name')}'s Shop` : 'KURE STREETWEAR',
-      handle: 'kure_streetwear',
-      description: 'Zim clothing store - built for the ones chasing more.',
+      name: localStorage.getItem('threadzw_owner_name') ? `${localStorage.getItem('threadzw_owner_name')}'s Shop` : 'My Brand',
+      handle: 'my_brand',
+      description: 'Handcrafted styles, curated just for you.',
       categories: ['Clothing'],
       location: 'Harare (Online)',
       whatsapp: '0776223144',
-      instagram: 'kure.zw',
+      instagram: 'mybrand.zw',
       is_live: true,
       subscription_status: 'trial',
       trial_started_at: new Date().toISOString(),
@@ -90,7 +117,7 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
       trial_end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
     };
     
-    return isSingle ? defaultShop : [defaultShop];
+    return isSingle ? defaultShop : [defaultShop, demoShopRecord];
   }
   
   if (relation === 'profiles') {
@@ -107,7 +134,7 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
     const defaultProfile = {
       id: activeUserId,
       display_name: localStorage.getItem('threadzw_owner_name') || 'ThreadZW Merchant',
-      handle: 'kure_streetwear',
+      handle: 'my_brand',
       email: 'merchant@threadzw.com',
       onboarding_complete: true,
       style_preferences: { town: 'Harare' },
@@ -174,7 +201,50 @@ supabase.from = function(relation: string) {
                 if (val && val.error) {
                   console.warn(`Database query returned error on ${rel}:`, val.error);
                   const fb = getFallbackForRelation(rel, state.isSingle, state.filterOwnerId);
-                  return { data: fb, error: null, count: fb ? (Array.isArray(fb) ? fb.length : 1) : 0 };
+                  val = { data: fb, error: null, count: fb ? (Array.isArray(fb) ? fb.length : 1) : 0 };
+                }
+
+                if (val && val.data && rel === 'shops') {
+                  const demoShopRecord = {
+                    id: 'demo-shop',
+                    owner_id: 'demo-owner',
+                    name: 'Kure Streetwear',
+                    handle: 'demo',
+                    slug: 'demo',
+                    whatsapp: '263776223144',
+                    whatsapp_number: '263776223144',
+                    is_live: true,
+                    subscription_status: 'active',
+                    trial_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10).toISOString(),
+                    description: 'Zim clothing store - built for the ones chasing more.',
+                    categories: ['Clothing', 'Streetwear'],
+                    location: 'Harare',
+                    instagram: 'kure.zw',
+                    logo_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
+                    banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+                    manual_lock: false,
+                    payment_overdue_flagged: false,
+                    created_at: new Date().toISOString()
+                  };
+
+                  if (Array.isArray(val.data)) {
+                    const hasDemo = val.data.some((s: any) => s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo');
+                    if (!hasDemo) {
+                      val.data = [...val.data, demoShopRecord];
+                    } else {
+                      val.data = val.data.map((s: any) => {
+                        if (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo') {
+                          return { ...s, ...demoShopRecord };
+                        }
+                        return s;
+                      });
+                    }
+                  } else {
+                    const s = val.data;
+                    if (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo') {
+                      val.data = { ...s, ...demoShopRecord };
+                    }
+                  }
                 }
                 return val;
               },

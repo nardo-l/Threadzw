@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Eye, EyeOff, User, Mail, Lock, AlertCircle, ArrowLeft, Star, Heart, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, AlertCircle, ArrowLeft, Star, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -30,8 +30,8 @@ export const Auth: React.FC = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.')
-      return
+      setError('Please enter your email and password.');
+      return;
     }
     
     setLoading(true);
@@ -54,7 +54,7 @@ export const Auth: React.FC = () => {
       }
       localStorage.setItem('thread_has_account', 'true');
     } catch (err: any) {
-      setError(mapError(err))
+      setError(mapError(err));
     } finally {
       if (mounted.current) setLoading(false);
     }
@@ -67,8 +67,8 @@ export const Auth: React.FC = () => {
       return;
     }
     
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     
     try {
       const cleanHandle = handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
@@ -106,17 +106,17 @@ export const Auth: React.FC = () => {
         });
       }
     } catch (err: any) {
-      setError(mapError(err))
+      setError(mapError(err));
     } finally {
       if (mounted.current) setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-cream text-charcoal selection:bg-pink/30 flex flex-col relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-black text-white selection:bg-[#C6FF00]/30 flex flex-col relative overflow-hidden font-sans">
       {/* Background Decor */}
-      <div className="absolute top-10 right-10 text-pink/10 -rotate-12"><Star size={120} fill="currentColor" /></div>
-      <div className="absolute bottom-10 left-10 text-pink/10 rotate-12"><Heart size={80} fill="currentColor" /></div>
+      <div className="absolute top-10 right-10 text-white/5 -rotate-12 pointer-events-none"><Star size={120} fill="currentColor" /></div>
+      <div className="absolute bottom-10 left-10 text-white/5 rotate-12 pointer-events-none"><Sparkles size={80} fill="currentColor" /></div>
       
       <AnimatePresence mode="wait">
         {view === 'welcome' && (
@@ -134,39 +134,39 @@ export const Auth: React.FC = () => {
                 transition={{ duration: 0.8, ease: "easeOut" }}
                 className="relative text-center"
               >
-                <h1 className="text-8xl md:text-9xl font-display font-black italic tracking-tighter relative text-charcoal uppercase leading-[0.8]">
-                   thread<span className="text-pink">zw</span>
+                <h1 className="text-7xl md:text-8xl font-display font-black tracking-tighter relative text-white uppercase leading-[0.8]">
+                   thread<span className="text-[#C6FF00]">ZW</span>
                 </h1>
-                <div className="mt-4 italic-accent text-xl">The Collective Protocol.</div>
+                <div className="mt-4 text-stone-400 text-sm tracking-wider uppercase font-mono">The Collective Protocol.</div>
               </motion.div>
             </div>
 
-            <div className="flex flex-col gap-6 max-w-sm mx-auto w-full mb-12">
+            <div className="flex flex-col gap-4 max-w-sm mx-auto w-full mb-12">
               <button 
                 onClick={() => setView('signup')}
-                className="w-full bg-charcoal text-cream py-6 rounded-full font-black uppercase tracking-widest text-[13px] italic hover:scale-105 active:scale-[0.98] transition-all shadow-[10px_10px_0_#C6FF00]"
+                className="w-full bg-[#C6FF00] hover:bg-[#b5e600] text-black py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition-all active:scale-[0.98]"
               >
                 Deploy Storefront
               </button>
               <button 
                 onClick={() => setView('signin')}
-                className="w-full bg-white text-charcoal border-2 border-charcoal py-6 rounded-full font-black uppercase tracking-widest text-[13px] italic hover:bg-cream-dark active:scale-[0.98] transition-all shadow-[10px_10px_0_#F4A6C1]"
+                className="w-full bg-white/5 text-white border border-white/10 hover:bg-white/10 py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition-all active:scale-[0.98]"
               >
                 Client Authentication
               </button>
               
-              <div className="mt-8 flex flex-col items-center gap-4 text-center">
+              <div className="mt-6 flex flex-col items-center gap-4 text-center">
                 <button 
                   onClick={() => setIsGuest(true)}
-                  className="oval-sticker hover:bg-pink hover:text-white transition-colors"
+                  className="text-stone-400 hover:text-[#C6FF00] text-xs uppercase tracking-widest font-bold transition-colors"
                 >
                   Guest Access
                 </button>
               </div>
             </div>
             
-            <div className="mt-auto text-center border-t border-charcoal/5 pt-8">
-              <span className="italic-accent text-charcoal/30">Infrastructure Layer established in Zimbabwe.</span>
+            <div className="mt-auto text-center border-t border-white/5 pt-8">
+              <span className="text-xs text-stone-600 uppercase tracking-widest font-mono">Infrastructure Layer established in Zimbabwe.</span>
             </div>
           </motion.div>
         )}
@@ -181,56 +181,56 @@ export const Auth: React.FC = () => {
           >
             <button 
               onClick={() => setView('welcome')}
-              className="w-12 h-12 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal mb-12 self-start active:scale-95 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)]"
+              className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white mb-12 self-start active:scale-95 transition-all"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
 
             <div className="max-w-sm mx-auto w-full">
               <div className="mb-10">
-                <h2 className="text-6xl md:text-7xl font-display font-black uppercase italic tracking-tighter mb-2 leading-[0.8]">
+                <h2 className="text-5xl font-display font-black uppercase tracking-tighter mb-2 leading-[0.8] text-white">
                   {view === 'signin' ? 'entry.' : 'setup.'}
                 </h2>
-                <div className="italic-accent text-pink">Protocol Engagement</div>
+                <div className="text-xs font-mono tracking-widest text-[#C6FF00] uppercase">Protocol Engagement</div>
               </div>
 
-              <form onSubmit={view === 'signin' ? handleSignIn : handleSignUp} className="space-y-6">
+              <form onSubmit={view === 'signin' ? handleSignIn : handleSignUp} className="space-y-5">
                 <AnimatePresence mode="popLayout">
                   {view === 'signup' && (
                     <>
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="space-y-2"
+                        className="space-y-1.5"
                       >
-                        <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 ml-2 italic">Commercial Name</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500 ml-1">Commercial Name</label>
                         <div className="relative">
-                          <User className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal/20" />
+                          <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
                           <input
                             type="text"
                             required
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="Store Owner"
-                            className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                            className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
                           />
                         </div>
                       </motion.div>
                       <motion.div 
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="space-y-2"
+                        className="space-y-1.5"
                       >
-                        <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 ml-2 italic">Node Handle</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500 ml-1">Node Handle</label>
                         <div className="relative">
-                          <div className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-charcoal/20 font-black">@</div>
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-stone-500 font-bold text-sm">@</div>
                           <input
                             type="text"
                             required
                             value={handle}
                             onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                             placeholder="handle"
-                            className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                            className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
                           />
                         </div>
                       </motion.div>
@@ -238,44 +238,44 @@ export const Auth: React.FC = () => {
                   )}
                 </AnimatePresence>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 ml-2 italic">Routing Address</label>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500 ml-1">Routing Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal/20" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@node.com"
-                      className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-6 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                      className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center px-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-charcoal/40 italic">Key Phrase</label>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Key Phrase</label>
                     {view === 'signin' && (
-                      <Link to="/forgot-password" disable-navigation="true" className="italic-accent text-[11px] hover:underline">Reset?</Link>
+                      <Link to="/forgot-password" disable-navigation="true" className="text-[10px] text-stone-400 hover:text-[#C6FF00] transition-colors uppercase font-mono tracking-wider">Reset?</Link>
                     )}
                   </div>
                   <div className="relative">
-                    <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal/20" />
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-14 pr-12 outline-none focus:border-pink transition-all text-charcoal shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
+                      className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-10 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-charcoal/20 hover:text-pink transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 hover:text-[#C6FF00] transition-colors"
                     >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
                 </div>
@@ -284,20 +284,20 @@ export const Auth: React.FC = () => {
                   <motion.div 
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 bg-pink/10 border-2 border-pink/20 rounded-[20px] flex items-start gap-3 mt-4"
+                    className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 mt-4"
                   >
-                    <AlertCircle className="text-pink w-5 h-5 shrink-0 mt-0.5" />
-                    <p className="text-charcoal text-[11px] font-bold uppercase tracking-tight leading-tight">{error}</p>
+                    <AlertCircle className="text-red-500 w-4 h-4 shrink-0 mt-0.5" />
+                    <p className="text-white text-xs font-medium leading-tight">{error}</p>
                   </motion.div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-charcoal text-cream py-6 rounded-full font-black uppercase tracking-widest transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 mt-10 text-[13px] italic shadow-[10px_10px_0_#C6FF00]"
+                  className="w-full bg-[#C6FF00] hover:bg-[#b5e600] text-black py-4 rounded-xl font-bold uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 mt-8 text-sm"
                 >
                   {loading ? (
-                    <div className="w-6 h-6 border-2 border-cream/30 border-t-cream rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
                   ) : (
                     view === 'signin' ? 'Verify Identity' : 'Establish Node'
                   )}
@@ -305,11 +305,11 @@ export const Auth: React.FC = () => {
               </form>
 
               <div className="mt-12 text-center">
-                <p className="text-charcoal/40 text-xs font-black uppercase tracking-widest italic">
+                <p className="text-stone-500 text-xs font-bold uppercase tracking-widest">
                   {view === 'signin' ? 'Zero Account?' : 'Identity Established?'}
                   <button 
                     onClick={() => setView(view === 'signin' ? 'signup' : 'signin')}
-                    className="ml-2 text-charcoal border-b-2 border-pink hover:text-pink transition-colors"
+                    className="ml-2 text-white border-b border-[#C6FF00] hover:text-[#C6FF00] transition-colors"
                   >
                     {view === 'signin' ? 'Sign Up' : 'Sign In'}
                   </button>

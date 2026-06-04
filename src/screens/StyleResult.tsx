@@ -69,7 +69,7 @@ export const StyleResult = ({ onComplete }: { onComplete?: () => void }) => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="mt-5 bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] rounded-full px-5 py-2 text-[13px] font-bold uppercase tracking-widest"
+          className="mt-5 bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] rounded-full px-5 py-2 text-[13px] font-bold uppercase tracking-widest"
         >
           {selectedCard.result_stat}
         </motion.div>
@@ -89,7 +89,7 @@ export const StyleResult = ({ onComplete }: { onComplete?: () => void }) => {
           transition={{ delay: 0.4, duration: 0.5 }}
           className="mt-6 flex justify-center"
         >
-          <div className="w-[110px] h-[140px] rounded-[14px] overflow-hidden border-[2.5px] border-[#FF2D78] shadow-[0_0_0_4px_rgba(255,45,120,0.15),0_16px_40px_rgba(0,0,0,0.5)]">
+          <div className="w-[110px] h-[140px] rounded-[14px] overflow-hidden border-[2.5px] border-[#C6FF00] shadow-[0_0_0_4px_rgba(255,45,120,0.15),0_16px_40px_rgba(0,0,0,0.5)]">
             <img
               src={selectedCard.image_url}
               alt="Style Preview"
@@ -113,10 +113,10 @@ export const StyleResult = ({ onComplete }: { onComplete?: () => void }) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55, duration: 0.5 }}
-          className="mt-4 bg-[#FF2D78]/10 border border-[#FF2D78]/25 rounded-full px-[18px] py-[7px] flex items-center justify-center gap-1.5"
+          className="mt-4 bg-[#C6FF00]/10 border border-[#C6FF00]/25 rounded-full px-[18px] py-[7px] flex items-center justify-center gap-1.5"
         >
           <span className="text-[#888] text-[12px]">Your style:</span>
-          <span className="text-[#FF2D78] text-[12px] font-bold">{selectedCard.style_label}</span>
+          <span className="text-[#C6FF00] text-[12px] font-bold">{selectedCard.style_label}</span>
         </motion.div>
 
         <div className="mt-8 flex flex-col gap-2.5 w-full">
@@ -125,7 +125,7 @@ export const StyleResult = ({ onComplete }: { onComplete?: () => void }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6, duration: 0.5 }}
             onClick={handleEnterApp}
-            className="w-full h-[48px] rounded-full bg-gradient-to-r from-[#FF2D78] to-[#9F33FF] text-white font-bold text-[14px] px-[28px]"
+            className="w-full h-[48px] rounded-full bg-gradient-to-r from-[#C6FF00] to-[#9F33FF] text-white font-bold text-[14px] px-[28px]"
           >
             Enter Thread ZW →
           </motion.button>

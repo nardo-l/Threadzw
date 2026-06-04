@@ -34,7 +34,7 @@ export const WishlistView: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center bg-[#0A0A0A]">
         <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/5">
-          <Heart className="opacity-20 text-[#FF5FA2]" size={40} />
+          <Heart className="opacity-20 text-[#C6FF00]" size={40} />
         </div>
         <h2 className="font-bold text-[20px] text-white">Nothing saved yet</h2>
         <p className="text-white/40 text-[14px] mt-2 leading-relaxed max-w-[260px]">
@@ -42,7 +42,7 @@ export const WishlistView: React.FC = () => {
         </p>
         <button 
           onClick={() => navigate('/')}
-          className="mt-10 px-10 h-14 rounded-full text-white font-bold text-[15px] shadow-xl flex items-center gap-2 transition-all active:scale-95 bg-gradient-to-br from-[#9B27AF] to-[#FF5FA2]"
+          className="mt-10 px-10 h-14 rounded-full text-white font-bold text-[15px] shadow-xl flex items-center gap-2 transition-all active:scale-95 bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]"
         >
           Explore Shop <ArrowRight size={18} />
         </button>
@@ -76,15 +76,15 @@ export const WishlistView: React.FC = () => {
           </button>
           <h1 className="font-bold text-[20px] text-white">Wishlist</h1>
         </div>
-        <Heart className="fill-[#FF5FA2] text-[#FF5FA2]" size={24} />
+        <Heart className="fill-[#C6FF00] text-[#C6FF00]" size={24} />
       </div>
 
       {/* Info Card */}
       <div 
-        className="mx-5 mt-6 border rounded-[20px] p-4 flex gap-3.5 bg-[#FF5FA21A] border-white/5"
+        className="mx-5 mt-6 border rounded-[20px] p-4 flex gap-3.5 bg-[#C6FF001A] border-white/5"
       >
-        <Bell className="shrink-0 text-[#FF5FA2]" size={18} />
-        <p className="text-[13px] leading-relaxed text-[#FF5FA2] font-medium">
+        <Bell className="shrink-0 text-[#C6FF00]" size={18} />
+        <p className="text-[13px] leading-relaxed text-[#C6FF00] font-medium">
           We'll notify you when prices drop or stock gets low on your saved items.
         </p>
       </div>
@@ -95,7 +95,7 @@ export const WishlistView: React.FC = () => {
           <button 
             key={c}
             onClick={() => setFilter(c)}
-            className={`h-[40px] px-6 rounded-full text-[13px] font-bold transition-all shrink-0 border ${filter === c ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-lg' : 'bg-transparent border-white/10 text-white/40'}`}
+            className={`h-[40px] px-6 rounded-full text-[13px] font-bold transition-all shrink-0 border ${filter === c ? 'bg-[#C6FF00] border-[#C6FF00] text-white shadow-lg' : 'bg-transparent border-white/10 text-white/40'}`}
           >
             {c}
           </button>
@@ -106,7 +106,7 @@ export const WishlistView: React.FC = () => {
       <div className="px-5 flex flex-col gap-3">
         <div className="flex justify-between items-center mb-1 px-1">
           <span className="text-[13px] font-bold text-white/40">{wishlistProducts.length} items saved</span>
-          <button className="text-[12px] font-bold text-[#FF5FA2]">Clear All</button>
+          <button className="text-[12px] font-bold text-[#C6FF00]">Clear All</button>
         </div>
 
         {wishlistProducts.map(p => (
@@ -137,7 +137,7 @@ export const WishlistView: React.FC = () => {
               </div>
               
               <div className="flex items-center gap-2 mt-2">
-                 <span className="font-bold text-[16px] text-[#FF5FA2]">${p.price}</span>
+                 <span className="font-bold text-[16px] text-[#C6FF00]">${p.price}</span>
                  {p.id === 'p1' && (
                     <div className="flex items-center gap-1.5">
                        <span className="text-[11px] font-bold text-green-500">🔥 Trending</span>
@@ -152,7 +152,7 @@ export const WishlistView: React.FC = () => {
                     <span className="text-[12px] font-bold text-green-500">In Stock</span>
                  )}
                  <button 
-                  className="rounded-full px-4 py-2 text-white text-[11px] font-bold bg-gradient-to-br from-[#9B27AF] to-[#FF5FA2] shadow-lg shadow-pink-500/20"
+                  className="rounded-full px-4 py-2 text-white text-[11px] font-bold bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] shadow-lg shadow-[#C6FF00]/20"
                  >
                     I Like It
                  </button>
@@ -185,7 +185,7 @@ const ToggleRow: React.FC<{ icon: string, label: string, defaultOn: boolean }> =
        <button 
         onClick={() => setOn(!on)}
         className={`w-12 h-7 rounded-full relative transition-colors p-1`}
-        style={{ background: on ? '#FF5FA2' : '#222' }}
+        style={{ background: on ? '#C6FF00' : '#222' }}
        >
           <motion.div 
             animate={{ x: on ? 20 : 0 }}

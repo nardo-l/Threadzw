@@ -31,7 +31,7 @@ export const EntrySuccessView: React.FC = () => {
              delay: Math.random() * 0.2
            }}
            className={`absolute w-3 h-3 rounded-sm`}
-           style={{ background: i % 2 === 0 ? '#FF2D78' : '#9B27AF' }}
+           style={{ background: i % 2 === 0 ? '#C6FF00' : '#9B27AF' }}
         />
       ))}
 
@@ -41,8 +41,8 @@ export const EntrySuccessView: React.FC = () => {
         transition={{ type: "spring", damping: 10, stiffness: 100 }}
         className="relative mb-10"
       >
-        <div className="absolute inset-0 blur-3xl animate-pulse bg-[#FF2D78]/20" />
-        <div className="w-[124px] h-[124px] rounded-full flex items-center justify-center shadow-2xl relative z-10 bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]">
+        <div className="absolute inset-0 blur-3xl animate-pulse bg-[#C6FF00]/20" />
+        <div className="w-[124px] h-[124px] rounded-full flex items-center justify-center shadow-2xl relative z-10 bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]">
            <CheckCircle2 size={64} className="text-white" strokeWidth={1.5} />
         </div>
       </motion.div>
@@ -67,7 +67,7 @@ export const EntrySuccessView: React.FC = () => {
       >
         <button 
           onClick={() => setCommunityScreen('hub')}
-          className="w-full h-[64px] rounded-full text-white font-bold text-[16px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]"
+          className="w-full h-[64px] rounded-full text-white font-bold text-[16px] flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]"
         >
           <Home size={20} /> Back to Hub
         </button>

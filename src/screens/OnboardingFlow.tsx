@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, Check, Camera, Image as ImageIcon, Search, MessageSquare, 
   Eye, EyeOff, ShoppingBag, Smartphone, Store, Clock, Flame, Send,
-  ArrowRight, Lock, AlertCircle, TrendingUp, CheckCircle, Package,
-  DollarSign, BarChart2, MapPin, Tag, Trophy, AlertTriangle, RefreshCw, HelpCircle, Shirt, Briefcase, Gem, Sparkles
+  ArrowRight, Lock, AlertCircle, TrendingUp, CheckCircle2, Package,
+  DollarSign, BarChart2, MapPin, Tag, Trophy, AlertTriangle, RefreshCw, HelpCircle, Shirt, Briefcase, Gem, Sparkles,
+  X, MessageCircle, Unlock
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { useDemoShop } from '../hooks/useDemoShop';
 
 // Hero icon component
 interface HeroIconProps {
@@ -140,6 +142,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   setAppStage,
   setPaywallScreen: setGlobalPaywallScreen
 }) => {
+  const { demoShop, demoProducts, screenshots, loading: demoLoading } = useDemoShop();
   const [screen, setScreen] = useState(1);
 
   // Phase tracking
@@ -603,7 +606,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
-                               <CheckCircle className="text-[#c8ff00] w-10 h-10" />
+                               <CheckCircle2 className="text-[#c8ff00] w-10 h-10" />
                     <span className="font-extrabold text-sm">Yes they can</span>
                   </button>
 
@@ -843,7 +846,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     transition={{ delay: 0.2 }}
                     className="bg-white/5 border border-white/10 p-4 rounded-xl flex items-center justify-between text-xs font-bold font-sans"
                   >
-                    <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> KureStreetwear</span>
+                    <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> {demoShop?.name || 'DemoShop'}</span>
                     <span className="text-white/60">just got an order</span>
                   </motion.div>
 
@@ -1035,42 +1038,130 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 13 && (
               <div className="flex-1 flex flex-col justify-between py-4">
                 <div className="flex-1 flex flex-col justify-center space-y-4">
-                  <h3 className="text-xl font-[900] text-center tracking-tight text-white">
+                  <h3 className="text-xl font-[900] text-center tracking-tight text-white animate-fade-in">
                     Your shop will look like this.
                   </h3>
 
-                  {/* Visual CSS-only mini storefront device framing mockup */}
-                  <div className="w-[200px] h-[280px] bg-[#111] border-[4px] border-white/15 rounded-[22px] mx-auto overflow-hidden shadow-2xl flex flex-col relative text-[10px]">
-                    <div className="h-2 w-16 bg-white/20 rounded-full mx-auto mt-1 mb-1.5" />
-                    
-                    {/* Cover Banner placeholder */}
-                    <div className="h-14 bg-gradient-to-r from-zinc-800 to-stone-800 relative flex items-end px-2 pb-1">
-                      <div className="w-7 h-7 bg-zinc-950 border border-white/20 rounded-full flex items-center justify-center text-[7px] font-black font-mono">TZW</div>
-                    </div>
-                    
-                    {/* Text items */}
-                    <div className="p-2 space-y-1">
-                      <h5 className="font-mono font-black text-white leading-none">Your Brand</h5>
-                      <p className="text-white/40 text-[7px] leading-tight">Harare &bull; clothing category</p>
-                      
-                      {/* Products visual representation */}
-                      <div className="grid grid-cols-2 gap-1 pt-1">
-                        <div className="bg-white/5 aspect-square rounded-md p-1 flex flex-col justify-between border border-white/5">
-                          <div className="w-full h-8 bg-zinc-800 rounded-sm" />
-                          <span className="font-black text-white text-[7px]">$15</span>
+                  {demoLoading ? (
+                    <div className="w-[180px] h-[240px] rounded-[22px] mx-auto animate-shimmer bg-white/[0.04]" />
+                  ) : (
+                    <div className="w-full flex flex-col items-center">
+                      {screenshots && screenshots.length > 0 ? (
+                        /* Horizontal scroll of real screenshots (FIX 5) */
+                        <div className="w-full flex gap-3 overflow-x-auto py-2 no-scrollbar px-4">
+                          {screenshots.map(shot => (
+                            <div 
+                              key={shot.id} 
+                              style={{
+                                minWidth: 200,
+                                borderRadius: 16,
+                                overflow: 'hidden',
+                                flexShrink: 0
+                              }}
+                              className="border border-white/10 bg-[#151515]"
+                            >
+                              <img 
+                                src={shot.image_url}
+                                style={{
+                                  width: '100%',
+                                  height: 380,
+                                  objectFit: 'cover'
+                                }}
+                                alt=""
+                                referrerPolicy="no-referrer"
+                              />
+                              {shot.caption && (
+                                <p style={{
+                                  fontSize: 12,
+                                  color: 'rgba(255,255,255,0.4)',
+                                  padding: '8px 12px'
+                                }} className="font-sans text-center">
+                                  {shot.caption}
+                                </p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                        <div className="bg-white/5 aspect-square rounded-md p-1 flex flex-col justify-between border border-white/5">
-                          <div className="w-full h-8 bg-zinc-800 rounded-sm" />
-                          <span className="font-black text-white text-[7px]">$20</span>
+                      ) : (
+                        /* Fallback when no screenshots uploaded: screen phone mockup with live demo shop data (FIX 3) AND coming soon indicator */
+                        <div className="w-full space-y-4 flex flex-col items-center">
+                          {/* Real-time demo shop mockup (FIX 3) */}
+                          <div className="w-[200px] h-[280px] bg-[#111] border-[4px] border-white/15 rounded-[22px] mx-auto overflow-hidden shadow-2xl flex flex-col relative text-[8px]">
+                            <div className="h-1 w-16 bg-white/20 rounded-full mx-auto mt-1 mb-1.5" />
+                            
+                            {/* Cover Banner placeholder */}
+                            <div 
+                              style={{
+                                height: 56,
+                                backgroundImage: demoShop?.banner_url ? `url(${demoShop.banner_url})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                backgroundColor: '#1E1B4B'
+                              }}
+                              className="relative flex items-end px-2 pb-1 bg-gradient-to-r from-zinc-800 to-stone-800"
+                            >
+                              {/* logo circle */}
+                              <div 
+                                style={{
+                                  backgroundImage: demoShop?.logo_url ? `url(${demoShop.logo_url})` : 'none',
+                                  backgroundSize: 'cover',
+                                  backgroundPosition: 'center',
+                                  backgroundColor: '#111'
+                                }}
+                                className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center font-bold"
+                              >
+                                {!demoShop?.logo_url && (
+                                  <span className="text-[5px] font-sans text-white">
+                                    {demoShop?.name ? demoShop.name.charAt(0).toUpperCase() : 'S'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Text items */}
+                            <div className="p-2 space-y-1 text-left">
+                              <h5 className="font-sans font-black text-white leading-none truncate">{demoShop?.name || 'My Shop'}</h5>
+                              <p className="text-white/40 text-[6px] leading-tight truncate">{demoShop?.location || 'Harare'} &bull; clothing category</p>
+                              
+                              {/* Products visual representation */}
+                              {demoProducts.length === 0 ? (
+                                <div className="text-center text-[7px] text-white/30 py-4 font-bold font-sans">
+                                  No products in stock
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-1 pt-1">
+                                  {demoProducts.slice(0, 2).map((product, idx) => (
+                                    <div key={product.id || idx} className="bg-white/5 aspect-square rounded-md p-1 flex flex-col justify-between border border-white/5 overflow-hidden">
+                                      {product.image_url ? (
+                                        <img 
+                                          src={product.image_url} 
+                                          className="w-full h-8 object-cover rounded-sm mx-auto" 
+                                          alt=""
+                                          referrerPolicy="no-referrer"
+                                        />
+                                      ) : (
+                                        <div className="w-full h-8 bg-zinc-800 rounded-sm" />
+                                      )}
+                                      <span className="font-sans font-black text-white text-[6px]">${product.price}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Interactive chat block line */}
+                            <div className="absolute bottom-1.5 left-2 right-2 bg-[#25D366] py-1 flex items-center justify-center gap-1 font-sans font-black text-[7px] text-white rounded-md uppercase">
+                              Chat on WhatsApp
+                            </div>
+                          </div>
+
+                          <div className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-center">
+                            <p className="text-white/40 text-[10px] font-black uppercase tracking-wider font-sans">Screenshots coming soon</p>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                    
-                    {/* Interactive chat block line */}
-                    <div className="absolute bottom-1.5 left-2 right-2 bg-[#25D366] py-1 flex items-center justify-center gap-1 font-black text-[7px] text-white rounded-md uppercase">
-                      <WhatsAppIcon size={8} /> Chat on WhatsApp
-                    </div>
-                  </div>
+                  )}
 
                   <p className="text-center text-white/40 text-xs">
                     Professional. Live in minutes.

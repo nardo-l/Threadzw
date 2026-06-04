@@ -117,7 +117,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
                   {copied ? (
                     <Check size={14} className="text-[#10b981]" />
                   ) : (
-                    <Copy size={16} className="text-[#FF2D78]" />
+                    <Copy size={16} className="text-[#C6FF00]" />
                   ) }
                 </button>
               </div>
@@ -145,10 +145,10 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
 
                 <button 
                   onClick={shareViaInstagram}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-[12px] border transition-all active:scale-[0.98] bg-pink-500/10 border-pink-500/30"
+                  className="flex flex-col items-center justify-center p-3.5 rounded-[12px] border transition-all active:scale-[0.98] bg-[#1a1a1a] border-white/10"
                 >
                   <span className="text-[24px] mb-1.5">📸</span>
-                  <span className="text-white text-[12px] font-bold uppercase tracking-tight text-white">Instagram</span>
+                  <span className="text-white text-[12px] font-bold uppercase tracking-tight">Instagram</span>
                 </button>
 
                 <button 
@@ -156,10 +156,10 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
                     handleCopyLink();
                     onClose();
                   }}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-[12px] border transition-all active:scale-[0.98] bg-[#FF2D78]/10 border-[#FF2D78]/30"
+                  className="flex flex-col items-center justify-center p-3.5 rounded-[12px] border transition-all active:scale-[0.98] bg-[#C6FF00]/10 border-[#C6FF00]/30"
                 >
                   <span className="text-[24px] mb-1.5">🔗</span>
-                  <span className="text-white text-[12px] font-bold uppercase tracking-tight text-[#FF2D78]">Copy Link</span>
+                  <span className="text-[#C6FF00] text-[12px] font-bold uppercase tracking-tight">Copy Link</span>
                 </button>
               </div>
 

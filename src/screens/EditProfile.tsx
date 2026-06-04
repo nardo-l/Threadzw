@@ -359,7 +359,7 @@ export const EditProfile: React.FC = () => {
                 setShowAvatarPicker(true);
                 fetchPresetAvatars();
               }}
-              className="w-44 h-44 rounded-[54px] border-8 border-charcoal bg-white p-2 relative active:scale-95 transition-all shadow-[20px_20px_0_#F4A6C1] group-hover:translate-y-[-4px] group-hover:shadow-[24px_24px_0_#F4A6C1] cursor-pointer"
+              className="w-44 h-44 rounded-[54px] border-8 border-charcoal bg-white p-2 relative active:scale-95 transition-all shadow-[20px_20px_0_#C6FF00] group-hover:translate-y-[-4px] group-hover:shadow-[24px_24px_0_#C6FF00] cursor-pointer"
             >
               <div className="w-full h-full rounded-[44px] overflow-hidden bg-cream flex items-center justify-center border-4 border-charcoal/5">
                 {avatarUrl && !imgError ? (
@@ -381,7 +381,7 @@ export const EditProfile: React.FC = () => {
             </div>
           </div>
           <div className="flex flex-col items-center">
-             <span className="text-[11px] font-black uppercase tracking-[0.4em] text-pink italic">Avatar Sync Required</span>
+             <span className="text-[11px] font-black uppercase tracking-[0.4em] text-[#C6FF00] italic">Avatar Sync Required</span>
              <p className="text-charcoal/30 text-[9px] font-black uppercase tracking-[0.2em] mt-1">Select from archives or upload capture</p>
           </div>
         </div>
@@ -389,43 +389,43 @@ export const EditProfile: React.FC = () => {
         {/* Form */}
         <div className="flex flex-col gap-10">
           <div className="flex flex-col gap-3 group">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic pl-4 group-focus-within:text-pink transition-colors">Neural Alias</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic pl-4 group-focus-within:text-[#C6FF00] transition-colors">Neural Alias</label>
             <div className="relative">
               <input 
                 value={name}
                 onChange={e => setName(e.target.value)}
                 placeholder="Identity Label"
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[12px_12px_0_#F4A6C1] transition-all outline-none"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[12px_12px_0_#C6FF00] transition-all outline-none"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-3 group">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic pl-4 group-focus-within:text-pink transition-colors">Digital Handle</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic pl-4 group-focus-within:text-[#C6FF00] transition-colors">Digital Handle</label>
             <div className="relative">
               <span className="absolute left-8 top-1/2 -translate-y-1/2 text-3xl font-display font-black text-charcoal/20">@</span>
               <input 
                 value={handle}
                 onChange={e => setHandle(e.target.value.toLowerCase().replace(/\s+/g, ''))}
                 placeholder="handle_sync"
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[12px_12px_0_#F4A6C1] transition-all outline-none"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[12px_12px_0_#C6FF00] transition-all outline-none"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-3 group">
-            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic pl-4 group-focus-within:text-pink transition-colors">Cipher Protocol</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic pl-4 group-focus-within:text-[#C6FF00] transition-colors">Cipher Protocol</label>
             <div className="relative">
               <input 
                 type={showPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[12px_12px_0_#F4A6C1] transition-all outline-none"
+                className="w-full bg-white border-4 border-charcoal rounded-[32px] p-8 text-2xl font-display font-black italic text-charcoal tracking-tight focus:bg-white focus:shadow-[12px_12px_0_#C6FF00] transition-all outline-none"
               />
               <button 
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-charcoal active:scale-90 transition-all hover:text-pink"
+                className="absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 flex items-center justify-center text-charcoal active:scale-90 transition-all hover:text-[#C6FF00]"
               >
                 {showPassword ? <EyeOff size={24} strokeWidth={3} /> : <Eye size={24} strokeWidth={3} />}
               </button>
@@ -525,7 +525,7 @@ export const EditProfile: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3 mb-6 pl-2">
-                 <div className="w-2 h-2 rounded-full bg-pink animate-pulse" />
+                 <div className="w-2 h-2 rounded-full bg-[#C6FF00] animate-pulse" />
                  <p className="text-[10px] uppercase font-black tracking-widest text-charcoal italic">Neural Presets Detected:</p>
               </div>
               
@@ -554,13 +554,13 @@ export const EditProfile: React.FC = () => {
                     
                     <div className="flex items-center gap-6">
                       <div className="flex flex-col text-right">
-                         <span className="text-[9px] font-black uppercase text-pink italic">New Protocol</span>
+                         <span className="text-[9px] font-black uppercase text-[#C6FF00] italic">New Protocol</span>
                          <span className="font-display font-black text-charcoal italic uppercase tracking-tighter">PENDING</span>
                       </div>
                       <motion.div 
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="w-20 h-20 rounded-[28px] border-4 p-1 border-pink bg-white shadow-[6px_6px_0_#F4A6C1]"
+                        className="w-20 h-20 rounded-[28px] border-4 p-1 border-[#C6FF00] bg-white shadow-[6px_6px_0_#C6FF00]"
                       >
                         <img 
                           src={selectedAvatar || undefined} 
@@ -590,7 +590,7 @@ export const EditProfile: React.FC = () => {
                     </div>
                     <button 
                       onClick={() => fetchPresetAvatars(true)}
-                      className="px-10 py-5 bg-charcoal text-white font-display font-black uppercase italic tracking-tighter text-xl rounded-[24px] shadow-[8px_8px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all"
+                      className="px-10 py-5 bg-charcoal text-white font-display font-black uppercase italic tracking-tighter text-xl rounded-[24px] shadow-[8px_8px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all"
                     >
                       Retry Pulse
                     </button>
@@ -605,7 +605,7 @@ export const EditProfile: React.FC = () => {
                         <div key={`preset-avatar-${i}-${avatar.name}`} className="relative group/btn">
                           <button
                             onClick={() => setSelectedAvatar(avatar.url)}
-                            className={`relative aspect-square w-full rounded-[28px] overflow-hidden transition-all duration-300 active:scale-90 border-4 ${isSelected || (isCurrent && !selectedAvatar) ? 'border-pink shadow-[6px_6px_0_#F4A6C1] -translate-y-1' : 'border-charcoal hover:border-lime group-hover/btn:translate-y-[-2px]'}`}
+                            className={`relative aspect-square w-full rounded-[28px] overflow-hidden transition-all duration-300 active:scale-90 border-4 ${isSelected || (isCurrent && !selectedAvatar) ? 'border-[#C6FF00] shadow-[6px_6px_0_#C6FF00] -translate-y-1' : 'border-charcoal hover:border-lime group-hover/btn:translate-y-[-2px]'}`}
                           >
                             <img 
                               src={avatar.url || undefined} 
@@ -613,7 +613,7 @@ export const EditProfile: React.FC = () => {
                               onLoad={(e) => (e.currentTarget.style.opacity = '1')}
                               alt={avatar.name}
                             />
-                            <div className={`absolute inset-0 bg-pink/20 transition-opacity ${isSelected || (isCurrent && !selectedAvatar) ? 'opacity-100' : 'opacity-0'}`} />
+                            <div className={`absolute inset-0 bg-[#C6FF00]/20 transition-opacity ${isSelected || (isCurrent && !selectedAvatar) ? 'opacity-100' : 'opacity-0'}`} />
                           </button>
                           {(isSelected || (isCurrent && !selectedAvatar)) && (
                             <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-[12px] border-2 flex items-center justify-center bg-lime border-charcoal shadow-[2px_2px_0_rgba(0,0,0,1)] z-10">
@@ -648,7 +648,7 @@ export const EditProfile: React.FC = () => {
                 
                 <button 
                   onClick={handleCloseAvatarPicker}
-                  className="w-full py-4 text-[10px] font-black uppercase tracking-[0.4em] text-center text-charcoal/20 italic hover:text-pink transition-colors"
+                  className="w-full py-4 text-[10px] font-black uppercase tracking-[0.4em] text-center text-charcoal/20 italic hover:text-[#C6FF00] transition-colors"
                 >
                   Terminate Probe
                 </button>

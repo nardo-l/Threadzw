@@ -134,7 +134,7 @@ export const FashionFeedView: React.FC = () => {
           <h1 className="text-[28px] font-bold tracking-tighter text-white">Fashion Feed</h1>
           <button 
             onClick={() => setShowUpload(true)}
-            className="w-12 h-12 rounded-full bg-[#FF5FA2] flex items-center justify-center text-white shadow-lg shadow-pink-500/20 active:scale-95 transition-all"
+            className="w-12 h-12 rounded-full bg-[#C6FF00] flex items-center justify-center text-white shadow-lg shadow-[#C6FF00]/20 active:scale-95 transition-all"
           >
             <Plus size={24} strokeWidth={3} />
           </button>
@@ -150,7 +150,7 @@ export const FashionFeedView: React.FC = () => {
       <div className="pb-32">
         {loading ? (
           <div className="flex flex-col items-center py-20 gap-4">
-            <div className="w-8 h-8 border-4 border-[#FF2D78] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#C6FF00] border-t-transparent rounded-full animate-spin" />
             <p className="text-gray-400 text-sm">Curating your style...</p>
           </div>
         ) : posts.length === 0 ? (
@@ -201,7 +201,7 @@ const TabButton = ({ active, label, onClick }: { active: boolean; label: string;
     {active && (
       <motion.div 
         layoutId="tab-underline"
-        className="absolute -bottom-1 left-0 right-0 h-1 bg-[#FF5FA2] rounded-full"
+        className="absolute -bottom-1 left-0 right-0 h-1 bg-[#C6FF00] rounded-full"
       />
     )}
   </button>
@@ -219,7 +219,7 @@ const PostCard = ({ post, isLiked, isSaved, onLike, onSave, onComment }: any) =>
             {post.profiles?.avatar_url ? (
               <img src={post.profiles.avatar_url} className="w-full h-full object-cover" alt="" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center font-bold text-[#FF5FA2] bg-white/5">
+              <div className="w-full h-full flex items-center justify-center font-bold text-[#C6FF00] bg-white/5">
                 {post.profiles?.display_name?.charAt(0) || '?'}
               </div>
             )}
@@ -255,7 +255,7 @@ const PostCard = ({ post, isLiked, isSaved, onLike, onSave, onComment }: any) =>
               {post.images.map((_: any, i: number) => (
                 <div 
                   key={`dot-${post.id}-${i}`} 
-                  className={`h-1.5 rounded-full transition-all duration-300 ${currentImage === i ? 'bg-[#FF5FA2] w-6' : 'bg-white/20 w-1.5'}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${currentImage === i ? 'bg-[#C6FF00] w-6' : 'bg-white/20 w-1.5'}`}
                 />
               ))}
             </div>
@@ -275,9 +275,9 @@ const PostCard = ({ post, isLiked, isSaved, onLike, onSave, onComment }: any) =>
               <button onClick={onLike} className="flex items-center gap-2 group">
                 <Heart 
                   size={26} 
-                  className={`transition-all duration-300 ${isLiked ? 'fill-[#FF5FA2] text-[#FF5FA2] scale-110 shadow-pink-500/20' : 'text-white group-hover:scale-110'}`} 
+                  className={`transition-all duration-300 ${isLiked ? 'fill-[#C6FF00] text-[#C6FF00] scale-110 shadow-[#C6FF00]/20' : 'text-white group-hover:scale-110'}`} 
                 />
-                <span className={`text-sm font-bold ${isLiked ? 'text-[#FF5FA2]' : 'text-white/40'}`}>{post.like_count}</span>
+                <span className={`text-sm font-bold ${isLiked ? 'text-[#C6FF00]' : 'text-white/40'}`}>{post.like_count}</span>
               </button>
               <button onClick={onComment} className="flex items-center gap-2 group">
                 <MessageCircle size={26} className="text-white group-hover:scale-110 transition-transform" />
@@ -290,7 +290,7 @@ const PostCard = ({ post, isLiked, isSaved, onLike, onSave, onComment }: any) =>
            <button onClick={onSave} className="group">
              <Bookmark 
                 size={26} 
-                className={`transition-all duration-300 ${isSaved ? 'fill-[#FF5FA2] text-[#FF5FA2] scale-110' : 'text-white group-hover:scale-110'}`} 
+                className={`transition-all duration-300 ${isSaved ? 'fill-[#C6FF00] text-[#C6FF00] scale-110' : 'text-white group-hover:scale-110'}`} 
              />
            </button>
         </div>
@@ -433,7 +433,7 @@ const UploadPostSheet = ({ onClose, onSuccess }: any) => {
                   value={caption}
                   onChange={e => setCaption(e.target.value)}
                   placeholder="Describe your match... where you got it... the vibe..."
-                  className="w-full min-h-[120px] bg-gray-50 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-[#FF2D78]/20 transition-all border-none resize-none"
+                  className="w-full min-h-[120px] bg-gray-50 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-[#C6FF00]/20 transition-all border-none resize-none"
                 />
               </div>
 
@@ -442,7 +442,7 @@ const UploadPostSheet = ({ onClose, onSuccess }: any) => {
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Outfit Breakdown</label>
                   <button 
                     onClick={() => setOutfitItems(prev => [...prev, { name: '', brand: '' }])}
-                    className="text-[#FF2D78] text-[10px] font-bold py-1 px-3 border border-[#FF2D78] rounded-full"
+                    className="text-[#C6FF00] text-[10px] font-bold py-1 px-3 border border-[#C6FF00] rounded-full"
                   >
                     + ADD ITEM
                   </button>
@@ -490,7 +490,7 @@ const UploadPostSheet = ({ onClose, onSuccess }: any) => {
            <button 
              onClick={handleUpload}
              disabled={posting || !images.length || !caption.trim()}
-             className="w-full h-14 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold disabled:opacity-50 transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2"
+             className="w-full h-14 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white font-bold disabled:opacity-50 transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2"
            >
              {posting ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : 'Post to Feed 🔥'}
            </button>
@@ -570,7 +570,7 @@ const CommentsSheet = ({ postId, onClose }: any) => {
                 </div>
                 <div className="flex-1">
                    <div className="bg-gray-50 rounded-2xl px-4 py-3">
-                      <span className="font-bold text-xs text-[#1a1a1a] mr-2 transition-all hover:text-[#FF2D78] cursor-pointer">
+                      <span className="font-bold text-xs text-[#1a1a1a] mr-2 transition-all hover:text-[#C6FF00] cursor-pointer">
                         {c.profiles?.display_name || 'User'}
                       </span>
                       <p className="text-sm text-gray-700 mt-1">{c.content}</p>
@@ -608,7 +608,7 @@ const CommentsSheet = ({ postId, onClose }: any) => {
               <button 
                 onClick={handleSend}
                 disabled={!newComment.trim() || sending}
-                className={`p-1.5 rounded-full ${newComment.trim() ? 'bg-[#FF2D78] text-white' : 'bg-gray-300 text-white'}`}
+                className={`p-1.5 rounded-full ${newComment.trim() ? 'bg-[#C6FF00] text-white' : 'bg-gray-300 text-white'}`}
               >
                 <Send size={16} />
               </button>

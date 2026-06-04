@@ -50,7 +50,7 @@ export const ComingSoonScreen: React.FC<ComingSoonScreenProps> = ({ feature }) =
       </motion.div>
 
       {/* Coming Soon Label */}
-      <h1 className="mt-[24px] text-[32px] font-bold bg-clip-text text-transparent bg-gradient-to-br from-[#9B27AF] to-[#FF2D78]">
+      <h1 className="mt-[24px] text-[32px] font-bold bg-clip-text text-transparent bg-gradient-to-br from-[#9B27AF] to-[#C6FF00]">
         Coming Soon
       </h1>
 
@@ -81,7 +81,7 @@ export const ComingSoonScreen: React.FC<ComingSoonScreenProps> = ({ feature }) =
       {/* Back Button */}
       <button
         onClick={handleBack}
-        className="mt-[24px] w-full max-w-[320px] h-[60px] rounded-full font-bold text-[16px] active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] text-white shadow-xl"
+        className="mt-[24px] w-full max-w-[320px] h-[60px] rounded-full font-bold text-[16px] active:scale-[0.98] transition-all bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] text-white shadow-xl"
       >
         Go Back
       </button>

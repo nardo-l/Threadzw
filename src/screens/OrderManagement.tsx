@@ -314,7 +314,7 @@ export const OrderManagement: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <h1 className="text-5xl font-display font-black uppercase italic tracking-tighter leading-none">
-              the <span className="text-pink">log</span>
+              the <span className="text-[#C6FF00]">log</span>
             </h1>
             <p className="italic-accent text-lg mt-1">Order Engagement Ledger</p>
           </div>
@@ -337,13 +337,13 @@ export const OrderManagement: React.FC = () => {
               className="mt-6 overflow-hidden"
             >
               <div className="relative group">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/20 group-focus-within:text-pink transition-colors" size={20} />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/20 group-focus-within:text-[#C6FF00] transition-colors" size={20} />
                 <input 
                   type="text"
                   placeholder="ID / Reference / Product"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 pl-14 pr-12 text-sm text-charcoal font-display uppercase tracking-tight focus:shadow-[8px_8px_0_#F4A6C1] outline-none transition-all"
+                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 pl-14 pr-12 text-sm text-charcoal font-display uppercase tracking-tight focus:shadow-[8px_8px_0_#C6FF00] outline-none transition-all"
                 />
                 {searchQuery && (
                   <button onClick={() => setSearchQuery('')} className="absolute right-6 top-1/2 -translate-y-1/2 text-charcoal/30">
@@ -377,14 +377,14 @@ export const OrderManagement: React.FC = () => {
         {/* Stats Row */}
         <div className="grid grid-cols-3 gap-4">
           <StatCard label="Today Rev" value={`$${stats.todayRevenue}`} color="text-charcoal" delay={0.1} />
-          <StatCard label="Today Unit" value={stats.todaySalesCount} color="text-pink" delay={0.2} />
+          <StatCard label="Today Unit" value={stats.todaySalesCount} color="text-[#C6FF00]" delay={0.2} />
           <StatCard label="Month Rev" value={`$${stats.monthRevenue}`} color="text-charcoal" delay={0.3} />
         </div>
 
         {/* Log a Sale Button */}
         <button 
           onClick={() => setIsLogSheetOpen(true)}
-          className="w-full py-6 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-[32px] shadow-[10px_10px_0_#F4A6C1] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3"
+          className="w-full py-6 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-[32px] shadow-[10px_10px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all flex items-center justify-center gap-3"
         >
           <Plus size={28} strokeWidth={3} />
           Log Engagement
@@ -419,7 +419,7 @@ export const OrderManagement: React.FC = () => {
               return (
                 <div key={group} className="flex flex-col gap-6">
                   <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black text-pink uppercase tracking-widest whitespace-nowrap bg-pink/10 px-3 py-1 rounded-full">{group}</span>
+                    <span className="text-[10px] font-black text-[#C6FF00] uppercase tracking-widest whitespace-nowrap bg-[#C6FF00]/10 px-3 py-1 rounded-full">{group}</span>
                     <div className="h-[2px] w-full bg-charcoal/5" />
                   </div>
                   <div className="flex flex-col gap-6">
@@ -504,7 +504,7 @@ const SaleCard: React.FC<{ sale: Sale; products: Product[]; onEdit: () => void; 
   const product = products.find(p => p.id === sale.product_id);
 
   return (
-    <div className="bg-white rounded-[32px] border-2 border-charcoal overflow-hidden flex flex-col shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[10px_10px_0_#F4A6C1] transition-all">
+    <div className="bg-white rounded-[32px] border-2 border-charcoal overflow-hidden flex flex-col shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[10px_10px_0_#C6FF00] transition-all">
       <div className="px-5 py-3 bg-cream border-b-2 border-charcoal flex justify-between items-center">
         <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest">{sale.reference}</span>
         <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest">{dateStr}, {timeStr}</span>
@@ -530,7 +530,7 @@ const SaleCard: React.FC<{ sale: Sale; products: Product[]; onEdit: () => void; 
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-display font-black text-pink italic tracking-tighter leading-none">${sale.sale_price * sale.quantity}</span>
+            <span className="text-3xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none">${sale.sale_price * sale.quantity}</span>
             {isNegotiated && (
               <div className="flex items-center gap-2">
                 <span className="text-sm font-display font-black text-charcoal/20 line-through tracking-tighter">${sale.listed_price * sale.quantity}</span>
@@ -551,7 +551,7 @@ const SaleCard: React.FC<{ sale: Sale; products: Product[]; onEdit: () => void; 
             <Edit2 size={14} />
             Refine
           </button>
-          <button onClick={onDelete} className="flex items-center gap-2 text-[10px] font-black text-pink hover:text-pink-dark transition-colors uppercase tracking-widest italic">
+          <button onClick={onDelete} className="flex items-center gap-2 text-[10px] font-black text-[#C6FF00] hover:text-[#C6FF00]-dark transition-colors uppercase tracking-widest italic">
             <Trash2 size={14} />
             Purge
           </button>
@@ -616,13 +616,13 @@ const SaleSheet: React.FC<{
             <div className="flex flex-col gap-3">
               <label className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.2em] italic">Product Identification</label>
               <div className="relative group">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/20 group-focus-within:text-pink transition-colors" size={20} />
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/20 group-focus-within:text-[#C6FF00] transition-colors" size={20} />
                 <input 
                   type="text"
                   placeholder="Query units catalog..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 pl-14 pr-6 text-sm text-charcoal outline-none focus:shadow-[6px_6px_0_#F4A6C1] transition-all"
+                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 pl-14 pr-6 text-sm text-charcoal outline-none focus:shadow-[6px_6px_0_#C6FF00] transition-all"
                 />
               </div>
             </div>
@@ -653,8 +653,8 @@ const SaleSheet: React.FC<{
                       </div>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-xl font-display font-black text-pink italic tracking-tighter leading-none">${p.price}</span>
-                      {isOutOfStock && <span className="text-[8px] font-black text-pink uppercase mt-1">DEPLETED</span>}
+                      <span className="text-xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none">${p.price}</span>
+                      {isOutOfStock && <span className="text-[8px] font-black text-[#C6FF00] uppercase mt-1">DEPLETED</span>}
                     </div>
                   </button>
                 );
@@ -753,7 +753,7 @@ const SaleSheet: React.FC<{
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-12 pr-6 text-2xl font-display font-black text-pink outline-none italic tracking-tighter focus:shadow-[6px_6px_0_#F4A6C1] transition-all"
+                  className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-12 pr-6 text-2xl font-display font-black text-[#C6FF00] outline-none italic tracking-tighter focus:shadow-[6px_6px_0_#C6FF00] transition-all"
                 />
               </div>
             </div>
@@ -773,7 +773,7 @@ const SaleSheet: React.FC<{
                 <button 
                   onClick={() => setChannel('whatsapp')}
                   className={`py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
-                    channel === 'whatsapp' ? 'bg-pink text-charcoal' : 'text-charcoal/40'
+                    channel === 'whatsapp' ? 'bg-[#C6FF00] text-charcoal' : 'text-charcoal/40'
                   }`}
                 >
                   <MessageCircle size={16} /> WhatsApp
@@ -905,7 +905,7 @@ const FilterSheet: React.FC<{
                <select 
                 value={localFilters.productId}
                 onChange={(e) => setLocalFilters(prev => ({ ...prev, productId: e.target.value }))}
-                className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 px-6 text-sm font-black uppercase text-charcoal focus:shadow-[6px_6px_0_#F4A6C1] transition-all appearance-none outline-none"
+                className="w-full bg-white border-2 border-charcoal rounded-[24px] py-4 px-6 text-sm font-black uppercase text-charcoal focus:shadow-[6px_6px_0_#C6FF00] transition-all appearance-none outline-none"
               >
                 <option value="All">All Units</option>
                 {products.map(p => (
@@ -945,7 +945,7 @@ const DeleteModal: React.FC<{ sale: Sale; onClose: () => void; onConfirm: () => 
       onClick={e => e.stopPropagation()}
     >
       <div className="flex flex-col items-center text-center gap-4">
-        <div className="w-20 h-20 rounded-[32px] bg-pink/10 border-2 border-charcoal flex items-center justify-center text-pink mb-2 shadow-[6px_6px_0_rgba(0,0,0,1)]">
+        <div className="w-20 h-20 rounded-[32px] bg-[#C6FF00]/10 border-2 border-charcoal flex items-center justify-center text-[#C6FF00] mb-2 shadow-[6px_6px_0_rgba(0,0,0,1)]">
           <Trash2 size={40} />
         </div>
         <h2 className="text-3xl font-display font-black uppercase italic tracking-tighter leading-none">Purge Entry?</h2>
@@ -957,7 +957,7 @@ const DeleteModal: React.FC<{ sale: Sale; onClose: () => void; onConfirm: () => 
       <div className="flex flex-col gap-4">
         <button 
           onClick={onConfirm}
-          className="w-full py-5 bg-pink text-charcoal font-black uppercase tracking-widest italic text-[11px] rounded-[32px] border-2 border-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[4px] active:shadow-none transition-all"
+          className="w-full py-5 bg-[#C6FF00] text-charcoal font-black uppercase tracking-widest italic text-[11px] rounded-[32px] border-2 border-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[4px] active:shadow-none transition-all"
         >
           Confirm Purge
         </button>

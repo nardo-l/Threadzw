@@ -167,8 +167,8 @@ export const NotificationsView: React.FC = () => {
 
   const getIcon = (type: NotificationType) => {
     const iconSize = 20;
-    const accent = '#FF5FA2';
-    const accent_bg = '#FF5FA21A';
+    const accent = '#C6FF00';
+    const accent_bg = '#C6FF001A';
     const green = '#22c55e';
     const amber = '#f59e0b';
     const blue = '#3b82f6';
@@ -206,7 +206,7 @@ export const NotificationsView: React.FC = () => {
         {unreadCount > 0 && (
           <button 
             onClick={markAllRead}
-            className="text-[13px] font-bold active:scale-95 transition-transform text-[#FF5FA2]"
+            className="text-[13px] font-bold active:scale-95 transition-transform text-[#C6FF00]"
           >
             Mark all read
           </button>
@@ -221,10 +221,10 @@ export const NotificationsView: React.FC = () => {
             onClick={() => setFilter(f as any)}
             className={`px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap transition-all border`}
             style={{ 
-              backgroundColor: filter === f ? '#FF5FA2' : '#111',
-              borderColor: filter === f ? '#FF5FA2' : '#222',
+              backgroundColor: filter === f ? '#C6FF00' : '#111',
+              borderColor: filter === f ? '#C6FF00' : '#222',
               color: filter === f ? '#FFFFFF' : '#888888',
-              boxShadow: filter === f ? `0 4px 12px #FF5FA24D` : 'none'
+              boxShadow: filter === f ? `0 4px 12px #C6FF004D` : 'none'
             }}
           >
             {f}
@@ -278,8 +278,8 @@ export const NotificationsView: React.FC = () => {
                       </p>
                       {!n.read && (
                         <div 
-                          className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#FF5FA2]" 
-                          style={{ boxShadow: `0 0 8px #FF5FA266` }} 
+                          className="w-2.5 h-2.5 rounded-full shrink-0 bg-[#C6FF00]" 
+                          style={{ boxShadow: `0 0 8px #C6FF0066` }} 
                         />
                       )}
                     </div>

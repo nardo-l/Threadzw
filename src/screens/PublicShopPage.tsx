@@ -7,7 +7,7 @@ import { getShopStatus, parseDate } from '../utils/shopStatus';
 import { 
   ArrowLeft, Share2, MapPin, Package, Clock, MessageCircle, 
   Check, X, ShieldCheck, ShoppingBag, ArrowRight,
-  Instagram, Search, ChevronLeft, ChevronRight, Store, ExternalLink, Phone
+  Instagram, Search, ChevronLeft, ChevronRight, Store, ExternalLink, Phone, Eye
 } from 'lucide-react';
 
 // Helper to extract dominant saturated color using a canvas sampler
@@ -186,30 +186,107 @@ export const PublicShopPage: React.FC<PublicShopPageProps> = ({ handle }) => {
         return;
       }
 
+      let isDemoShop = cleanHandle === 'demo';
       let shopData: any = null;
 
-      // 1. Fetch from Supabase (by slug, falling back to handle)
-      try {
-        let { data, error } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('slug', cleanHandle)
-          .maybeSingle();
-
-        if (error || !data) {
-          const { data: fallbackData } = await supabase
+      if (isDemoShop) {
+        try {
+          // Try fetching from public 'shops' table where slug is 'demo' first
+          const { data: physicalShop, error: physicalErr } = await supabase
             .from('shops')
             .select('*')
-            .ilike('handle', cleanHandle)
+            .eq('slug', 'demo')
             .maybeSingle();
-          data = fallbackData;
-        }
 
-        if (data) {
-          shopData = data;
+          if (physicalShop) {
+            shopData = {
+              ...physicalShop,
+              isDemo: true,
+              handle: 'demo',
+              slug: 'demo',
+              whatsapp_number: physicalShop.whatsapp || '263776223144',
+              logo_url: physicalShop.logo_url || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
+              banner_url: physicalShop.banner_url || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80'
+            };
+          } else {
+            // Fallback to legacy demo_shop custom table
+            const { data } = await supabase
+              .from('demo_shop')
+              .select('*')
+              .maybeSingle();
+            if (data) {
+              shopData = {
+                ...data,
+                id: 'demo-shop',
+                name: 'Kure Streetwear',
+                isDemo: true,
+                handle: 'demo',
+                slug: 'demo',
+                description: 'Zim clothing store - built for the ones chasing more.',
+                is_live: true,
+                whatsapp: data.whatsapp || '263776223144',
+                whatsapp_number: data.whatsapp || '263776223144',
+                logo_url: data.logo_url || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
+                banner_url: data.banner_url || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80'
+              };
+            } else {
+              shopData = {
+                id: 'demo-shop',
+                name: 'Kure Streetwear',
+                handle: 'demo',
+                slug: 'demo',
+                description: 'Zim clothing store - built for the ones chasing more.',
+                location: 'Harare',
+                isDemo: true,
+                is_live: true,
+                whatsapp: '263776223144',
+                whatsapp_number: '263776223144',
+                logo_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
+                banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80'
+              };
+            }
+          }
+        } catch (dbErr) {
+          console.warn("Supabase demo shop fetch failed", dbErr);
+          shopData = {
+            id: 'demo-shop',
+            name: 'Kure Streetwear',
+            handle: 'demo',
+            slug: 'demo',
+            description: 'Zim clothing store - built for the ones chasing more.',
+            location: 'Harare',
+            isDemo: true,
+            is_live: true,
+            whatsapp: '263776223144',
+            whatsapp_number: '263776223144',
+            logo_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
+            banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80'
+          };
         }
-      } catch (dbErr) {
-        console.warn("Supabase fetch failed", dbErr);
+      } else {
+        // 1. Fetch from Supabase (by slug, falling back to handle)
+        try {
+          let { data, error } = await supabase
+            .from('shops')
+            .select('*')
+            .eq('slug', cleanHandle)
+            .maybeSingle();
+
+          if (error || !data) {
+            const { data: fallbackData } = await supabase
+              .from('shops')
+              .select('*')
+              .ilike('handle', cleanHandle)
+              .maybeSingle();
+            data = fallbackData;
+          }
+
+          if (data) {
+            shopData = data;
+          }
+        } catch (dbErr) {
+          console.warn("Supabase fetch failed", dbErr);
+        }
       }
 
       if (!shopData) {
@@ -223,58 +300,121 @@ export const PublicShopPage: React.FC<PublicShopPageProps> = ({ handle }) => {
 
       // Fetch payment claims for status check
       let claimsData: any[] = [];
-      try {
-        const { data, error } = await supabase
-          .from('payment_claims')
-          .select('*')
-          .eq('shop_id', shopData.id);
-        if (!error && data) {
-          claimsData = data;
+      if (!isDemoShop) {
+        try {
+          const { data, error } = await supabase
+            .from('payment_claims')
+            .select('*')
+            .eq('shop_id', shopData.id);
+          if (!error && data) {
+            claimsData = data;
+          }
+        } catch (dbClaimsErr) {
+          console.warn("Supabase claims fetch failed", dbClaimsErr);
         }
-      } catch (dbClaimsErr) {
-        console.warn("Supabase claims fetch failed", dbClaimsErr);
       }
       setClaims(claimsData);
 
-      // 2. Fetch products of the loaded shop from Supabase (Strictly no fallbacks or cache)
+      // 2. Fetch products of the loaded shop from Supabase
       let productsData: any[] = [];
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('shop_id', shopData.id)
-          .neq('status', 'deleted')
-          .order('is_featured', { ascending: false })
-          .order('created_at', { ascending: false });
+      if (isDemoShop) {
+        try {
+          // Try fetching from the real products table first if we have a real shop ID
+          const realShopId = shopData?.id || 'da7da7da-7da7-4da7-bda7-da7da7da7da7';
+          const { data: realProds, error: realProdsErr } = await supabase
+            .from('products')
+            .select('*')
+            .eq('shop_id', realShopId)
+            .neq('status', 'deleted');
 
-        if (!error && data) {
-          productsData = data.map((p: any) => {
-            let imgs: string[] = [];
-            if (Array.isArray(p.images)) {
-              imgs = p.images.filter(Boolean);
-            } else if (typeof p.images === 'string' && p.images.trim()) {
-              imgs = [p.images.trim()];
-            }
-            return {
-              ...p,
-              images: imgs,
-              colors: p.colours || p.colors || []
-            };
-          });
+          if (!realProdsErr && realProds && realProds.length > 0) {
+            productsData = realProds.map((nt: any) => {
+              let ft: string[] = [];
+              if (Array.isArray(nt.images)) {
+                ft = nt.images.filter(Boolean);
+              } else if (typeof nt.images === 'string' && nt.images.trim()) {
+                ft = [nt.images.trim()];
+              }
+              return {
+                ...nt,
+                images: ft,
+                colors: nt.colours || nt.colors || []
+              };
+            });
+          }
+        } catch (dbRealProdsErr) {
+          console.warn("Supabase physical products fetch for demo failed", dbRealProdsErr);
         }
-      } catch (dbProdsErr) {
-        console.warn("Supabase products fetch failed", dbProdsErr);
+
+        if (productsData.length === 0) {
+          try {
+            const { data, error } = await supabase
+              .from('demo_products')
+              .select('*')
+              .eq('in_stock', true)
+              .order('sort_order', { ascending: true });
+
+            if (!error && data) {
+              productsData = data.map((p: any) => {
+                let imgs: string[] = [];
+                if (p.image_url) {
+                  imgs = [p.image_url];
+                }
+                return {
+                  ...p,
+                  images: imgs,
+                  colors: p.colors || [],
+                  sizes: p.sizes || [],
+                  total_stock: p.in_stock ? 99 : 0,
+                  status: 'active'
+                };
+              });
+            }
+          } catch (dbProdsErr) {
+            console.warn("Supabase demo products fetch failed", dbProdsErr);
+          }
+        }
+      } else {
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .eq('shop_id', shopData.id)
+            .neq('status', 'deleted')
+            .order('is_featured', { ascending: false })
+            .order('created_at', { ascending: false });
+
+          if (!error && data) {
+            productsData = data.map((p: any) => {
+              let imgs: string[] = [];
+              if (Array.isArray(p.images)) {
+                imgs = p.images.filter(Boolean);
+              } else if (typeof p.images === 'string' && p.images.trim()) {
+                imgs = [p.images.trim()];
+              }
+              return {
+                ...p,
+                images: imgs,
+                colors: p.colours || p.colors || []
+              };
+            });
+          }
+        } catch (dbProdsErr) {
+          console.warn("Supabase products fetch failed", dbProdsErr);
+        }
       }
 
       setProducts(productsData);
 
       // Save/increment view count if available
-      try {
-        await supabase
-          .from('shops')
-          .update({ view_count: (shopData.view_count || 0) + 1 })
-          .eq('id', shopData.id);
-      } catch (_) {}
+      if (!isDemoShop) {
+        try {
+          await supabase
+            .from('shops')
+            .update({ view_count: (shopData.view_count || 0) + 1 })
+            .eq('id', shopData.id);
+        } catch (_) {}
+      }
 
     } catch (err) {
       console.error(err);
@@ -307,13 +447,23 @@ export const PublicShopPage: React.FC<PublicShopPageProps> = ({ handle }) => {
   };
 
   const handleWhatsAppDirect = () => {
+    if (shop?.isDemo) {
+      const demoMsg = "Hi! I am viewing Kure Streetwear. I want to create my own shop like this.";
+      window.open(`https://wa.me/263776223144?text=${encodeURIComponent(demoMsg)}`, '_blank');
+      return;
+    }
     const phone = formatWA(shop?.whatsapp || shop?.whatsapp_number);
-    const text = `Hi ${shop?.name}! I saw your shop on ThreadZW and would love to enquire about your products. ✨`;
+    const text = `Hi ${shop?.name}! I saw your shop on ThreadZW and would love to enquire about your products.`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   // WhatsApp prefilled order system format
   const handleOrderCheckout = () => {
+    if (shop?.isDemo) {
+      const demoMsg = "Hi! I am viewing Kure Streetwear. I want to create my own shop like this.";
+      window.open(`https://wa.me/263776223144?text=${encodeURIComponent(demoMsg)}`, '_blank');
+      return;
+    }
     if (!selectedProduct) return;
     
     const sizesAvailable = selectedProduct.sizes || [];
@@ -329,7 +479,7 @@ Product: ${selectedProduct.name}
 Size: ${selectedSize || 'N/A'}
 Color: ${selectedColor || 'N/A'}
 
-Is this available? 🙏`;
+Is this available?`;
 
     window.open(`https://wa.me/${shopPhone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
@@ -641,6 +791,29 @@ Is this available? 🙏`;
 
     return (
       <div className="h-screen w-full max-w-[430px] mx-auto bg-[#0a0a0a] text-white flex flex-col justify-between p-6 overflow-hidden border-x border-[#1a1a1a] shadow-2xl relative select-none">
+        {shop?.isDemo && (
+          <div style={{
+            background: 'rgba(200,255,0,0.1)',
+            borderBottom: '1px solid rgba(200,255,0,0.2)',
+            padding: '8px 16px',
+            textAlign: 'center',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            marginTop: '-24px',
+            marginLeft: '-24px',
+            marginRight: '-24px'
+          }} className="z-20">
+            <Eye size={14} color="#c8ff00" />
+            <span style={{
+              fontSize: '12px',
+              fontWeight: 700,
+              color: '#c8ff00',
+              letterSpacing: '0.5px'
+            }}>You are viewing a demo shop</span>
+          </div>
+        )}
         
         {/* Background ambient lighting */}
         <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-[#c8ff00]/10 to-transparent pointer-events-none" style={{ backgroundImage: `linear-gradient(to bottom, ${accent}15 0%, transparent 100%)` }} />
@@ -717,6 +890,26 @@ Is this available? 🙏`;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col font-sans max-w-[430px] mx-auto border-x border-[#1a1a1a] shadow-2xl relative overflow-x-hidden">
+      {shop?.isDemo && (
+        <div style={{
+          background: 'rgba(200,255,0,0.1)',
+          borderBottom: '1px solid rgba(200,255,0,0.2)',
+          padding: '8px 16px',
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }} className="z-20">
+          <Eye size={14} color="#c8ff00" />
+          <span style={{
+            fontSize: '12px',
+            fontWeight: 700,
+            color: '#c8ff00',
+            letterSpacing: '0.5px'
+          }}>You are viewing a demo shop</span>
+        </div>
+      )}
 
       {/* SECTION 1 — HERO */}
       <section className="relative h-screen w-full flex flex-col justify-between overflow-hidden">
@@ -1547,3 +1740,6 @@ Is this available? 🙏`;
     </div>
   );
 };
+
+export const StorefrontPage = PublicShopPage;
+

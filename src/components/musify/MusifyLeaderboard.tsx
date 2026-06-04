@@ -51,14 +51,14 @@ export const MusifyLeaderboard: React.FC<MusifyLeaderboardProps> = ({
           </h3>
         </div>
         <div className="flex flex-col items-end flex-shrink-0">
-          <Trophy size={18} className="text-[#FF2D78] mb-1" />
+          <Trophy size={18} className="text-[#C6FF00] mb-1" />
           <span className="text-white font-mono text-[11px] font-bold">TOP 20</span>
         </div>
       </div>
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <div className="w-8 h-8 border-2 border-[#FF2D78] border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[#C6FF00] border-t-transparent rounded-full animate-spin" />
           <p className="text-[#444] text-xs font-bold uppercase tracking-widest">Fetching Champions...</p>
         </div>
       ) : data.length > 0 ? (
@@ -75,7 +75,7 @@ export const MusifyLeaderboard: React.FC<MusifyLeaderboardProps> = ({
                 key={item.id}
                 className={`
                   flex items-center gap-3 p-3 rounded-2xl border transition-all
-                  ${isMe ? 'bg-[#FF2D78]/10 border-[#FF2D78]/30 shadow-[0_4px_15px_rgba(255,45,120,0.1)]' : 'bg-[#111] border-[#222]'}
+                  ${isMe ? 'bg-[#C6FF00]/10 border-[#C6FF00]/30 shadow-[0_4px_15px_rgba(255,45,120,0.1)]' : 'bg-[#111] border-[#222]'}
                 `}
               >
                 <div className={`
@@ -89,7 +89,7 @@ export const MusifyLeaderboard: React.FC<MusifyLeaderboardProps> = ({
                   {item.avatar_url ? (
                     <img src={item.avatar_url} alt="" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[#FF2D78] font-bold">
+                    <div className="w-full h-full flex items-center justify-center text-[#C6FF00] font-bold">
                       {item.display_name?.[0]?.toUpperCase() || 'A'}
                     </div>
                   )}
@@ -97,10 +97,10 @@ export const MusifyLeaderboard: React.FC<MusifyLeaderboardProps> = ({
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <p className={`text-[14px] font-bold truncate ${isMe ? 'text-[#FF2D78]' : 'text-white'}`}>
+                    <p className={`text-[14px] font-bold truncate ${isMe ? 'text-[#C6FF00]' : 'text-white'}`}>
                       {item.display_name || 'Anonymous'}
                     </p>
-                    {isMe && <span className="bg-[#FF2D78] text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded-sm flex-shrink-0">You</span>}
+                    {isMe && <span className="bg-[#C6FF00] text-white text-[8px] font-black uppercase px-1.5 py-0.5 rounded-sm flex-shrink-0">You</span>}
                   </div>
                   {item.max_streak > 3 && (
                     <div className="flex items-center gap-1 mt-0.5">
@@ -111,7 +111,7 @@ export const MusifyLeaderboard: React.FC<MusifyLeaderboardProps> = ({
                 </div>
 
                 <div className="text-right">
-                  <p className={`text-xl font-black italic italic-none ${isMe ? 'text-[#FF2D78]' : 'text-white'}`}>
+                  <p className={`text-xl font-black italic italic-none ${isMe ? 'text-[#C6FF00]' : 'text-white'}`}>
                     {item.best_percentage}%
                   </p>
                   <p className="text-[#444] text-[10px] font-bold">BEST SCORE</p>

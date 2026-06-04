@@ -82,7 +82,7 @@ export const CommunityHub: React.FC = () => {
       description: 'Find your style personality',
       status: 'LIVE',
       action: () => setCommunityScreen('quiz'),
-      color: '#ec4899', // Pink
+      color: '#C6FF00', // Neon Green
       rotate: 0,
       zIndex: 3,
       style: { left: '50%', transform: 'translateX(-50%)', top: '0px', transformOrigin: 'bottom center' }
@@ -204,16 +204,16 @@ export const CommunityHub: React.FC = () => {
            onClick={() => navigate('/challenge')}
            className="relative p-6 rounded-[24px] border overflow-hidden cursor-pointer bg-white border-[#EFEFEF] shadow-sm active:scale-[0.98] transition-all"
          >
-           <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#9B27AF] to-[#FF2D78]" />
+           <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#9B27AF] to-[#C6FF00]" />
            
            <div className="flex items-center">
-             <div className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] shadow-lg">
+             <div className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center flex-shrink-0 bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] shadow-lg">
                 <Zap className="text-white" size={24} fill="currentColor" />
              </div>
              
              <div className="ml-4 flex-1">
                <div className="flex items-center gap-2 mb-1.5">
-                 <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#FF2D78]/10 text-[#FF2D78] border border-[#FF2D78]/20">
+                 <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-[#C6FF00]/10 text-[#C6FF00] border border-[#C6FF00]/20">
                    HOT
                  </span>
                  <div className="flex items-center gap-1">
@@ -235,7 +235,7 @@ export const CommunityHub: React.FC = () => {
                   <div className="w-6 h-6 rounded-full border-2 border-white bg-[#EFEFEF] flex items-center justify-center text-[10px] text-[#888888]">2</div>
                </div>
                <p className="text-[11px] text-[#888888]">
-                 <span className="font-bold text-[#FF2D78]">{userChallenge.attempt_count}</span> people have tried your challenge
+                 <span className="font-bold text-[#C6FF00]">{userChallenge.attempt_count}</span> people have tried your challenge
                </p>
              </div>
            )}

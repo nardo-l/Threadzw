@@ -36,8 +36,8 @@ export const InAppBrowserBanner: React.FC = () => {
         className="fixed top-0 left-0 right-0 z-[9999] p-4"
       >
         <div className="bg-[#1a1a1a] border border-[#222] rounded-2xl p-4 shadow-2xl flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-[#FF2D781A] flex items-center justify-center shrink-0">
-            <AlertCircle className="text-[#FF2D78] w-5 h-5" />
+          <div className="w-10 h-10 rounded-full bg-[#C6FF00]/10 flex items-center justify-center shrink-0">
+            <AlertCircle className="text-[#C6FF00] w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-white font-bold text-sm mb-1">Open in External Browser</h3>
@@ -55,7 +55,7 @@ export const InAppBrowserBanner: React.FC = () => {
                   }
                   window.location.href = url;
                 }}
-                className="bg-[#FF2D78] text-white text-[11px] font-bold px-4 py-2 rounded-full flex items-center gap-2"
+                className="bg-[#C6FF00] text-black text-[11px] font-bold px-4 py-2 rounded-full flex items-center gap-2"
               >
                 <ExternalLink size={14} /> Open Main Browser
               </button>

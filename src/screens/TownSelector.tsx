@@ -155,7 +155,7 @@ export const TownSelector: React.FC<OnboardingProps> = ({
       <div style={{ paddingTop: 56, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <h1 style={{ 
           fontFamily: "'Pacifico', cursive", 
-          color: '#FF2D78', 
+          color: '#C6FF00', 
           fontSize: 22, 
           margin: 0 
         }}>thread</h1>
@@ -191,7 +191,7 @@ export const TownSelector: React.FC<OnboardingProps> = ({
         display: 'flex',
         alignItems: 'center'
       }}>
-        <span style={{ color: '#FF2D78', marginLeft: 14, fontSize: 16 }}>🔍</span>
+        <span style={{ color: '#C6FF00', marginLeft: 14, fontSize: 16 }}>🔍</span>
         <input
           placeholder="Search your town..."
           style={{
@@ -227,7 +227,7 @@ export const TownSelector: React.FC<OnboardingProps> = ({
               onClick={() => setSelectedTown(town)}
               style={{
                 background: selectedTown === town ? 'rgba(255,45,120,0.08)' : '#111111',
-                border: selectedTown === town ? '1.5px solid #FF2D78' : '1px solid #222',
+                border: selectedTown === town ? '1.5px solid #C6FF00' : '1px solid #222',
                 borderRadius: 12,
                 padding: '16px 14px',
                 marginBottom: 8,
@@ -252,7 +252,7 @@ export const TownSelector: React.FC<OnboardingProps> = ({
                 width: 22,
                 height: 22,
                 borderRadius: '50%',
-                background: selectedTown === town ? '#FF2D78' : 'transparent',
+                background: selectedTown === town ? '#C6FF00' : 'transparent',
                 border: selectedTown === town ? 'none' : '1.5px solid #444',
                 display: 'flex',
                 alignItems: 'center',
@@ -286,7 +286,7 @@ export const TownSelector: React.FC<OnboardingProps> = ({
             height: 52,
             borderRadius: 999,
             border: 'none',
-            background: selectedTown ? 'linear-gradient(135deg, #9B27AF, #FF2D78)' : '#1a1a1a',
+            background: selectedTown ? 'linear-gradient(135deg, #9B27AF, #C6FF00)' : '#1a1a1a',
             color: selectedTown ? 'white' : '#555',
             fontWeight: 'bold',
             fontSize: 15,

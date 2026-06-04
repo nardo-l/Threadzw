@@ -145,7 +145,7 @@ export const EventsView: React.FC = () => {
               className={`
                 whitespace-nowrap px-6 py-2.5 rounded-full text-[13px] font-bold transition-all border
                 ${filter === opt 
-                  ? 'bg-[#FF5FA2] text-white border-[#FF5FA2] shadow-lg shadow-pink-500/20' 
+                  ? 'bg-[#C6FF00] text-white border-[#C6FF00] shadow-lg shadow-[#C6FF00]/20' 
                   : 'bg-transparent text-white/40 border-white/10'}
               `}
             >
@@ -157,8 +157,8 @@ export const EventsView: React.FC = () => {
 
       {/* Hero Banner */}
       <div 
-        className="mx-6 my-6 rounded-[32px] p-8 min-h-[160px] flex flex-col justify-between relative overflow-hidden shadow-xl shadow-pink-500/10"
-        style={{ background: 'linear-gradient(135deg, #9B27AF, #FF2D78)' }}
+        className="mx-6 my-6 rounded-[32px] p-8 min-h-[160px] flex flex-col justify-between relative overflow-hidden shadow-xl shadow-[#C6FF00]/10"
+        style={{ background: 'linear-gradient(135deg, #9B27AF, #C6FF00)' }}
       >
         <div className="relative z-10">
           <h2 className="text-white font-bold text-xl tracking-tight">The Weekend Guide 🔥</h2>
@@ -175,7 +175,7 @@ export const EventsView: React.FC = () => {
       <div className="px-6 space-y-6 pb-28">
         {loading ? (
           <div className="flex flex-col items-center py-20 gap-4">
-            <div className="w-8 h-8 border-4 border-[#FF5FA2] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#C6FF00] border-t-transparent rounded-full animate-spin" />
             <p className="text-white/20 text-sm">Finding vibes...</p>
           </div>
         ) : events.length === 0 ? (
@@ -206,12 +206,12 @@ export const EventsView: React.FC = () => {
                   <span>{event.event_type}</span>
                 </div>
                 
-                <div className="absolute bottom-4 left-4 px-4 py-2 rounded-xl bg-[#FF5FA2] text-white text-[11px] font-bold">
+                <div className="absolute bottom-4 left-4 px-4 py-2 rounded-xl bg-[#C6FF00] text-white text-[11px] font-bold">
                   {new Date(event.event_date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase()}
                 </div>
 
                 {event.is_verified && (
-                  <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#FF5FA2] text-white flex items-center justify-center shadow-lg">
+                  <div className="absolute top-4 right-4 w-8 h-8 rounded-full bg-[#C6FF00] text-white flex items-center justify-center shadow-lg">
                     <Check size={16} strokeWidth={3} />
                   </div>
                 )}
@@ -221,7 +221,7 @@ export const EventsView: React.FC = () => {
                 <h3 className="text-white font-bold text-[19px] leading-tight tracking-tight">{event.title}</h3>
                 <div className="mt-3 space-y-2">
                   <div className="flex items-center gap-2 text-white/40 text-[13px] font-medium">
-                    <MapPin size={14} className="text-[#FF5FA2]" />
+                    <MapPin size={14} className="text-[#C6FF00]" />
                     <span>{event.location} · {event.town}</span>
                   </div>
                   <div className="flex items-center gap-2 text-white/40 text-[13px] font-medium">
@@ -251,7 +251,7 @@ export const EventsView: React.FC = () => {
                       px-6 h-11 rounded-full text-[13px] font-bold transition-all
                       ${rsvpedEvents.includes(event.id)
                         ? 'bg-white/10 text-white'
-                        : 'bg-[#FF5FA2] text-white shadow-lg'}
+                        : 'bg-[#C6FF00] text-white shadow-lg'}
                     `}
                   >
                     {rsvpedEvents.includes(event.id) ? '✓ Registered' : 'GET TICKET'}
@@ -321,7 +321,7 @@ const EventDetailView: React.FC<{
 
         <div className="px-8 pb-20 relative z-20">
           <div className="flex gap-2.5 mb-10 overflow-x-auto no-scrollbar">
-            <div className="px-5 py-3 rounded-2xl bg-[#FF2D78] text-white text-[12px] font-bold flex items-center gap-2 whitespace-nowrap">
+            <div className="px-5 py-3 rounded-2xl bg-[#C6FF00] text-white text-[12px] font-bold flex items-center gap-2 whitespace-nowrap">
               <span>{getEventTypeEmoji(event.event_type)}</span>
               <span className="uppercase tracking-widest">{event.event_type}</span>
             </div>
@@ -348,7 +348,7 @@ const EventDetailView: React.FC<{
               w-full h-16 rounded-[24px] font-bold text-[16px] mt-10 transition-all active:scale-[0.98] shadow-xl
               ${isRsvped 
                 ? 'bg-[#F5F5F5] text-[#111111]' 
-                : 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white shadow-pink-500/20'}
+                : 'bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white shadow-[#C6FF00]/20'}
             `}
           >
             {isRsvped ? '✓ BOOKED · VIEW TICKET' : 'SECURE MY SPOT'}
@@ -357,7 +357,7 @@ const EventDetailView: React.FC<{
           <div className="mt-12 mb-8">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-[#1a1a1a]">Event Fits 📸</h3>
-              <button className="text-[#FF2D78] text-sm font-bold">Upload Yours →</button>
+              <button className="text-[#C6FF00] text-sm font-bold">Upload Yours →</button>
             </div>
             
             <div className="flex flex-col items-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100">

@@ -12,7 +12,7 @@ export const Analytics: React.FC = () => {
              <StatCard label="Total Revenue" value="$0" icon={<TrendingUp size={16} />} color="text-neon" />
              <StatCard label="Total Orders" value="0" icon={<ShoppingBag size={16} />} color="text-warm" />
              <StatCard label="Shop Views" value="0" icon={<Eye size={16} />} color="text-sky-400" />
-             <StatCard label="Customers" value="0" icon={<Users size={16} />} color="text-pink-400" />
+             <StatCard label="Customers" value="0" icon={<Users size={16} />} color="text-[#C6FF00]-400" />
           </div>
           
           <div className="mt-10 bg-card-bg border border-border rounded-3xl p-6 text-center">

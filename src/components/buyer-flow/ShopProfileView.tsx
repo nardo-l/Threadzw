@@ -96,7 +96,7 @@ export const ShopProfileView: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0B0B0B] text-white flex flex-col items-center justify-center p-6 pb-24">
-        <div className="w-12 h-12 border-4 border-[#FF2D78] border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="w-12 h-12 border-4 border-[#C6FF00] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-sm font-semibold text-neutral-400 tracking-wide animate-pulse">Establishing Connection...</p>
       </div>
     );
@@ -105,7 +105,7 @@ export const ShopProfileView: React.FC = () => {
   if (!shop) {
     return (
       <div className="min-h-screen bg-[#0B0B0B] text-white flex flex-col items-center justify-center p-6 text-center gap-6">
-        <div className="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-[32px] flex items-center justify-center text-[#FF2D78]">
+        <div className="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-[32px] flex items-center justify-center text-[#C6FF00]">
           <Package size={28} />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -126,7 +126,7 @@ export const ShopProfileView: React.FC = () => {
   const averageRating = '4.9';
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white pb-32 font-sans selection:bg-[#FF2D78]/30">
+    <div className="min-h-screen bg-[#000000] text-white pb-32 font-sans selection:bg-[#C6FF00]/30">
       
       {/* Banner / Cover Header Image */}
       <div className="h-[260px] relative overflow-hidden group">
@@ -172,7 +172,7 @@ export const ShopProfileView: React.FC = () => {
                  referrerPolicy="no-referrer"
                />
              ) : (
-               <span className="text-4xl font-extrabold italic tracking-tighter text-[#FF2D78] select-none">
+               <span className="text-4xl font-extrabold italic tracking-tighter text-[#C6FF00] select-none">
                  {shop.name[0]?.toUpperCase()}
                </span>
              )}
@@ -194,7 +194,7 @@ export const ShopProfileView: React.FC = () => {
             className={`px-6 h-11 rounded-full font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center border-2 cursor-pointer ${
               followingState
                 ? 'bg-neutral-950 border-neutral-800 text-neutral-400 hover:bg-neutral-900'
-                : 'bg-[#FF2D78]/5 border-[#FF2D78] text-[#FF2D78] hover:bg-[#FF2D78]/20'
+                : 'bg-[#C6FF00]/5 border-[#C6FF00] text-[#C6FF00] hover:bg-[#C6FF00]/20'
             }`}
           >
             {followingState ? 'Following' : 'Follow'}
@@ -215,7 +215,7 @@ export const ShopProfileView: React.FC = () => {
 
         {/* Categories/Location badges */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#FF2D78]/10 border border-[#FF2D78]/20 text-[#FF2D78] uppercase tracking-wide">
+          <span className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#C6FF00]/10 border border-[#C6FF00]/20 text-[#C6FF00] uppercase tracking-wide">
             {shop.category || 'streetwear'}
           </span>
           <span className="px-4 py-1.5 rounded-full text-xs font-semibold bg-neutral-900 border border-neutral-800 text-neutral-300 flex items-center gap-1.5">
@@ -247,7 +247,7 @@ export const ShopProfileView: React.FC = () => {
 
         {/* Business Physical Location Element */}
         <div className="bg-[#111111] border border-[#1E1E1E] rounded-2xl p-4 flex items-center gap-3">
-          <MapPin size={18} className="text-[#FF2D78] flex-shrink-0" />
+          <MapPin size={18} className="text-[#C6FF00] flex-shrink-0" />
           <span className="text-sm font-semibold text-neutral-200">
             {shop.town || shop.location || 'Bulawayo'}
           </span>
@@ -291,13 +291,13 @@ export const ShopProfileView: React.FC = () => {
             key={tab.label}
             onClick={() => setActiveTab(tab.label as any)}
             className={`pb-4 text-xs font-bold uppercase tracking-wider transition-all relative flex items-center gap-2 cursor-pointer ${
-              activeTab === tab.label ? 'text-[#FF2D78]' : 'text-neutral-500 hover:text-neutral-300'
+              activeTab === tab.label ? 'text-[#C6FF00]' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
             {tab.icon}
             {tab.label}
             {activeTab === tab.label && (
-              <motion.div layoutId="shopProfileTabLine" className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[#FF2D78] rounded-t-full" />
+              <motion.div layoutId="shopProfileTabLine" className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[#C6FF00] rounded-t-full" />
             )}
           </button>
         ))}
@@ -341,11 +341,11 @@ export const ShopProfileView: React.FC = () => {
                           </div>
                         )}
                         <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/5">
-                          <span className="text-xs font-black text-[#FF2D78] italic">${p.price}</span>
+                          <span className="text-xs font-black text-[#C6FF00] italic">${p.price}</span>
                         </div>
                       </div>
                       <div className="p-4 flex flex-col justify-between flex-1 gap-1">
-                        <h4 className="font-extrabold text-xs text-neutral-100 group-hover:text-[#FF2D78] transition-colors truncate">{p.name}</h4>
+                        <h4 className="font-extrabold text-xs text-neutral-100 group-hover:text-[#C6FF00] transition-colors truncate">{p.name}</h4>
                         <div className="flex items-center justify-between mt-1 text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
                           <span>{p.category || 'drip'}</span>
                           {p.total_stock > 0 ? (
@@ -366,7 +366,7 @@ export const ShopProfileView: React.FC = () => {
         {activeTab === 'About' && (
           <div className="flex flex-col gap-6 bg-[#111] border border-neutral-850 rounded-2xl p-6">
             <div className="flex flex-col gap-1.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#FF2D78]">About the Brand</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#C6FF00]">About the Brand</h3>
               <p className="text-sm leading-relaxed text-neutral-300">{shop.description || 'Welcome to our premium storefront node. We present selected bespoke wear with secure local protocols.'}</p>
             </div>
 
@@ -386,7 +386,7 @@ export const ShopProfileView: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-neutral-500 font-semibold tracking-wider block">Instagram Account</span>
-                  <span className="text-sm font-medium text-[#FF2D78] mt-0.5 block">@{shop.instagram || shop.handle}</span>
+                  <span className="text-sm font-medium text-[#C6FF00] mt-0.5 block">@{shop.instagram || shop.handle}</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-neutral-500 font-semibold tracking-wider block">Operational Status</span>

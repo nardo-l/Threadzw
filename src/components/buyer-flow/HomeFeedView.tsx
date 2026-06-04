@@ -101,7 +101,7 @@ export const HomeFeedView: React.FC = () => {
               onClick={() => setFilter(cat)}
               className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
                 filter === cat 
-                  ? 'bg-[#FF5FA2] text-white border-[#FF5FA2]' 
+                  ? 'bg-[#C6FF00] text-white border-[#C6FF00]' 
                   : 'bg-[#1a1a1a] text-white/40 border-white/5'
               }`}
             >
@@ -120,7 +120,7 @@ export const HomeFeedView: React.FC = () => {
               <div className="w-[62px] h-[62px] rounded-full bg-white/5 flex items-center justify-center text-[28px]">
                 🏪
               </div>
-              <div className="absolute -bottom-1 right-0 w-6 h-6 bg-[#FF5FA2] rounded-full border-2 border-black flex items-center justify-center text-white">
+              <div className="absolute -bottom-1 right-0 w-6 h-6 bg-[#C6FF00] rounded-full border-2 border-black flex items-center justify-center text-white">
                 <Plus size={14} strokeWidth={3} />
               </div>
             </div>
@@ -130,7 +130,7 @@ export const HomeFeedView: React.FC = () => {
           {shops.slice(0, 8).map((shop) => (
             <div key={shop.id} className="flex flex-col items-center gap-1.5 shrink-0">
                <div className="w-[72px] h-[72px] rounded-full p-[3px] bg-[#1a1a1a] border border-white/5 flex items-center justify-center cursor-pointer">
-                  <div className="w-full h-full rounded-full border-2 border-[#FF5FA2] p-[2px]">
+                  <div className="w-full h-full rounded-full border-2 border-[#C6FF00] p-[2px]">
                     <div className="w-full h-full rounded-full overflow-hidden bg-[#1a1a1a]">
                       {shop.logo_url ? (
                         <img src={shop.logo_url} className="w-full h-full object-cover" />
@@ -229,7 +229,7 @@ export const HomeFeedView: React.FC = () => {
               <h2 className="text-white font-bold text-[18px]">Community Fits</h2>
               <button 
                 onClick={() => navigate('/culture')}
-                className="text-[#FF5FA2] text-[13px] font-bold"
+                className="text-[#C6FF00] text-[13px] font-bold"
               >
                 View Hub →
               </button>
@@ -292,7 +292,7 @@ export const HomeFeedView: React.FC = () => {
               <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-[32px] mb-4">🏆</div>
               <h2 className="text-white font-bold text-[22px]">Best Dresser Round 04</h2>
               <p className="text-white/40 text-[14px] mt-2 mb-6 max-w-[240px]">Think you've got it? Enter the competition and win big.</p>
-              <button className="px-8 py-3 bg-[#FF5FA2] text-white rounded-full font-bold text-[14px] uppercase tracking-wide">Enter Competition</button>
+              <button className="px-8 py-3 bg-[#C6FF00] text-white rounded-full font-bold text-[14px] uppercase tracking-wide">Enter Competition</button>
            </div>
         </section>
 
@@ -316,7 +316,7 @@ export const HomeFeedView: React.FC = () => {
           </div>
           
           <div className="mt-12 flex flex-col items-center gap-4">
-             <div className="w-10 h-10 rounded-full border-2 border-[#EFEFEF] border-t-[#FF2D78] animate-spin" />
+             <div className="w-10 h-10 rounded-full border-2 border-[#EFEFEF] border-t-[#C6FF00] animate-spin" />
              <p className="text-[#888888] text-[13px]">Loading more magic...</p>
           </div>
         </section>
@@ -355,7 +355,7 @@ const StackedFitCard = ({ fit }: { fit: any }) => {
                  <span className="text-white/80 text-[10px] font-bold truncate">@{profile.handle || 'user'}</span>
               </div>
               <div className="flex items-center gap-1 text-white">
-                 <Heart size={10} className="fill-[#FF2D78] text-[#FF2D78]" />
+                 <Heart size={10} className="fill-[#C6FF00] text-[#C6FF00]" />
                  <span className="text-[10px] font-bold">{fit.likes || '0'}</span>
               </div>
             </div>
@@ -374,7 +374,7 @@ const SmallProductCard = ({ product }: { product: any }) => {
       </div>
       <div>
         <h4 className="text-[13px] font-bold text-[#111111] truncate">{product.name}</h4>
-        <p className="text-[#FF2D78] font-bold text-[13px]">${product.price}</p>
+        <p className="text-[#C6FF00] font-bold text-[13px]">${product.price}</p>
       </div>
     </div>
   );
@@ -389,7 +389,7 @@ const ShopFollowCard = ({ shop }: { shop: any }) => {
       </div>
       <h4 className="text-[14px] font-bold text-[#111111] text-center truncate w-full">{shop.name}</h4>
       <p className="text-[10px] text-[#888888] uppercase tracking-widest font-bold mt-0.5">{shop.location || 'Harare'}</p>
-      <button className="w-full mt-4 py-2 bg-[#F5F5F5] text-[#111111] rounded-full font-bold text-[11px] uppercase tracking-wider hover:bg-[#FF2D78] hover:text-white transition-colors">Follow</button>
+      <button className="w-full mt-4 py-2 bg-[#F5F5F5] text-[#111111] rounded-full font-bold text-[11px] uppercase tracking-wider hover:bg-[#C6FF00] hover:text-white transition-colors">Follow</button>
     </div>
   );
 };
@@ -414,10 +414,10 @@ const ListingCard = ({ product }: { product: any }) => {
           onClick={(e) => { e.stopPropagation(); toggleLike(product.id); }}
           className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/40 backdrop-blur-md flex items-center justify-center text-[#111111] border border-white/20 active:scale-90 transition-all z-10"
         >
-          <Heart size={18} className={isLiked ? "fill-[#FF2D78] text-[#FF2D78]" : "text-white"} />
+          <Heart size={18} className={isLiked ? "fill-[#C6FF00] text-[#C6FF00]" : "text-white"} />
         </button>
         <div className="absolute top-4 left-4">
-           {product.original_price && <div className="px-3 py-1 bg-[#FF2D78] text-white rounded-full text-[10px] font-bold uppercase tracking-wider">Sale</div>}
+           {product.original_price && <div className="px-3 py-1 bg-[#C6FF00] text-white rounded-full text-[10px] font-bold uppercase tracking-wider">Sale</div>}
         </div>
         <div className="absolute bottom-3 left-3 right-3 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
           <button className="w-full py-2.5 bg-white/90 backdrop-blur-sm text-[#111111] rounded-2xl font-bold text-[12px] uppercase tracking-wide shadow-xl">View Details</button>
@@ -426,7 +426,7 @@ const ListingCard = ({ product }: { product: any }) => {
       <div className="px-1">
         <div className="flex items-center justify-between gap-2 mb-1">
           <h5 className="text-[#111111] font-bold text-[14px] truncate flex-1">{product.name}</h5>
-          <span className="text-[#FF2D78] font-bold text-[14px]">${product.price}</span>
+          <span className="text-[#C6FF00] font-bold text-[14px]">${product.price}</span>
         </div>
         <div className="flex items-center gap-1.5 opacity-60">
            <div className="w-4 h-4 rounded-full overflow-hidden bg-[#F5F5F5] border border-[#EFEFEF]">
@@ -476,7 +476,7 @@ const FitDetailOverlay = ({ fit, onClose }: { fit: any, onClose: () => void }) =
                   </motion.div>
                 ) : (
                   <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white/10 backdrop-blur-xl p-6 rounded-[32px] border border-white/10">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#FF2D78] mb-2 block">TAGGED ITEM</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#C6FF00] mb-2 block">TAGGED ITEM</span>
                     <h3 className="text-white font-bold text-xl mb-1">{slides[activeIndex].name}</h3>
                     <p className="text-white/60 font-bold text-lg mb-6">${slides[activeIndex].price}</p>
                     <button onClick={() => navigate(`/product/${slides[activeIndex].id}`)} className="w-full h-14 bg-white text-[#111111] rounded-2xl font-bold text-sm flex items-center justify-center gap-2">View Product <ArrowRight size={18} /></button>

@@ -30,7 +30,7 @@ export const MusifyLoading: React.FC<MusifyLoadingProps> = ({ artistName }) => {
         {[0, 1, 2, 3, 4].map((i) => (
           <motion.div
             key={`musify-viz-bar-${i}`}
-            className="w-1.5 bg-[#FF2D78] rounded-full"
+            className="w-1.5 bg-[#C6FF00] rounded-full"
             animate={{ height: [8, 48, 8] }}
             transition={{
               duration: 0.6,

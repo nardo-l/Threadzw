@@ -49,7 +49,7 @@ export const MusifyArtistConfirm: React.FC<MusifyArtistConfirmProps> = ({
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', damping: 15, stiffness: 300, delay: 0.1 }}
-          className="w-[100px] h-[100px] rounded-full border-[3px] border-[#FF2D78] overflow-hidden shadow-[0_0_40px_rgba(255,45,120,0.3)]"
+          className="w-[100px] h-[100px] rounded-full border-[3px] border-[#C6FF00] overflow-hidden shadow-[0_0_40px_rgba(255,45,120,0.3)]"
         >
           <img src={artist.image} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
         </motion.div>
@@ -71,7 +71,7 @@ export const MusifyArtistConfirm: React.FC<MusifyArtistConfirmProps> = ({
             className={`
               px-6 py-2.5 rounded-full text-[13px] font-bold transition-all border
               ${difficulty === 'normal' 
-                ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white border-transparent' 
+                ? 'bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white border-transparent' 
                 : 'bg-black/50 text-[#888] border-[#222]'}
             `}
           >
@@ -82,7 +82,7 @@ export const MusifyArtistConfirm: React.FC<MusifyArtistConfirmProps> = ({
             className={`
               px-6 py-2.5 rounded-full text-[13px] font-bold transition-all border flex items-center gap-2
               ${difficulty === 'hard' 
-                ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white border-transparent' 
+                ? 'bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white border-transparent' 
                 : 'bg-black/50 text-[#888] border-[#222]'}
             `}
           >
@@ -91,7 +91,7 @@ export const MusifyArtistConfirm: React.FC<MusifyArtistConfirmProps> = ({
         </div>
 
         {difficulty === 'hard' && (
-          <p className="mt-3 text-[#FF2D78] text-[11px] font-bold animate-pulse uppercase tracking-widest">
+          <p className="mt-3 text-[#C6FF00] text-[11px] font-bold animate-pulse uppercase tracking-widest">
             Fast response required (5s window)
           </p>
         )}
@@ -102,7 +102,7 @@ export const MusifyArtistConfirm: React.FC<MusifyArtistConfirmProps> = ({
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
           onClick={onStart}
-          className="mt-10 w-full max-w-[280px] h-14 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white font-[Arial Black] text-base shadow-[0_8px_30px_rgba(255,45,120,0.4)] flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          className="mt-10 w-full max-w-[280px] h-14 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white font-[Arial Black] text-base shadow-[0_8px_30px_rgba(255,45,120,0.4)] flex items-center justify-center gap-2 active:scale-95 transition-transform"
         >
           Start Quiz 🎵
         </motion.button>

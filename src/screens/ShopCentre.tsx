@@ -58,7 +58,7 @@ export const ShopCentre: React.FC = () => {
       {/* Header */}
       <header className="flex flex-col gap-2">
         <h1 className="text-6xl md:text-7xl font-display font-black uppercase italic tracking-tighter leading-[0.8]">
-          the <span className="text-pink">terminal</span>
+          the <span className="text-[#C6FF00]">terminal</span>
         </h1>
         <div className="flex items-center gap-3">
           <p className="italic-accent text-xl">Governance Protocol</p>
@@ -70,7 +70,7 @@ export const ShopCentre: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         
         {/* Visual Identity & Sharing */}
-        <section className="bg-white border-2 border-charcoal rounded-[40px] p-10 flex flex-col gap-10 relative overflow-hidden shadow-[12px_12px_0_#F4A6C1]">
+        <section className="bg-white border-2 border-charcoal rounded-[40px] p-10 flex flex-col gap-10 relative overflow-hidden shadow-[12px_12px_0_#C6FF00]">
           <div className="absolute top-0 right-0 p-8 opacity-10 rotate-12"><Sparkles size={120} /></div>
           
           <div className="flex items-center gap-6 md:gap-8 relative z-10">
@@ -105,7 +105,7 @@ export const ShopCentre: React.FC = () => {
 
           <button className="mt-4 p-6 bg-cream border-2 border-charcoal rounded-[32px] flex items-center justify-between group hover:bg-white transition-all">
              <div className="flex items-center gap-6">
-                <div className="p-4 bg-charcoal text-cream rounded-2xl shadow-[4px_4px_0_#F4A6C1]">
+                <div className="p-4 bg-charcoal text-cream rounded-2xl shadow-[4px_4px_0_#C6FF00]">
                    <QrCode size={24} />
                 </div>
                 <div>
@@ -142,7 +142,7 @@ export const ShopCentre: React.FC = () => {
                 label="Billing Cycle" 
                 value={userData.isShopLive ? 'Initialized' : 'Restricted'} 
                 onClick={() => setSellerFlowState('paywall')}
-                color={userData.isShopLive ? 'text-lime' : 'text-pink'}
+                color={userData.isShopLive ? 'text-lime' : 'text-[#C6FF00]'}
               />
            </div>
 
@@ -157,8 +157,8 @@ export const ShopCentre: React.FC = () => {
         {/* Subscription / Paywall Alert */}
         {!userData.isShopLive && (
           <div className="lg:col-span-2">
-             <div className="bg-pink/5 border-2 border-pink/20 rounded-[40px] p-10 flex flex-col lg:flex-row items-center gap-8">
-                <div className="w-20 h-20 bg-pink/10 rounded-3xl flex items-center justify-center text-pink shrink-0 shadow-[8px_8px_0_rgba(0,0,0,1)] border-2 border-charcoal">
+             <div className="bg-[#C6FF00]/5 border-2 border-[#C6FF00]/20 rounded-[40px] p-10 flex flex-col lg:flex-row items-center gap-8">
+                <div className="w-20 h-20 bg-[#C6FF00]/10 rounded-3xl flex items-center justify-center text-[#C6FF00] shrink-0 shadow-[8px_8px_0_rgba(0,0,0,1)] border-2 border-charcoal">
                    <CreditCard size={40} />
                 </div>
                 <div className="flex-1 text-center lg:text-left">
@@ -181,7 +181,7 @@ export const ShopCentre: React.FC = () => {
       {/* Experimental Features */}
       <section className="mt-8">
         <div className="flex items-center gap-6 mb-10">
-           <h3 className="text-3xl font-display font-black uppercase italic tracking-tighter">advanced <span className="text-pink">modules</span></h3>
+           <h3 className="text-3xl font-display font-black uppercase italic tracking-tighter">advanced <span className="text-[#C6FF00]">modules</span></h3>
            <div className="h-0.5 flex-1 bg-charcoal/10" />
         </div>
 
@@ -221,7 +221,7 @@ const ProtocolItem = ({ icon, label, value, onClick, color }: any) => (
     className="w-full flex items-center justify-between p-6 bg-white border-2 border-charcoal rounded-[24px] group hover:bg-cream-dark transition-all shadow-[4px_4px_0_rgba(0,0,0,0.05)]"
   >
     <div className="flex items-center gap-5">
-      <div className="text-charcoal/20 group-hover:text-pink transition-colors">{icon}</div>
+      <div className="text-charcoal/20 group-hover:text-[#C6FF00] transition-colors">{icon}</div>
       <div className="text-left">
         <p className="text-[10px] font-black uppercase tracking-widest text-charcoal/30 italic mb-1">{label}</p>
         <p className={`text-lg font-display font-black italic tracking-tighter leading-none ${color || 'text-charcoal'}`}>{value}</p>
@@ -234,7 +234,7 @@ const ProtocolItem = ({ icon, label, value, onClick, color }: any) => (
 const ModuleCard = ({ title, desc, isNew }: any) => (
   <div className="bg-white border-2 border-charcoal rounded-[32px] p-10 flex flex-col gap-6 group hover:translate-y-[-4px] transition-all cursor-not-allowed shadow-[8px_8px_0_rgba(0,0,0,0.05)]">
     <div className="flex justify-between items-start">
-       <div className="w-14 h-14 bg-cream border-2 border-charcoal rounded-2xl flex items-center justify-center text-charcoal/30 group-hover:text-pink transition-colors shadow-[4px_4px_0_rgba(0,0,0,1)]">
+       <div className="w-14 h-14 bg-cream border-2 border-charcoal rounded-2xl flex items-center justify-center text-charcoal/30 group-hover:text-[#C6FF00] transition-colors shadow-[4px_4px_0_rgba(0,0,0,1)]">
           <Settings size={24} />
        </div>
        {isNew && <div className="oval-sticker !bg-lime !text-charcoal !shadow-none font-black">Encrypted</div>}
@@ -243,6 +243,6 @@ const ModuleCard = ({ title, desc, isNew }: any) => (
        <h4 className="text-2xl font-display font-black uppercase italic tracking-tighter mb-2">{title}</h4>
        <p className="italic-accent text-charcoal/50 text-sm leading-relaxed">{desc}</p>
     </div>
-    <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-pink italic">Module Locked</div>
+    <div className="mt-2 text-[10px] font-black uppercase tracking-widest text-[#C6FF00] italic">Module Locked</div>
   </div>
 );

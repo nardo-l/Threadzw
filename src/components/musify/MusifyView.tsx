@@ -1541,16 +1541,16 @@ const MuzifyFallbackSheet: React.FC<{
 
         <button
           onClick={onTryAgain}
-          className="w-full bg-pink-500/5 border border-pink-500/20 rounded-2xl p-4 flex items-center justify-between group active:scale-[0.98] transition-all"
+          className="w-full bg-[#C6FF00]/5 border border-[#C6FF00]/20 rounded-2xl p-4 flex items-center justify-between group active:scale-[0.98] transition-all"
         >
           <div className="flex items-center">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#9B27AF] to-[#FF2D78] flex items-center justify-center text-lg">⚡</div>
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] flex items-center justify-center text-lg">⚡</div>
             <div className="ml-3.5 text-left">
               <p className="text-white font-bold text-[15px]">ThreadZW Quiz</p>
               <p className="text-[#888] text-xs mt-0.5">YouTube clips inside the app</p>
             </div>
           </div>
-          <ChevronRight size={18} className="text-[#FF2D78]" />
+          <ChevronRight size={18} className="text-[#C6FF00]" />
         </button>
       </div>
     </motion.div>
@@ -1578,7 +1578,7 @@ const MuzifyShellScreen: React.FC<{
       </button>
       
       <div className="flex items-center gap-2">
-        <span className="text-[#FF2D78] font-pacifico text-base">thread</span>
+        <span className="text-[#C6FF00] font-pacifico text-base">thread</span>
         <span className="text-[#333] text-sm">×</span>
         <span className="text-[#888] font-mono text-sm tracking-tight">musify</span>
       </div>
@@ -1618,7 +1618,7 @@ const MuzifyShellScreen: React.FC<{
           
           {!iframeLoaded && (
             <div className="absolute inset-0 bg-black flex flex-col items-center justify-center text-center px-10">
-              <div className="w-8 h-8 border-2 border-[#FF2D78] border-t-transparent rounded-full animate-spin mb-4" />
+              <div className="w-8 h-8 border-2 border-[#C6FF00] border-t-transparent rounded-full animate-spin mb-4" />
               <p className="text-[#888] font-mono text-xs uppercase tracking-widest">Loading Muzify...</p>
             </div>
           )}
@@ -1640,7 +1640,7 @@ const MuzifyShellScreen: React.FC<{
 
           <button
             onClick={onOpenInBrowser}
-            className="w-full h-14 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold flex items-center justify-center gap-2.5 shadow-lg shadow-[#FF2D78]/20 active:scale-[0.98] transition-transform"
+            className="w-full h-14 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white font-bold flex items-center justify-center gap-2.5 shadow-lg shadow-[#C6FF00]/20 active:scale-[0.98] transition-transform"
           >
             <span>🎵</span>
             <span>Open Muzify →</span>
@@ -1672,7 +1672,7 @@ const ReturnPromptOverlay: React.FC<{ onDismiss: () => void }> = ({ onDismiss })
       </div>
       <button 
         onClick={onDismiss}
-        className="text-[#FF2D78] font-bold text-[13px] px-4 py-2"
+        className="text-[#C6FF00] font-bold text-[13px] px-4 py-2"
       >
         Got it
       </button>
@@ -1733,7 +1733,7 @@ const ScoreEntrySheet: React.FC<{
               className={`
                 min-w-[44px] h-[44px] rounded-xl flex items-center justify-center font-bold text-sm transition-all
                 ${enteredScore === i 
-                  ? 'bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white' 
+                  ? 'bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white' 
                   : 'bg-[#1a1a1a] text-[#555]'}
               `}
             >
@@ -1752,7 +1752,7 @@ const ScoreEntrySheet: React.FC<{
 
       <button
         onClick={onSave}
-        className="w-full h-13 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold flex items-center justify-center gap-2.5 shadow-lg shadow-[#FF2D78]/20 transition-transform active:scale-95"
+        className="w-full h-13 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white font-bold flex items-center justify-center gap-2.5 shadow-lg shadow-[#C6FF00]/20 transition-transform active:scale-95"
       >
         <span>Save Score</span>
         <ArrowRight size={18} />
@@ -1776,12 +1776,12 @@ const ShellLoader: React.FC<{ artistName: string }> = ({ artistName }) => (
     className="fixed inset-0 bg-black z-[11000] flex flex-col items-center justify-center p-10 text-center"
   >
     <div className="flex items-center justify-center gap-2.5 mb-8">
-      <span className="text-[#FF2D78] font-[Pacifico] text-[20px]">thread</span>
+      <span className="text-[#C6FF00] font-[Pacifico] text-[20px]">thread</span>
       <span className="text-[#333] text-xl">×</span>
       <span className="text-[#888] font-mono text-[18px] tracking-tight">musify</span>
     </div>
 
-    <div className="w-9 h-9 border-[3px] border-[#FF2D78] border-t-transparent rounded-full animate-spin mb-6" />
+    <div className="w-9 h-9 border-[3px] border-[#C6FF00] border-t-transparent rounded-full animate-spin mb-6" />
     
     <p className="text-[#888] font-mono text-[13px] uppercase tracking-[0.2em]">Opening Muzify...</p>
     

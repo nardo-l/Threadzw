@@ -50,7 +50,7 @@ export const QuizFlow: React.FC = () => {
            <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            className="w-12 h-12 rounded-full border-4 border-[#333] border-t-[#FF2D78]"
+            className="w-12 h-12 rounded-full border-4 border-[#333] border-t-[#C6FF00]"
            />
            <span className="text-white font-bold text-[18px] mt-6">Analyzing your drip...</span>
         </div>
@@ -74,7 +74,7 @@ export const QuizFlow: React.FC = () => {
         <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden">
            <motion.div 
             animate={{ width: `${progress}%` }}
-            className="h-full bg-linear-to-r from-[#9B27AF] to-[#FF2D78]" 
+            className="h-full bg-linear-to-r from-[#9B27AF] to-[#C6FF00]" 
            />
         </div>
       </div>
@@ -95,14 +95,14 @@ export const QuizFlow: React.FC = () => {
             onClick={() => handleSelect(i)}
             className={`w-full flex items-center justify-between p-4 px-[18px] rounded-[14px] border-1.5 transition-all text-left
               ${selectedAnswers[currentStep] === i 
-                ? 'bg-[#FF2D781A] border-[#FF2D78] border-l-3' 
+                ? 'bg-[#C6FF001A] border-[#C6FF00] border-l-3' 
                 : 'bg-[#111] border-[#222]'}`}
           >
             <span className={`text-[14px] ${selectedAnswers[currentStep] === i ? 'text-white font-bold' : 'text-white'}`}>
               {opt}
             </span>
             {selectedAnswers[currentStep] === i && (
-              <div className="w-2 h-2 bg-[#FF2D78] rounded-full shadow-[0_0_8px_#FF2D78]" />
+              <div className="w-2 h-2 bg-[#C6FF00] rounded-full shadow-[0_0_8px_#C6FF00]" />
             )}
           </button>
         ))}
@@ -114,7 +114,7 @@ export const QuizFlow: React.FC = () => {
           onClick={handleNext}
           disabled={selectedAnswers[currentStep] === -1}
           className={`w-full h-[52px] rounded-full font-bold text-[15px] flex items-center justify-center transition-all
-            ${selectedAnswers[currentStep] !== -1 ? 'bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white active:scale-[0.98]' : 'bg-[#333] text-[#666]'}`}
+            ${selectedAnswers[currentStep] !== -1 ? 'bg-linear-to-r from-[#9B27AF] to-[#C6FF00] text-white active:scale-[0.98]' : 'bg-[#333] text-[#666]'}`}
         >
           {currentStep === questions.length - 1 ? "See My Result →" : "Next →"}
         </button>

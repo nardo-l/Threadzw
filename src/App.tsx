@@ -31,8 +31,11 @@ import { ShopProvider, useShopContext } from './context/ShopContext';
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup';
 
 const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: string } => {
-  const path = window.location.pathname;
+  const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
 
+  if (path === '/demo' || path === '/shop/demo' || path === '/store/demo') {
+    return { stage: 'shop', handle: 'demo' };
+  }
   if (path === '/admin') {
     return { stage: 'admin' };
   }
@@ -44,7 +47,7 @@ const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: st
   }
   
   // Match /store/:slug or /shop/:handle
-  const shopMatch = path.match(/^\/(?:shop|store)\/@?([a-z0-9_-]+)$/i);
+  const shopMatch = window.location.pathname.match(/^\/(?:shop|store)\/@?([a-z0-9_-]+)$/i);
   if (shopMatch) {
     return {
       stage: 'shop',
@@ -53,7 +56,7 @@ const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: st
   }
 
   // Match /product/:id
-  const productMatch = path.match(/^\/product\/([a-z0-9_-]+)$/i);
+  const productMatch = window.location.pathname.match(/^\/product\/([a-z0-9_-]+)$/i);
   if (productMatch) {
     return {
       stage: 'product',
@@ -91,13 +94,13 @@ function AppContent() {
 
   // Consolidated Onboarding Shop Context Data State
   const [shopData, setShopData] = useState({
-    ownerName: 'Nardo',
-    name: 'KURE STREETWEAR',
-    category: 'Streetwear',
+    ownerName: '',
+    name: '',
+    category: '',
     town: 'Harare',
-    whatsapp: '263776223144',
-    description: 'Built for the ones chasing more.',
-    instagram: '@kure.zw',
+    whatsapp: '',
+    description: '',
+    instagram: '',
     priceRange: '10-50',
     productEstimate: '50-100'
   });
@@ -126,7 +129,7 @@ function AppContent() {
     
     // Allow public routes
     const path = window.location.pathname;
-    if (path.startsWith('/shop/') || path.startsWith('/store/') || path === '/admin' || path.startsWith('/product/')) {
+    if (path.startsWith('/shop/') || path.startsWith('/store/') || path === '/demo' || path === '/demo/' || path === '/admin' || path.startsWith('/product/')) {
       return;
     }
 
@@ -156,16 +159,47 @@ function AppContent() {
     }
   }, [loading, session, shopLoading, hasShop]);
 
-  if (loading || authLoading || (localStorage.getItem('threadzw_logged_in') === 'true' && shopLoading)) {
+  if (loading || authLoading) {
     return <SplashScreen />;
   }
 
-  if (appStage === 'shop') {
-    const handle = initialData.handle || 'kure';
+  // Handle public routes unconditionally to prevent any auth lag or state conflicts
+  const cleanPath = window.location.pathname.toLowerCase().replace(/\/$/, '');
+  const isDemoUrl = cleanPath === '/demo' || cleanPath === '/shop/demo' || cleanPath === '/store/demo' || cleanPath.endsWith('/demo');
+
+  if (isDemoUrl) {
+    return (
+      <Routes>
+        <Route path="/demo" element={<PublicShopPage handle="demo" />} />
+        <Route path="/shop/:shopSlug" element={<PublicShopPage handle="demo" />} />
+        <Route path="/store/:shopSlug" element={<PublicShopPage handle="demo" />} />
+        <Route path="*" element={<PublicShopPage handle="demo" />} />
+      </Routes>
+    );
+  }
+
+  if (cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/')) {
+    const handle = initialData.handle || 'demo';
     return (
       <Routes>
         <Route path="/shop/:shopSlug" element={<PublicShopPage handle={handle} />} />
         <Route path="/store/:shopSlug" element={<PublicShopPage handle={handle} />} />
+        <Route path="*" element={<PublicShopPage handle={handle} />} />
+      </Routes>
+    );
+  }
+
+  if (localStorage.getItem('threadzw_logged_in') === 'true' && shopLoading) {
+    return <SplashScreen />;
+  }
+
+  if (appStage === 'shop') {
+    const handle = initialData.handle || 'demo';
+    return (
+      <Routes>
+        <Route path="/shop/:shopSlug" element={<PublicShopPage handle={handle} />} />
+        <Route path="/store/:shopSlug" element={<PublicShopPage handle={handle} />} />
+        <Route path="/demo" element={<PublicShopPage handle="demo" />} />
         <Route path="*" element={<PublicShopPage handle={handle} />} />
       </Routes>
     );

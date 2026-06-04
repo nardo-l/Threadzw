@@ -319,7 +319,7 @@ export const StoriesViewer: React.FC = () => {
                 </h2>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-[#FF2D78]">${currentProduct.price}</span>
+                  <span className="text-2xl font-bold text-[#C6FF00]">${currentProduct.price}</span>
                   {currentProduct.price < 50 && (
                      <span className="text-sm text-muted line-through">$60</span>
                   )}
@@ -339,7 +339,7 @@ export const StoriesViewer: React.FC = () => {
               onClick={handleSave}
               className="flex-1 py-4 bg-white/5 border border-white/10 rounded-full flex items-center justify-center gap-2 text-white font-medium transition-all active:scale-95"
             >
-              <Bookmark size={18} className={isSaved ? 'fill-[#FF2D78] text-[#FF2D78]' : ''} />
+              <Bookmark size={18} className={isSaved ? 'fill-[#C6FF00] text-[#C6FF00]' : ''} />
               Save
             </button>
             {currentProduct ? (
@@ -348,7 +348,7 @@ export const StoriesViewer: React.FC = () => {
                   handleClose();
                   navigate(`/product/${currentProduct.id}`);
                 }}
-                className="flex-[2] py-4 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white rounded-full flex items-center justify-center gap-2 font-bold shadow-lg transition-all active:scale-95"
+                className="flex-[2] py-4 bg-linear-to-r from-[#9B27AF] to-[#C6FF00] text-white rounded-full flex items-center justify-center gap-2 font-bold shadow-lg transition-all active:scale-95"
               >
                 View Product <ArrowRight size={18} />
               </button>
@@ -358,7 +358,7 @@ export const StoriesViewer: React.FC = () => {
                   handleClose();
                   navigate(`/shop/${currentShop.id}`);
                 }}
-                className="flex-[2] py-4 bg-linear-to-r from-[#9B27AF] to-[#FF2D78] text-white rounded-full flex items-center justify-center gap-2 font-bold shadow-lg transition-all active:scale-95"
+                className="flex-[2] py-4 bg-linear-to-r from-[#9B27AF] to-[#C6FF00] text-white rounded-full flex items-center justify-center gap-2 font-bold shadow-lg transition-all active:scale-95"
               >
                 Visit Shop <ArrowRight size={18} />
               </button>

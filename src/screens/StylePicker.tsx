@@ -70,13 +70,13 @@ export const StylePicker = ({ onComplete }: { onComplete: () => void }) => {
             Skip
           </button>
         </div>
-        <h1 className="font-pacifico text-[#FF2D78] text-[22px]">thread</h1>
+        <h1 className="font-pacifico text-[#C6FF00] text-[22px]">thread</h1>
         <h2 className="mt-6 text-[28px] font-bold leading-[1.2]">What's your style?</h2>
         <p className="mt-2.5 text-[#888] text-[15px] max-w-[260px] mx-auto">
           Pick the outfit that speaks to you.
         </p>
         <div className="mt-4 flex items-center justify-center gap-1.5 uppercase tracking-wider text-[12px] text-[#888]">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#FF2D78]" />
+          <div className="w-1.5 h-1.5 rounded-full bg-[#C6FF00]" />
           Pick one
         </div>
       </div>
@@ -116,7 +116,7 @@ export const StylePicker = ({ onComplete }: { onComplete: () => void }) => {
                 onClick={() => setSelectedCard(card)}
                 className={`relative aspect-[3/4] rounded-[16px] overflow-hidden cursor-pointer transition-all duration-150 ${
                   selectedCard?.id === card.id
-                    ? 'border-[2.5px] border-[#FF2D78] shadow-[0_0_0_3px_rgba(255,45,120,0.25)] scale-[1.02]'
+                    ? 'border-[2.5px] border-[#C6FF00] shadow-[0_0_0_3px_rgba(255,45,120,0.25)] scale-[1.02]'
                     : 'border-2 border-transparent'
                 }`}
               >
@@ -131,7 +131,7 @@ export const StylePicker = ({ onComplete }: { onComplete: () => void }) => {
                 </span>
 
                 {selectedCard?.id === card.id && (
-                  <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-[#FF2D78] border-2 border-black flex items-center justify-center text-white font-bold text-[14px]">
+                  <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-[#C6FF00] border-2 border-black flex items-center justify-center text-white font-bold text-[14px]">
                     ✓
                   </div>
                 )}
@@ -153,7 +153,7 @@ export const StylePicker = ({ onComplete }: { onComplete: () => void }) => {
         ) : (
           <button
             onClick={handleContinue}
-            className="w-full h-[48px] rounded-full bg-gradient-to-r from-[#FF2D78] to-[#9F33FF] text-white font-bold text-[14px] px-[28px]"
+            className="w-full h-[48px] rounded-full bg-gradient-to-r from-[#C6FF00] to-[#9F33FF] text-white font-bold text-[14px] px-[28px]"
           >
             This Is My Style →
           </button>

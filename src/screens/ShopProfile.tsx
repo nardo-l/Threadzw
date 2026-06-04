@@ -99,7 +99,7 @@ export const ShopProfile: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0B0B0B] text-white flex flex-col items-center justify-center p-6 pb-24">
-        <div className="w-12 h-12 border-4 border-[#FF2D78] border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="w-12 h-12 border-4 border-[#C6FF00] border-t-transparent rounded-full animate-spin mb-4" />
         <p className="text-sm font-semibold text-neutral-400 tracking-wide">Loading Shop Profile...</p>
       </div>
     );
@@ -108,7 +108,7 @@ export const ShopProfile: React.FC = () => {
   if (error || !shop) {
     return (
       <div className="min-h-screen bg-[#0B0B0B] text-white flex flex-col items-center justify-center p-6 text-center gap-6">
-        <div className="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center text-[#FF2D78]">
+        <div className="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center text-[#C6FF00]">
           <ShoppingBag size={28} />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -191,7 +191,7 @@ export const ShopProfile: React.FC = () => {
             className={`px-6 h-11 rounded-full font-bold text-xs uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center border-2 ${
               followingState
                 ? 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:bg-neutral-800/80'
-                : 'bg-[#FF2D78]/10 border-[#FF2D78] text-[#FF2D78] hover:bg-[#FF2D78]/20'
+                : 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00] hover:bg-[#C6FF00]/20'
             }`}
           >
             {followingState ? 'Following' : 'Follow'}
@@ -218,13 +218,13 @@ export const ShopProfile: React.FC = () => {
             shop.categories.slice(0, 2).map((cat: string) => (
               <span 
                 key={cat} 
-                className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#FF2D78]/10 border border-[#FF2D78]/25 text-[#FF2D78]"
+                className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#C6FF00]/10 border border-[#C6FF00]/25 text-[#C6FF00]"
               >
                 {cat.toLowerCase()}
               </span>
             ))
           ) : (
-            <span className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#FF2D78]/10 border border-[#FF2D78]/25 text-[#FF2D78]">
+            <span className="px-4 py-1.5 rounded-full text-xs font-semibold bg-[#C6FF00]/10 border border-[#C6FF00]/25 text-[#C6FF00]">
               streetwear
             </span>
           )}
@@ -258,7 +258,7 @@ export const ShopProfile: React.FC = () => {
 
         {/* Physical Address Block */}
         <div className="bg-[#111111] border border-[#1E1E1E] rounded-2xl p-4 flex items-center gap-3">
-          <MapPin size={18} className="text-[#FF2D78] flex-shrink-0" />
+          <MapPin size={18} className="text-[#C6FF00] flex-shrink-0" />
           <span className="text-sm font-semibold text-neutral-200">
             {shop.location || shop.area || 'Bulawayo'}
           </span>
@@ -295,7 +295,7 @@ export const ShopProfile: React.FC = () => {
         {isOwner && (
           <button 
             onClick={() => navigate('/shop-centre')}
-            className="w-full h-11 bg-[#FF2D78] hover:bg-[#E02669] text-white font-bold text-xs uppercase tracking-wide rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF2D78]/10"
+            className="w-full h-11 bg-[#C6FF00] hover:bg-[#E02669] text-white font-bold text-xs uppercase tracking-wide rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#C6FF00]/10"
           >
             <Edit2 size={14} />
             Manage Shop (Admin Centre)
@@ -314,13 +314,13 @@ export const ShopProfile: React.FC = () => {
             key={tab.label}
             onClick={() => setActiveTab(tab.label as any)}
             className={`pb-4 text-xs font-bold uppercase tracking-wider transition-all relative flex items-center gap-2 cursor-pointer ${
-              activeTab === tab.label ? 'text-[#FF2D78]' : 'text-neutral-500 hover:text-neutral-300'
+              activeTab === tab.label ? 'text-[#C6FF00]' : 'text-neutral-500 hover:text-neutral-300'
             }`}
           >
             {tab.icon}
             {tab.label}
             {activeTab === tab.label && (
-              <motion.div layoutId="shopTabLine" className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[#FF2D78] rounded-t-full" />
+              <motion.div layoutId="shopTabLine" className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[#C6FF00] rounded-t-full" />
             )}
           </button>
         ))}
@@ -370,13 +370,13 @@ export const ShopProfile: React.FC = () => {
                           {isSoldOut ? (
                             <div className="bg-[#151515]/95 border border-neutral-800 text-neutral-400 px-2 py-0.5 rounded">Sold Out</div>
                           ) : (
-                            <div className="bg-[#FF2D78] text-white px-2 py-0.5 rounded">Available</div>
+                            <div className="bg-[#C6FF00] text-white px-2 py-0.5 rounded">Available</div>
                           )}
                         </div>
                       </div>
 
                       <div className="p-3.5 flex flex-col justify-between flex-1 gap-1">
-                        <h4 className="text-sm font-semibold tracking-tight text-neutral-100 group-hover:text-[#FF2D78] transition-colors truncate">
+                        <h4 className="text-sm font-semibold tracking-tight text-neutral-100 group-hover:text-[#C6FF00] transition-colors truncate">
                           {product.name}
                         </h4>
                         <div className="flex items-center justify-between mt-1">
@@ -409,7 +409,7 @@ export const ShopProfile: React.FC = () => {
         {activeTab === 'About' && (
           <div className="flex flex-col gap-6 bg-[#111] border border-neutral-800 rounded-2xl p-6">
             <div className="flex flex-col gap-1.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#FF2D78]">About the Brand</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[#C6FF00]">About the Brand</h3>
               <p className="text-sm leading-relaxed text-neutral-300">{shop.description || 'No business description provided yet.'}</p>
             </div>
 
@@ -530,7 +530,7 @@ const ReviewsTab: React.FC<{
                 <Star 
                   key={s} 
                   size={16} 
-                  className={s <= Math.round(Number(activeRating)) ? 'fill-[#FF2D78] text-[#FF2D78]' : 'text-neutral-800'} 
+                  className={s <= Math.round(Number(activeRating)) ? 'fill-[#C6FF00] text-[#C6FF00]' : 'text-neutral-800'} 
                   strokeWidth={2.5}
                 />
               ))}
@@ -559,7 +559,7 @@ const ReviewsTab: React.FC<{
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${b.percentage}%` }}
-                  className={`h-full border-r-2 border-neutral-900 transition-colors ${b.star >= 4 ? 'bg-[#FF2D78]' : 'bg-neutral-600'}`}
+                  className={`h-full border-r-2 border-neutral-900 transition-colors ${b.star >= 4 ? 'bg-[#C6FF00]' : 'bg-neutral-600'}`}
                 />
               </div>
               <span className="font-semibold text-right text-[10px] w-12">{b.count} logs</span>
@@ -576,7 +576,7 @@ const ReviewsTab: React.FC<{
             onClick={() => setSortBy(s)}
             className={`px-4 h-9 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer ${
               sortBy === s 
-                ? 'bg-[#FF2D78] border-[#FF2D78] text-white' 
+                ? 'bg-[#C6FF00] border-[#C6FF00] text-white' 
                 : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-white'
             }`}
           >
@@ -643,7 +643,7 @@ const ReviewCard: React.FC<{
               <Star 
                 key={s} 
                 size={11} 
-                className={s <= review.rating ? 'fill-[#FF2D78] text-[#FF2D78]' : 'text-neutral-850'} 
+                className={s <= review.rating ? 'fill-[#C6FF00] text-[#C6FF00]' : 'text-neutral-850'} 
                 strokeWidth={2}
               />
             ))}
@@ -654,7 +654,7 @@ const ReviewCard: React.FC<{
         </div>
       </div>
 
-      <div className="pl-2 border-l-2 border-[#FF2D78]/40">
+      <div className="pl-2 border-l-2 border-[#C6FF00]/40">
         <p className="text-xs text-neutral-300 leading-relaxed italic">
           "{review.text}"
         </p>
@@ -689,7 +689,7 @@ const ReviewCard: React.FC<{
       {/* Official Business Response if any */}
       {review.sellerResponse && (
         <div className="mt-2 p-3.5 bg-neutral-950 border border-neutral-800/80 rounded-2xl flex flex-col gap-2 relative">
-          <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#FF2D78]">
+          <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#C6FF00]">
             Brand response from: <span className="text-white">{shopName}</span>
           </span>
           <p className="text-xs text-neutral-400 leading-relaxed italic mt-0.5">
@@ -712,7 +712,7 @@ const ReviewCard: React.FC<{
                 value={replyText}
                 onChange={(e) => setReplyText(e.target.value)}
                 placeholder="Declare official brand response terminal..."
-                className="w-full bg-[#0B0B0B] border border-neutral-800 rounded-xl p-3.5 text-xs text-white placeholder-neutral-600 outline-none focus:border-[#FF2D78] transition-all resize-none h-24"
+                className="w-full bg-[#0B0B0B] border border-neutral-800 rounded-xl p-3.5 text-xs text-white placeholder-neutral-600 outline-none focus:border-[#C6FF00] transition-all resize-none h-24"
               />
               <button 
                 onClick={() => {
@@ -763,7 +763,7 @@ const WriteReviewSheet: React.FC<{
         
         <div className="flex justify-between items-start mt-2">
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#FF2D78]">Client Ledger Entry</span>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C6FF00]">Client Ledger Entry</span>
             <h2 className="text-xl font-extrabold text-white leading-none">Log Validation</h2>
             <p className="text-[11px] text-neutral-400 mt-1">FOR BRAND: <span className="text-neutral-100 font-bold uppercase">{shopName}</span></p>
           </div>
@@ -786,7 +786,7 @@ const WriteReviewSheet: React.FC<{
               >
                 <Star 
                   size={32} 
-                  className={s <= rating ? 'fill-[#FF2D78] text-[#FF2D78]' : 'text-neutral-800'} 
+                  className={s <= rating ? 'fill-[#C6FF00] text-[#C6FF00]' : 'text-neutral-800'} 
                   strokeWidth={2}
                 />
               </button>
@@ -806,7 +806,7 @@ const WriteReviewSheet: React.FC<{
                value={text || ''}
                onChange={(e) => setText(e.target.value.slice(0, 300))}
                placeholder="Briefly state your direct customer satisfaction or brand observation protocols..."
-               className="w-full bg-neutral-950 border border-neutral-850 rounded-2xl p-4 text-xs text-white placeholder-neutral-600 outline-none focus:border-[#FF2D78] focus:bg-neutral-950 transition-all resize-none h-32 leading-relaxed"
+               className="w-full bg-neutral-950 border border-neutral-850 rounded-2xl p-4 text-xs text-white placeholder-neutral-600 outline-none focus:border-[#C6FF00] focus:bg-neutral-950 transition-all resize-none h-32 leading-relaxed"
              />
              <div className="absolute bottom-4 right-4 flex items-center gap-2">
                 <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-widest">{text.length || 0} / 300</span>
@@ -819,7 +819,7 @@ const WriteReviewSheet: React.FC<{
           <button 
             onClick={() => onSubmit(rating, text)}
             disabled={rating === 0 || !text.trim()}
-            className="w-full h-12 bg-[#FF2D78] hover:bg-[#E02669] active:scale-95 text-white font-extrabold text-xs uppercase tracking-wider rounded-full disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#FF2D78]/15 cursor-pointer mt-1"
+            className="w-full h-12 bg-[#C6FF00] hover:bg-[#E02669] active:scale-95 text-white font-extrabold text-xs uppercase tracking-wider rounded-full disabled:opacity-20 disabled:pointer-events-none transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#C6FF00]/15 cursor-pointer mt-1"
           >
             TRANSMIT LEDGER RECORD
             <Check size={14} />

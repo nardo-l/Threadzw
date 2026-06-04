@@ -42,8 +42,8 @@ export const AuthPromptBottomSheet: React.FC = () => {
           </button>
 
           <div className="flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-[#FF2D78] to-[#FF2D78]/20 flex items-center justify-center mb-6 shadow-[0_10px_30px_rgba(255,45,120,0.3)]">
-              <Sparkles size={32} className="text-white" />
+            <div className="w-20 h-20 rounded-[24px] bg-[#C6FF00] flex items-center justify-center mb-6 shadow-[0_10px_30px_rgba(198,255,0,0.3)]">
+              <Sparkles size={32} className="text-black" />
             </div>
 
             <h2 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-3">
@@ -59,7 +59,7 @@ export const AuthPromptBottomSheet: React.FC = () => {
                   setShowAuthPrompt(false);
                   navigate('/auth?mode=signup');
                 }}
-                className="w-full h-16 rounded-full text-white font-black uppercase tracking-widest text-[13px] shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all bg-[#FF2D78]"
+                className="w-full h-16 rounded-xl text-black font-bold uppercase tracking-wider text-sm shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all bg-[#C6FF00]"
               >
                 <UserPlus size={18} />
                 Create Account

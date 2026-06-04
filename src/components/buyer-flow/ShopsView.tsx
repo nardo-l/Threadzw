@@ -40,7 +40,7 @@ export const ShopsView: React.FC = () => {
           <button onClick={() => navigate(-1)} className="active:scale-95 transition-transform text-white">
             <ArrowLeft size={24} />
           </button>
-          <h1 className="font-pacifico text-[28px] text-[#FF5FA2]">Shops</h1>
+          <h1 className="font-pacifico text-[28px] text-[#C6FF00]">Shops</h1>
           <div className="ml-auto">
             <Search className="text-white" size={24} />
           </div>
@@ -55,7 +55,7 @@ export const ShopsView: React.FC = () => {
 
       {/* Search Bar */}
       <div className="mx-5 mt-1 relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#FF5FA2]">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#C6FF00]">
           <Search size={16} />
         </div>
         <input 
@@ -63,13 +63,13 @@ export const ShopsView: React.FC = () => {
           placeholder="Search for shops..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full h-11 border border-white/10 rounded-full pl-11 pr-4 text-[14px] focus:outline-none transition-colors bg-white/5 text-white focus:border-[#FF5FA2]"
+          className="w-full h-11 border border-white/10 rounded-full pl-11 pr-4 text-[14px] focus:outline-none transition-colors bg-white/5 text-white focus:border-[#C6FF00]"
         />
       </div>
 
       {/* Affiliate Card */}
       <div 
-        className="mx-5 mt-4 rounded-[16px] p-5 flex items-center justify-between bg-gradient-to-br from-[#9B27AF] to-[#FF5FA2] shadow-lg"
+        className="mx-5 mt-4 rounded-[16px] p-5 flex items-center justify-between bg-gradient-to-br from-[#9B27AF] to-[#C6FF00] shadow-lg"
       >
         <div className="flex flex-col max-w-[190px]">
            <div className="w-11 h-11 rounded-[10px] bg-white/20 flex items-center justify-center mb-3">
@@ -82,7 +82,7 @@ export const ShopsView: React.FC = () => {
              onClick={() => toast.info("Coming soon....", {
                style: { background: '#111', color: '#fff', border: `1px solid #222` }
              })}
-             className="mt-3 w-fit h-[38px] bg-white rounded-full px-4 text-[13px] font-bold shadow-md transition-transform active:scale-95 text-[#FF5FA2]"
+             className="mt-3 w-fit h-[38px] bg-white rounded-full px-4 text-[13px] font-bold shadow-md transition-transform active:scale-95 text-[#C6FF00]"
            >
               Start Earning →
            </button>
@@ -100,7 +100,7 @@ export const ShopsView: React.FC = () => {
           <button 
             key={c}
             onClick={() => setFilter(c)}
-            className={`h-[34px] px-4 rounded-full text-[12px] font-medium transition-all shrink-0 border ${filter === c ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-md' : 'bg-transparent border-white/10 text-white/40'}`}
+            className={`h-[34px] px-4 rounded-full text-[12px] font-medium transition-all shrink-0 border ${filter === c ? 'bg-[#C6FF00] border-[#C6FF00] text-white shadow-md' : 'bg-transparent border-white/10 text-white/40'}`}
           >
             {c}
           </button>
@@ -119,20 +119,20 @@ export const ShopsView: React.FC = () => {
               className="w-[152px] border border-white/5 rounded-[24px] p-4 flex flex-col items-center shrink-0 relative cursor-pointer bg-[#111111]"
               onClick={() => handleShopTap(shop.id)}
             >
-              <div className="absolute top-3 right-3 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF5FA2]">
+              <div className="absolute top-3 right-3 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#C6FF00]">
                 HOT
               </div>
-              <div className="w-[64px] h-[64px] rounded-full border-2 p-0.5 mb-3 overflow-hidden border-[#FF5FA2]">
+              <div className="w-[64px] h-[64px] rounded-full border-2 p-0.5 mb-3 overflow-hidden border-[#C6FF00]">
                 {shop.logo_url ? (
                    <img src={shop.logo_url} className="w-full h-full rounded-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
-                   <div className="w-full h-full rounded-full flex items-center justify-center text-lg bg-linear-to-br from-[#9B27AF] to-[#FF5FA2] text-white">🏪</div>
+                   <div className="w-full h-full rounded-full flex items-center justify-center text-lg bg-linear-to-br from-[#9B27AF] to-[#C6FF00] text-white">🏪</div>
                 )}
               </div>
               <div className="flex items-center gap-1 w-full justify-center min-w-0">
                 <span className="font-bold text-[13px] truncate text-white">{shop.name}</span>
                 {shop.is_verified && (
-                  <div className="bg-[#FF5FA2] rounded-full p-0.5 shrink-0">
+                  <div className="bg-[#C6FF00] rounded-full p-0.5 shrink-0">
                     <Check size={8} className="text-white stroke-[4]" />
                   </div>
                 )}
@@ -140,7 +140,7 @@ export const ShopsView: React.FC = () => {
               <span className="text-[11px] mt-0.5 text-white/40">{shop.category}</span>
               <button 
                 onClick={(e) => { e.stopPropagation(); toggleFollow(shop.id); }}
-                className={`mt-3 w-full h-8 rounded-full border transition-all text-[12px] font-bold flex items-center justify-center gap-1 ${following.includes(shop.id) ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-md' : 'border-[#FF5FA2] text-[#FF5FA2]'}`}
+                className={`mt-3 w-full h-8 rounded-full border transition-all text-[12px] font-bold flex items-center justify-center gap-1 ${following.includes(shop.id) ? 'bg-[#C6FF00] border-[#C6FF00] text-white shadow-md' : 'border-[#C6FF00] text-[#C6FF00]'}`}
               >
                 {following.includes(shop.id) ? <><Check size={12} /> Following</> : 'Follow'}
               </button>
@@ -176,7 +176,7 @@ export const ShopsView: React.FC = () => {
                     localStorage.setItem('thread_selected_town', 'Zimbabwe');
                     setShowTownPicker(false);
                   }}
-                  className={`w-full p-4 rounded-2xl text-left font-bold transition-all ${selectedTown === 'Zimbabwe' ? 'bg-[#FF2D78] text-white shadow-md' : 'bg-[#F5F5F5] text-[#888888]'}`}
+                  className={`w-full p-4 rounded-2xl text-left font-bold transition-all ${selectedTown === 'Zimbabwe' ? 'bg-[#C6FF00] text-white shadow-md' : 'bg-[#F5F5F5] text-[#888888]'}`}
                 >
                   All Zimbabwe 🇿🇼
                 </button>
@@ -188,7 +188,7 @@ export const ShopsView: React.FC = () => {
                       localStorage.setItem('thread_selected_town', town);
                       setShowTownPicker(false);
                     }}
-                    className={`w-full p-4 rounded-2xl text-left font-bold transition-all ${selectedTown === town ? 'bg-[#FF2D78] text-white shadow-md' : 'bg-[#F5F5F5] text-[#888888]'}`}
+                    className={`w-full p-4 rounded-2xl text-left font-bold transition-all ${selectedTown === town ? 'bg-[#C6FF00] text-white shadow-md' : 'bg-[#F5F5F5] text-[#888888]'}`}
                   >
                     {town}
                   </button>
@@ -209,11 +209,11 @@ export const ShopsView: React.FC = () => {
               className="border border-white/5 rounded-[20px] p-4 flex items-start cursor-pointer transition-colors bg-[#111111] active:scale-[0.98]"
               onClick={() => handleShopTap(shop.id)}
             >
-              <div className="w-[52px] h-[52px] rounded-full border-2 p-0.5 shrink-0 overflow-hidden border-[#FF5FA2]">
+              <div className="w-[52px] h-[52px] rounded-full border-2 p-0.5 shrink-0 overflow-hidden border-[#C6FF00]">
                  {shop.logo_url ? (
                    <img src={shop.logo_url} className="w-full h-full rounded-full object-cover" referrerPolicy="no-referrer" />
                  ) : (
-                   <div className="w-full h-full rounded-full flex items-center justify-center text-lg bg-linear-to-br from-[#9B27AF] to-[#FF5FA2] text-white">🏪</div>
+                   <div className="w-full h-full rounded-full flex items-center justify-center text-lg bg-linear-to-br from-[#9B27AF] to-[#C6FF00] text-white">🏪</div>
                  )}
               </div>
               <div className="ml-3.5 flex-1 min-w-0">
@@ -221,14 +221,14 @@ export const ShopsView: React.FC = () => {
                   <div className="flex items-center gap-1 min-w-0">
                     <h3 className="font-bold text-[15px] truncate text-white">{shop.name}</h3>
                     {shop.is_verified && (
-                      <div className="bg-[#FF5FA2] rounded-full p-0.5 shrink-0">
+                      <div className="bg-[#C6FF00] rounded-full p-0.5 shrink-0">
                         <Check size={8} className="text-white stroke-[4]" />
                       </div>
                     )}
                   </div>
                   <button 
                     onClick={(e) => { e.stopPropagation(); toggleFollow(shop.id); }}
-                    className={`h-[30px] px-3.5 rounded-full border transition-all text-[10px] font-bold shrink-0 ${following.includes(shop.id) ? 'bg-[#FF5FA2] border-[#FF5FA2] text-white shadow-sm' : 'border-[#FF5FA2] text-[#FF5FA2]'}`}
+                    className={`h-[30px] px-3.5 rounded-full border transition-all text-[10px] font-bold shrink-0 ${following.includes(shop.id) ? 'bg-[#C6FF00] border-[#C6FF00] text-white shadow-sm' : 'border-[#C6FF00] text-[#C6FF00]'}`}
                   >
                      {following.includes(shop.id) ? 'Following ✓' : 'Follow'}
                   </button>

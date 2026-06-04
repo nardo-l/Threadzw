@@ -194,7 +194,7 @@ export const MusifyResults: React.FC<MusifyResultsProps> = ({
   const getResultInfo = () => {
     if (percentage === 100) return { title: 'Perfect Score! 👑', color: '#FFD700' };
     if (percentage >= 80) return { title: 'Certified Fan 🔥', color: '#22c55e' };
-    if (percentage >= 60) return { title: 'Real Listener 🎵', color: '#FF2D78' };
+    if (percentage >= 60) return { title: 'Real Listener 🎵', color: '#C6FF00' };
     if (percentage >= 40) return { title: 'Getting There 😤', color: '#f59e0b' };
     return { title: 'Study The Discography 😭', color: '#ef4444' };
   };
@@ -353,7 +353,7 @@ export const MusifyResults: React.FC<MusifyResultsProps> = ({
 
         <button
           onClick={handleShare}
-          className="w-full h-13 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#FF2D78] text-white font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          className="w-full h-13 rounded-full bg-gradient-to-r from-[#9B27AF] to-[#C6FF00] text-white font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
         >
           <Share2 size={18} />
           Share My Score
@@ -395,7 +395,7 @@ export const MusifyResults: React.FC<MusifyResultsProps> = ({
             <img src={artist?.image || ''} alt="" className="w-full h-full object-cover opacity-50" referrerPolicy="no-referrer" />
             <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent" />
             <div className="absolute bottom-4 left-5">
-              <p className="text-[#FF2D78] text-[12px] font-black uppercase tracking-[0.2em] mb-1">Score Result</p>
+              <p className="text-[#C6FF00] text-[12px] font-black uppercase tracking-[0.2em] mb-1">Score Result</p>
               <h2 className="text-white text-2xl font-[Impact] uppercase italic tracking-tighter italic">{artist?.name || 'Unknown Artist'}</h2>
             </div>
           </div>
@@ -430,7 +430,7 @@ export const MusifyResults: React.FC<MusifyResultsProps> = ({
               <span className="text-[#444] text-[10px] font-bold uppercase tracking-widest">Beat this on Musify</span>
               <span className="text-white/40 text-[10px] font-medium">ThreadZW · Zimbabwe</span>
             </div>
-            <div className="text-[#FF2D78] font-mono text-[14px] font-black tracking-tighter">musify</div>
+            <div className="text-[#C6FF00] font-mono text-[14px] font-black tracking-tighter">musify</div>
           </div>
         </div>
       </div>

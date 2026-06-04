@@ -160,8 +160,8 @@ export const DashboardView: React.FC<{ myShop: any }> = ({ myShop }) => {
                  <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <defs>
                        <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#FF5FA2" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#FF5FA2" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#C6FF00" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#C6FF00" stopOpacity={0}/>
                        </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
@@ -169,9 +169,9 @@ export const DashboardView: React.FC<{ myShop: any }> = ({ myShop }) => {
                     <YAxis dataKey="revenue" hide />
                     <Tooltip 
                       contentStyle={{ backgroundColor: '#000', border: '1px solid #ffffff10', borderRadius: '12px' }}
-                      itemStyle={{ color: '#FF5FA2', fontWeight: 'bold' }}
+                      itemStyle={{ color: '#C6FF00', fontWeight: 'bold' }}
                     />
-                    <Area type="monotone" dataKey="revenue" stroke="#FF5FA2" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                    <Area type="monotone" dataKey="revenue" stroke="#C6FF00" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                  </AreaChart>
               </ResponsiveContainer>
            </div>
