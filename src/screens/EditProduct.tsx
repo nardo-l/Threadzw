@@ -36,6 +36,7 @@ export const EditProduct: React.FC = () => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [dbCategories, setDbCategories] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState('None');
 
   // SCREEN 3: Sizes & Availability
@@ -116,6 +117,20 @@ export const EditProduct: React.FC = () => {
 
         setShopId(shop.id);
         setShopHandle(shop.handle || 'kure');
+
+        // Fetch custom categories
+        try {
+          const { data: catList } = await supabase
+            .from('categories')
+            .select('name')
+            .eq('shop_id', shop.id)
+            .order('sort_order', { ascending: true });
+          if (catList && catList.length > 0) {
+            setDbCategories(catList.map((c: any) => c.name));
+          }
+        } catch (catErr) {
+          console.warn("Bypassing dynamic category fetch inside EditProduct:", catErr);
+        }
 
         // Fetch product info matching product ID and shop ID
         const { data: product, error } = await supabase
@@ -490,7 +505,9 @@ export const EditProduct: React.FC = () => {
     })
   };
 
-  const categories = ['All', 'Tops', 'Bottoms', 'Hoodies', 'Sneakers', 'Accessories', 'New Drop'];
+  const categories = dbCategories.length > 0 
+    ? dbCategories 
+    : ['Tops', 'Bottoms', 'Hoodies', 'Sneakers', 'Accessories', 'New Drop'];
   const tagOptions = ['New Drop', 'Best Seller', 'Limited', 'None'];
 
   if (loading) {

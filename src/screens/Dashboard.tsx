@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Settings, ShoppingBag, Eye, Plus, 
   ArrowUpRight, Share2, Clock, CheckCircle2, 
-  AlertTriangle, ChevronRight, Zap, Image as ImageIcon,
+  AlertTriangle, ChevronRight, ChevronLeft, Pencil, Zap, Image as ImageIcon,
   MoreVertical, Home, Package, BarChart3, Gift, DollarSign,
   ArrowLeft, Trash2, Edit, EyeOff, Check
 } from 'lucide-react';
@@ -136,7 +136,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) => {
   const navigate = useNavigate();
-  const { shop: contextShop } = useShopContext();
+  const { shop: contextShop, hasShop, refreshShop } = useShopContext();
   const [shop, setShop] = useState<Shop | null>(null);
 
   useEffect(() => {
@@ -144,7 +144,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
       setShop(contextShop);
     }
   }, [contextShop]);
+
+  useEffect(() => {
+    if (!hasShop) {
+      setShowSetupOverlay(true);
+    } else {
+      setShowSetupOverlay(false);
+    }
+  }, [hasShop]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [demandRequests, setDemandRequests] = useState<any[]>([]);
+  
+  const [showCatModal, setShowCatModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any | null>(null);
+  const [catNameInput, setCatNameInput] = useState('');
+  const [catImageInput, setCatImageInput] = useState('');
+  const [activeDashboardTab, setActiveDashboardTab] = useState<'products' | 'categories' | 'demands'>('products');
+
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -332,6 +349,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         }
         
         setProducts(prodData || []);
+
+        // Fetch Categories
+        let catsData = [];
+        try {
+          const { data, error } = await supabase
+            .from('categories')
+            .select('*')
+            .eq('shop_id', shopData.id)
+            .order('sort_order', { ascending: true });
+          if (!error && data && data.length > 0) {
+            catsData = data;
+          } else {
+            const cachedCats = localStorage.getItem(`categories_${shopData.id}`);
+            if (cachedCats) catsData = JSON.parse(cachedCats);
+          }
+        } catch (catErr) {
+          console.warn("Categories fetch failed:", catErr);
+          const cachedCats = localStorage.getItem(`categories_${shopData.id}`);
+          if (cachedCats) catsData = JSON.parse(cachedCats);
+        }
+        setCategories(catsData || []);
+
+        // Fetch Demands
+        let demandsData = [];
+        try {
+          const { data, error } = await supabase
+            .from('demand_requests')
+            .select('*')
+            .eq('shop_id', shopData.id)
+            .order('created_at', { ascending: false });
+          if (!error && data && data.length > 0) {
+            demandsData = data;
+          } else {
+            const cachedDemands = localStorage.getItem(`demand_requests_${shopData.id}`);
+            if (cachedDemands) demandsData = JSON.parse(cachedDemands);
+          }
+        } catch (demandErr) {
+          console.warn("Demands fetch failed:", demandErr);
+          const cachedDemands = localStorage.getItem(`demand_requests_${shopData.id}`);
+          if (cachedDemands) demandsData = JSON.parse(cachedDemands);
+        }
+        setDemandRequests(demandsData || []);
+
       } catch (err) {
         console.error("Dashboard overall fetchData error:", err);
       } finally {
@@ -503,6 +563,114 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
     } catch (err: any) {
       console.error(err);
       toast.error('Failed to change visibility: ' + err.message);
+    }
+  };
+
+  const handleSaveCategory = async () => {
+    if (!catNameInput.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    try {
+      const activeShopId = shop?.id;
+      if (!activeShopId) return;
+
+      if (editingCategory) {
+        // Update category
+        const updatedCat = {
+          ...editingCategory,
+          name: catNameInput.trim(),
+          cover_image_url: catImageInput.trim() || null
+        };
+
+        const { error } = await supabase
+          .from('categories')
+          .update(updatedCat)
+          .eq('id', editingCategory.id);
+
+        if (error) throw error;
+        toast.success("Category updated successfully");
+      } else {
+        // Insert category
+        const maxSortOrder = categories.reduce((max, c) => Math.max(max, c.sort_order || 0), 0);
+        const newCat = {
+          shop_id: activeShopId,
+          name: catNameInput.trim(),
+          cover_image_url: catImageInput.trim() || null,
+          sort_order: maxSortOrder + 1,
+          created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabase
+          .from('categories')
+          .insert(newCat);
+
+        if (error) throw error;
+        toast.success("Category added successfully");
+      }
+
+      // Close modal and refresh trigger
+      setShowCatModal(false);
+      setEditingCategory(null);
+      setCatNameInput('');
+      setCatImageInput('');
+      setRefreshTrigger(prev => prev + 1);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to save category");
+    }
+  };
+
+  const handleDeleteCategory = async (cat: any) => {
+    if (!window.confirm(`Are you sure you want to delete "${cat.name}"?`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', cat.id);
+
+      if (error) throw error;
+      toast.success("Category deleted");
+      setRefreshTrigger(prev => prev + 1);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete category");
+    }
+  };
+
+  const handleMoveCategory = async (index: number, direction: 'up' | 'down') => {
+    const nextIndex = direction === 'up' ? index - 1 : index + 1;
+    if (nextIndex < 0 || nextIndex >= categories.length) return;
+
+    const list = [...categories];
+    // Swap positions
+    const temp = list[index];
+    list[index] = list[nextIndex];
+    list[nextIndex] = temp;
+
+    // Redefine sort_order values
+    const updatedList = list.map((c, i) => ({
+      ...c,
+      sort_order: i + 1
+    }));
+
+    setCategories(updatedList);
+
+    // Save sort order updates concurrently to database
+    try {
+      for (const cat of updatedList) {
+        await supabase
+          .from('categories')
+          .update({ sort_order: cat.sort_order })
+          .eq('id', cat.id);
+      }
+      toast.success("Rankings saved");
+    } catch (err) {
+      console.warn("Soft sort save warning:", err);
     }
   };
 
@@ -754,9 +922,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
     <div className="relative min-h-screen overflow-y-auto bg-[#0a0a0a]">
       {/* FIRST TIME SETUP OVERLAY - 5 SCREEN SHOPFRONT ONBOARDING */}
       <AnimatePresence>
-        {showSetupOverlay && shop && (
+        {showSetupOverlay && (shop || contextShop) && (
           <ShopFrontOnboarding 
-            shop={shop}
+            shop={shop || contextShop}
+            hideCloseButton={!hasShop}
             onClose={() => {
               setShowSetupOverlay(false);
               localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
@@ -767,6 +936,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               setShowSetupOverlay(false);
               localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
               localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
+              refreshShop();
             }}
           />
         )}
@@ -1042,73 +1212,283 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         </button>
       </div>
 
-      {/* Products List */}
+      {/* Dynamic Multi-Tab Container */}
       <div className="mt-10 px-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-bold text-[17px]">Your Products</h3>
-          <span className="text-secondary-text text-[13px]">{products.length} items</span>
+        
+        {/* Tab Headers */}
+        <div className="flex border-b border-white/5 mb-6">
+          <button 
+            onClick={() => setActiveDashboardTab('products')}
+            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors ${
+              activeDashboardTab === 'products' ? 'text-[#c8ff00] border-b-2 border-[#c8ff00]' : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            Products ({products.length})
+          </button>
+          
+          <button 
+            onClick={() => setActiveDashboardTab('categories')}
+            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors ${
+              activeDashboardTab === 'categories' ? 'text-[#c8ff00] border-b-2 border-[#c8ff00]' : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            Categories ({categories.length})
+          </button>
+          
+          <button 
+            onClick={() => setActiveDashboardTab('demands')}
+            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors ${
+              activeDashboardTab === 'demands' ? 'text-[#c8ff00] border-b-2 border-[#c8ff00]' : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            Requests ({demandRequests.length})
+          </button>
         </div>
 
-        <div className="space-y-3">
-          {products.length === 0 ? (
-            <div className="bg-card-bg border-2 border-border border-dashed rounded-[24px] py-20 flex flex-col items-center text-center px-10">
-              <div className="w-16 h-16 rounded-3xl bg-ele-bg mb-6 flex items-center justify-center opacity-30">
-                <Package size={32} className="text-secondary-text" />
-              </div>
-              <h4 className="font-bold text-lg mb-2">No products yet</h4>
-              <p className="text-secondary-text text-sm leading-relaxed">Add your first product to start selling online with <span className="threadzw-wordmark text-[11px] font-mono leading-none">ThreadZW</span>.</p>
+        {/* Tab Contents: Products */}
+        {activeDashboardTab === 'products' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-[17px] text-white">Your Products</h3>
+              <span className="text-secondary-text text-[13px]">{products.length} items</span>
             </div>
-          ) : (
-            products.map((product, index) => (
-              <div key={product.id || `product-${index}`} className="bg-card-bg border border-border rounded-xl p-3.5 flex gap-4 items-center relative">
-                <div className="w-[72px] h-[72px] rounded-xl bg-ele-bg overflow-hidden flex-shrink-0">
-                  {product.images?.[0] ? (
-                    <img src={product.images[0]} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-secondary-text/20">
-                      <ImageIcon size={24} />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0 pr-6">
-                  <h4 className="font-bold text-[15px] truncate">{product.name}</h4>
-                  <div className="text-neon font-bold text-base mt-0.5">${product.price}</div>
-                  <div className="flex items-center gap-2 mt-1.5 text-[11px] font-medium text-secondary-text">
-                    <span className="bg-ele-bg px-2 py-0.5 rounded-full">{product.total_stock} in stock</span>
-                    <span className={`flex items-center gap-1 ${product.is_published ? 'text-success' : 'text-secondary-text'}`}>
-                      <div className={`w-1 h-1 rounded-full ${product.is_published ? 'bg-success' : 'bg-secondary-text'}`} />
-                      {product.is_published ? 'Live' : 'Draft'}
-                    </span>
+
+            <div className="space-y-3">
+              {products.length === 0 ? (
+                <div className="bg-card-bg border-2 border-border border-dashed rounded-[24px] py-20 flex flex-col items-center text-center px-10">
+                  <div className="w-16 h-16 rounded-3xl bg-ele-bg mb-6 flex items-center justify-center opacity-30">
+                    <Package size={32} className="text-secondary-text" />
                   </div>
+                  <h4 className="font-bold text-lg mb-2 text-white">No products yet</h4>
+                  <p className="text-secondary-text text-sm leading-relaxed">Add your first product to start selling online with <span className="threadzw-wordmark text-[11px] font-mono leading-none">ThreadZW</span>.</p>
                 </div>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedProduct(product);
-                    setRestockSizes(product.sizes || []);
-                    setShowOptionsSheet(true);
-                  }}
-                  id={`options-btn-${product.id}`}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.6)',
-                    fontSize: '18px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  className="absolute top-3.5 right-3.5 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
-                >
-                  ⋯
-                </button>
+              ) : (
+                products.map((product, index) => (
+                  <div key={product.id || `product-${index}`} className="bg-card-bg border border-border rounded-xl p-3.5 flex gap-4 items-center relative">
+                    <div className="w-[72px] h-[72px] rounded-xl bg-ele-bg overflow-hidden flex-shrink-0">
+                      {product.images?.[0] ? (
+                        <img src={product.images[0]} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-secondary-text/20">
+                          <ImageIcon size={24} />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 pr-6">
+                      <h4 className="font-bold text-[15px] truncate text-white">{product.name}</h4>
+                      <div className="text-neon font-bold text-base mt-0.5">${product.price}</div>
+                      <div className="flex items-center gap-2 mt-1.5 text-[11px] font-medium text-secondary-text">
+                        <span className="bg-ele-bg px-2 py-0.5 rounded-full">{product.total_stock} in stock</span>
+                        <span className={`flex items-center gap-1 ${product.is_published ? 'text-success' : 'text-secondary-text'}`}>
+                          <div className={`w-1 h-1 rounded-full ${product.is_published ? 'bg-success' : 'bg-secondary-text'}`} />
+                          {product.is_published ? 'Live' : 'Draft'}
+                        </span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedProduct(product);
+                        setRestockSizes(product.sizes || []);
+                        setShowOptionsSheet(true);
+                      }}
+                      id={`options-btn-${product.id}`}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'rgba(255,255,255,0.6)',
+                        fontSize: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      className="absolute top-3.5 right-3.5 hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+                    >
+                      ⋯
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab Contents: Categories */}
+        {activeDashboardTab === 'categories' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-start gap-4 mb-2">
+              <div>
+                <h3 className="font-bold text-[17px] text-white">Categories</h3>
+                <p className="text-secondary-text text-xs mt-1 leading-relaxed">
+                  Organise your products. Customers filter by category on your storefront.
+                </p>
               </div>
-            ))
-          )}
-        </div>
+
+              <button 
+                onClick={() => {
+                  setEditingCategory(null);
+                  setCatNameInput('');
+                  setCatImageInput('');
+                  setShowCatModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#c8ff00]/10 border border-[#c8ff00]/30 rounded-[10px] text-[#c8ff00] text-[11px] font-black uppercase tracking-wider active:scale-95 transition-transform"
+              >
+                <Plus size={14} />
+                <span>Add Category</span>
+              </button>
+            </div>
+
+            {categories.length === 0 ? (
+              <div className="bg-card-bg border-2 border-border border-dashed rounded-[24px] py-16 flex flex-col items-center text-center px-8">
+                <Package size={28} className="text-secondary-text opacity-40 mb-3" />
+                <h4 className="font-bold text-sm text-white mb-1">No Categories Yet</h4>
+                <p className="text-secondary-text text-xs max-w-xs">Create custom categories below to let buyers easily explore your stock.</p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {categories.map((cat, index) => {
+                  const linkedCount = products.filter(p => (p as any).category_id === cat.id || p.category?.toLowerCase() === cat.name.toLowerCase()).length;
+                  const letter = cat.name.slice(0, 1).toUpperCase();
+
+                  return (
+                    <div key={cat.id || index} className="bg-card-bg border border-border rounded-xl p-3 flex items-center justify-between gap-3">
+                      
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Highlights circular preview */}
+                        <div className="w-[40px] h-[40px] rounded-full overflow-hidden bg-[#222] shrink-0 border border-white/5 flex items-center justify-center">
+                          {cat.cover_image_url ? (
+                            <img src={cat.cover_image_url} alt={cat.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-xs font-black text-white">{letter}</span>
+                          )}
+                        </div>
+
+                        <div className="min-w-0">
+                          <h4 className="font-extrabold text-[14px] text-white truncate leading-tight">{cat.name}</h4>
+                          <p className="text-secondary-text text-[11px] font-mono font-bold mt-1 uppercase tracking-wider">
+                            {linkedCount} {linkedCount === 1 ? 'product' : 'products'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Rank reorder inputs & editing triggers */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        
+                        <button 
+                          disabled={index === 0}
+                          onClick={() => handleMoveCategory(index, 'up')}
+                          className="p-1.5 hover:bg-white/5 rounded-lg text-secondary-text disabled:opacity-20 cursor-pointer"
+                          title="Move Up"
+                        >
+                          <ChevronLeft className="rotate-90" size={15} />
+                        </button>
+
+                        <button 
+                          disabled={index === categories.length - 1}
+                          onClick={() => handleMoveCategory(index, 'down')}
+                          className="p-1.5 hover:bg-white/5 rounded-lg text-secondary-text disabled:opacity-20 cursor-pointer"
+                          title="Move Down"
+                        >
+                          <ChevronRight className="rotate-90" size={15} />
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setCatNameInput(cat.name);
+                            setCatImageInput(cat.cover_image_url || '');
+                            setShowCatModal(true);
+                          }}
+                          className="p-2 hover:bg-white/5 rounded-lg text-[#c8ff00]"
+                          title="Edit"
+                        >
+                          <Edit size={14} />
+                        </button>
+
+                        <button 
+                          onClick={() => handleDeleteCategory(cat)}
+                          className="p-2 hover:bg-red-500/10 rounded-lg text-red-400"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab Contents: Customer Requests */}
+        {activeDashboardTab === 'demands' && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-bold text-[17px] text-white">Sourcing Requests</h3>
+              <p className="text-secondary-text text-xs mt-1 leading-relaxed">
+                Requests submitted by buyers looking for custom clothing designs.
+              </p>
+            </div>
+
+            {demandRequests.length === 0 ? (
+              <div className="bg-card-bg border-2 border-border border-dashed rounded-[24px] py-16 flex flex-col items-center text-center px-8">
+                <Package size={28} className="text-secondary-text opacity-40 mb-3" />
+                <h4 className="font-bold text-sm text-white mb-1">No Requests Yet</h4>
+                <p className="text-secondary-text text-xs max-w-xs">Your customers see a "Sourcing Upload" badge under products to request designs.</p>
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {demandRequests.map((dem, index) => (
+                  <div key={dem.id || index} className="bg-card-bg border border-border rounded-xl p-4 flex gap-4">
+                    {dem.image_url && (
+                      <div className="w-[72px] h-[72px] rounded-lg overflow-hidden shrink-0 bg-zinc-900 border border-white/5">
+                        <img src={dem.image_url} alt="requested mock up" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] font-mono tracking-widest text-secondary-text uppercase font-bold">
+                          {dem.created_at ? new Date(dem.created_at).toLocaleDateString() : 'Just now'}
+                        </span>
+                        <p className="text-zinc-200 text-sm font-semibold mt-1 leading-relaxed whitespace-pre-line">
+                          {dem.description}
+                        </p>
+                      </div>
+
+                      {dem.customer_whatsapp && (
+                        <div className="mt-3.5 flex items-center justify-between gap-2.5">
+                          <span className="text-xs text-[#c8ff00] font-mono font-bold truncate">
+                            {dem.customer_whatsapp}
+                          </span>
+                          
+                          <a 
+                            href={`https://wa.me/${dem.customer_whatsapp?.replace(/\D/g, '')}?text=${encodeURIComponent(
+                              `Hi, I saw your category request on my ThreadZW store for "${dem.description?.slice(0, 30)}..." and I would like to offer...`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-[#25D366] text-white font-extrabold text-[10px] px-3 py-1.5 rounded-lg uppercase tracking-wider flex items-center gap-1.5 active:scale-95 transition-transform"
+                          >
+                            <WhatsAppIcon size={12} className="text-white shrink-0" />
+                            <span>Contact Buyer</span>
+                          </a>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
 
       {/* OPTIONS BOTTOM SHEET */}
@@ -1935,6 +2315,105 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               </div>
             )}
           </motion.div>
+        )}
+      </AnimatePresence>
+ 
+      {/* ADD/EDIT CATEGORY MODAL */}
+      <AnimatePresence>
+        {showCatModal && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-55 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="w-full max-w-sm bg-[#161616] border border-white/[0.08] p-6 rounded-2xl text-left shadow-2xl flex flex-col text-white animate-fadeIn"
+            >
+              <h3 className="font-extrabold text-[18px] text-white flex items-center gap-2 mb-4">
+                <Plus size={18} className="text-[#c8ff00]" />
+                {editingCategory ? 'Edit Category' : 'New Category'}
+              </h3>
+
+              <div className="space-y-4 flex-1">
+                {/* Category Name */}
+                <div className="space-y-1.5">
+                  <label className="text-white/60 text-xs font-bold uppercase tracking-wider block">
+                    Category Name
+                  </label>
+                  <input
+                    type="text"
+                    value={catNameInput}
+                    onChange={(e) => setCatNameInput(e.target.value)}
+                    className="w-full h-12 bg-white/[0.04] px-4 text-white text-sm font-bold border border-white/[0.1] rounded-[10px] focus:border-[#c8ff00] focus:outline-none transition-all placeholder-zinc-600"
+                    placeholder="e.g. New Arrivals"
+                  />
+                </div>
+
+                {/* Cover Image Upload (URL Input and Preview) */}
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-white/60 text-xs font-bold uppercase tracking-wider block mb-2">
+                    Cover Image
+                  </label>
+                  
+                  <div className="flex items-center gap-4 bg-white/[0.02] border border-white/[0.05] p-3.5 rounded-xl">
+                    {/* Circle preview (80px) */}
+                    <div className="w-[80px] h-[80px] rounded-full overflow-hidden bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+                      {catImageInput.trim() ? (
+                        <img 
+                          src={catImageInput} 
+                          alt="Category preview" 
+                          className="w-full h-full object-cover" 
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <span className="text-lg font-black text-white">
+                          {catNameInput.trim() ? catNameInput.slice(0, 1).toUpperCase() : '?'}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <input
+                        type="text"
+                        value={catImageInput}
+                        onChange={(e) => setCatImageInput(e.target.value)}
+                        className="w-full h-9 bg-zinc-900 border border-white/[0.08] rounded-lg px-2.5 text-xs text-white focus:outline-none focus:border-[#c8ff00] placeholder-zinc-700"
+                        placeholder="Paste cover image URL..."
+                      />
+                      <p className="text-[10px] text-zinc-500 font-medium leading-tight">
+                        Customers see this image inside the horizontal category strip on your shop front.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 space-y-2">
+                <button
+                  type="button"
+                  onClick={handleSaveCategory}
+                  className="w-full h-12 bg-[#c8ff00] text-black font-[900] rounded-[10px] active:scale-95 transition-all cursor-pointer flex items-center justify-center text-sm"
+                >
+                  Save Category
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCatModal(false);
+                    setEditingCategory(null);
+                    setCatNameInput('');
+                    setCatImageInput('');
+                  }}
+                  className="w-full h-12 bg-white/5 hover:bg-white/10 text-white font-bold rounded-[10px] active:scale-95 transition-all cursor-pointer flex items-center justify-center text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

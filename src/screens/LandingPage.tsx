@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { Shield, Eye, EyeOff, Lock, X } from 'lucide-react';
 import { useDemoShop } from '../hooks/useDemoShop';
+import { IPhoneMockup } from '../components/IPhoneMockup';
 
 interface LandingPageProps {
   onStartFree: () => void;
@@ -145,68 +146,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
         </div>
 
         {/* PHONE MOCKUP WITH FLOATING BADGES */}
-        <div className="relative mt-14 max-w-[260px] mx-auto">
-          {/* PHONE FRAME */}
-          <div className="bg-[#151515] border-2 border-[#2A2A2A] rounded-[36px] p-2.5 shadow-[0_40px_80px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.05)] select-none">
-            {/* NOTCH */}
-            <div className="w-[60px] h-1.5 bg-[#0B0B0B] rounded-full mx-auto mb-2" />
-            
-            {/* SCREEN */}
-            <div className="bg-[#0B0B0B] rounded-[26px] overflow-hidden text-left pb-3">
-              {/* Mock Banner */}
-              <div 
-                style={{
-                  height: 100,
-                  background: 'linear-gradient(135deg, #1A1A1A, #252525)'
-                }}
-                className="relative"
-              >
-                {/* Avatar circle */}
-                <div className="absolute bottom-[-18px] left-4 w-12 h-12 rounded-full bg-[#C6FF00] border-[3px] border-[#0B0B0B] flex items-center justify-center text-xl shadow-lg">
-                  🏪
-                </div>
-              </div>
-
-              {/* Shop Info */}
-              <div className="pt-7 px-3.5">
-                <h3 className="text-white font-black text-sm leading-none">KickZone ZW</h3>
-                <p className="text-[#A1A1AA] text-[10px] mt-1 font-semibold">@kickzone · Harare</p>
-              </div>
-
-              {/* Grid Items */}
-              <div className="grid grid-cols-2 gap-1.5 px-3.5 mt-2.5">
-                {[
-                  { emoji: '👟', price: '$15' },
-                  { emoji: '👕', price: '$12' },
-                  { emoji: '🧢', price: '$8' },
-                  { emoji: '👖', price: '$18' }
-                ].map((item, i) => (
-                  <div 
-                    key={i}
-                    className="bg-[#151515] rounded-[10px] h-[72px] flex flex-col items-center justify-center gap-1 border border-[#222222]"
-                  >
-                    <span className="text-lg">{item.emoji}</span>
-                    <span className="text-[#C6FF00] font-black text-[10px]">{item.price}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* WhatsApp Button */}
-              <div className="mx-3.5 mt-2.5 bg-[#25D366] text-white font-extrabold text-[10px] py-2 rounded-[10px] text-center shadow-md">
-                💬 Chat on WhatsApp
-              </div>
-            </div>
-          </div>
+        <div className="relative mt-14 max-w-[270px] mx-auto z-20">
+          {/* HIGH-FIDELITY IPHONE MOCKUP RENDER */}
+          <IPhoneMockup />
 
           {/* FLOATING BADGES */}
           {/* Badge 1: Top Right */}
-          <div className="absolute top-[-10px] right-[-16px] bg-[#151515] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg">
+          <div className="absolute top-[-10px] right-[-16px] bg-[#151515] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg z-30">
             <span className="text-sm">🔗</span>
             <span className="text-white font-extrabold text-[9px] uppercase tracking-wide">Your own link</span>
           </div>
 
           {/* Badge 2: Bottom Left */}
-          <div className="absolute bottom-11 left-[-22px] bg-[#151515] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg">
+          <div className="absolute bottom-11 left-[-22px] bg-[#151515] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg z-30">
             <span className="relative flex h-1.5 w-1.5 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#22C55E]"></span>
@@ -215,7 +167,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
           </div>
 
           {/* Badge 3: Bottom Right */}
-          <div className="absolute bottom-[-10px] right-[-10px] bg-[#C6FF00] rounded-xl px-2.5 py-1.5 flex items-center shadow-lg">
+          <div className="absolute bottom-[-10px] right-[-10px] bg-[#C6FF00] rounded-xl px-2.5 py-1.5 flex items-center shadow-lg z-30">
             <span className="text-[#0B0B0B] font-black text-[9px] uppercase tracking-wide">📦 3 orders today</span>
           </div>
         </div>

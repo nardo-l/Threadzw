@@ -12,6 +12,7 @@ interface ShopFrontOnboardingProps {
   shop: any;
   onClose: () => void;
   onComplete: (updatedShop: any) => void;
+  hideCloseButton?: boolean;
 }
 
 const PRESET_EMOJIS = ['🏪', '👕', '🧥', '👟', '🎒', '🕶️', '🔥', '👑', '💄', '💍'];
@@ -19,7 +20,8 @@ const PRESET_EMOJIS = ['🏪', '👕', '🧥', '👟', '🎒', '🕶️', '🔥'
 export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
   shop,
   onClose,
-  onComplete
+  onComplete,
+  hideCloseButton = false
 }) => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -195,7 +197,8 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
       };
 
       let updatedShop;
-      if (shop?.id) {
+      const isLocalPlaceholder = !shop?.id || String(shop.id).startsWith('local-shop-');
+      if (shop?.id && !isLocalPlaceholder) {
         const { data, error } = await supabase
           .from('shops')
           .update(updateData)
@@ -276,18 +279,20 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
         </div>
 
         {/* CLOSE BUTTON */}
-        <button 
-          id="btn_onboarding_close"
-          onClick={() => {
-            if (confirm("Are you sure you want to exit setup? You can finish customising your shopfront later from the notice banner.")) {
-              localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
-              onClose();
-            }
-          }}
-          className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-        >
-          <X size={16} />
-        </button>
+        {!hideCloseButton && (
+          <button 
+            id="btn_onboarding_close"
+            onClick={() => {
+              if (confirm("Are you sure you want to exit setup? You can finish customising your shopfront later from the notice banner.")) {
+                localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
+                onClose();
+              }
+            }}
+            className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 border border-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        )}
 
         {/* STEPPER PROGRESS Segment Bar */}
         <div className="mt-14 px-6 flex justify-between gap-1">

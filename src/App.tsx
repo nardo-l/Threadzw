@@ -133,7 +133,7 @@ function AppContent() {
       return;
     }
 
-    const loggedIn = localStorage.getItem('threadzw_logged_in') === 'true';
+    const loggedIn = !!session;
 
     if (!loggedIn) {
       if (
@@ -147,14 +147,8 @@ function AppContent() {
     } else {
       if (shopLoading) return;
 
-      if (!hasShop) {
-        if (appStageRef.current !== 'setup') {
-          setAppStage('setup');
-        }
-      } else {
-        if (appStageRef.current !== 'dashboard') {
-          setAppStage('dashboard');
-        }
+      if (appStageRef.current !== 'dashboard') {
+        setAppStage('dashboard');
       }
     }
   }, [loading, session, shopLoading, hasShop]);
@@ -189,7 +183,7 @@ function AppContent() {
     );
   }
 
-  if (localStorage.getItem('threadzw_logged_in') === 'true' && shopLoading) {
+  if (session && shopLoading) {
     return <SplashScreen />;
   }
 

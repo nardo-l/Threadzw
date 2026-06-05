@@ -173,6 +173,35 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
     }
     return isSingle ? null : [];
   }
+
+  if (relation === 'categories') {
+    try {
+      const parentUser = filterOwnerId || getLoggedUserId();
+      const cached = localStorage.getItem(`categories_${parentUser}`);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.warn("Error reading cached categories:", e);
+    }
+    return [
+      { id: 'cat-new', name: 'New In', cover_image_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80', sort_order: 1 },
+      { id: 'cat-best', name: 'Best Seller', cover_image_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=150&q=80', sort_order: 2 }
+    ];
+  }
+
+  if (relation === 'demand_requests') {
+    try {
+      const parentUser = filterOwnerId || getLoggedUserId();
+      const cached = localStorage.getItem(`demand_requests_${parentUser}`);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch (e) {
+      console.warn("Error reading cached demand_requests:", e);
+    }
+    return [];
+  }
   
   return isSingle ? null : [];
 }
@@ -315,6 +344,41 @@ supabase.from = function(relation: string) {
                   localStorage.setItem(`products_${shopId}`, JSON.stringify(list));
                 } catch (e) {
                   console.warn("Error caching product mutation:", e);
+                }
+              } else if (rel === 'categories') {
+                try {
+                  const catObj = Array.isArray(payload) ? payload[0] : payload;
+                  if (!catObj.id) catObj.id = 'local-cat-' + Date.now();
+                  const shopId = catObj.shop_id || getLoggedUserId();
+                  const cachedStr = localStorage.getItem(`categories_${shopId}`);
+                  let list = cachedStr ? JSON.parse(cachedStr) : [];
+                  if (prop === 'insert') {
+                    list.push(catObj);
+                  } else if (prop === 'update') {
+                    list = list.map((c: any) => c.id === catObj.id ? { ...c, ...catObj } : c);
+                  } else if (prop === 'upsert') {
+                    const idx = list.findIndex((c: any) => c.id === catObj.id);
+                    if (idx > -1) {
+                      list[idx] = { ...list[idx], ...catObj };
+                    } else {
+                      list.push(catObj);
+                    }
+                  }
+                  localStorage.setItem(`categories_${shopId}`, JSON.stringify(list));
+                } catch (e) {
+                  console.warn("Error caching category mutation:", e);
+                }
+              } else if (rel === 'demand_requests') {
+                try {
+                  const demandObj = Array.isArray(payload) ? payload[0] : payload;
+                  if (!demandObj.id) demandObj.id = 'local-demand-' + Date.now();
+                  const shopId = demandObj.shop_id || getLoggedUserId();
+                  const cachedStr = localStorage.getItem(`demand_requests_${shopId}`);
+                  let list = cachedStr ? JSON.parse(cachedStr) : [];
+                  list.unshift(demandObj);
+                  localStorage.setItem(`demand_requests_${shopId}`, JSON.stringify(list));
+                } catch (e) {
+                  console.warn("Error caching demand mutation:", e);
                 }
               }
             }
