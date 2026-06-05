@@ -147,7 +147,12 @@ function AppContent() {
     } else {
       if (shopLoading) return;
 
-      if (appStageRef.current !== 'dashboard') {
+      if (
+        appStageRef.current !== 'dashboard' &&
+        appStageRef.current !== 'onboarding' &&
+        appStageRef.current !== 'building' &&
+        appStageRef.current !== 'paywall'
+      ) {
         setAppStage('dashboard');
       }
     }

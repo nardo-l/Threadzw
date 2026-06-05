@@ -64,6 +64,53 @@ export const useDemoShop = () => {
           .select('*')
           .order('sort_order', { ascending: true });
 
+        // Retrieve screenshots uploaded directly to the 'shop-images' storage bucket
+        let bucketShots: DemoScreenshot[] = [];
+        try {
+          const { data: files, error: storageError } = await supabase.storage
+            .from('shop-images')
+            .list('', { sortBy: { column: 'name', order: 'asc' } });
+          
+          if (!storageError && files && files.length > 0) {
+            // Remove utility / hidden files
+            const filteredFiles = files.filter(file => file.name && !file.name.startsWith('.'));
+            bucketShots = filteredFiles.map((file, idx) => {
+              const { data: { publicUrl } } = supabase.storage
+                .from('shop-images')
+                .getPublicUrl(file.name);
+              
+              return {
+                id: file.id || `bucket-${file.name}-${idx}`,
+                image_url: publicUrl,
+                caption: file.name.split('.')[0] || 'Screenshot',
+                sort_order: idx
+              };
+            });
+          }
+        } catch (bucketErr) {
+          console.warn('Error reading from shop-images bucket in useDemoShop:', bucketErr);
+        }
+
+        // Combine database table shots and storage bucket shots
+        const combinedShots: DemoScreenshot[] = [];
+        const seenUrls = new Set<string>();
+
+        if (shots && shots.length > 0) {
+          shots.forEach((s: any) => {
+            if (s.image_url) {
+              combinedShots.push(s);
+              seenUrls.add(s.image_url);
+            }
+          });
+        }
+
+        bucketShots.forEach((bs) => {
+          if (!seenUrls.has(bs.image_url)) {
+            combinedShots.push(bs);
+            seenUrls.add(bs.image_url);
+          }
+        });
+
         if (shop) {
           setDemoShop({
             ...shop,
@@ -84,7 +131,7 @@ export const useDemoShop = () => {
           });
         }
         setDemoProducts(products || []);
-        setScreenshots(shots || []);
+        setScreenshots(combinedShots);
       } catch (err) {
         console.error('Demo shop fetch error:', err);
       } finally {

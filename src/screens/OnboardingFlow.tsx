@@ -157,6 +157,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const [instagram, setInstagram] = useState('');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
 
   // Selection visual toggles
   const [q1Answer, setQ1Answer] = useState<string | null>(null);
@@ -312,6 +314,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
     }
   };
@@ -319,6 +322,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setBannerFile(file);
       setBannerPreview(URL.createObjectURL(file));
     }
   };
@@ -391,8 +395,47 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         display_name: shopName || 'ThreadZW Merchant',
         email: email.trim().toLowerCase(),
         whatsapp_number: whatsapp || '0776223144',
-        onboarding_complete: false // Retain overlay on dashboard
+        onboarding_complete: true // Set to true since they completed this flow
       });
+
+      let finalLogoUrl = logoPreview;
+      let finalBannerUrl = bannerPreview;
+
+      // Upload logo if selected
+      if (logoFile && activeUserId) {
+        try {
+          const ext = logoFile.name.split('.').pop();
+          const filePath = `${activeUserId}/logo_${Date.now()}.${ext}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('shop-avatars')
+            .upload(filePath, logoFile, { upsert: true });
+          
+          if (!uploadErr) {
+            const { data: logoPub } = supabase.storage.from('shop-avatars').getPublicUrl(filePath);
+            finalLogoUrl = logoPub.publicUrl;
+          }
+        } catch (err) {
+          console.error('Logo upload error during onboarding:', err);
+        }
+      }
+
+      // Upload banner if selected
+      if (bannerFile && activeUserId) {
+        try {
+          const ext = bannerFile.name.split('.').pop();
+          const filePath = `${activeUserId}/banner_${Date.now()}.${ext}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('shop-images')
+            .upload(filePath, bannerFile, { upsert: true });
+          
+          if (!uploadErr) {
+            const { data: bannerPub } = supabase.storage.from('shop-images').getPublicUrl(filePath);
+            finalBannerUrl = bannerPub.publicUrl;
+          }
+        } catch (err) {
+          console.error('Banner upload error during onboarding:', err);
+        }
+      }
 
       // 3. Connect/Insert shop config
       const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
@@ -407,8 +450,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         whatsapp: whatsapp || '0776223144',
         instagram: instagram || null,
         description: description || 'Zim clothing store',
-        logo_url: logoPreview,
-        banner_url: bannerPreview,
+        logo_url: finalLogoUrl,
+        banner_url: finalBannerUrl,
         plan: 'shop',
         subscription_status: 'trial',
         trial_started_at: new Date().toISOString(),
@@ -436,10 +479,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const handleFinishPaywall = async () => {
     try {
       localStorage.setItem('threadzw_onboarding_complete', 'true');
+      localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
+      localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.id) {
         await supabase.from('profiles').update({
-          onboarding_complete: false // Show dashboard launch overlay first
+          onboarding_complete: true // Mark as finished to prevent duplicate layouts
         }).eq('id', session.user.id);
       }
     } catch (e) {
