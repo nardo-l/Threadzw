@@ -10,6 +10,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { useDemoShop } from '../hooks/useDemoShop';
+import { useGlobalCategories } from '../hooks/useGlobalCategories';
 
 // Hero icon component
 interface HeroIconProps {
@@ -143,6 +144,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   setPaywallScreen: setGlobalPaywallScreen
 }) => {
   const { demoShop, demoProducts, screenshots, loading: demoLoading } = useDemoShop();
+  const { categories: globalCategories } = useGlobalCategories();
   const [screen, setScreen] = useState(1);
 
   // Phase tracking
@@ -159,6 +161,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+
+  const formData = React.useMemo(() => ({
+    shopName,
+    category,
+    description,
+    priceRange,
+    city,
+    whatsapp,
+    instagram
+  }), [shopName, category, description, priceRange, city, whatsapp, instagram]);
 
   // Selection visual toggles
   const [q1Answer, setQ1Answer] = useState<string | null>(null);
@@ -1290,53 +1302,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
             {/* SCREEN 16: WHAT YOU SELL (grid choice) */}
             {screen === 16 && (
-              <div className="flex-1 flex flex-col justify-between py-4">
-                <div className="flex-1 flex flex-col justify-start space-y-6 pt-4">
-                  <h2 className="text-xl font-[900] text-center tracking-tight text-white leading-tight">
-                    What do you sell?
-                  </h2>
-
-                  <div className="grid grid-cols-2 gap-3 pb-4">
-                    {[
-                      { icon: Shirt, label: "Clothing" },
-                      { icon: ShoppingBag, label: "Sneakers" },
-                      { icon: Tag, label: "Thrift & Vintage" },
-                      { icon: Flame, label: "Streetwear" },
-                      { icon: Sparkles, label: "Women's Fashion" },
-                      { icon: Briefcase, label: "Formal Wear" },
-                      { icon: Gem, label: "Accessories" },
-                      { icon: Package, label: "Mixed" }
-                    ].map(item => {
-                      const isSelected = category === item.label;
-                      const IconComponent = item.icon;
-                      return (
-                        <button
-                          key={item.label}
-                          onClick={() => setCategory(item.label)}
-                          className={`flex items-center gap-3 p-3.5 rounded-xl border-1.5 transition-all text-sm font-bold ${
-                            isSelected 
-                              ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-white' 
-                              : 'bg-white/5 border-white/5 text-white/70 hover:border-white/10'
-                          }`}
-                        >
-                          <IconComponent size={20} className="text-[#c8ff00] shrink-0" />
-                          <span>{item.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <button 
-                  disabled={!category}
-                  onClick={() => setScreen(17)}
-                  className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                    category ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
-                  }`}
-                >
-                  Continue &rarr;
-                </button>
-              </div>
+              <Screen16
+                categories={globalCategories}
+                onSelect={setCategory}
+                selectedCategory={category}
+                step={screen}
+                formData={formData}
+                onNext={() => setScreen(17)}
+              />
             )}
 
             {/* SCREEN 17: DESCRIBE SHOP */}
@@ -2200,3 +2173,240 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     </div>
   );
 };
+
+interface CategoryCardProps {
+  category: {
+    id: string;
+    name: string;
+    cover_image_url?: string | null;
+  };
+  isSelected: boolean;
+  onSelect: (categoryName: string) => void;
+}
+
+const CategoryCard = React.memo<CategoryCardProps>(({ 
+  category, 
+  isSelected, 
+  onSelect 
+}) => {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(category.name)}
+      style={{
+        background: isSelected
+          ? 'rgba(200,255,0,0.08)'
+          : 'rgba(255,255,255,0.04)',
+        border: isSelected
+          ? '2px solid #c8ff00'
+          : '1.5px solid rgba(255,255,255,0.08)',
+        borderRadius: 14,
+        padding: '20px 12px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 10,
+        cursor: 'pointer',
+        transition: 
+          'border-color 0.15s ease, background 0.15s ease',
+        minHeight: 100
+      }}
+    >
+      {/* Cover image circle */}
+      <div style={{
+        width: 48,
+        height: 48,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        border: isSelected
+          ? '2px solid #c8ff00'
+          : '2px solid rgba(255,255,255,0.1)',
+        flexShrink: 0
+      }}>
+        {category.cover_image_url ? (
+          <img
+            src={category.cover_image_url}
+            alt={category.name}
+            loading="lazy"
+            width={48}
+            height={48}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block'
+            }}
+          />
+        ) : (
+          <div style={{
+            width: '100%',
+            height: '100%',
+            background: isSelected
+              ? 'rgba(200,255,0,0.15)'
+              : 'rgba(255,255,255,0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 20,
+            fontWeight: 900,
+            color: isSelected
+              ? '#c8ff00'
+              : 'rgba(255,255,255,0.3)'
+          }}>
+            {category.name
+              .charAt(0)
+              .toUpperCase()}
+          </div>
+        )}
+      </div>
+      
+      {/* Name */}
+      <span style={{
+        fontSize: 13,
+        fontWeight: 800,
+        color: isSelected
+          ? '#c8ff00'
+          : 'rgba(255,255,255,0.7)',
+        textAlign: 'center',
+        lineHeight: 1.2
+      }}>
+        {category.name}
+      </span>
+    </button>
+  );
+});
+
+CategoryCard.displayName = 'CategoryCard';
+
+interface Screen16Props {
+  categories: any[];
+  onSelect: (categoryName: string) => void;
+  selectedCategory: string;
+  step: number;
+  formData: any;
+  onNext: () => void;
+}
+
+const Screen16: React.FC<Screen16Props> = React.memo(({ 
+  categories,    // From parent, not fetched here
+  onSelect,      // Callback when category chosen
+  selectedCategory,    // Currently selected category
+  step,
+  formData,
+  onNext         // Advance to screen 17
+}) => {
+  console.log('Screen 16 rendered', {
+    timestamp: Date.now(),
+    currentStep: step,
+    formData: formData,
+    selectedCategory: selectedCategory
+  });
+
+  const displayCategories = 
+    categories && categories.length > 0
+      ? categories
+      : [
+          { id: '1', name: 'Clothing' },
+          { id: '2', name: 'Sneakers' },
+          { id: '3', name: 'Thrift & Vintage' },
+          { id: '4', name: 'Streetwear' },
+          { id: '5', name: "Women's Fashion" },
+          { id: '6', name: 'Formal Wear' },
+          { id: '7', name: 'Accessories' },
+          { id: '8', name: 'Mixed' }
+        ];
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '16px 4px',
+      height: '100%'
+    }}>
+      
+      {/* Phase label */}
+      <p style={{
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: '2.5px',
+        color: '#c8ff00',
+        textTransform: 'uppercase',
+        marginBottom: 16
+      }}>
+        PHASE 4: BUILD YOUR SHOP
+      </p>
+      
+      {/* Headline */}
+      <h1 style={{
+        fontSize: 32,
+        fontWeight: 900,
+        color: '#ffffff',
+        letterSpacing: '-0.5px',
+        marginBottom: 8
+      }}>
+        What do you sell?
+      </h1>
+      
+      <p style={{
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.4)',
+        marginBottom: 28
+      }}>
+        Choose your main category.
+      </p>
+      
+      {/* Category grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 10,
+        flex: 1
+      }}>
+        {displayCategories
+          .slice(0, 8)
+          .map(cat => (
+            <CategoryCard
+              key={cat.id}
+              category={cat}
+              isSelected={selectedCategory === cat.name}
+              onSelect={onSelect}
+            />
+          ))
+        }
+      </div>
+      
+      {/* CTA */}
+      <button
+        onClick={onNext}
+        disabled={!selectedCategory}
+        style={{
+          width: '100%',
+          padding: '16px',
+          background: selectedCategory
+            ? '#c8ff00'
+            : 'rgba(255,255,255,0.06)',
+          color: selectedCategory
+            ? '#000000'
+            : 'rgba(255,255,255,0.2)',
+          border: 'none',
+          borderRadius: 10,
+          fontWeight: 900,
+          fontSize: 15,
+          letterSpacing: '0.5px',
+          textTransform: 'uppercase',
+          cursor: selectedCategory
+            ? 'pointer'
+            : 'not-allowed',
+          transition: 
+            'background 0.2s ease, color 0.2s ease',
+          marginTop: 20
+        }}
+      >
+        Continue
+      </button>
+    </div>
+  );
+});
+
+Screen16.displayName = 'Screen16';
