@@ -1291,12 +1291,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* SCREEN 16: WHAT YOU SELL (grid choice) */}
             {screen === 16 && (
               <div className="flex-1 flex flex-col justify-between py-4">
-                <div className="flex-1 flex flex-col justify-center space-y-6">
+                <div className="flex-1 flex flex-col justify-start space-y-6 pt-4">
                   <h2 className="text-xl font-[900] text-center tracking-tight text-white leading-tight">
                     What do you sell?
                   </h2>
 
-                  <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar">
+                  <div className="grid grid-cols-2 gap-3 pb-4">
                     {[
                       { icon: Shirt, label: "Clothing" },
                       { icon: ShoppingBag, label: "Sneakers" },
@@ -1455,7 +1455,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* SCREEN 19: CITY */}
             {screen === 19 && (
               <div className="flex-1 flex flex-col justify-between py-4">
-                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[400px]">
+                <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[400px]">
                   <h2 className="text-xl font-[900] tracking-tight text-white leading-none">
                     Which city?
                   </h2>
@@ -1747,7 +1747,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* SCREEN 25: SECURE ACCOUNT SIGN UP */}
             {screen === 25 && (
               <div className="flex-1 flex flex-col justify-between py-2">
-                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[500px] overflow-y-auto no-scrollbar pr-0.5">
+                <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar pr-0.5">
                   <div className="flex flex-col items-center text-center space-y-2">
                     <span className="inline-block bg-[#c8ff00] text-black text-[10px] tracking-wider uppercase font-black px-3 py-1 rounded-full px-4 font-bold scale-95 shadow-md">
                       🎁 3 days free &bull; No payment needed
@@ -2016,7 +2016,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* PAYWALL SCREEN 2: JUST $5/MONTH ECOCASH */}
             {screen === 28 && (
               <div className="flex-1 flex flex-col justify-between py-2">
-                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[500px] overflow-y-auto no-scrollbar">
+                <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar">
                   <div className="flex justify-center gap-1">
                     {[0, 1, 2, 3].map(dot => (
                       <div key={dot} className={`w-2 h-2 rounded-full ${dot === 1 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
@@ -2081,7 +2081,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* PAYWALL SCREEN 3: WHATSAPP CODE */}
             {screen === 29 && (
               <div className="flex-1 flex flex-col justify-between py-2">
-                <div className="flex-1 flex flex-col justify-center space-y-4 max-h-[500px] overflow-y-auto no-scrollbar">
+                <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar">
                   <div className="flex justify-center gap-1">
                     {[0, 1, 2, 3].map(dot => (
                       <div key={dot} className={`w-2 h-2 rounded-full ${dot === 2 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />

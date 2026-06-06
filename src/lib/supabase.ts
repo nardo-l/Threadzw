@@ -203,6 +203,19 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
     return [];
   }
   
+  if (relation === 'global_categories') {
+    return [
+      { id: 'cat-clothing', name: 'Clothing', cover_image_url: 'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 1 },
+      { id: 'cat-sneakers', name: 'Sneakers', cover_image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 2 },
+      { id: 'cat-thrift', name: 'Thrift & Vintage', cover_image_url: 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 3 },
+      { id: 'cat-streetwear', name: 'Streetwear', cover_image_url: 'https://images.unsplash.com/photo-1509281373149-e957c6296406?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 4 },
+      { id: 'cat-womens', name: "Women's Fashion", cover_image_url: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 5 },
+      { id: 'cat-formal', name: 'Formal Wear', cover_image_url: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 6 },
+      { id: 'cat-accessories', name: 'Accessories', cover_image_url: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 7 },
+      { id: 'cat-mixed', name: 'Mixed', cover_image_url: 'https://images.unsplash.com/photo-1483181957632-8bda974cbc91?auto=format&fit=crop&w=300&q=80', visible: true, sort_order: 8 }
+    ];
+  }
+  
   return isSingle ? null : [];
 }
 

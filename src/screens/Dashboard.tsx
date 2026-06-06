@@ -146,12 +146,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
   }, [contextShop]);
 
   useEffect(() => {
-    if (!hasShop) {
+    if (!shop) return;
+    
+    const firstLoginOverlayShown = localStorage.getItem('threadzw_first_login_overlay_shown') === 'true';
+    const isSetupDone = shop.setup_complete === true || 
+      (shop.setup_complete === null && shop.name && shop.name.trim() !== '' && shop.name !== 'My ThreadZW Shop' && shop.name !== 'My brand');
+
+    if (!isSetupDone && !firstLoginOverlayShown) {
       setShowSetupOverlay(true);
     } else {
       setShowSetupOverlay(false);
     }
-  }, [hasShop]);
+  }, [shop]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [demandRequests, setDemandRequests] = useState<any[]>([]);
@@ -304,6 +310,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         const isLocked = statusObj.status === 'expired';
         setIsLockedOnFetch(initialLocked || isLocked);
 
+        // Step 5 check: if shop exists but setup_complete is null, treat as complete if shop has a name
+        if (shopData && (shopData.setup_complete === null || shopData.setup_complete === undefined)) {
+          if (shopData.name && shopData.name.trim() && shopData.name !== 'My ThreadZW Shop' && shopData.name !== 'My brand') {
+            shopData.setup_complete = true;
+            // Background update
+            supabase
+              .from('shops')
+              .update({
+                setup_complete: true,
+                setup_completed_at: shopData.created_at || new Date().toISOString()
+              })
+              .eq('id', shopData.id)
+              .then(() => {
+                console.log("Auto-migrated existing shop setup status to completed");
+              });
+          }
+        }
+
         // Determine setup overlay presence with database status protection
         const firstLoginOverlayShown = localStorage.getItem('threadzw_first_login_overlay_shown') === 'true';
         let onboardingCompleteVal = false;
@@ -320,7 +344,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
           console.warn("Profile query failed in Dashboard, bypassing overlay checks:", profileErr);
         }
 
-        if (!firstLoginOverlayShown && !onboardingCompleteVal) {
+        const isSetupDone = shopData?.setup_complete === true;
+
+        if (!firstLoginOverlayShown && !onboardingCompleteVal && !isSetupDone) {
           setShowSetupOverlay(true);
         }
 
@@ -894,6 +920,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
   const isTrial = statusObj.status === 'trial';
 
   const isShopSetupCompleted = shop?.id ? (
+    shop.setup_complete === true ||
+    (shop.setup_complete === null && shop.name && shop.name.trim() !== '' && shop.name !== 'My ThreadZW Shop' && shop.name !== 'My brand') ||
     localStorage.getItem(`threadzw_shop_front_setup_${shop.id}`) === 'true' ||
     !!(shop.logo_url || shop.instagram || (shop.description && shop.description !== 'Brand new ThreadZW clothing brand'))
   ) : false;

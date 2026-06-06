@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { SHOP_CATEGORIES, ZIMBABWE_TOWNS } from '../../constants';
+import { useGlobalCategories } from '../../hooks/useGlobalCategories';
 
 interface ShopFrontOnboardingProps {
   shop: any;
@@ -35,6 +36,8 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
   const [category, setCategory] = useState(shop?.categories?.[0] || 'Streetwear');
   const [description, setDescription] = useState(shop?.description || '');
   const [instagram, setInstagram] = useState(shop?.instagram || '');
+  
+  const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
   
   // Visual/Asset States
   const [logoPreview, setLogoPreview] = useState<string | null>(shop?.logo_url || null);
@@ -193,7 +196,9 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
         description: description.trim(),
         instagram: instagram.trim() ? instagram.trim().replace(/^@/, '') : null,
         logo_url: finalLogoUrl || null,
-        is_live: true
+        is_live: true,
+        setup_complete: true,
+        setup_completed_at: new Date().toISOString()
       };
 
       let updatedShop;
@@ -466,26 +471,42 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
 
                 <div className="space-y-2">
                   <span className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold block">Brand Category</span>
-                  <div className="flex flex-wrap gap-2 max-h-[110px] overflow-y-auto pr-1">
-                    {SHOP_CATEGORIES.map(cat => {
-                      const isSelected = category === cat.label || category === cat.id;
-                      return (
-                        <button
-                          key={`cat-btn-${cat.id}`}
-                          id={`btn_cat_${cat.id}`}
-                          type="button"
-                          onClick={() => setCategory(cat.label)}
-                          className={`px-3 py-1.5 rounded-lg border text-xs transition-all flex items-center gap-1.5 ${
-                            isSelected 
-                              ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-[#c8ff00] font-bold' 
-                              : 'bg-white/[0.02] border-white/10 text-zinc-400 hover:text-white hover:border-zinc-700'
-                          }`}
-                        >
-                          <span>{cat.emoji}</span>
-                          <span>{cat.label}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="grid grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-1">
+                    {globalCategoriesLoading ? (
+                      <div className="col-span-2 py-4 text-center text-xs text-zinc-500">Loading classifications...</div>
+                    ) : (
+                      globalCategories.map(cat => {
+                        const isSelected = category === cat.name;
+                        return (
+                          <button
+                            key={`cat-btn-${cat.id}`}
+                            id={`btn_cat_${cat.id}`}
+                            type="button"
+                            onClick={() => setCategory(cat.name)}
+                            className={`relative h-16 rounded-xl border overflow-hidden transition-all text-left group ${
+                              isSelected 
+                                ? 'border-[#c8ff00] ring-1 ring-[#c8ff00]' 
+                                : 'border-white/10 hover:border-white/20'
+                            }`}
+                          >
+                            <div className="absolute inset-0 bg-black/65 z-10" />
+                            {cat.cover_image_url && (
+                              <img 
+                                src={cat.cover_image_url} 
+                                alt={cat.name} 
+                                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <div className="absolute inset-x-3 bottom-2.5 z-20">
+                              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${isSelected ? 'text-[#c8ff00]' : 'text-white'}`}>
+                                {cat.name}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 

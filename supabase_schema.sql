@@ -54,6 +54,8 @@ create table if not exists public.shops (
   updated_at timestamp with time zone default now(),
   manual_lock boolean default false,
   manual_lock_reason text,
+  setup_complete boolean default false,
+  setup_completed_at timestamp with time zone,
   manual_lock_date timestamp with time zone,
   manual_lock_by uuid,
   payment_overdue_flagged boolean default false,

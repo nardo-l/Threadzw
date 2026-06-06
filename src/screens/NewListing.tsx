@@ -28,7 +28,7 @@ import { useSubscription } from '../context/SubscriptionContext';
 import { UpgradeSheet } from '../components/UpgradeSheet';
 import { FieldError } from '../components/ui/FieldError';
 
-import { PRODUCT_CATEGORIES } from '../constants';
+import { useGlobalCategories } from '../hooks/useGlobalCategories';
 
 // --- Types ---
 
@@ -109,6 +109,8 @@ export const NewListing: React.FC = () => {
   const [showUpgradeSheet, setShowUpgradeSheet] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [createdProductId, setCreatedProductId] = useState<string | null>(null);
+  
+  const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
   
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -613,20 +615,35 @@ export const NewListing: React.FC = () => {
                <span className="text-[#C6FF00] text-xs font-black italic">*</span>
             </div>
             <div className={`flex gap-4 overflow-x-auto no-scrollbar pb-6 -mx-8 px-8 ${publishAttempted && !category ? 'animate-shake' : ''}`}>
-              {PRODUCT_CATEGORIES.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategory(cat.label)}
-                  className={`px-10 py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] whitespace-nowrap transition-all border-2 flex items-center gap-4 italic ${
-                    category === cat.label 
-                      ? 'bg-charcoal border-charcoal text-white shadow-[0_20px_40px_rgba(0,0,0,0.15)] scale-105' 
-                      : 'bg-white border-charcoal/5 text-charcoal/40 hover:border-charcoal/10 hover:text-charcoal'
-                  }`}
-                >
-                  <span className="text-xl opacity-80">{cat.emoji}</span>
-                  {cat.label}
-                </button>
-              ))}
+              {globalCategoriesLoading ? (
+                <div className="py-4 text-center text-xs text-charcoal/40 uppercase tracking-widest font-bold">Loading...</div>
+              ) : (
+                globalCategories.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategory(cat.name)}
+                    className={`relative w-44 h-24 rounded-[20px] overflow-hidden transition-all flex items-end p-4 border-2 flex-shrink-0 text-left ${
+                      category === cat.name 
+                        ? 'border-charcoal scale-105 shadow-md font-bold' 
+                        : 'border-charcoal/10 hover:border-charcoal/35'
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-black/55 z-10" />
+                    {cat.cover_image_url && (
+                      <img 
+                        src={cat.cover_image_url} 
+                        alt={cat.name} 
+                        className="absolute inset-0 w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                    <span className={`text-[10px] font-black uppercase tracking-widest z-20 relative ${category === cat.name ? 'text-[#C6FF00]' : 'text-white'}`}>
+                      {cat.name}
+                    </span>
+                  </button>
+                ))
+              )}
             </div>
             <FieldError message={publishAttempted && !category ? 'Classification scope missing' : null} />
           </div>

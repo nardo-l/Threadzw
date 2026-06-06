@@ -12,6 +12,7 @@ import { useFollow } from '../../context/FollowContext';
 import { Shop, Product } from '../../types';
 import { toast } from 'sonner';
 import { formatDistanceToNow, parseISO } from 'date-fns';
+import { useGlobalCategories } from '../../hooks/useGlobalCategories';
 
 export const ShopProfileView: React.FC = () => {
   const { handle } = useParams<{ handle: string }>();
@@ -21,8 +22,15 @@ export const ShopProfileView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'Products' | 'About' | 'Reviews'>('Products');
   const [localFollowerAdjust, setLocalFollowerAdjust] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
 
   const { follow, unfollow, isFollowing } = useFollow();
+  const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
+
+  const filteredProducts = useMemo(() => {
+    if (selectedCategory === 'All') return products;
+    return products.filter(p => p.category?.toLowerCase() === selectedCategory.toLowerCase());
+  }, [products, selectedCategory]);
 
   useEffect(() => {
     const fetchShop = async () => {
@@ -307,6 +315,58 @@ export const ShopProfileView: React.FC = () => {
       <div className="px-6 pt-6">
         {activeTab === 'Products' && (
           <div>
+            {products.length > 0 && (
+              <div className="mb-6">
+                <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest font-bold mb-3 block">Boutique Sections</span>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+                  {/* All Card */}
+                  <button
+                    onClick={() => setSelectedCategory('All')}
+                    className={`relative w-28 h-16 rounded-xl overflow-hidden transition-all flex items-end p-2.5 border text-left flex-shrink-0 ${
+                      selectedCategory === 'All' 
+                        ? 'border-[#C6FF00] scale-105 shadow-md shadow-[#C6FF00]/10 font-bold' 
+                        : 'border-neutral-800 hover:border-neutral-700'
+                    }`}
+                  >
+                    <div className="absolute inset-0 bg-neutral-900 z-10 animate-fade-in" />
+                    <div className="absolute inset-x-2.5 bottom-2 z-20">
+                      <span className={`text-[10px] font-extrabold uppercase tracking-widest ${selectedCategory === 'All' ? 'text-[#C6FF00]' : 'text-neutral-400'}`}>
+                        All
+                      </span>
+                    </div>
+                  </button>
+
+                  {/* Dyn Categories Cards */}
+                  {!globalCategoriesLoading && globalCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      onClick={() => setSelectedCategory(cat.name)}
+                      className={`relative w-28 h-16 rounded-xl overflow-hidden transition-all flex items-end p-2.5 border text-left flex-shrink-0 ${
+                        selectedCategory === cat.name 
+                          ? 'border-[#C6FF00] scale-105 shadow-md shadow-[#C6FF00]/10 font-bold' 
+                          : 'border-neutral-800 hover:border-neutral-700'
+                      }`}
+                    >
+                      <div className="absolute inset-0 bg-black/60 z-10" />
+                      {cat.cover_image_url && (
+                        <img 
+                          src={cat.cover_image_url} 
+                          alt={cat.name} 
+                          className="absolute inset-0 w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
+                      <div className="absolute inset-x-2.5 bottom-2 z-20">
+                        <span className={`text-[10px] font-extrabold uppercase tracking-widest leading-none ${selectedCategory === cat.name ? 'text-[#C6FF00]' : 'text-white'}`}>
+                          {cat.name}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {products.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center gap-4 bg-[#111] border border-neutral-800/80 rounded-2xl p-6">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center bg-neutral-950 border border-neutral-800 text-neutral-600">
@@ -317,9 +377,20 @@ export const ShopProfileView: React.FC = () => {
                   <p className="text-xs text-neutral-500 mt-1 max-w-[240px]">This boutique hasn't registered list items yet.</p>
                 </div>
               </div>
+            ) : filteredProducts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center gap-2.5 bg-[#111] border border-neutral-800/80 rounded-2xl p-6">
+                <p className="text-sm font-bold text-neutral-300">No products</p>
+                <p className="text-xs text-neutral-500 max-w-[200px]">There are no active items available under this section.</p>
+                <button 
+                  onClick={() => setSelectedCategory('All')}
+                  className="mt-2 text-xs font-bold text-[#C6FF00] uppercase tracking-wider hover:underline cursor-pointer"
+                >
+                  View All &rarr;
+                </button>
+              </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
-                {products.map(p => {
+                {filteredProducts.map(p => {
                   const isSoldOut = p.total_stock <= 0;
                   return (
                     <div 
@@ -346,7 +417,7 @@ export const ShopProfileView: React.FC = () => {
                       </div>
                       <div className="p-4 flex flex-col justify-between flex-1 gap-1">
                         <h4 className="font-extrabold text-xs text-neutral-100 group-hover:text-[#C6FF00] transition-colors truncate">{p.name}</h4>
-                        <div className="flex items-center justify-between mt-1 text-[10px] text-neutral-500 font-bold uppercase tracking-wider">
+                        <div className="flex items-center justify-between mt-1 text-[10px] text-neutral-500 font-bold uppercase tracking-wider font-mono">
                           <span>{p.category || 'drip'}</span>
                           {p.total_stock > 0 ? (
                             <span className="text-emerald-500">In Stock</span>

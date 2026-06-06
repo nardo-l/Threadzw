@@ -35,6 +35,8 @@ export interface Shop {
   manual_lock_by?: string | null;
   payment_overdue_flagged?: boolean;
   payment_overdue_since?: string | null;
+  setup_complete?: boolean | null;
+  setup_completed_at?: string | null;
 }
 
 export interface Product {
