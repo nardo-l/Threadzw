@@ -1,32 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { ShopFrontOnboarding } from '../components/dashboard/ShopFrontOnboarding';
 import { useAuth } from '../context/AuthContext';
+import { Sparkles, ArrowRight, Store } from 'lucide-react';
 
 export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupComplete }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
 
-  const handleComplete = async (newShop: any) => {
-    localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
-    localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
-    if (newShop?.id) {
-      localStorage.setItem(`threadzw_shop_front_setup_${newShop.id}`, 'true');
-    }
-
-    if (onSetupComplete) {
-      onSetupComplete();
-    } else {
-      navigate('/');
-    }
-  };
-
-  const handleClose = async () => {
-    // If they close, auto-create a baseline skeleton shop so they aren't stuck and can configure later
+  const handleSetupStart = async () => {
+    setLoading(true);
+    // If they click to set up, auto-create a baseline skeleton shop first so they aren't stuck and can configure
     if (user?.id) {
       try {
-        const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30-day trial
         const { data: existingShop } = await supabase
           .from('shops')
           .select('id')
@@ -34,34 +22,37 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
           .maybeSingle();
 
         if (!existingShop) {
-          const defaultName = 'My ThreadZW Shop';
+          const defaultName = localStorage.getItem('threadzw_owner_name') 
+            ? `${localStorage.getItem('threadzw_owner_name')}'s Shop` 
+            : 'My Brand';
           const defaultHandle = `shop-${user.id.substring(0, 8)}`;
           
-          const { data: newShop } = await supabase
+          const newShop = {
+            owner_id: user.id,
+            name: defaultName,
+            handle: defaultHandle,
+            slug: defaultHandle,
+            whatsapp: '0776223144',
+            location: 'Harare',
+            categories: ['Streetwear'],
+            description: 'Welcome to our clothing store!',
+            trial_started_at: new Date().toISOString(),
+            trial_ends_at: trialEnds.toISOString(),
+            subscription_status: 'trial',
+            manual_lock: false,
+            is_live: true,
+            created_at: new Date().toISOString()
+          };
+
+          const { data } = await supabase
             .from('shops')
-            .insert([
-              {
-                owner_id: user.id,
-                name: defaultName,
-                handle: defaultHandle,
-                slug: defaultHandle,
-                whatsapp: '0776223144',
-                location: 'Harare',
-                categories: ['Streetwear'],
-                description: 'Welcome to our clothing store!',
-                trial_started_at: new Date().toISOString(),
-                trial_ends_at: trialEnds.toISOString(),
-                subscription_status: 'trial',
-                manual_lock: false,
-                is_live: true,
-                created_at: new Date().toISOString()
-              }
-            ])
+            .insert([newShop])
             .select()
             .maybeSingle();
 
-          if (newShop) {
-            localStorage.setItem(`shop_${user.id}`, JSON.stringify(newShop));
+          if (data) {
+            localStorage.setItem(`shop_${user.id}`, JSON.stringify(data));
+            localStorage.setItem('threadzw_shop', JSON.stringify(data));
           }
         }
       } catch (err) {
@@ -73,19 +64,52 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
     localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
 
     if (onSetupComplete) {
-      onSetupComplete();
+      setTimeout(() => {
+        onSetupComplete();
+        navigate('/edit-shop');
+      }, 300);
     } else {
-      navigate('/');
+      navigate('/edit-shop');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] flex items-center justify-center p-4">
-      <ShopFrontOnboarding 
-        shop={null}
-        onClose={handleClose}
-        onComplete={handleComplete}
-      />
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 text-white font-sans selection:bg-[#c8ff00] selection:text-black">
+      <div className="max-w-md w-full bg-[#121212] rounded-3xl border border-zinc-900 overflow-hidden shadow-2xl p-8 text-center space-y-6 relative">
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#c8ff00] to-transparent" />
+        
+        <div className="w-16 h-16 bg-[#c8ff00]/10 border border-[#c8ff00]/20 rounded-2xl flex items-center justify-center mx-auto text-[#c8ff00]">
+          <Store size={32} />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-center gap-1.5 text-[#c8ff00] font-mono text-[10px] tracking-widest uppercase font-black">
+            <Sparkles size={12} />
+            <span>Store Initialized</span>
+          </div>
+          <h2 className="text-2xl font-black uppercase tracking-tight text-white leading-tight">
+            Your ThreadZW Store is Ready!
+          </h2>
+          <p className="text-zinc-400 text-sm leading-relaxed max-w-sm mx-auto p-1 font-medium">
+            To start selling, customize your shop front layout, upload your brand logo or banner, and set your WhatsApp contact details.
+          </p>
+        </div>
+
+        <button
+          onClick={handleSetupStart}
+          disabled={loading}
+          className="w-full h-14 bg-[#c8ff00] hover:bg-[#b0df00] disabled:bg-zinc-800 text-black font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-[0_4px_20px_rgba(200,255,0,0.15)] cursor-pointer"
+        >
+          {loading ? (
+            <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <>
+              <span>Setup Shop Front</span>
+              <ArrowRight size={14} className="stroke-[2.5px]" />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 };

@@ -35,6 +35,7 @@ import { ScreenError } from '../components/ui/ScreenError';
 import { FieldError } from '../components/ui/FieldError';
 import { uploadImage } from '../utils/uploadImage';
 import { useInventory } from '../context/InventoryContext';
+import { useShopContext } from '../context/ShopContext';
 import { parseShopConfig, serializeShopConfig, StorefrontConfig } from '../utils/configHelper';
 
 const AREAS = [
@@ -58,6 +59,7 @@ export const ShopEdit = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { refreshInventory } = useInventory();
+  const { refreshShop } = useShopContext();
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -370,15 +372,14 @@ export const ShopEdit = () => {
       try {
         const cachedKey = `shop_${user?.id}`;
         const cached = localStorage.getItem(cachedKey);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (type === 'logo') {
-            parsed.logo_url = publicUrl;
-          } else {
-            parsed.banner_url = publicUrl;
-          }
-          localStorage.setItem(cachedKey, JSON.stringify(parsed));
+        let parsed = cached ? JSON.parse(cached) : {};
+        if (type === 'logo') {
+          parsed.logo_url = publicUrl;
+        } else {
+          parsed.banner_url = publicUrl;
         }
+        localStorage.setItem(cachedKey, JSON.stringify(parsed));
+        localStorage.setItem('threadzw_shop', JSON.stringify(parsed));
       } catch (e) {
         console.warn('Cache update warning:', e);
       }
@@ -391,6 +392,7 @@ export const ShopEdit = () => {
 
       // Trigger active layout rebuild
       await refreshInventory();
+      await refreshShop();
 
     } catch (err) {
       console.error('Upload failed:', err);
@@ -550,8 +552,28 @@ export const ShopEdit = () => {
         throw updateError;
       }
 
+      // Save changes locally in localStorage immediately to prevent stale states
+      try {
+        if (user?.id) {
+          const cachedKey = `shop_${user.id}`;
+          const cached = localStorage.getItem(cachedKey);
+          let mergedObj = { id: shopId, owner_id: user.id, ...updateData };
+          if (cached) {
+            mergedObj = { ...JSON.parse(cached), ...updateData };
+          }
+          localStorage.setItem(cachedKey, JSON.stringify(mergedObj));
+          localStorage.setItem('threadzw_shop', JSON.stringify(mergedObj));
+          if (updateData.name) {
+            localStorage.setItem('threadzw_owner_name', updateData.name);
+          }
+        }
+      } catch (e) {
+        console.warn("Error caching shop updates directly in ShopEdit onSave:", e);
+      }
+
       // Sync state and memory to avoid stale data
       await refreshInventory();
+      await refreshShop();
 
       setHasChanges(false);
       showToast('Shop updated successfully', 'success');
@@ -574,7 +596,24 @@ export const ShopEdit = () => {
 
       if (error) throw error;
 
+      // Update local storage cache
+      try {
+        if (user?.id) {
+          const cachedKey = `shop_${user.id}`;
+          const cached = localStorage.getItem(cachedKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            parsed.is_live = !isLive;
+            localStorage.setItem(cachedKey, JSON.stringify(parsed));
+            localStorage.setItem('threadzw_shop', JSON.stringify(parsed));
+          }
+        }
+      } catch (cacheErr) {
+        console.warn('Error updating pause status in caching:', cacheErr);
+      }
+
       setIsLive(!isLive);
+      await refreshShop();
       showToast(isLive ? 'Shop paused' : 'Shop is live again', 'success');
       setShowPauseModal(false);
       navigate('/settings');

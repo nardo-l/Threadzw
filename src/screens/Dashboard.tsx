@@ -176,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
       (shop.setup_complete === null && shop.name && shop.name.trim() !== '' && shop.name !== 'My ThreadZW Shop' && shop.name !== 'My brand');
 
     if (!isSetupDone && !firstLoginOverlayShown) {
-      setShowSetupOverlay(true);
+      setShowSetupOverlay(false); // Disable auto-popup onboarding form
     } else {
       setShowSetupOverlay(false);
     }
@@ -370,7 +370,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         const isSetupDone = shopData?.setup_complete === true;
 
         if (!firstLoginOverlayShown && !onboardingCompleteVal && !isSetupDone) {
-          setShowSetupOverlay(true);
+          setShowSetupOverlay(false); // Disable auto-popup onboarding form
         }
 
         // Fetch products with catch fallbacks
@@ -971,27 +971,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
   return (
     <div className="relative min-h-screen overflow-y-auto bg-[#0a0a0a]">
-      {/* FIRST TIME SETUP OVERLAY - 5 SCREEN SHOPFRONT ONBOARDING */}
-      <AnimatePresence>
-        {showSetupOverlay && (shop || contextShop) && (
-          <ShopFrontOnboarding 
-            shop={shop || contextShop}
-            hideCloseButton={!hasShop}
-            onClose={() => {
-              setShowSetupOverlay(false);
-              localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
-              localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
-            }}
-            onComplete={(updatedShop) => {
-              setShop(updatedShop);
-              setShowSetupOverlay(false);
-              localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
-              localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
-              refreshShop();
-            }}
-          />
-        )}
-      </AnimatePresence>
+      {/* FIRST TIME SETUP OVERLAY DISABLED - REDIRECTS TO EDIT SHOP PAGE */}
 
       {/* If banner paywall trigger is opened manually by user on active dashboard */}
       {bannerPaywallOpen && (
@@ -1034,7 +1014,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   </div>
                   <button
                     id="btn_launch_notice_onboarding"
-                    onClick={() => setShowSetupOverlay(true)}
+                    onClick={() => navigate('/edit-shop')}
                     className="px-3.5 py-2 bg-[#c8ff00] hover:bg-[#b0df00] text-black font-extrabold rounded-lg uppercase tracking-wider text-[9.5px] hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-pointer whitespace-nowrap"
                   >
                     Setup Now &rarr;
