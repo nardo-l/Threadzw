@@ -578,7 +578,7 @@ export const LockOverlay: React.FC<LockOverlayProps> = ({
   const simulateResetTrial = async () => {
     try {
       setLoadingClaim(true);
-      const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString();
+      const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString();
       
       const { data: updated } = await supabase
         .from('shops')
@@ -777,7 +777,7 @@ export const LockOverlay: React.FC<LockOverlayProps> = ({
                   <div className="space-y-2.5">
                     {/* Method 1: EcoCash */}
                     <div className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3 text-left">
-                      <span className="text-[10px] text-white/30 uppercase font-bold tracking-widest block font-mono">1. Transfer $5 USD</span>
+                      <span className="text-[10px] text-white/30 uppercase font-bold tracking-widest block font-mono">1. Transfer $7 USD</span>
                       <p className="text-xs font-black text-white mt-0.5">Send to EcoCash Line Number:</p>
                       <p className="text-sm font-black text-[#c8ff00] tracking-widest mt-1 bg-black/45 p-2 rounded border border-white/[0.03] select-all inline-block font-mono">
                         +263 78 911 3734
@@ -789,7 +789,7 @@ export const LockOverlay: React.FC<LockOverlayProps> = ({
                     <div className="bg-white/[0.01] border border-white/[0.04] rounded-xl p-3 text-left">
                       <span className="text-[10px] text-white/30 uppercase font-bold tracking-widest block font-mono">2. Alternative InnBucks</span>
                       <p className="text-xs text-white/70 mt-0.5 leading-normal">
-                        If you prefer InnBucks, send <span className="font-bold text-white">$5 USD</span> to same telephone number: <span className="text-white font-bold select-all font-mono">+263789113734</span>.
+                        If you prefer InnBucks, send <span className="font-bold text-white">$7 USD</span> to same telephone number: <span className="text-white font-bold select-all font-mono">+263789113734</span>.
                       </p>
                     </div>
                   </div>
@@ -935,7 +935,7 @@ export const LockOverlay: React.FC<LockOverlayProps> = ({
                 <div className="text-center space-y-2">
                   <h2 className="text-xl font-black text-white tracking-tight uppercase leading-none">Subscription Expired</h2>
                   <p className="text-xs text-white/50 leading-relaxed max-w-[320px] mx-auto font-medium">
-                    Your 3-day Free Trial is completed. Upgrade to subscription mode to display items, publish products, and record client checkout orders.
+                    Your 28-day Free Trial is completed. Upgrade to subscription mode to display items, publish products, and record client checkout orders.
                   </p>
                 </div>
 
@@ -959,7 +959,7 @@ export const LockOverlay: React.FC<LockOverlayProps> = ({
 
                   <div className="pt-2 border-t border-white/[0.04] flex justify-between items-baseline">
                     <span className="text-[10px] text-white/30 uppercase font-mono tracking-wider font-extrabold">Price rate:</span>
-                    <span className="text-lg font-black text-white">$5 <span className="text-xs text-white/50 font-normal">/ month (28 days)</span></span>
+                    <span className="text-lg font-black text-white">$7 <span className="text-xs text-white/50 font-normal">/ month (28 days)</span></span>
                   </div>
                 </div>
               </div>

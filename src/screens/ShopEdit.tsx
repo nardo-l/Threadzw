@@ -19,7 +19,15 @@ import {
   Play,
   Loader2,
   AlertTriangle,
-  Info
+  Info,
+  Sparkles,
+  Layout,
+  Palette,
+  Heart,
+  BookOpen,
+  Facebook,
+  Phone,
+  HelpCircle
 } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 import { Shimmer } from '../components/ui/Shimmer';
@@ -27,6 +35,7 @@ import { ScreenError } from '../components/ui/ScreenError';
 import { FieldError } from '../components/ui/FieldError';
 import { uploadImage } from '../utils/uploadImage';
 import { useInventory } from '../context/InventoryContext';
+import { parseShopConfig, serializeShopConfig, StorefrontConfig } from '../utils/configHelper';
 
 const AREAS = [
   'Harare CBD', 'Eastlea', 'Borrowdale', 'Avondale', 'Bulawayo', 
@@ -76,6 +85,19 @@ export const ShopEdit = () => {
   const [deliveryInfo, setDeliveryInfo] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [instagram, setInstagram] = useState('');
+  
+  // Custom Premium Redesigned Storefront States
+  const [storeStory, setStoreStory] = useState('');
+  const [featuredProducts, setFeaturedProducts] = useState<string[]>([]);
+  const [bestSellerProducts, setBestSellerProducts] = useState<string[]>([]);
+  const [tiktok, setTiktok] = useState('');
+  const [facebook, setFacebook] = useState('');
+  const [brandColorPrimary, setBrandColorPrimary] = useState('');
+  const [brandColorSecondary, setBrandColorSecondary] = useState('');
+  const [brandColorAccent, setBrandColorAccent] = useState('');
+  const [layoutStyle, setLayoutStyle] = useState('fashion-editorial');
+  const [themeSelection, setThemeSelection] = useState<'streetwear' | 'luxury' | 'minimalist' | 'vintage' | 'sportswear'>('streetwear');
+  const [shopProducts, setShopProducts] = useState<any[]>([]);
   const [tradingHours, setTradingHours] = useState<TradingHour[]>([
     { day: 'Mon', isOpen: true,  openTime: '09:00', closeTime: '18:00' },
     { day: 'Tue', isOpen: true,  openTime: '09:00', closeTime: '18:00' },
@@ -188,9 +210,38 @@ export const ShopEdit = () => {
       setShopName(data.name || '');
       setHandle(data.handle || '');
       setOriginalHandle(data.handle || '');
-      setTagline(data.tagline || '');
-      setDescription(data.description || '');
       setCategories(data.categories || []);
+      
+      // Parse description config safely to support premium custom properties
+      const { description: plainDesc, config } = parseShopConfig(data.description || '');
+      setDescription(plainDesc);
+      setTagline(config.tagline || data.tagline || '');
+      setStoreStory(config.story || '');
+      setTiktok(config.tiktok || '');
+      setFacebook(config.facebook || '');
+      setThemeSelection(config.theme_selection || 'streetwear');
+      setLayoutStyle(config.layout_style || 'fashion-editorial');
+      setFeaturedProducts(config.featured_products || []);
+      setBestSellerProducts(config.best_seller_products || []);
+      if (config.brand_colors) {
+        setBrandColorPrimary(config.brand_colors.primary || '');
+        setBrandColorSecondary(config.brand_colors.secondary || '');
+        setBrandColorAccent(config.brand_colors.accent || '');
+      }
+
+      // Also let's fetch seller products to display selection checklists
+      try {
+        const { data: pData } = await supabase
+          .from('products')
+          .select('id, name, price, images, category')
+          .eq('shop_id', data.id)
+          .neq('status', 'deleted');
+        if (pData) {
+          setShopProducts(pData);
+        }
+      } catch (pErr) {
+        console.warn('Failed querying products inside ShopEdit:', pErr);
+      }
       setSuburb(data.suburb || '');
       setCity(data.city || '');
       setGoogleMapsUrl(data.google_maps_url || '');
@@ -431,12 +482,33 @@ export const ShopEdit = () => {
       const cleanBanner = bannerUrl ? bannerUrl.split('?')[0] : null;
       const cleanAvatar = avatarUrl ? avatarUrl.split('?')[0] : null;
 
+      // Pack custom storefront settings into config block safely
+      const configObj: StorefrontConfig = {
+        tagline: tagline.trim(),
+        story: storeStory.trim(),
+        featured_products: featuredProducts,
+        best_seller_products: bestSellerProducts,
+        instagram: instagram.trim(),
+        tiktok: tiktok.trim(),
+        facebook: facebook.trim(),
+        whatsapp_number: `+263${cleanWhatsapp}`,
+        theme_selection: themeSelection,
+        layout_style: layoutStyle,
+        brand_colors: {
+          primary: brandColorPrimary,
+          secondary: brandColorSecondary,
+          accent: brandColorAccent,
+        }
+      };
+
+      const serializedDescription = serializeShopConfig(description, configObj);
+
       // Prepare payload and strip undefined values
       const updateData: any = {
         name: shopName.trim(),
         handle: handle.trim().toLowerCase(),
         tagline: tagline.trim() || null,
-        description: description.trim(),
+        description: serializedDescription,
         categories,
         suburb: suburb.trim() || null,
         city: city.trim() || null,
@@ -1200,6 +1272,311 @@ export const ShopEdit = () => {
                 placeholder="yourshopname"
                 className="flex-1 bg-transparent p-4 pl-1 text-white font-sans focus:outline-none"
               />
+            </div>
+          </div>
+        </section>
+
+        {/* Section 7: PREMIUM STOREFRONT STYLE & CUSTOMIZATION */}
+        <section className="space-y-6 pt-6 border-t border-border">
+          <div className="flex justify-between items-center">
+            <h2 className="font-syne font-bold text-lg text-white">Storefront Customization</h2>
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <Sparkles size={20} className="text-primary" />
+            </div>
+          </div>
+
+          <div className="bg-elevated/40 border border-border/40 rounded-16 p-4 space-y-5">
+            {/* Theme Selection */}
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
+                <Palette size={14} className="text-primary" /> Theme Selection
+              </label>
+              <p className="text-xs text-muted">Each theme automatically redesigns typography, spacing, and layouts to vibe perfectly.</p>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {(['streetwear', 'luxury', 'minimalist', 'vintage', 'sportswear'] as const).map((theme) => (
+                  <button
+                    key={theme}
+                    type="button"
+                    onClick={() => {
+                      setThemeSelection(theme);
+                      markChanged();
+                    }}
+                    className={`p-3 rounded-12 border-2 text-xs font-syne font-bold capitalize transition-all ${
+                      themeSelection === theme 
+                        ? 'border-primary bg-primary/10 text-white shadow-md' 
+                        : 'border-transparent bg-elevated text-muted hover:text-white hover:bg-elevated-hover'
+                    }`}
+                  >
+                    {theme === 'luxury' ? 'Luxury Fashion' : theme}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Layout Style */}
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
+                <Layout size={14} className="text-primary" /> Homepage Layout Style
+              </label>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                {[
+                  { id: 'fashion-editorial', label: 'Premium Editorial' },
+                  { id: 'bento-grid', label: 'Bento Grid Style' },
+                  { id: 'default', label: 'Classic Grid' }
+                ].map((layout) => (
+                  <button
+                    key={layout.id}
+                    type="button"
+                    onClick={() => {
+                      setLayoutStyle(layout.id);
+                      markChanged();
+                    }}
+                    className={`p-2.5 rounded-12 border-2 text-xs font-syne font-bold transition-all ${
+                      layoutStyle === layout.id 
+                        ? 'border-primary bg-primary/10 text-white shadow-md' 
+                        : 'border-transparent bg-elevated text-muted hover:text-white hover:bg-elevated-hover'
+                    }`}
+                  >
+                    {layout.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tagline */}
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-2 text-white">
+                Store Tagline
+              </label>
+              <input
+                value={tagline}
+                onChange={e => {
+                  setTagline(e.target.value);
+                  markChanged();
+                }}
+                placeholder="Built for the ones chasing more"
+                className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white text-sm focus:outline-none"
+              />
+            </div>
+
+            {/* Store Story */}
+            <div className="space-y-2">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-2 text-white">
+                <BookOpen size={14} /> Brand Story / Mission
+              </label>
+              <textarea
+                value={storeStory}
+                onChange={e => {
+                  setStoreStory(e.target.value);
+                  markChanged();
+                }}
+                placeholder="In 2026, we launched Kure to connect high-concept silhouettes with local Harare design structures. Every piece crafted is a monument to modern progression..."
+                rows={4}
+                className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white text-sm focus:outline-none resize-none"
+              />
+            </div>
+
+            {/* Colors Override */}
+            <div className="space-y-3 pt-2">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
+                <Palette size={14} /> Brand Colors Override (Optional)
+              </label>
+              <p className="text-[11px] text-muted leading-relaxed">
+                Specify hex overrides or leave blank to let our AI auto-extract colors from your store logo.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <span className="font-mono text-[9px] text-muted uppercase font-semibold">Primary</span>
+                  <div className="flex gap-1.5 items-center">
+                    <input
+                      type="color"
+                      value={brandColorPrimary || '#000000'}
+                      onChange={e => {
+                        setBrandColorPrimary(e.target.value);
+                        markChanged();
+                      }}
+                      className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Auto"
+                      value={brandColorPrimary}
+                      onChange={e => {
+                        setBrandColorPrimary(e.target.value);
+                        markChanged();
+                      }}
+                      className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="font-mono text-[9px] text-muted uppercase font-semibold">Secondary</span>
+                  <div className="flex gap-1.5 items-center">
+                    <input
+                      type="color"
+                      value={brandColorSecondary || '#ffffff'}
+                      onChange={e => {
+                        setBrandColorSecondary(e.target.value);
+                        markChanged();
+                      }}
+                      className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Auto"
+                      value={brandColorSecondary}
+                      onChange={e => {
+                        setBrandColorSecondary(e.target.value);
+                        markChanged();
+                      }}
+                      className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="font-mono text-[9px] text-muted uppercase font-semibold">Accent</span>
+                  <div className="flex gap-1.5 items-center">
+                    <input
+                      type="color"
+                      value={brandColorAccent || '#c8ff00'}
+                      onChange={e => {
+                        setBrandColorAccent(e.target.value);
+                        markChanged();
+                      }}
+                      className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Auto"
+                      value={brandColorAccent}
+                      onChange={e => {
+                        setBrandColorAccent(e.target.value);
+                        markChanged();
+                      }}
+                      className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Links Expand */}
+            <div className="space-y-3 pt-2">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider text-white">Social Platforms</label>
+              
+              {/* TikTok */}
+              <div className="space-y-1">
+                <span className="font-mono text-[10px] text-muted">TikTok Handle</span>
+                <div className="flex items-center bg-elevated rounded-12 p-3 text-sm">
+                  <span className="text-muted mr-1">@</span>
+                  <input
+                    value={tiktok}
+                    onChange={e => {
+                      setTiktok(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''));
+                      markChanged();
+                    }}
+                    placeholder="kure_clothing"
+                    className="flex-1 bg-transparent text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Facebook */}
+              <div className="space-y-1">
+                <span className="font-mono text-[10px] text-muted">Facebook Profile URL</span>
+                <div className="flex items-center bg-elevated rounded-12 p-3 text-sm">
+                  <Facebook size={14} className="text-muted mr-2" />
+                  <input
+                    value={facebook}
+                    onChange={e => {
+                      setFacebook(e.target.value);
+                      markChanged();
+                    }}
+                    placeholder="https://facebook.com/kureclothing"
+                    className="flex-1 bg-transparent text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Product Tagging Selection Lists */}
+            <div className="space-y-3 pt-2">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1 text-white">
+                <Heart size={14} className="text-red-500" /> Products Selection
+              </label>
+              <p className="text-[11px] text-muted leading-relaxed">
+                Toggles which of your items will render under the premium "Featured Collection" and "Best Seller" storefront grids.
+              </p>
+
+              {shopProducts.length === 0 ? (
+                <div className="p-4 bg-elevated/45 text-center rounded-12">
+                  <p className="text-xs text-muted font-mono uppercase">No products listed yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 border border-border/20 rounded-12 p-2 bg-elevated/30">
+                  {shopProducts.map((p) => {
+                    const isFeat = featuredProducts.includes(p.id);
+                    const isBest = bestSellerProducts.includes(p.id);
+                    const imgUrl = Array.isArray(p.images) && p.images[0] ? p.images[0] : 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=80&q=80';
+                    
+                    return (
+                      <div key={p.id} className="flex items-center justify-between p-2 rounded-8 bg-elevated/80 border border-border/10">
+                        <div className="flex items-center gap-2">
+                          <img src={imgUrl} className="w-8 h-8 rounded object-cover" referrerPolicy="no-referrer" />
+                          <div className="leading-tight">
+                            <p className="text-xs text-white font-medium truncate max-w-[120px]">{p.name}</p>
+                            <p className="text-[10px] text-primary font-mono">${p.price}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {/* Featured Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isFeat) {
+                                setFeaturedProducts(featuredProducts.filter(id => id !== p.id));
+                              } else {
+                                setFeaturedProducts([...featuredProducts, p.id]);
+                              }
+                              markChanged();
+                            }}
+                            className={`px-2 py-1 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors ${
+                              isFeat 
+                                ? 'bg-primary text-black border-primary' 
+                                : 'bg-transparent text-muted border-muted/30 hover:border-muted'
+                            }`}
+                          >
+                            Featured
+                          </button>
+
+                          {/* Best Seller Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (isBest) {
+                                setBestSellerProducts(bestSellerProducts.filter(id => id !== p.id));
+                              } else {
+                                setBestSellerProducts([...bestSellerProducts, p.id]);
+                              }
+                              markChanged();
+                            }}
+                            className={`px-2 py-1 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors ${
+                              isBest 
+                                ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+                                : 'bg-transparent text-muted border-muted/30 hover:border-muted'
+                            }`}
+                          >
+                            Best Seller
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </section>

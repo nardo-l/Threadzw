@@ -665,7 +665,7 @@ export const AdminLeads: React.FC = () => {
                           <button
                             onClick={() => {
                               const whatsappPhone = shop.whatsapp?.replace(/\D/g, '') || '';
-                              const prefilledMsg = `Hi ${shop.name}! Your ThreadZW shop trial has ended. Keep your shop live for $5/month — send $5 to EcoCash 0776 223 144 and tap 'I've Paid' in your dashboard. — ThreadZW 🇿🇼`;
+                              const prefilledMsg = `Hi ${shop.name}! Your ThreadZW shop trial has ended. Keep your shop live for $7/month — send $7 to EcoCash 0776 223 144 and tap 'I've Paid' in your dashboard. — ThreadZW 🇿🇼`;
                               window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(prefilledMsg)}`, '_blank');
                             }}
                             className="w-full h-11 bg-[#c8ff00] text-black hover:bg-[#b0df00] rounded-xl text-xs uppercase tracking-wider font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#c8ff00]/10"

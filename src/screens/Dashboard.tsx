@@ -47,23 +47,32 @@ const OwnerStatusBanner = ({
     let border = '1px solid rgba(200,255,0,0.2)';
     let color = '#c8ff00';
     let content = '';
+    let isUrgent = false;
 
-    if (daysLeft === 3) {
-      content = '3-day free trial active. Your shop is live.';
-    } else if (daysLeft === 2) {
-      content = '2 days left in your trial. Keep your shop live for $5.';
-    } else if (daysLeft === 1) {
+    if (daysLeft > 14) {
+      // Days 15 to 28: Calm Elegant
+      content = `28-day professional free trial active (${daysLeft} days remaining). Your shop is live.`;
+    } else if (daysLeft > 5) {
+      // Days 6 to 14: Warning Amber
       bg = 'rgba(245,158,11,0.08)';
-      border = '1px solid rgba(245,158,11,0.3)';
+      border = '1px solid rgba(245,158,11,0.25)';
       color = '#f59e0b';
-      content = 'Trial ends tomorrow. Pay $5 to stay live.';
-    } else if (hoursLeft && hoursLeft < 24) {
-      bg = 'rgba(239,68,68,0.08)';
-      border = '1px solid rgba(239,68,68,0.3)';
-      color = '#ff4444';
-      content = `Trial ends in ${hoursLeft} hours!`;
+      content = `Trial halfway completed! You have ${daysLeft} days left. Keep your shop live permanently.`;
+    } else if (daysLeft > 1) {
+      // Days 2 to 5: Prominent Orange
+      bg = 'rgba(249,115,22,0.1)';
+      border = '1px solid rgba(249,115,22,0.3)';
+      color = '#f97316';
+      content = `Trial is expiring soon! Only ${daysLeft} days left of free premium business tools.`;
     } else {
-      content = `${daysLeft} days left in your free trial.`;
+      // Days 0 or 1: Pulse Urgent Red
+      bg = 'rgba(239,68,68,0.1)';
+      border = '1px solid rgba(239,68,68,0.4)';
+      color = '#ff4444';
+      content = hoursLeft && hoursLeft < 24 
+        ? `Immediate action required: Free trial ends in ${hoursLeft} hours!`
+        : `Immediate action required: Free trial ends in 1 day!`;
+      isUrgent = true;
     }
 
     return (
@@ -72,19 +81,31 @@ const OwnerStatusBanner = ({
         style={{
           background: bg,
           border: border,
-          borderRadius: 10,
-          padding: '12px 16px',
+          borderRadius: 12,
+          padding: '14px 18px',
           color: color,
           cursor: 'pointer'
         }}
-        className="mb-5 flex items-center justify-between gap-3 text-xs font-bold leading-relaxed transition-opacity hover:opacity-95 select-none w-full"
+        className={`mb-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold leading-relaxed transition-all hover:opacity-95 select-none w-full ${isUrgent ? 'animate-pulse' : ''}`}
       >
-        <div className="flex items-center gap-2">
-          <Clock size={15} className="shrink-0" />
+        <div className="flex items-center gap-3 text-left">
+          {isUrgent ? (
+            <AlertTriangle size={16} className="shrink-0 animate-bounce" />
+          ) : (
+            <Clock size={16} className="shrink-0" />
+          )}
           <span>{content}</span>
         </div>
-        <span className="text-[#c8ff00] uppercase tracking-wider text-[10px] font-mono whitespace-nowrap bg-white/5 px-2.5 py-1 rounded-md hover:bg-white/10">
-          Keep My Shop Live →
+        <span 
+          style={{
+            background: isUrgent ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
+            border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
+            borderRadius: 8,
+            color: isUrgent ? '#ff4444' : '#c8ff00'
+          }}
+          className="uppercase tracking-wider text-[10px] font-mono whitespace-nowrap px-3.5 py-1.5 font-black hover:scale-[1.02] active:scale-[0.98] transition-transform"
+        >
+          {isUrgent ? 'Renew Pro Now' : 'Keep My Shop Live →'}
         </span>
       </div>
     );
@@ -94,18 +115,19 @@ const OwnerStatusBanner = ({
     return (
       <div 
         style={{
-          background: 'rgba(0,200,100,0.06)',
-          border: '1px solid rgba(0,200,100,0.2)',
-          borderRadius: 10,
-          padding: '12px 16px',
-          color: '#00c864'
+          background: 'rgba(0, 200, 100, 0.05)',
+          border: '1px solid rgba(0, 200, 100, 0.2)',
+          borderRadius: 8,
+          padding: '6px 12px',
+          color: '#00c864',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px'
         }}
-        className="mb-5 text-xs font-bold leading-relaxed select-none"
+        className="mb-5 text-xs font-extrabold tracking-wide select-none rounded-full"
       >
-        <div className="flex items-center gap-2">
-          <CheckCircle2 size={15} className="shrink-0 text-[#00c864]" />
-          <span>Shop live — {daysLeft} days remaining</span>
-        </div>
+        <CheckCircle2 size={13} className="shrink-0 text-[#00c864]" />
+        <span>Pro Active · {daysLeft} days remaining</span>
       </div>
     );
   }
@@ -120,9 +142,10 @@ const OwnerStatusBanner = ({
           padding: '12px 16px',
           color: '#f97316'
         }}
-        className="mb-5 text-xs font-bold leading-relaxed select-none"
+        className="mb-5 text-xs font-bold leading-relaxed select-none animate-pulse flex items-center gap-2 w-full text-left"
       >
-        <span>⏳ Payment claim submitted. We\'re verifying your payment. Your shop will unlock once verified.</span>
+        <Clock size={15} className="shrink-0 text-[#f97316]" />
+        <span>⏳ Pending Payment - Waiting for NardoPay webhook verification.</span>
       </div>
     );
   }
@@ -262,7 +285,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             // Safe auto-creation in-memory fallback shop values so dashboard never breaks
             const baseName = session.user.user_metadata?.username || 'brand';
             const defaultHandle = baseName.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6);
-            const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+            const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
             
             shopData = {
               id: 'local-shop-' + session.user.id,
@@ -1046,7 +1069,66 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         </div>
 
 
+        {/* SUBSCRIPTION CARD FOR TRIAL ONLY */}
+        {isTrial && (
+          <div className="px-5 mt-6" id="subscription_trial_card">
+            <div className="bg-gradient-to-br from-[#121214] to-[#0a0a0b] border border-zinc-800/80 rounded-[20px] p-5 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-[#c8ff00]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#c8ff00]/10 transition-colors duration-500" />
 
+              <div className="flex items-start justify-between relative z-10">
+                <div className="space-y-1">
+                  <span className="text-[9px] font-mono font-extrabold text-[#c8ff00] bg-[#c8ff00]/10 border border-[#c8ff00]/15 rounded-full px-2 py-0.5 tracking-wider uppercase inline-block">
+                    PRO TRIAL ACTIVE
+                  </span>
+                  <h3 className="font-extrabold text-white text-[15px] tracking-tight mt-1.5">
+                    ThreadZW Pro Package
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed max-w-[270px]">
+                    Enjoy full, unrestricted access to customer checkouts, catalogs, and analytical tools.
+                  </p>
+                </div>
+                <div className="w-9 h-9 bg-zinc-800/50 border border-zinc-800 rounded-xl flex items-center justify-center text-[#c8ff00]">
+                  <Zap size={18} className="stroke-[2]" />
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-2 relative z-10">
+                <div className="flex justify-between items-baseline text-xs font-bold font-mono">
+                  <span className="text-zinc-500 uppercase tracking-wider text-[10px]">TRIAL PROGRESSION</span>
+                  <span className="text-white text-[11px]">
+                    {daysLeft} of 28 Days Remaining
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-zinc-800/40">
+                  <div 
+                    style={{ width: `${Math.min(100, Math.max(0, (daysLeft / 28) * 100))}%` }}
+                    className={`h-full transition-all duration-500 rounded-full ${
+                      daysLeft > 14 
+                        ? 'bg-[#c8ff00]' 
+                        : daysLeft > 5 
+                        ? 'bg-amber-500' 
+                        : 'bg-red-500 animate-pulse'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-5 pt-4 border-t border-zinc-800/40 flex items-center justify-between relative z-10">
+                <div>
+                  <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest font-bold">Standard Price</span>
+                  <p className="text-sm font-black text-white">$7 <span className="text-[11px] font-normal text-zinc-500 lowercase">/ month</span></p>
+                </div>
+                <button
+                  id="btn_trial_card_upgrade"
+                  onClick={() => setBannerPaywallOpen(true)}
+                  className="px-3.5 py-2 bg-[#c8ff00] hover:bg-[#b0df00] text-black font-extrabold rounded-lg uppercase tracking-wider text-[10px] hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer whitespace-nowrap shadow-sm animate-none"
+                >
+                  Keep Live
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
 
         {/* FEATURE 5 - Quick Action Row Shortcuts */}

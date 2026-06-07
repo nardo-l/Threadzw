@@ -1,4 +1,4 @@
-// THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
+// THREADZW PRICING: $7/month | 28-day trial — do not change without updating all instances
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Check, Rocket, Lock, CreditCard } from 'lucide-react';
@@ -17,26 +17,8 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleUpgrade = async () => {
-    setIsProcessing(true);
-    
-    // Mock Paynow processing
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const { error } = await renewSubscription({
-      plan: 'full',
-      billingCycle: 'monthly',
-      amountPaid: 5.00,
-      paynowReference: `TZW-UPGRADE-${Date.now()}`,
-    });
-
-    setIsProcessing(false);
-    if (!error) {
-      onClose();
-      toast.success('Upgraded to Full Shop! 🚀 Add unlimited products now.');
-      navigate('/new-listing');
-    } else {
-      toast.error('Upgrade failed. Please try again.');
-    }
+    onClose();
+    navigate('/subscription');
   };
 
   return (
@@ -59,7 +41,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
                 <h3 className="text-2xl font-syne font-bold text-white flex items-center gap-2">
                   <Rocket className="text-primary" size={24} /> Launch Your Store
                 </h3>
-                <span className="text-[10px] font-mono text-amber uppercase tracking-widest">Trial Limit: 3 products max</span>
+                <span className="text-[10px] font-mono text-amber uppercase tracking-widest">Trial Limit: 28 days</span>
               </div>
               <button onClick={onClose} className="text-muted p-1 hover:text-white transition-colors">
                 <X size={24} />
@@ -69,8 +51,8 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
             {/* Current Usage Card */}
             <div className="bg-elevated p-4 rounded-xl border-l-4 border-amber flex flex-col gap-3">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-mono text-amber uppercase tracking-widest font-bold">3 / 3 trial products used</span>
-                <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Limit reached</span>
+                <span className="text-[10px] font-mono text-amber uppercase tracking-widest font-bold">28 Days Trial Active</span>
+                <span className="text-[10px] font-mono text-muted uppercase tracking-widest">Unlimited products</span>
               </div>
               <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
                 <div className="w-full h-full bg-[#C6FF00] text-black" />
@@ -85,7 +67,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
                 {[
                   "Unlimited product listings",
                   "Verified Badge on your profile",
-                  "Featured on the feed for 5 days",
+                  "Featured on the feed for 28 days",
                   "Full dashboard analytics",
                   "Smart restock notifications"
                 ].map((text, i) => (
@@ -104,7 +86,7 @@ export const UpgradeSheet: React.FC<UpgradeSheetProps> = ({ isOpen, onClose }) =
               <div className="bg-elevated p-4 rounded-xl border border-white/5 flex flex-col gap-3">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-syne font-bold text-white">
-                    $5/month
+                    $7/month
                   </span>
                   <span className="text-[10px] font-mono text-primary uppercase tracking-widest">
                     Thread ZW Shop

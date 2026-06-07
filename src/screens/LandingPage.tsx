@@ -403,14 +403,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
 
           <div className="bg-[#151515] border-2 border-[#C6FF00] rounded-[24px] p-7 text-left shadow-[0_8px_32px_rgba(198,255,0,0.06)]">
             <div className="inline-flex items-center bg-[#C6FF00] text-[#0B0B0B] font-black text-[10px] uppercase tracking-wider rounded-full px-3.5 py-1 mb-4">
-              🎁 3 days free
+              🎁 28 days free
             </div>
 
             <div className="flex items-baseline gap-1 mt-2">
-              <span className="text-[#C6FF00] font-black text-60px leading-none">$5</span>
+              <span className="text-[#C6FF00] font-black text-60px leading-none">$7</span>
               <span className="text-[#A1A1AA] text-lg font-bold">/month</span>
             </div>
-            <p className="text-[#A1A1AA] text-xs font-semibold mt-1">Then $5/month · Cancel any time</p>
+            <p className="text-[#A1A1AA] text-xs font-semibold mt-1">Then $7/month · Cancel any time</p>
 
             <div className="h-[1px] bg-[#2A2A2A] my-5" />
 
@@ -455,8 +455,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
           <div className="grid grid-cols-3 gap-3">
             {[
               { title: '+50 shops live', sub: 'Merchant growth' },
-              { title: '$5/month', sub: 'Flat pricing' },
-              { title: '3 day free trial', sub: 'No payment upfront' }
+              { title: '$7/month', sub: 'Flat pricing' },
+              { title: '28 day free trial', sub: 'No payment upfront' }
             ].map((stat, i) => (
               <div 
                 key={i}

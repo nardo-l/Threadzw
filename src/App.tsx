@@ -26,6 +26,9 @@ import { LandingPage } from './screens/LandingPage';
 import { AdminLeads } from './screens/AdminLeads';
 import { mockShop } from './data/mockData';
 import { SetupShop } from './screens/SetupShop';
+import { SubscriptionPage } from './pages/SubscriptionPage';
+import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
+import { PaymentCancelledPage } from './pages/PaymentCancelledPage';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup';
@@ -285,6 +288,9 @@ function AppContent() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
+        <Route path="/payment-cancelled" element={<PaymentCancelledPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

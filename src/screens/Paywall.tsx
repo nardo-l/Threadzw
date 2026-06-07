@@ -574,7 +574,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               </h2>
               
               <p className="text-[#A1A1AA] text-base leading-relaxed text-center mt-4 max-w-[300px] mx-auto">
-                Start your 3-day free trial. No payment now.
+                Start your 28-day free trial. No payment now.
               </p>
             </motion.div>
           )}
@@ -599,8 +599,8 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
 
               <div className="space-y-3 mt-8">
                 {[
-                  { icon: Gift, title: "3 days free", desc: "Explore everything. No payment now." },
-                  { icon: Zap, title: "Then $5/month", desc: "Cheaper than a single flyer print run." },
+                  { icon: Gift, title: "28 days free", desc: "Explore everything. No payment now." },
+                  { icon: Zap, title: "Then $7/month", desc: "Cheaper than a single flyer print run." },
                   { icon: Smartphone, title: "Pay via EcoCash or InnBucks", desc: "No card needed. Ever." }
                 ].map((card, idx) => {
                   const IconComponent = card.icon;
@@ -643,7 +643,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
 
                 <div className="space-y-6">
                   {[
-                    { num: "1", title: "Send $5 to EcoCash +263789113734", detail: "Or InnBucks using the same number" },
+                    { num: "1", title: "Send $7 to EcoCash +263789113734", detail: "Or InnBucks using the same number" },
                     { num: "2", title: "Submit Transaction Claim Form", detail: "Log your payment in the application" },
                     { num: "3", title: "Automated WhatsApp Link", detail: "Submit details in one-click to the team" },
                     { num: "4", title: "Direct Admin Activation", detail: "System unlocks your shopfront dynamically" }
@@ -689,7 +689,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                     </h2>
                     
                     <p className="text-[#A1A1AA] text-base leading-relaxed mt-4 mb-6 text-center max-w-[300px] mx-auto">
-                      Logged in as <span className="text-[#c8ff00] font-bold">{signupEmail || currentSessionUser.email}</span>. Tap below to activate your 3-day trial and launch your clothing brand!
+                      Logged in as <span className="text-[#c8ff00] font-bold">{signupEmail || currentSessionUser.email}</span>. Tap below to activate your 28-day trial and launch your clothing brand!
                     </p>
 
                     <div className="bg-[#111] border border-white/5 rounded-[10px] p-5 mt-4 flex gap-4 items-start">
@@ -707,7 +707,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                     </h2>
                     
                     <p className="text-[#A1A1AA] text-base leading-relaxed mt-3 mb-6 text-center">
-                      Starting your 3-day free trial. No payment now.
+                      Starting your 28-day free trial. No payment now.
                     </p>
 
                     {/* FORM FIELDS */}
@@ -831,7 +831,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                     <div className="bg-[#111] border border-white/5 rounded-[10px] p-4 mt-6 flex gap-3">
                       <span className="text-sm">🔒</span>
                       <p className="text-[#A1A1AA] text-xs leading-relaxed text-left">
-                        By signing up you agree to our terms. Your 3-day trial starts immediately.
+                        By signing up you agree to our terms. Your 28-day trial starts immediately.
                       </p>
                     </div>
 
@@ -852,16 +852,16 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
               ) : (
                 <>
                   {/* EXPIRATION MODE BLOCK */}
-                  {/* THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances */}
+                  {/* THREADZW PRICING: $7/month | 28-day trial — do not change without updating all instances */}
                   <h2 className="text-white font-black text-3xl tracking-tight leading-tight">
-                    Continue for $5/month
+                    Continue for $7/month
                   </h2>
                   <p className="text-[#A1A1AA] text-sm mt-1 mb-4 leading-relaxed">
-                    Your 3-day free trial has ended
+                    Your 28-day free trial has ended
                   </p>
 
                   <div className="flex items-baseline justify-start gap-1 pb-4 border-b border-[#1A1A1A]">
-                    <span className="text-[#C6FF00] font-black text-4xl leading-none">$5</span>
+                    <span className="text-[#C6FF00] font-black text-4xl leading-none">$7</span>
                     <span className="text-[#A1A1AA] text-base font-bold">/month</span>
                   </div>
 
@@ -916,7 +916,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
                             Recording payment...
                           </>
                         ) : (
-                          'Pay $5 via EcoCash or InnBucks'
+                          'Pay $7 via EcoCash or InnBucks'
                         )}
                       </button>
                     </div>

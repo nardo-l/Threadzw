@@ -106,7 +106,7 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
            <div className="h-px bg-white/5" />
            <div className="flex justify-between items-center">
               <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">Monthly Sync</span>
-              <span className="text-sm font-bold text-white">$5.00 USD</span>
+              <span className="text-sm font-bold text-white">$7.00 USD</span>
            </div>
         </div>
 
@@ -142,9 +142,9 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
 
       <div className="flex-1 overflow-y-auto px-6 py-10 pb-40 space-y-12">
         <div className="text-center space-y-4">
-           {/* THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances */}
-           <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">Start <span className="text-[#C6FF00]">free</span> for 3 days</h2>
-           <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest italic">Then just $5/month</p>
+           {/* THREADZW PRICING: $7/month | 28-day trial — do not change without updating all instances */}
+           <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter leading-none">Start <span className="text-[#C6FF00]">free</span> for 28 days</h2>
+           <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest italic">Then just $7/month</p>
         </div>
 
         <div className="grid grid-cols-1 gap-6">
@@ -160,7 +160,7 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
            </div>
            <div>
               <h3 className="text-sm font-black uppercase italic tracking-tighter mb-2">Zero Friction Entry</h3>
-              <p className="text-zinc-500 text-[11px] leading-relaxed font-medium uppercase tracking-wider">No credit card required. Your node remains active for 3 days of uninterrupted operation before the first lock occurs.</p>
+              <p className="text-zinc-500 text-[11px] leading-relaxed font-medium uppercase tracking-wider">No credit card required. Your node remains active for 28 days of uninterrupted operation before the first lock occurs.</p>
            </div>
         </div>
       </div>

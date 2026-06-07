@@ -204,7 +204,7 @@ export const ProductDetail: React.FC = () => {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="relative w-full aspect-[4/5] bg-[#121215] overflow-hidden rounded-b-[28px] focus:outline-none"
+          className="relative w-full h-[70vh] bg-[#121215] overflow-hidden rounded-b-[28px] focus:outline-none"
         >
           <AnimatePresence mode="wait">
             <motion.img 

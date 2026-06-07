@@ -1,24 +1,23 @@
-// THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
+// THREADZW PRICING: $7/month | 28-day trial — do not change without updating all instances
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, Check, X, CreditCard, Clock, Loader2 } from 'lucide-react';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export const RenewalPaywall: React.FC = () => {
   const { shop, setShowRenewalPaywall } = useSubscription();
   const { renewalDate } = useSubscriptionStatus();
+  const navigate = useNavigate();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleRenew = async () => {
-    setIsProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    setIsProcessing(false);
     setShowRenewalPaywall(false);
-    toast.info('Please follow the payment instructions in the Shop Centre.');
+    navigate('/subscription');
   };
 
   return (
@@ -73,7 +72,7 @@ export const RenewalPaywall: React.FC = () => {
               <h3 className="text-[20px] font-black text-white">Unlimited Products</h3>
             </div>
             <div className="text-right">
-              <span className="text-[28px] font-black text-white leading-none">$5</span>
+              <span className="text-[28px] font-black text-white leading-none">$7</span>
               <span className="text-[12px] text-[#666] block">monthly</span>
             </div>
           </div>
@@ -135,7 +134,7 @@ export const RenewalPaywall: React.FC = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-[11px] font-bold text-[#888] uppercase tracking-widest">Monthly Amount</span>
-                  <span className="text-[24px] font-black text-[#C6FF00]">$5.00</span>
+                  <span className="text-[24px] font-black text-[#C6FF00]">$7.00</span>
                 </div>
               </div>
 
@@ -144,7 +143,7 @@ export const RenewalPaywall: React.FC = () => {
                   <CreditCard size={18} className="text-[#C6FF00]" />
                   <span className="text-[15px]">EcoCash or InnBucks</span>
                 </div>
-                <p className="text-[12px] text-[#888] leading-relaxed">You will be redirected to the Shop Centre instructions to send your $5 verification payment.</p>
+                <p className="text-[12px] text-[#888] leading-relaxed">You will be redirected to the Shop Centre instructions to send your $7 verification payment.</p>
               </div>
 
               <button 

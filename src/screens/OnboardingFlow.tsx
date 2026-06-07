@@ -1699,7 +1699,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   <p className="text-center text-white/40 text-[11px] leading-tight font-medium">
-                    Build activates your 3-day trial instantly.
+                    Build activates your 28-day trial instantly.
                   </p>
                 </div>
 
@@ -1723,7 +1723,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar pr-0.5">
                   <div className="flex flex-col items-center text-center space-y-2">
                     <span className="inline-block bg-[#c8ff00] text-black text-[10px] tracking-wider uppercase font-black px-3 py-1 rounded-full px-4 font-bold scale-95 shadow-md">
-                      🎁 3 days free &bull; No payment needed
+                      🎁 28 days free &bull; No payment needed
                     </span>
                     <h2 className="text-xl font-[900] tracking-tight leading-none text-white pt-2.5">
                       Secure Account
@@ -1813,7 +1813,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                     {/* Terms Card */}
                     <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/15 rounded-xl p-3.5 text-[11px] text-[#c8ff00] leading-snug font-bold">
-                      🔒 By signing up you agree to our terms. Your 3-day trial starts immediately.
+                      🔒 By signing up you agree to our terms. Your 28-day trial starts immediately.
                     </div>
                   </div>
                 </div>
@@ -1940,7 +1940,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       Try ThreadZW free
                     </h2>
                     <h2 className="text-2xl font-[950] tracking-tight leading-none text-white">
-                      for 3 days.
+                      for 28 days.
                     </h2>
                     <span className="text-white/50 text-xs font-bold block pt-1">No payment needed to start.</span>
                   </div>
@@ -1986,7 +1986,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               </div>
             )}
 
-            {/* PAYWALL SCREEN 2: JUST $5/MONTH ECOCASH */}
+            {/* PAYWALL SCREEN 2: JUST $7/MONTH ECOCASH */}
             {screen === 28 && (
               <div className="flex-1 flex flex-col justify-between py-2">
                 <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar">
@@ -1997,16 +1997,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   <div className="text-center">
-                    <h2 className="text-xl font-black text-white leading-none">Just $5/month</h2>
+                    <h2 className="text-xl font-black text-white leading-none">Just $7/month</h2>
                     <h2 className="text-base font-bold text-white/50 leading-none mt-1">after your trial.</h2>
 
                     {/* Big Display price badge */}
                     <div className="mt-2 text-center select-none">
                       <span className="text-6xl font-[950] tracking-tighter text-[#c8ff00] leading-none uppercase inline-block">
-                        $5
+                        $7
                       </span>
                       <span className="text-lg font-black text-white/90">/month</span>
-                      <p className="text-white/40 text-[11px] mt-0.5 font-bold">Less than $0.17 per day</p>
+                      <p className="text-white/40 text-[11px] mt-0.5 font-bold">Less than $0.25 per day</p>
                     </div>
                   </div>
 
@@ -2017,7 +2017,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
                         <Smartphone size={16} className="text-[#c8ff00]" /> EcoCash App
                       </h4>
-                      <p className="text-white/50 text-[11px] leading-none">Open EcoCash &rarr; Send Money &rarr; Enter number &rarr; Send $5</p>
+                      <p className="text-white/50 text-[11px] leading-none">Open EcoCash &rarr; Send Money &rarr; Enter number &rarr; Send $7</p>
                       
                       <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider font-sans">
                         0789 113 734
@@ -2029,7 +2029,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
                         <Smartphone size={16} className="text-[#c8ff00]" /> EcoCash Super App
                       </h4>
-                      <p className="text-white/50 text-[11px] leading-none">Open Super App &rarr; Send Money &rarr; Enter number &rarr; Send $5</p>
+                      <p className="text-white/50 text-[11px] leading-none">Open Super App &rarr; Send Money &rarr; Enter number &rarr; Send $7</p>
                       
                       <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider font-sans">
                         0789 113 734
@@ -2080,7 +2080,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       <div className="w-5 h-5 rounded-full bg-[#c8ff00] text-black text-[10px] font-black flex items-center justify-center shrink-0">1</div>
                       <div>
                         <h4 className="font-extrabold leading-none">Pay via EcoCash</h4>
-                        <p className="text-white/45 text-[10px] mt-0.5 leading-none">Send $5 to 0789 113 734</p>
+                        <p className="text-white/45 text-[10px] mt-0.5 leading-none">Send $7 to 0789 113 734</p>
                       </div>
                     </div>
 
@@ -2133,13 +2133,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <h2 className="text-2xl font-[950] tracking-tight leading-none text-white pt-2">
                       You're in.
                     </h2>
-                    <p className="text-white/50 text-xs font-bold leading-none">Your 3-day free trial is active.</p>
+                    <p className="text-white/50 text-xs font-bold leading-none">Your 28-day free trial is active.</p>
                   </div>
 
                   {/* Big countdown badge layout card */}
                   <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/20 rounded-2xl p-6 text-center space-y-3.5 shadow-xl max-w-xs mx-auto w-full">
                     <span className="text-7xl font-[1000] text-[#c8ff00] leading-none tracking-tighter block font-mono select-none">
-                      3
+                      28
                     </span>
                     <span className="text-white font-[900] text-sm uppercase tracking-wider block">days remaining</span>
                     
@@ -2150,7 +2150,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   <p className="text-center text-white/40 text-xs leading-relaxed font-bold px-3">
-                    After day 3, keep your shop live for $5/month.<br/>Pay via EcoCash or InnBucks anytime.
+                    After day 28, keep your shop live for $7/month.<br/>Pay via EcoCash or InnBucks anytime.
                   </p>
                 </div>
 

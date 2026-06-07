@@ -1,8 +1,8 @@
 /*
  * THREADZW SUBSCRIPTION CONSTANTS
- * Free trial: 3 days (72 hours)
+ * Free trial: 28 days
  * Subscription: 28 days per period
- * Price: $5/month
+ * Price: $7/month
  * 
  * DO NOT change these values without 
  * updating ALL instances across the app.
@@ -10,9 +10,9 @@
  * to find every reference.
  */
 
-export const TRIAL_DAYS = 3;
+export const TRIAL_DAYS = 28;
 export const SUBSCRIPTION_DAYS = 28;
-export const SUBSCRIPTION_PRICE = 5;
+export const SUBSCRIPTION_PRICE = 7;
 
 export interface ShopStatusResult {
   status: 'trial' | 'active' | 'pending_verification' | 'expired';
@@ -110,8 +110,8 @@ export const getShopStatus = (shop: any, claims?: any[]): ShopStatusResult => {
   if (trialStart) {
     const trialStartDate = parseDate(trialStart);
     if (trialStartDate) {
-      const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
-      const computedEndDate = new Date(trialStartDate.getTime() + threeDaysInMs);
+      const trialDaysInMs = TRIAL_DAYS * 24 * 60 * 60 * 1000;
+      const computedEndDate = new Date(trialStartDate.getTime() + trialDaysInMs);
 
       const parsedTrialEnd = parseDate(trialEndVal);
       if (computedEndDate > now && (!parsedTrialEnd || parsedTrialEnd < computedEndDate)) {

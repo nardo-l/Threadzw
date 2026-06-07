@@ -48,12 +48,37 @@ export const SubscriptionManagement: React.FC = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       if (!shop) return;
-      const { data } = await supabase
+      
+      const { data: payments } = await supabase
+        .from('payment_records')
+        .select('*')
+        .eq('shop_id', shop.id)
+        .order('created_at', { ascending: false });
+
+      const { data: legacySubs } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('shop_id', shop.id)
         .order('created_at', { ascending: false });
-      if (data) setHistory(data);
+      
+      const combinedHistory = [
+        ...(payments || []).map(p => ({
+          id: p.id,
+          created_at: p.created_at,
+          amount_paid: Number(p.amount) || 7.00,
+          status: p.status === 'completed' ? 'Paid' : p.status,
+          type: 'Payment Record'
+        })),
+        ...(legacySubs || []).map(s => ({
+          id: s.id,
+          created_at: s.created_at,
+          amount_paid: Number(s.amount_paid) || 5.00,
+          status: s.status === 'expired' ? 'Expired' : 'Paid',
+          type: 'Subscription Log'
+        }))
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setHistory(combinedHistory);
     };
     fetchHistory();
   }, [shop]);
@@ -141,7 +166,7 @@ export const SubscriptionManagement: React.FC = () => {
 
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-syne font-bold text-primary">
-                $5
+                $7
               </span>
               <span className="text-[10px] font-mono text-muted uppercase">
                 /month
@@ -196,12 +221,18 @@ export const SubscriptionManagement: React.FC = () => {
               <div key={inv.id} className={`p-4 flex items-center justify-between ${i !== history.length - 1 ? 'border-b border-white/5' : ''}`}>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-mono text-muted">{new Date(inv.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                  <span className="text-xs text-white">Shop Subscription</span>
+                  <span className="text-xs text-white">{inv.type === 'Payment Record' ? 'Invoice Payment' : 'Legacy Plan'}</span>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="text-sm font-syne font-bold text-primary">${inv.amount_paid?.toFixed(2)}</span>
-                  <div className="px-2 py-0.5 bg-green/10 rounded-full">
-                    <span className="text-[8px] font-mono text-green font-bold uppercase tracking-widest">Paid</span>
+                  <div className={`px-2 py-0.5 rounded-full ${
+                    inv.status?.toLowerCase() === 'paid' || inv.status?.toLowerCase() === 'completed'
+                      ? 'bg-green/10 text-green'
+                      : 'bg-amber/10 text-amber'
+                  }`}>
+                    <span className="text-[8px] font-mono font-bold uppercase tracking-widest block">
+                      {inv.status}
+                    </span>
                   </div>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-// THREADZW PRICING: $5/month | 3-day trial — do not change without updating all instances
+// THREADZW PRICING: $7/month | 28-day trial — do not change without updating all instances
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, X, Smartphone, ShieldCheck, ArrowRight, MessageCircle } from 'lucide-react';
@@ -34,7 +34,7 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
           owner_id: session?.user?.id,
           whatsapp_number: whatsappNumber.trim(),
           plan: 'standard',
-          amount: 5,
+          amount: 7,
           status: 'pending',
           receiving_number: '0789113734'
         });
@@ -82,16 +82,16 @@ export const PaywallFlow: React.FC<PaywallFlowProps> = ({ myShop, onActivated })
            <div className="mx-auto w-14 h-14 md:w-16 md:h-16 bg-[#C6FF00]/10 rounded-2xl md:rounded-3xl flex items-center justify-center text-[#C6FF00] shadow-[0_0_40px_rgba(198,255,0,0.1)]">
               <ShieldCheck className="size-7 md:size-8" />
            </div>
-           <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter">Activate your store — $5/month</h2>
-           <p className="text-[#C6FF00] text-[12px] md:text-sm font-black italic uppercase tracking-widest">$5.00 USD / MONTH</p>
+           <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tighter">Activate your store — $7/month</h2>
+           <p className="text-[#C6FF00] text-[12px] md:text-sm font-black italic uppercase tracking-widest">$7.00 USD / MONTH</p>
         </div>
 
         {/* Manual Instructions */}
         <div className="space-y-6">
            <InstructionStep 
              num="01" 
-             title="Send $5 to EcoCash +263789113734 or InnBucks" 
-             desc="Send exactly $5.00 USD to help activate your catalog." 
+             title="Send $7 to EcoCash +263789113734 or InnBucks" 
+             desc="Send exactly $7.00 USD to help activate your catalog." 
            />
            
            <div className="bg-[#151515] border border-white/5 rounded-3xl p-6 space-y-4">
