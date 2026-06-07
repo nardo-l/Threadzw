@@ -80,6 +80,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const fetchSubscription = useCallback(
     async () => {
+      let shopData: any = null;
       try {
         setLoading(true)
         // Get current user session
@@ -94,7 +95,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         // Fetch shop subscription data using owner_id for local context fallback
-        const { data: shopData } = await supabase
+        const { data } = await supabase
           .from('shops')
           .select(`
             id,
@@ -110,6 +111,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
           `)
           .eq('owner_id', session.user.id)
           .maybeSingle()
+
+        shopData = data;
 
         if (shopData) {
           setShop(shopData)
@@ -130,47 +133,67 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
           throw new Error('Failed to fetch subscription')
         }
 
-        const data = await response.json()
+        const dataRes = await response.json()
 
         setSubscription({
-          status: data.status,
-          daysRemaining: data.days_remaining,
-          expiryDate: data.expiry_date,
-          trialStartDate: data.trial_start_date,
-          trialEndDate: data.trial_end_date,
-          subscriptionStartDate: data.subscription_start_date,
-          subscriptionEndDate: data.subscription_end_date,
-          nextBillingDate: data.next_billing_date,
-          lastPaymentDate: data.last_payment_date,
-          paymentProvider: data.payment_provider,
-          planName: data.plan_name || 'ThreadZW Pro',
-          pricePerMonth: data.plan_price || 7.00,
-          billingDays: data.plan_billing_days || 28,
+          status: dataRes.status,
+          daysRemaining: dataRes.days_remaining,
+          expiryDate: dataRes.expiry_date,
+          trialStartDate: dataRes.trial_start_date,
+          trialEndDate: dataRes.trial_end_date,
+          subscriptionStartDate: dataRes.subscription_start_date,
+          subscriptionEndDate: dataRes.subscription_end_date,
+          nextBillingDate: dataRes.next_billing_date,
+          lastPaymentDate: dataRes.last_payment_date,
+          paymentProvider: dataRes.payment_provider,
+          planName: dataRes.plan_name || 'ThreadZW Pro',
+          pricePerMonth: dataRes.plan_price || 7.00,
+          billingDays: dataRes.plan_billing_days || 28,
           trialDays: 28,
-          hasFullAccess: data.has_full_access,
-          isLocked: data.is_locked,
-          canBeRenewed: data.can_be_renewed,
+          hasFullAccess: dataRes.has_full_access,
+          isLocked: dataRes.is_locked,
+          canBeRenewed: dataRes.can_be_renewed,
           paymentUrl: null,
-          rawShopData: shopData || data,
-          started_at: data.trial_start_date || (shopData as any)?.created_at || new Date().toISOString()
+          rawShopData: shopData || dataRes,
+          started_at: dataRes.trial_start_date || (shopData as any)?.created_at || new Date().toISOString()
         })
 
       } catch (err) {
-        console.error(
-          'Subscription fetch error:', err
+        console.warn(
+          'Subscription fetch failed, dynamically falling back to local shop configuration:', err
         )
-        // Set fallback in case edge function isn't reachable
-        setSubscription(prev => prev || {
-          status: SUB_STATUS.EXPIRED,
-          daysRemaining: 0,
-          expiryDate: null,
+        
+        let status: SubStatus = SUB_STATUS.TRIAL;
+        let expiryStr: string | null = null;
+        let days = 3; // default fallback
+
+        if (shopData) {
+          status = (shopData.subscription_status || 'trial') as SubStatus;
+          expiryStr = shopData.subscription_end_date || shopData.trial_ends_at || shopData.trial_end_date || null;
+          if (expiryStr) {
+            const diffMs = new Date(expiryStr).getTime() - Date.now();
+            days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+          } else {
+            days = 3;
+          }
+        }
+
+        const isLocked = days <= 0 && status !== 'active';
+        const finalStatus = (days <= 0 && status === 'trial') ? SUB_STATUS.EXPIRED : status;
+
+        setSubscription({
+          status: finalStatus,
+          daysRemaining: days,
+          expiryDate: expiryStr,
           paymentUrl: null,
           planName: 'ThreadZW Pro',
           pricePerMonth: 7,
           trialDays: 28,
-          rawShopData: null,
-          started_at: new Date().toISOString(),
-          isLocked: true
+          rawShopData: shopData || null,
+          started_at: shopData ? (shopData.trial_started_at || shopData.trial_start_date || new Date().toISOString()) : new Date().toISOString(),
+          isLocked: isLocked,
+          hasFullAccess: !isLocked,
+          canBeRenewed: true
         });
       } finally {
         setLoading(false)

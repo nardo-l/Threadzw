@@ -113,6 +113,8 @@ export const useDemoShop = () => {
 
         if (shop) {
           setDemoShop({
+            logo_url: "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&w=150&q=80",
+            banner_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
             ...shop,
             id: 'demo-shop',
             name: 'Kure Streetwear',
@@ -127,7 +129,9 @@ export const useDemoShop = () => {
             handle: 'demo',
             description: 'Zim clothing store - built for the ones chasing more.',
             location: 'Harare',
-            whatsapp: '263776223144'
+            whatsapp: '263776223144',
+            logo_url: "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&w=150&q=80",
+            banner_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80"
           });
         }
         setDemoProducts(products || []);

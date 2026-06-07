@@ -171,14 +171,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
   useEffect(() => {
     if (!shop) return;
     
-    const firstLoginOverlayShown = localStorage.getItem('threadzw_first_login_overlay_shown') === 'true';
+    const hasPrompted = localStorage.getItem('threadzw_dashboard_prompted_setup') === 'true';
     const isSetupDone = shop.setup_complete === true || 
-      (shop.setup_complete === null && shop.name && shop.name.trim() !== '' && shop.name !== 'My ThreadZW Shop' && shop.name !== 'My brand');
+      (shop.name && shop.name.trim() !== '' && shop.name !== 'My ThreadZW Shop' && shop.name !== 'My brand' && shop.name !== 'My Brand');
 
-    if (!isSetupDone && !firstLoginOverlayShown) {
-      setShowSetupOverlay(false); // Disable auto-popup onboarding form
-    } else {
-      setShowSetupOverlay(false);
+    if (!isSetupDone && !hasPrompted) {
+      setShowSetupOverlay(true); 
+      localStorage.setItem('threadzw_dashboard_prompted_setup', 'true');
     }
   }, [shop]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -369,8 +368,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
         const isSetupDone = shopData?.setup_complete === true;
 
-        if (!firstLoginOverlayShown && !onboardingCompleteVal && !isSetupDone) {
-          setShowSetupOverlay(false); // Disable auto-popup onboarding form
+        const isSetupDoneNow = shopData?.setup_complete === true || 
+          (shopData?.name && shopData.name.trim() !== '' && shopData.name !== 'My ThreadZW Shop' && shopData.name !== 'My brand' && shopData?.name !== 'My Brand');
+        const hasPromptedNow = localStorage.getItem('threadzw_dashboard_prompted_setup') === 'true';
+
+        if (!isSetupDoneNow && !hasPromptedNow) {
+          setShowSetupOverlay(true);
+          localStorage.setItem('threadzw_dashboard_prompted_setup', 'true');
         }
 
         // Fetch products with catch fallbacks
@@ -971,7 +975,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
   return (
     <div className="relative min-h-screen overflow-y-auto bg-[#0a0a0a]">
-      {/* FIRST TIME SETUP OVERLAY DISABLED - REDIRECTS TO EDIT SHOP PAGE */}
+      {/* Interactive Shop Front Setup Onboarding Bottom Sheet/Modal */}
+      {showSetupOverlay && (
+        <ShopFrontOnboarding
+          shop={shop}
+          onClose={() => setShowSetupOverlay(false)}
+          onComplete={(updatedShop) => {
+            setShop(updatedShop);
+            setShowSetupOverlay(false);
+            localStorage.setItem(`threadzw_shop_front_setup_${updatedShop.id}`, 'true');
+            toast.success('Your shop front design is now live! ✨');
+          }}
+        />
+      )}
 
       {/* If banner paywall trigger is opened manually by user on active dashboard */}
       {bannerPaywallOpen && (
@@ -1002,7 +1018,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               {/* STOREFRONT SETUP NOTICE BANNER */}
               {!isShopSetupCompleted && !showSetupOverlay && (
                 <div 
-                  id="banner_storefront_unconfigured"
+                   id="banner_storefront_unconfigured"
                   className="mb-5 p-4 rounded-xl bg-[#c8ff00]/5 border border-[#c8ff00]/15 text-white text-xs flex flex-row items-center justify-between gap-4 select-none shadow-md"
                 >
                   <div className="flex items-start gap-3">
@@ -1014,7 +1030,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   </div>
                   <button
                     id="btn_launch_notice_onboarding"
-                    onClick={() => navigate('/edit-shop')}
+                    onClick={() => setShowSetupOverlay(true)}
                     className="px-3.5 py-2 bg-[#c8ff00] hover:bg-[#b0df00] text-black font-extrabold rounded-lg uppercase tracking-wider text-[9.5px] hover:scale-[1.02] active:scale-[0.98] transition-transform cursor-pointer whitespace-nowrap"
                   >
                     Setup Now &rarr;

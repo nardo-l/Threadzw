@@ -437,11 +437,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           const ext = bannerFile.name.split('.').pop();
           const filePath = `${activeUserId}/banner_${Date.now()}.${ext}`;
           const { error: uploadErr } = await supabase.storage
-            .from('shop-images')
+            .from('shop-banners')
             .upload(filePath, bannerFile, { upsert: true });
           
           if (!uploadErr) {
-            const { data: bannerPub } = supabase.storage.from('shop-images').getPublicUrl(filePath);
+            const { data: bannerPub } = supabase.storage.from('shop-banners').getPublicUrl(filePath);
             finalBannerUrl = bannerPub.publicUrl;
           }
         } catch (err) {

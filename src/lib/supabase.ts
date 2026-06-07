@@ -96,13 +96,32 @@ function getFallbackForRelation(
   
   if (relation === 'shops') {
     let parsed: any = null;
+    const allLocalShops: any[] = [];
     try {
       const cached = localStorage.getItem(`shop_${activeUserId}`) || localStorage.getItem('threadzw_shop');
       if (cached) {
         parsed = JSON.parse(cached);
+        parsed.id = parsed.id || 'local-shop-' + (parsed.owner_id || activeUserId);
+        allLocalShops.push(parsed);
+      }
+      
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('shop_') && key !== 'shop_local-session-id' && key !== `shop_${activeUserId}`) {
+          const contents = localStorage.getItem(key);
+          if (contents) {
+            try {
+              const shopObj = JSON.parse(contents);
+              if (shopObj && (shopObj.handle || shopObj.slug)) {
+                shopObj.id = shopObj.id || 'local-shop-' + (shopObj.owner_id || key.substring(5));
+                allLocalShops.push(shopObj);
+              }
+            } catch (_) {}
+          }
+        }
       }
     } catch (e) {
-      console.warn("Error reading cached shop:", e);
+      console.warn("Error reading cached shop list:", e);
     }
     
     const defaultShop = {
@@ -128,8 +147,9 @@ function getFallbackForRelation(
       if (fh === 'demo') {
         return isSingle ? demoShopRecord : [demoShopRecord];
       }
-      if (parsed && parsed.handle && parsed.handle.toLowerCase().trim() === fh) {
-        return isSingle ? parsed : [parsed];
+      const matched = allLocalShops.find(s => s && s.handle && s.handle.toLowerCase().trim() === fh);
+      if (matched) {
+        return isSingle ? matched : [matched];
       }
       if (defaultShop.handle.toLowerCase().trim() === fh) {
         return isSingle ? defaultShop : [defaultShop];
@@ -142,11 +162,9 @@ function getFallbackForRelation(
       if (fs === 'demo') {
         return isSingle ? demoShopRecord : [demoShopRecord];
       }
-      if (parsed && parsed.slug && parsed.slug.toLowerCase().trim() === fs) {
-        return isSingle ? parsed : [parsed];
-      }
-      if (parsed && parsed.handle && parsed.handle.toLowerCase().trim() === fs) {
-        return isSingle ? parsed : [parsed];
+      const matched = allLocalShops.find(s => (s && s.slug && s.slug.toLowerCase().trim() === fs) || (s && s.handle && s.handle.toLowerCase().trim() === fs));
+      if (matched) {
+        return isSingle ? matched : [matched];
       }
       if (defaultShop.handle.toLowerCase().trim() === fs) {
         return isSingle ? defaultShop : [defaultShop];
@@ -211,27 +229,62 @@ function getFallbackForRelation(
 
   if (relation === 'products') {
     try {
-      const cached = localStorage.getItem(`products_${activeUserId}`) ||
-                     localStorage.getItem(`products_local-shop-${activeUserId}`) ||
-                     localStorage.getItem(`products_local-shop-id`);
-      if (cached) {
-        return JSON.parse(cached);
-      }
-      
-      // Resiliently locate any non-empty 'products_' cached list
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('products_')) {
-          const contents = localStorage.getItem(key);
-          if (contents) {
-            try {
-              const list = JSON.parse(contents);
-              if (Array.isArray(list) && list.length > 0) {
-                return list;
-              }
-            } catch (_) {}
+      const targetShopId = filterShopId || activeUserId;
+      if (targetShopId) {
+        const cached = localStorage.getItem(`products_${targetShopId}`) ||
+                       localStorage.getItem(`products_local-shop-${targetShopId}`);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            return parsed.filter((p: any) => !p.shop_id || p.shop_id === targetShopId);
           }
         }
+
+        // Direct scan for this specific shop limit
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('products_')) {
+            const contents = localStorage.getItem(key);
+            if (contents) {
+              try {
+                const list = JSON.parse(contents);
+                if (Array.isArray(list)) {
+                  const filtered = list.filter((p: any) => p.shop_id === targetShopId);
+                  if (filtered.length > 0) {
+                    return filtered;
+                  }
+                }
+              } catch (_) {}
+            }
+          }
+        }
+        
+        // Return empty or empty array to avoid leaking products of other shops
+        return [];
+      } else {
+        // Active/Feed products search across all compiled products
+        let combined: any[] = [];
+        const seenIds = new Set();
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('products_')) {
+            const contents = localStorage.getItem(key);
+            if (contents) {
+              try {
+                const list = JSON.parse(contents);
+                if (Array.isArray(list)) {
+                  list.forEach((p: any) => {
+                    if (p && p.id && !seenIds.has(p.id)) {
+                      seenIds.add(p.id);
+                      combined.push(p);
+                    }
+                  });
+                }
+              } catch (_) {}
+            }
+          }
+        }
+        return combined;
       }
     } catch (e) {
       console.warn("Error reading cached products:", e);
@@ -328,6 +381,21 @@ supabase.from = function(relation: string) {
                   val = { data: fb, error: null, count: fb ? (Array.isArray(fb) ? fb.length : 1) : 0 };
                 }
 
+                // Fall back if database query successfully executed but returned no matching row
+                if (val && !val.error && (!val.data || (Array.isArray(val.data) && val.data.length === 0))) {
+                  const fb = getFallbackForRelation(
+                    rel, 
+                    state.isSingle, 
+                    state.filterOwnerId, 
+                    state.filterHandle, 
+                    state.filterSlug, 
+                    state.filterShopId
+                  );
+                  if (fb !== undefined && fb !== null && (Array.isArray(fb) ? fb.length > 0 : true)) {
+                    val = { data: fb, error: null, count: fb ? (Array.isArray(fb) ? fb.length : 1) : 0 };
+                  }
+                }
+
                 if (val && val.data && rel === 'shops') {
                   const demoShopRecord = {
                     id: 'demo-shop',
@@ -394,7 +462,7 @@ supabase.from = function(relation: string) {
             if (prop === 'single' || prop === 'maybeSingle') {
               state.isSingle = true;
             }
-            if (prop === 'eq' && typeof args[1] === 'string') {
+            if ((prop === 'eq' || prop === 'ilike') && typeof args[1] === 'string') {
               if (args[0] === 'owner_id') {
                 state.filterOwnerId = args[1];
               } else if (args[0] === 'handle') {
@@ -402,6 +470,8 @@ supabase.from = function(relation: string) {
               } else if (args[0] === 'slug') {
                 state.filterSlug = args[1];
               } else if (args[0] === 'id') {
+                state.filterShopId = args[1];
+              } else if (args[0] === 'shop_id') {
                 state.filterShopId = args[1];
               }
             }
@@ -414,7 +484,8 @@ supabase.from = function(relation: string) {
                 const ownerId = shopObj.owner_id || getLoggedUserId();
                 try {
                   const existing = localStorage.getItem(`shop_${ownerId}`);
-                  const merged = existing ? { ...JSON.parse(existing), ...shopObj } : shopObj;
+                  const baseId = shopObj.id || (existing ? JSON.parse(existing).id : null) || `local-shop-${ownerId}`;
+                  const merged = existing ? { id: baseId, ...JSON.parse(existing), ...shopObj } : { id: baseId, ...shopObj };
                   localStorage.setItem(`shop_${ownerId}`, JSON.stringify(merged));
                   localStorage.setItem('threadzw_shop', JSON.stringify(merged));
                   if (merged.name) {

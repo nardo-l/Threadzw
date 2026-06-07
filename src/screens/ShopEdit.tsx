@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, SUPABASE_URL } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -274,9 +274,9 @@ export const ShopEdit = () => {
 
   const getImageUrl = (url: string | null) => {
     if (!url) return null;
-    if (url.startsWith('http')) return url;
+    if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
     const bucket = url.includes('banner') ? 'shop-banners' : 'shop-avatars';
-    return `https://oadahfyoxfbisqqdtttz.supabase.co/storage/v1/object/public/${bucket}/${url}`;
+    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${url}`;
   };
 
   const uploadShopImage = async (file: File, type: 'logo' | 'banner') => {
@@ -995,11 +995,11 @@ export const ShopEdit = () => {
           </div>
 
           <div className={`flex flex-wrap gap-2 transition-all ${validationErrors.categories ? 'animate-shake' : ''}`}>
-            {CATEGORY_OPTIONS.map(cat => {
+            {CATEGORY_OPTIONS.map((cat, index) => {
               const isSelected = categories.includes(cat);
               return (
                 <button
-                  key={cat}
+                  key={`${cat || 'cat'}-${index}`}
                   onClick={() => toggleCategory(cat)}
                   className={`px-4 py-2 rounded-pill font-sans text-sm transition-all border ${
                     isSelected 
@@ -1212,7 +1212,7 @@ export const ShopEdit = () => {
 
           <div className="space-y-4">
             {tradingHours.map((hour, index) => (
-              <div key={hour.day} className="flex items-center justify-between">
+              <div key={`${hour.day || 'hour'}-${index}`} className="flex items-center justify-between">
                 <span className="font-sans text-white w-12">{hour.day}</span>
                 
                 <div className="flex-1 flex items-center justify-end gap-3">
@@ -1555,13 +1555,13 @@ export const ShopEdit = () => {
                 </div>
               ) : (
                 <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 border border-border/20 rounded-12 p-2 bg-elevated/30">
-                  {shopProducts.map((p) => {
+                  {shopProducts.map((p, index) => {
                     const isFeat = featuredProducts.includes(p.id);
                     const isBest = bestSellerProducts.includes(p.id);
                     const imgUrl = Array.isArray(p.images) && p.images[0] ? p.images[0] : 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=80&q=80';
                     
                     return (
-                      <div key={p.id} className="flex items-center justify-between p-2 rounded-8 bg-elevated/80 border border-border/10">
+                      <div key={`${p.id || 'product'}-${index}`} className="flex items-center justify-between p-2 rounded-8 bg-elevated/80 border border-border/10">
                         <div className="flex items-center gap-2">
                           <img src={imgUrl} className="w-8 h-8 rounded object-cover" referrerPolicy="no-referrer" />
                           <div className="leading-tight">
@@ -1839,9 +1839,9 @@ export const ShopEdit = () => {
             <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-6" />
             <h3 className="font-syne font-bold text-xl text-white mb-6">Select Area</h3>
             <div className="space-y-1 max-h-[400px] overflow-y-auto no-scrollbar">
-              {AREAS.map(a => (
+              {AREAS.map((a, index) => (
                 <button
-                  key={a}
+                  key={`${a || 'area'}-${index}`}
                   onClick={() => {
                     setArea(a);
                     setShowAreaSheet(false);

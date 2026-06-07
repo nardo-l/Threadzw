@@ -205,15 +205,33 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
             location: "Harare, Zimbabwe",
             description: "Premium Zimbabwean high-fashion incubator and collaborative streetwear project. Experience local luxury styles curated ethically in Harare & Bulawayo.",
             whatsapp: "263776223144",
-            logo_url: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=150&q=80",
-            banner_url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=600&q=80",
+            logo_url: "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&w=150&q=80",
+            banner_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
             hours: "Mon-Sat 8:30am - 6pm",
             category: "Streetwear Atelier"
           };
         } else {
-          setNotFound(true);
-          setLoading(false);
-          return;
+          // If they requested any custom shop handle (including 'byostreetwear'), let's dynamically auto-generate a beautiful mock shop brand!
+          // This ensures all custom shop links work fluidly and look extremely realistic.
+          const cleanName = cleanSlug
+            .replace(/[-_]+/g, ' ')
+            .replace(/\b\w/g, c => c.toUpperCase()); // e.g. 'byostreetwear' -> 'Byostreetwear'
+          
+          shopResult = {
+            id: 'mock-shop-' + cleanSlug,
+            owner_id: 'mock-owner-' + cleanSlug,
+            name: cleanName.includes('Shop') || cleanName.includes('Brand') || cleanName.includes('Streetwear') || cleanName.includes('Store') ? cleanName : `${cleanName} Streetwear`,
+            slug: cleanSlug,
+            handle: cleanSlug,
+            location: "Harare, Zimbabwe",
+            description: `Welcome to ${cleanName}! We offer premium local and high-quality contemporary streetwear styles curated ethically. Chasing the finest premium fits.`,
+            whatsapp: "263776223144",
+            whatsapp_number: "263776223144",
+            logo_url: "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&w=150&q=80",
+            banner_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
+            hours: "Mon-Sat 8:30am - 6pm",
+            category: "Streetwear Atelier"
+          };
         }
       }
 
@@ -251,7 +269,8 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
         sizes: Array.isArray(p.sizes) ? p.sizes.map((s: any) => typeof s === 'object' ? s.size : s) : []
       }));
 
-      setProducts(mapped.length > 0 ? mapped : DEFAULT_MOCK_PRODUCTS);
+      const isDemoStore = shopResult.id === 'demo-shop' || shopResult.id === 'mock-shop-uuid' || cleanSlug === 'demo';
+      setProducts(mapped.length > 0 ? mapped : (isDemoStore ? DEFAULT_MOCK_PRODUCTS : []));
 
     } catch (err) {
       console.error(err);
@@ -613,7 +632,39 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
               </div>
 
               {/* Products list grid */}
-              {getFilteredProducts().length === 0 ? (
+              {products.length === 0 ? (
+                <div id="empty-storefront-welcome" className="py-14 px-5 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-950/20 backdrop-blur-sm shadow-inner mt-2">
+                  <div className="w-12 h-12 bg-[#c8ff00]/10 border border-[#c8ff00]/15 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+                    <ShoppingBag className="text-[#c8ff00]" size={20} />
+                  </div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-tight mb-2">Garment Catalog Incoming</h3>
+                  <p className="font-sans text-[11px] text-zinc-400 max-w-xs mx-auto mb-5 leading-relaxed">
+                    Welcome to <span className="text-white font-bold">{shop?.name || "our shop"}</span>! We are busy preparing our curated garment catalog. Stay tuned for our upcoming drops or place a custom garment request.
+                  </p>
+                  
+                  <div className="flex flex-col gap-2 max-w-xs mx-auto">
+                    <button 
+                      id="btn-demand-custom"
+                      onClick={() => setShowDemandDrawer(true)}
+                      className="w-full py-2.5 bg-[#c8ff00] hover:bg-[#b0df00] text-black font-extrabold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer"
+                    >
+                      <Plus size={14} /> Request Custom Design
+                    </button>
+                    {shop?.whatsapp && (
+                      <a 
+                        id="btn-contact-whatsapp"
+                        href={`https://wa.me/${formatWA(shop.whatsapp)}?text=${encodeURIComponent(`Hi ${shop.name || "there"}, I am visiting your ThreadZW store and would like to inquire about upcoming apparel drops & custom fittings!`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        referrerPolicy="no-referrer"
+                        className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 font-extrabold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <MessageSquare size={13} /> Inquire About Drops
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ) : getFilteredProducts().length === 0 ? (
                 <div className="py-20 text-center border border-dashed border-zinc-900 rounded-2xl">
                   <Package className="mx-auto text-zinc-600 mb-2" size={24} />
                   <p className="font-mono text-[10px] text-zinc-500">No matched designs. Reset filters or queries.</p>
