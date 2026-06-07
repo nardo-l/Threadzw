@@ -553,17 +553,6 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
                 </div>
               </div>
 
-              {/* SHOP GALLERY */}
-              <div className="py-5 px-4 border-b border-zinc-900 text-left">
-                <span className="text-[8px] font-mono tracking-widest text-[#c8ff00] font-black uppercase block mb-1">Look Book Gallery</span>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-3">Atelier Space & Design</h3>
-                <div className="grid grid-cols-3 gap-1.5 rounded-xl overflow-hidden border border-zinc-900">
-                  <img src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=150&q=80" alt="Space" className="aspect-square object-cover hover:opacity-80 transition-opacity cursor-pointer" />
-                  <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=150&q=80" alt="Garments" className="aspect-square object-cover hover:opacity-80 transition-opacity cursor-pointer" />
-                  <img src="https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=150&q=80" alt="Wear" className="aspect-square object-cover hover:opacity-80 transition-opacity cursor-pointer" />
-                </div>
-              </div>
-
               {/* DEMAND FORM PREVIEW LINK */}
               <div className="p-4">
                 <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 text-center">
