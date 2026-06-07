@@ -58,7 +58,14 @@ function getLoggedUserId(): string {
 }
 
 // Fallback generator for queries that timeout or fail
-function getFallbackForRelation(relation: string, isSingle: boolean, filterOwnerId?: string) {
+function getFallbackForRelation(
+  relation: string, 
+  isSingle: boolean, 
+  filterOwnerId?: string, 
+  filterHandle?: string, 
+  filterSlug?: string, 
+  filterShopId?: string
+) {
   const activeUserId = filterOwnerId || getLoggedUserId();
   
   const demoShopRecord = {
@@ -88,12 +95,11 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
   }
   
   if (relation === 'shops') {
+    let parsed: any = null;
     try {
       const cached = localStorage.getItem(`shop_${activeUserId}`) || localStorage.getItem('threadzw_shop');
       if (cached) {
-        const parsed = JSON.parse(cached);
-        const list = [parsed, demoShopRecord];
-        return isSingle ? (parsed.handle === 'demo' ? demoShopRecord : parsed) : list;
+        parsed = JSON.parse(cached);
       }
     } catch (e) {
       console.warn("Error reading cached shop:", e);
@@ -117,15 +123,61 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
       trial_end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
     };
     
-    return isSingle ? defaultShop : [defaultShop, demoShopRecord];
+    if (filterHandle) {
+      const fh = filterHandle.toLowerCase().trim();
+      if (fh === 'demo') {
+        return isSingle ? demoShopRecord : [demoShopRecord];
+      }
+      if (parsed && parsed.handle && parsed.handle.toLowerCase().trim() === fh) {
+        return isSingle ? parsed : [parsed];
+      }
+      if (defaultShop.handle.toLowerCase().trim() === fh) {
+        return isSingle ? defaultShop : [defaultShop];
+      }
+      return isSingle ? null : [];
+    }
+
+    if (filterSlug) {
+      const fs = filterSlug.toLowerCase().trim();
+      if (fs === 'demo') {
+        return isSingle ? demoShopRecord : [demoShopRecord];
+      }
+      if (parsed && parsed.slug && parsed.slug.toLowerCase().trim() === fs) {
+        return isSingle ? parsed : [parsed];
+      }
+      if (parsed && parsed.handle && parsed.handle.toLowerCase().trim() === fs) {
+        return isSingle ? parsed : [parsed];
+      }
+      if (defaultShop.handle.toLowerCase().trim() === fs) {
+        return isSingle ? defaultShop : [defaultShop];
+      }
+      return isSingle ? null : [];
+    }
+
+    if (filterShopId) {
+      const fsd = filterShopId;
+      if (fsd === 'demo-shop') {
+        return isSingle ? demoShopRecord : [demoShopRecord];
+      }
+      if (parsed && parsed.id === fsd) {
+        return isSingle ? parsed : [parsed];
+      }
+      if (defaultShop.id === fsd) {
+        return isSingle ? defaultShop : [defaultShop];
+      }
+      return isSingle ? null : [];
+    }
+    
+    const currentShop = parsed || defaultShop;
+    return isSingle ? currentShop : [currentShop, demoShopRecord];
   }
   
   if (relation === 'profiles') {
+    let parsed: any = null;
     try {
       const cached = localStorage.getItem(`profile_${activeUserId}`);
       if (cached) {
-        const parsed = JSON.parse(cached);
-        return isSingle ? parsed : [parsed];
+        parsed = JSON.parse(cached);
       }
     } catch (e) {
       console.warn("Error reading cached profile:", e);
@@ -141,7 +193,20 @@ function getFallbackForRelation(relation: string, isSingle: boolean, filterOwner
       whatsapp_number: '0776223144',
       created_at: new Date().toISOString()
     };
-    return isSingle ? defaultProfile : [defaultProfile];
+
+    if (filterHandle) {
+      const fh = filterHandle.toLowerCase().trim();
+      if (parsed && parsed.handle && parsed.handle.toLowerCase().trim() === fh) {
+        return isSingle ? parsed : [parsed];
+      }
+      if (defaultProfile.handle.toLowerCase().trim() === fh) {
+        return isSingle ? defaultProfile : [defaultProfile];
+      }
+      return isSingle ? null : [];
+    }
+
+    const currentProfile = parsed || defaultProfile;
+    return isSingle ? currentProfile : [currentProfile];
   }
 
   if (relation === 'products') {
@@ -224,7 +289,17 @@ const originalFrom = supabase.from.bind(supabase);
 supabase.from = function(relation: string) {
   const queryBuilder = originalFrom(relation);
   
-  function makeBuilderProxy(builder: any, rel: string, state = { isSingle: false, filterOwnerId: undefined as string | undefined }) {
+  function makeBuilderProxy(
+    builder: any, 
+    rel: string, 
+    state = { 
+      isSingle: false, 
+      filterOwnerId: undefined as string | undefined,
+      filterHandle: undefined as string | undefined,
+      filterSlug: undefined as string | undefined,
+      filterShopId: undefined as string | undefined
+    }
+  ) {
     return new Proxy(builder, {
       get(target, prop, receiver) {
         if (prop === 'then') {
@@ -242,7 +317,14 @@ supabase.from = function(relation: string) {
               (val: any) => {
                 if (val && val.error) {
                   console.warn(`Database query returned error on ${rel}:`, val.error);
-                  const fb = getFallbackForRelation(rel, state.isSingle, state.filterOwnerId);
+                  const fb = getFallbackForRelation(
+                    rel, 
+                    state.isSingle, 
+                    state.filterOwnerId, 
+                    state.filterHandle, 
+                    state.filterSlug, 
+                    state.filterShopId
+                  );
                   val = { data: fb, error: null, count: fb ? (Array.isArray(fb) ? fb.length : 1) : 0 };
                 }
 
@@ -292,7 +374,14 @@ supabase.from = function(relation: string) {
               },
               (err) => {
                 console.warn(`Database query failed/timeout on ${rel}:`, err);
-                const fb = getFallbackForRelation(rel, state.isSingle, state.filterOwnerId);
+                const fb = getFallbackForRelation(
+                  rel, 
+                  state.isSingle, 
+                  state.filterOwnerId, 
+                  state.filterHandle, 
+                  state.filterSlug, 
+                  state.filterShopId
+                );
                 return { data: fb, error: null, count: fb ? (Array.isArray(fb) ? fb.length : 1) : 0 };
               }
             ).then(onfulfilled, onrejected);
@@ -305,8 +394,16 @@ supabase.from = function(relation: string) {
             if (prop === 'single' || prop === 'maybeSingle') {
               state.isSingle = true;
             }
-            if (prop === 'eq' && args[0] === 'owner_id' && typeof args[1] === 'string') {
-              state.filterOwnerId = args[1];
+            if (prop === 'eq' && typeof args[1] === 'string') {
+              if (args[0] === 'owner_id') {
+                state.filterOwnerId = args[1];
+              } else if (args[0] === 'handle') {
+                state.filterHandle = args[1];
+              } else if (args[0] === 'slug') {
+                state.filterSlug = args[1];
+              } else if (args[0] === 'id') {
+                state.filterShopId = args[1];
+              }
             }
 
             // Capture mutations to update local cache
