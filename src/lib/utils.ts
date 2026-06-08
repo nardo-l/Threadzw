@@ -24,6 +24,14 @@ export function mapError(error: any): string {
     return 'Incorrect email or password. Please try again.';
   }
 
+  if (
+    lowerMessage.includes('invalid api key') || 
+    lowerMessage.includes('api key') || 
+    lowerMessage.includes('apikey')
+  ) {
+    return 'Invalid Supabase API Key. Please make sure you have configured the VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables in your Vercel (or hosting) project dashboard, then redeployed.';
+  }
+
   if (lowerMessage.includes('email not confirmed')) {
     return 'Please confirm your email before signing in.';
   }

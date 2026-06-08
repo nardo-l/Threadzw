@@ -15,7 +15,7 @@ import { Shop, Product } from '../types';
 import { toast } from 'sonner';
 import { HowToPay } from './HowToPay';
 import { useShopContext } from '../context/ShopContext';
-import { ShopLogo, ShopBanner, ProductImage } from '../components/ui/ShopImage';
+import { ShopLogo, ShopBanner, ProductImage, resolveImageUrl } from '../components/ui/ShopImage';
 
 import { LockOverlay } from '../components/paywall/LockOverlay';
 import { getShopStatus, parseDate } from '../utils/shopStatus';
@@ -974,6 +974,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
     );
   }
 
+  console.log('[DASHBOARD IMAGE PIPELINE DEBUG]', {
+    shopId: shop?.id,
+    logoUrlDb: shop?.logo_url || shop?.avatar_url,
+    resolvedLogoUrl: resolveImageUrl(shop?.logo_url || shop?.avatar_url || ''),
+    bannerUrlDb: shop?.banner_url,
+    resolvedBannerUrl: resolveImageUrl(shop?.banner_url || '')
+  });
+
   return (
     <div className="relative min-h-screen overflow-y-auto bg-[#0a0a0a]">
       {/* Interactive Shop Front Setup Onboarding Bottom Sheet/Modal */}
@@ -1009,6 +1017,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         {/* Top Profile Section */}
         <div className="px-5 pt-8">
           
+          {/* IMAGE PIPELINE DEBUG PANEL (Check 7) */}
+          <div className="mb-6 p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono text-[10px] space-y-1.5 shadow-md">
+            <div className="font-extrabold text-[#c8ff00] text-xs flex justify-between items-center pb-1 border-b border-zinc-800">
+              <span>🔍 SELLER DASHBOARD IMAGE PIPELINE DEBUGGER</span>
+              <span className="text-[9px] text-zinc-500 font-normal">Active</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 pt-1.5">
+              <div><strong className="text-zinc-200">Shop ID:</strong> <span className="text-zinc-300 select-all">{shop?.id || 'N/A'}</span></div>
+              <div><strong className="text-zinc-200">Raw DB Logo:</strong> <span className="text-zinc-300 select-all">{shop?.logo_url || shop?.avatar_url || 'N/A'}</span></div>
+              <div><strong className="text-zinc-200">Resolved Logo:</strong> <span className="text-zinc-400 select-all">{resolveImageUrl(shop?.logo_url || shop?.avatar_url) || 'N/A'}</span></div>
+              <div><strong className="text-zinc-200">Raw DB Banner:</strong> <span className="text-zinc-300 select-all">{shop?.banner_url || 'N/A'}</span></div>
+              <div><strong className="text-zinc-200">Resolved Banner:</strong> <span className="text-zinc-400 select-all">{resolveImageUrl(shop?.banner_url) || 'N/A'}</span></div>
+              <div><strong className="text-zinc-200">Buckets:</strong> <span>logo: "shop-avatars" | banner: "shop-banners"</span></div>
+            </div>
+          </div>
+
           {!isLockedOnFetch && (
             <>
               <OwnerStatusBanner

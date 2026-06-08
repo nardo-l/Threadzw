@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { mapError } from '../lib/utils';
 
 export const generateSlug = (shopName: string): string => {
   return shopName
@@ -357,7 +358,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
       setAppStage('dashboard');
     } catch (err: any) {
       console.error('SignUp Submit Error:', err);
-      toast.error(err.message || 'Error occurred during secure signup.');
+      toast.error(mapError(err));
     } finally {
       setSigningUp(false);
     }

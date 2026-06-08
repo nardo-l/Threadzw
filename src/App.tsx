@@ -175,7 +175,11 @@ function AppContent() {
       <Routes>
         <Route path="/demo" element={<StorefrontPage />} />
         <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
@@ -185,7 +189,11 @@ function AppContent() {
     return (
       <Routes>
         <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
@@ -199,7 +207,11 @@ function AppContent() {
     return (
       <Routes>
         <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/demo" element={<StorefrontPage />} />
         <Route path="*" element={<StorefrontPage />} />
       </Routes>

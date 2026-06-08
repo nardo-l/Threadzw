@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { mapError } from '../lib/utils';
 import { useDemoShop } from '../hooks/useDemoShop';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
 
@@ -480,7 +481,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       setScreen(26);
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || 'An error occurred during account creation.');
+      toast.error(mapError(err));
     } finally {
       setSigningUp(false);
     }

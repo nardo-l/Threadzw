@@ -1,8 +1,18 @@
 // src/utils/imageUrl.ts
+import { SUPABASE_URL } from '../lib/supabase';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const getBaseSupabaseUrl = (): string => {
+  let val = SUPABASE_URL || '';
+  if (!val) {
+    val = (import.meta.env?.VITE_SUPABASE_URL) || "https://dxfnoswvuhqvhyofcain.supabase.co";
+  }
+  if (val.endsWith('/')) {
+    val = val.slice(0, -1);
+  }
+  return val;
+};
 
-const STORAGE_BASE = `${SUPABASE_URL}/storage/v1/object/public`;
+const STORAGE_BASE = `${getBaseSupabaseUrl()}/storage/v1/object/public`;
 
 export const getImageUrl = (
   path: string | null | undefined, 
@@ -10,16 +20,24 @@ export const getImageUrl = (
 ): string | null => {
   if (!path) return null;
   
+  let finalPath = path.trim();
+
+  // Rewrite legacy project references if they occur
+  if (finalPath.includes('oadahfyoxfbisqqdtttz.supabase.co')) {
+    const activeBase = getBaseSupabaseUrl();
+    finalPath = finalPath.replace(/https:\/\/oadahfyoxfbisqqdtttz\.supabase\.co/gi, activeBase);
+  }
+
   // Already a full URL
-  if (path.startsWith('http')) return path;
+  if (finalPath.startsWith('http')) return finalPath;
   
   // Path with bucket prefix
-  if (path.startsWith('shop-images/')) {
-    return `${STORAGE_BASE}/${path}`;
+  if (finalPath.startsWith('shop-images/')) {
+    return `${STORAGE_BASE}/${finalPath}`;
   }
   
   // Relative path
-  return `${STORAGE_BASE}/${bucket}/${path}`;
+  return `${STORAGE_BASE}/${bucket}/${finalPath}`;
 };
 
 export const getShopLogoUrl = (shop: any): string | null => {

@@ -1,14 +1,63 @@
 // src/components/ui/ShopImage.tsx
 import React, { useState } from 'react';
+import { SUPABASE_URL } from '../../lib/supabase';
 
-const SUPABASE_STORAGE = `https://oadahfyoxfbisqqdtttz.supabase.co/storage/v1/object/public/shop-images/`;
+const getBaseStorageUrl = (): string => {
+  let val = SUPABASE_URL || '';
+  if (!val) {
+    val = (import.meta.env?.VITE_SUPABASE_URL) || "https://dxfnoswvuhqvhyofcain.supabase.co";
+  }
+  if (val.endsWith('/')) {
+    val = val.slice(0, -1);
+  }
+  return `${val}/storage/v1/object/public`;
+};
 
 export const resolveImageUrl = (url: string | null | undefined): string | null => {
   if (!url || url.trim() === '') return null;
-  if (url.startsWith('http')) return url;
-  if (url.startsWith('//')) return `https:${url}`;
-  // Relative path
-  return `${SUPABASE_STORAGE}${url}`;
+  
+  const baseStorage = getBaseStorageUrl();
+  let finalUrl = url.trim();
+
+  // Log raw input and base details for pipeline tracking
+  console.log('[IMAGE PIPELINE] Resolving image URL:', {
+    rawInput: url,
+    activeBase: SUPABASE_URL,
+    storageEndpoint: baseStorage
+  });
+
+  // Rewrite legacy project references dynamically if they occur in database records or defaults
+  if (finalUrl.includes('oadahfyoxfbisqqdtttz.supabase.co')) {
+    console.warn('[IMAGE PIPELINE] Detected legacy project ID "oadahfyoxfbisqqdtttz", rewriting to active Supabase URL');
+    const cleanBase = SUPABASE_URL ? SUPABASE_URL.replace(/\/$/, '') : "https://dxfnoswvuhqvhyofcain.supabase.co";
+    finalUrl = finalUrl.replace(/https:\/\/oadahfyoxfbisqqdtttz\.supabase\.co/gi, cleanBase);
+  }
+
+  if (finalUrl.startsWith('http')) {
+    return finalUrl;
+  }
+  if (finalUrl.startsWith('//')) {
+    return `https:${finalUrl}`;
+  }
+
+  // Dynamic bucket matching for relative references
+  let bucket = 'shop-images';
+  if (finalUrl.includes('avatar') || finalUrl.includes('logo')) {
+    bucket = 'shop-avatars';
+  } else if (finalUrl.includes('banner')) {
+    bucket = 'shop-banners';
+  } else if (finalUrl.includes('product')) {
+    bucket = 'product-images';
+  }
+
+  const resolved = `${baseStorage}/${bucket}/${finalUrl}`;
+  console.log('[IMAGE PIPELINE] Resolved relative path:', {
+    bucket,
+    relative: finalUrl,
+    resolved
+  });
+  
+  return resolved;
 };
 
 export const getGlobalImageUrl = (url: string | null | undefined, type: 'logo' | 'banner' | 'product'): string => {
