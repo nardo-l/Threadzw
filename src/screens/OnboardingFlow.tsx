@@ -91,15 +91,13 @@ const WhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({ size = 
 );
 
 export const generateSlug = (shopName: string): string => {
+  if (!shopName) return '';
   return shopName
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-]/g, '')
-    // Remove special characters
-    .replace(/\s+/g, '')
-    // Remove all spaces
-    .replace(/-+/g, '-');
-    // Clean up dashes
+    .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+    .replace(/\s+/g, '')       // Remove ALL spaces
+    .replace(/[^a-z0-9]/g, '');// Final cleanup
 };
 
 export const generateUniqueSlug = async (shopName: string): Promise<string> => {
@@ -450,7 +448,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       }
 
       // 3. Connect/Insert shop config
-      const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+      const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
       const generatedSlug = await generateUniqueSlug(shopName || 'My Shop');
       const { error: shopError } = await supabase.from('shops').upsert({
         owner_id: activeUserId,

@@ -30,6 +30,7 @@ import { SubscriptionPage } from './pages/SubscriptionPage';
 import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
 import { PaymentCancelledPage } from './pages/PaymentCancelledPage';
 import { ShopProvider, useShopContext } from './context/ShopContext';
+import { StorefrontPage } from './pages/StorefrontPage';
 
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup';
 
@@ -172,21 +173,20 @@ function AppContent() {
   if (isDemoUrl) {
     return (
       <Routes>
-        <Route path="/demo" element={<PublicShopPage handle="demo" />} />
-        <Route path="/shop/:shopSlug" element={<PublicShopPage handle="demo" />} />
-        <Route path="/store/:shopSlug" element={<PublicShopPage handle="demo" />} />
-        <Route path="*" element={<PublicShopPage handle="demo" />} />
+        <Route path="/demo" element={<StorefrontPage />} />
+        <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
   }
 
   if (cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/')) {
-    const handle = initialData.handle || 'demo';
     return (
       <Routes>
-        <Route path="/shop/:shopSlug" element={<PublicShopPage handle={handle} />} />
-        <Route path="/store/:shopSlug" element={<PublicShopPage handle={handle} />} />
-        <Route path="*" element={<PublicShopPage handle={handle} />} />
+        <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
   }
@@ -196,13 +196,12 @@ function AppContent() {
   }
 
   if (appStage === 'shop') {
-    const handle = initialData.handle || 'demo';
     return (
       <Routes>
-        <Route path="/shop/:shopSlug" element={<PublicShopPage handle={handle} />} />
-        <Route path="/store/:shopSlug" element={<PublicShopPage handle={handle} />} />
-        <Route path="/demo" element={<PublicShopPage handle="demo" />} />
-        <Route path="*" element={<PublicShopPage handle={handle} />} />
+        <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="/demo" element={<StorefrontPage />} />
+        <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
   }

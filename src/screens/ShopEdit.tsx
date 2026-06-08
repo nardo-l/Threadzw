@@ -37,6 +37,9 @@ import { uploadImage } from '../utils/uploadImage';
 import { useInventory } from '../context/InventoryContext';
 import { useShopContext } from '../context/ShopContext';
 import { parseShopConfig, serializeShopConfig, StorefrontConfig } from '../utils/configHelper';
+import { slugify } from '../utils/slugify';
+import { getImageUrl as getGlobalImageUrl } from '../utils/imageUrl';
+import { ShopLogo, ShopBanner, ProductImage } from '../components/ui/ShopImage';
 
 const AREAS = [
   'Harare CBD', 'Eastlea', 'Borrowdale', 'Avondale', 'Bulawayo', 
@@ -273,10 +276,7 @@ export const ShopEdit = () => {
   };
 
   const getImageUrl = (url: string | null) => {
-    if (!url) return null;
-    if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
-    const bucket = url.includes('banner') ? 'shop-banners' : 'shop-avatars';
-    return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${url}`;
+    return getGlobalImageUrl(url);
   };
 
   const uploadShopImage = async (file: File, type: 'logo' | 'banner') => {
@@ -509,6 +509,7 @@ export const ShopEdit = () => {
       const updateData: any = {
         name: shopName.trim(),
         handle: handle.trim().toLowerCase(),
+        slug: slugify(handle),
         tagline: tagline.trim() || null,
         description: serializedDescription,
         categories,
@@ -750,11 +751,10 @@ export const ShopEdit = () => {
             >
               {(bannerPreview || bannerUrl) ? (
                 <>
-                  <img 
-                    src={getImageUrl(bannerPreview || bannerUrl) || undefined} 
+                  <ShopBanner 
+                    url={bannerPreview || bannerUrl} 
                     alt="Banner" 
                     className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
                     <Camera size={24} className="text-white mb-1" />
@@ -810,11 +810,10 @@ export const ShopEdit = () => {
               >
                 {(avatarPreview || avatarUrl) ? (
                   <>
-                    <img 
-                      src={getImageUrl(avatarPreview || avatarUrl) || undefined} 
+                    <ShopLogo 
+                      url={avatarPreview || avatarUrl} 
                       alt="Logo" 
                       className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <Camera size={20} className="text-white" />
@@ -1563,7 +1562,7 @@ export const ShopEdit = () => {
                     return (
                       <div key={`${p.id || 'product'}-${index}`} className="flex items-center justify-between p-2 rounded-8 bg-elevated/80 border border-border/10">
                         <div className="flex items-center gap-2">
-                          <img src={imgUrl} className="w-8 h-8 rounded object-cover" referrerPolicy="no-referrer" />
+                          <ProductImage url={imgUrl} className="w-8 h-8 rounded object-cover" />
                           <div className="leading-tight">
                             <p className="text-xs text-white font-medium truncate max-w-[120px]">{p.name}</p>
                             <p className="text-[10px] text-primary font-mono">${p.price}</p>

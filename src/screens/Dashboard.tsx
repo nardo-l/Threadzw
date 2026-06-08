@@ -15,6 +15,7 @@ import { Shop, Product } from '../types';
 import { toast } from 'sonner';
 import { HowToPay } from './HowToPay';
 import { useShopContext } from '../context/ShopContext';
+import { ShopLogo, ShopBanner, ProductImage } from '../components/ui/ShopImage';
 
 import { LockOverlay } from '../components/paywall/LockOverlay';
 import { getShopStatus, parseDate } from '../utils/shopStatus';
@@ -1044,7 +1045,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             <div className="flex items-center gap-3">
             <div className={`w-14 h-14 rounded-full bg-card-bg border-2 flex items-center justify-center overflow-hidden ${shop.is_live ? 'border-neon' : 'border-border'}`}>
               {(shop.logo_url || shop.avatar_url) ? (
-                <img src={shop.logo_url || shop.avatar_url || undefined} className="w-full h-full object-cover" />
+                <ShopLogo url={shop.logo_url || shop.avatar_url} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-neon font-bold text-xl">{shop.name[0].toUpperCase()}</span>
               )}
@@ -1373,7 +1374,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   <div key={product.id || `product-${index}`} className="bg-card-bg border border-border rounded-xl p-3.5 flex gap-4 items-center relative">
                     <div className="w-[72px] h-[72px] rounded-xl bg-ele-bg overflow-hidden flex-shrink-0">
                       {product.images?.[0] ? (
-                        <img src={product.images[0]} className="w-full h-full object-cover" />
+                        <ProductImage url={product.images[0]} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-secondary-text/20">
                           <ImageIcon size={24} />
@@ -1885,7 +1886,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                 <div className="bg-white/[0.04] p-3 rounded-[10px] flex items-center gap-3 border border-white/[0.06] mb-5">
                   <div className="w-12 h-12 rounded-[8px] overflow-hidden bg-white/5 flex-shrink-0">
                     {selectedProduct.images?.[0] ? (
-                      <img src={selectedProduct.images[0]} className="w-full h-full object-cover" />
+                      <ProductImage url={selectedProduct.images[0]} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white/20">
                         <ImageIcon size={18} />

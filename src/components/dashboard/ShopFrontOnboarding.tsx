@@ -214,7 +214,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
         if (error) throw error;
         updatedShop = data;
       } else {
-        const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
         const { data, error } = await supabase
           .from('shops')
           .insert([

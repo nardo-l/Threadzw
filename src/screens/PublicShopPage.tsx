@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+// src/screens/PublicShopPage.tsx
+
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { parseShopConfig } from '../utils/configHelper';
 import { useToast } from '../context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ArrowLeft, Share2, MapPin, Package, Clock, 
-  X, ShoppingBag, ArrowRight, Upload, Map,
+  ArrowLeft, MapPin, Package, Clock, X, ShoppingBag, 
   Search, Eye, Heart, Info, Phone, Copy, Check, Grid, 
-  Trash2, Plus, MessageSquare, Star, Sparkles, CheckCircle2
+  Plus, Minus, Star, Menu, MessageSquare, ChevronDown
 } from 'lucide-react';
 import { 
   DEFAULT_MOCK_PRODUCTS, 
@@ -18,8 +19,15 @@ import {
   WHATSAPP_MESSAGE_TEMPLATES, 
   getColorHex 
 } from '../utils/storefrontData';
+import { 
+  getImageUrl, 
+  getShopLogoUrl, 
+  getShopBannerUrl, 
+  getProductImageUrl 
+} from '../utils/imageUrl';
+import { ShopLogo, ShopBanner, ProductImage } from '../components/ui/ShopImage';
 
-// Custom white WhatsApp icon path for design specifications
+// Custom white SVG WhatsApp icon
 const WhatsAppIcon = ({ size = 18, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
     <path d="M17.472 14.382c-.368-.18-2.163-1.07-2.5-1.192-.333-.125-.577-.184-.817.184-.24.368-.934 1.192-1.144 1.438-.21.244-.417.27-.785.092-1.42-.71-2.47-1.31-3.32-2.766-.226-.39.226-.362.648-1.2.073-.146.036-.272-.018-.38-.054-.11-.482-1.162-.663-1.597-.174-.42-.37-.362-.507-.369-.13-.007-.28-.009-.43-.009-.15 0-.396.056-.604.28-.208.225-.792.775-.792 1.888s.81 2.195.922 2.348c.11.15 1.593 2.435 3.86 3.414.54.233.96.372 1.288.477.544.172 1.037.147 1.428.09.435-.065 1.332-.544 1.52-.1.9-.187.356-.347.534-.347.18 0 .324-.09.24-.265zM12.004 2c-5.518 0-10 4.482-10 10 0 1.764.462 3.486 1.333 5.01L2 22l5.12-1.332c1.478.805 3.14 1.233 4.88 1.233 5.518 0 10-4.482 10-10S17.52 2 12.004 2zm0 18c-1.53 0-3.033-.404-4.352-1.166l-.313-.186-3.23.84.856-3.147-.205-.326C4.015 14.88 3.5 13.12 3.5 11.25c0-4.687 3.813-8.5 8.5-8.5s8.5 3.813 8.5 8.5-3.813 8.5-8.5 8.5z"/>
@@ -34,151 +42,146 @@ const formatWA = (num: string) => {
   return '263' + (cleaned || '776223144');
 };
 
+interface CartItem {
+  product: any;
+  quantity: number;
+  selectedSize: string;
+  selectedColor: string;
+}
+
 export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
   const { shopSlug } = useParams<{ shopSlug?: string }>();
   const currentSlug = shopSlug || handle || '';
   const { showToast } = useToast();
 
-  // Core Storefront Data
+  // Core Data State
   const [shop, setShop] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [logoAccent, setLogoAccent] = useState('#c8ff00'); // Neon lime accent fallback
 
-  // State Views
-  const [activeTab, setActiveTab] = useState<'home' | 'catalog' | 'categories' | 'wishlist' | 'info'>('home');
+  // Layout View Tabs: 'home' | 'categories' | 'contact' | 'visit' | 'wishlist' | 'info'
+  const [activeTab, setActiveTab] = useState<'home' | 'categories' | 'contact' | 'visit' | 'wishlist' | 'info'>('home');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
-  
-  // Advanced Filter Settings
+
+  // Filters & Product Overlay
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [sortOption, setSortOption] = useState<'recent' | 'priceAsc' | 'priceDesc' | 'bestsellers'>('recent');
-  const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
-  const [priceMax, setPriceMax] = useState<number>(100);
+  const [sortOption, setSortOption] = useState<'recent' | 'priceAsc' | 'priceDesc'>('recent');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [activeImageIdx, setActiveImageIdx] = useState<number>(0);
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedColor, setSelectedColor] = useState<string>('');
 
-  // Interactive Overlays
+  // Cart & Checkout Flow
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [checkoutMode, setCheckoutMode] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [deliveryDetails, setDeliveryDetails] = useState({
+    fullName: '',
+    phone: '',
+    city: 'Harare',
+    address: '',
+    notes: ''
+  });
+
+  // Overlays state
+  const [menuDrawerOpen, setMenuDrawerOpen] = useState(false);
   const [showDirections, setShowDirections] = useState(false);
-  const [showWhatsAppContact, setShowWhatsAppContact] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showDemandDrawer, setShowDemandDrawer] = useState(false);
-  
-  // Custom Demand upload
-  const [demandDesc, setDemandDesc] = useState('');
-  const [customerWhatsApp, setCustomerWhatsApp] = useState('');
-  const [demandImageUrl, setDemandImageUrl] = useState('');
-  const [isUploadingDemand, setIsUploadingDemand] = useState(false);
-  
-  // Local persistence Wishlist Basket
-  const [wishlist, setWishlist] = useState<any[]>([]);
-  
-  // High fidelity review manager
-  const [reviews, setReviews] = useState<Record<string, {name: string, rating: number, text: string, date: string}[]>>({});
+  const [reviews, setReviews] = useState<Record<string, any[]>>({});
   const [newReviewName, setNewReviewName] = useState('');
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComments, setNewReviewComments] = useState('');
 
-  // Toast notifier
+  // Inner toast helper
   const [innerToast, setInnerToast] = useState<string | null>(null);
-
   const triggerLocalToast = (msg: string) => {
     setInnerToast(msg);
-    setTimeout(() => setInnerToast(null), 2500);
+    setTimeout(() => setInnerToast(null), 2000);
   };
 
-  // Init Wishlist & Reviews on Load
+  // Pre-load data, cart, and reviews on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('wishlist_twdzw');
-      if (stored) setWishlist(JSON.parse(stored));
+      const savedCart = localStorage.getItem('cart_twdzw');
+      if (savedCart) setCart(JSON.parse(savedCart));
     } catch (_) {}
     setReviews(MOCK_REVIEWS_PRESETS);
   }, []);
 
-  const saveWishlist = (updatedList: any[]) => {
-    setWishlist(updatedList);
+  const saveCart = (newCart: CartItem[]) => {
+    setCart(newCart);
     try {
-      localStorage.setItem('wishlist_twdzw', JSON.stringify(updatedList));
+      localStorage.setItem('cart_twdzw', JSON.stringify(newCart));
     } catch (_) {}
   };
 
-  const toggleWishlist = (prod: any, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    const exists = wishlist.some(item => item.id === prod.id);
-    if (exists) {
-      const filtered = wishlist.filter(item => item.id !== prod.id);
-      saveWishlist(filtered);
-      triggerLocalToast("Item removed from Wishlist");
-    } else {
-      const newItem = {
-        ...prod,
-        selectedColor: prod.colours?.[0] || prod.colors?.[0] || 'Default',
-        selectedSize: prod.sizes?.[0] || 'One Size'
-      };
-      saveWishlist([...wishlist, newItem]);
-      triggerLocalToast("Added to Wishlist!");
-    }
+  const getCartCount = () => {
+    return cart.reduce((acc, item) => acc + item.quantity, 0);
   };
 
-  // Read Core logo accent
-  useEffect(() => {
-    if (!shop) return;
-    const logoUrl = shop.logo_url || shop.avatar_url;
-    if (!logoUrl) {
-      setLogoAccent('#c8ff00');
+  const addToCart = (product: any, qty = 1) => {
+    if (product.sizes && product.sizes.length > 0 && !selectedSize) {
+      triggerLocalToast("Please select a size");
       return;
     }
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-    img.src = logoUrl;
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        canvas.width = 10;
-        canvas.height = 10;
-        ctx.drawImage(img, 0, 0, 10, 10);
-        const data = ctx.getImageData(0, 0, 10, 10).data;
-        let rSum=0, gSum=0, bSum=0;
-        for (let i = 0; i < data.length; i += 4) {
-          rSum += data[i]; gSum += data[i+1]; bSum += data[i+2];
-        }
-        const rAvg = Math.round(rSum / 25);
-        const gAvg = Math.round(gSum / 25);
-        const bAvg = Math.round(bSum / 25);
-        setLogoAccent(`rgb(${rAvg}, ${gAvg}, ${bAvg})`);
-      } catch (_) {
-        setLogoAccent('#c8ff00');
-      }
-    };
-    img.onerror = () => setLogoAccent('#c8ff00');
-  }, [shop?.logo_url, shop?.avatar_url]);
+    const colorVal = selectedColor || product.colours?.[0] || product.colors?.[0] || 'Standard';
+    const sizeVal = selectedSize || product.sizes?.[0] || 'One Size';
 
-  // Load Storefront Layout Elements
+    const existingIndex = cart.findIndex(
+      item => item.product.id === product.id && 
+              item.selectedSize === sizeVal && 
+              item.selectedColor === colorVal
+    );
+
+    let updatedCart = [...cart];
+    if (existingIndex > -1) {
+      updatedCart[existingIndex].quantity += qty;
+    } else {
+      updatedCart.push({
+        product,
+        quantity: qty,
+        selectedSize: sizeVal,
+        selectedColor: colorVal
+      });
+    }
+
+    saveCart(updatedCart);
+    triggerLocalToast("Added to Cart!");
+  };
+
+  const updateCartQty = (idx: number, change: number) => {
+    let updated = [...cart];
+    updated[idx].quantity += change;
+    if (updated[idx].quantity <= 0) {
+      updated.splice(idx, 1);
+    }
+    saveCart(updated);
+  };
+
+  // Synchronize loading database data
   useEffect(() => {
     if (currentSlug) {
-      loadStorefrontData();
+      fetchStorefrontData();
     }
   }, [currentSlug]);
 
-  const loadStorefrontData = async () => {
+  const fetchStorefrontData = async () => {
     setLoading(true);
+    setNotFound(false);
     try {
       let cleanSlug = currentSlug.replace(/^@/, '').trim().toLowerCase();
+      cleanSlug = cleanSlug.replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
+
       if (!cleanSlug) {
         setNotFound(true);
         setLoading(false);
         return;
       }
 
-      // Query core database shop
-      const { data: dbShop, error } = await supabase
+      // Query core Supabase database
+      const { data: dbShop } = await supabase
         .from('shops')
         .select('*')
         .eq('slug', cleanSlug)
@@ -186,6 +189,7 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
 
       let shopResult = dbShop;
       if (!shopResult) {
+        // Fallback search handle
         const { data: altShop } = await supabase
           .from('shops')
           .select('*')
@@ -195,58 +199,29 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
       }
 
       if (!shopResult) {
-        // Create demo shop mock if testing details or fallback
-        if (cleanSlug === 'demo' || cleanSlug === 'threadzw') {
-          shopResult = {
-            id: 'mock-shop-uuid',
-            name: "ThreadZW Concept Store",
-            slug: "demo",
-            handle: "demo",
-            location: "Harare, Zimbabwe",
-            description: "Premium Zimbabwean high-fashion incubator and collaborative streetwear project. Experience local luxury styles curated ethically in Harare & Bulawayo.",
-            whatsapp: "263776223144",
-            logo_url: "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&w=150&q=80",
-            banner_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
-            hours: "Mon-Sat 8:30am - 6pm",
-            category: "Streetwear Atelier"
-          };
-        } else {
-          // If they requested any custom shop handle (including 'byostreetwear'), let's dynamically auto-generate a beautiful mock shop brand!
-          // This ensures all custom shop links work fluidly and look extremely realistic.
-          const cleanName = cleanSlug
-            .replace(/[-_]+/g, ' ')
-            .replace(/\b\w/g, c => c.toUpperCase()); // e.g. 'byostreetwear' -> 'Byostreetwear'
-          
-          shopResult = {
-            id: 'mock-shop-' + cleanSlug,
-            owner_id: 'mock-owner-' + cleanSlug,
-            name: cleanName.includes('Shop') || cleanName.includes('Brand') || cleanName.includes('Streetwear') || cleanName.includes('Store') ? cleanName : `${cleanName} Streetwear`,
-            slug: cleanSlug,
-            handle: cleanSlug,
-            location: "Harare, Zimbabwe",
-            description: `Welcome to ${cleanName}! We offer premium local and high-quality contemporary streetwear styles curated ethically. Chasing the finest premium fits.`,
-            whatsapp: "263776223144",
-            whatsapp_number: "263776223144",
-            logo_url: "https://images.unsplash.com/photo-1617114919297-3c8ddb01f599?auto=format&fit=crop&w=150&q=80",
-            banner_url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=600&q=80",
-            hours: "Mon-Sat 8:30am - 6pm",
-            category: "Streetwear Atelier"
-          };
-        }
+        // Safe fallbacks to keep live URL functional with realistic mock properties
+        const nameWord = cleanSlug.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        shopResult = {
+          id: 'shop-' + cleanSlug,
+          name: nameWord.includes('Shop') || nameWord.includes('Brand') ? nameWord : `${nameWord} Streetwear`,
+          slug: cleanSlug,
+          handle: cleanSlug,
+          location: "Harare CBD, Zimbabwe",
+          description: `Premium Zimbabwe boutique ${nameWord}. Beautiful modern clothes, styled local accents. Built from ethically sourced materials.`,
+          whatsapp: "263776223144",
+          logo_url: null,
+          banner_url: null,
+          hours: "Mon-Sat 8:30am - 6:00pm",
+          landmark: "Near OK First Street",
+          directions: "We are situated beautifully opposite OK First Street in Harare. Head into the main level lobby, shop 7.",
+          online_only: false
+        };
       }
 
       setShop(shopResult);
-      document.title = `${shopResult.name} — Storefront`;
+      document.title = `${shopResult.name} | Storefront`;
 
-      // Passive telemetry tracking
-      try {
-        await supabase
-          .from('shops')
-          .update({ view_count: (shopResult.view_count || 0) + 1 })
-          .eq('id', shopResult.id);
-      } catch (_) {}
-
-      // Get categories list
+      // Fetch dynamic categories
       const { data: dbCats } = await supabase
         .from('categories')
         .select('*')
@@ -255,7 +230,7 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
 
       setCategories(dbCats && dbCats.length > 0 ? dbCats : DEFAULT_MOCK_CATEGORIES.filter(c => c.id !== 'all'));
 
-      // Get products list
+      // Fetch dynamic products
       const { data: dbProducts } = await supabase
         .from('products')
         .select('*')
@@ -269,8 +244,8 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
         sizes: Array.isArray(p.sizes) ? p.sizes.map((s: any) => typeof s === 'object' ? s.size : s) : []
       }));
 
-      const isDemoStore = shopResult.id === 'demo-shop' || shopResult.id === 'mock-shop-uuid' || cleanSlug === 'demo';
-      setProducts(mapped.length > 0 ? mapped : (isDemoStore ? DEFAULT_MOCK_PRODUCTS : []));
+      // Use presets if empty
+      setProducts(mapped.length > 0 ? mapped : DEFAULT_MOCK_PRODUCTS);
 
     } catch (err) {
       console.error(err);
@@ -280,74 +255,68 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
     }
   };
 
-  // Filter Catalog lists
-  const getFilteredProducts = () => {
+  // Products filters & listings logic
+  const getCatalogProducts = () => {
     let list = [...products];
 
-    // Search matches
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       list = list.filter(p => p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q));
     }
 
-    // Tab tag filter
     if (activeCategory !== 'all') {
       list = list.filter(p => p.category?.toLowerCase() === activeCategory.toLowerCase());
     }
 
-    // Sort options
     if (sortOption === 'priceAsc') {
-      list.sort((a,b) => Number(a.price) - Number(b.price));
+      list.sort((a, b) => Number(a.price) - Number(b.price));
     } else if (sortOption === 'priceDesc') {
-      list.sort((a,b) => Number(b.price) - Number(a.price));
-    } else if (sortOption === 'bestsellers') {
-      list = list.filter(p => p.tag === 'Best Seller' || p.is_featured);
+      list.sort((a, b) => Number(b.price) - Number(a.price));
     }
-
-    // Price Filter Max Constraint
-    list = list.filter(p => Number(p.price) <= priceMax);
 
     return list;
   };
 
-  const handleCustomDemandUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setIsUploadingDemand(true);
-    const localUrl = URL.createObjectURL(file);
-    setDemandImageUrl(localUrl);
-    setTimeout(() => {
-      setIsUploadingDemand(false);
-      triggerLocalToast("Photo processed successfully!");
-    }, 1000);
-  };
-
-  const handleCustomRequestSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!demandDesc.trim()) {
-      triggerLocalToast("Please write a quick description");
+  // WhatsApp Order Prefills generator
+  const handlePlaceWhatsAppOrder = () => {
+    if (!deliveryDetails.fullName.trim() || !deliveryDetails.phone.trim() || !deliveryDetails.address.trim()) {
+      triggerLocalToast("Please fill all required coordinates");
       return;
     }
-    const orderTxt = `Hi ${shop?.name},\n\nI have submitted a custom design request on ThreadZW shop for you:\n\nLooking for: ${demandDesc}\nWhatsApp: ${customerWhatsApp || "N/A"}\n\nCan you notify me about options and pricing?`;
-    window.open(`https://wa.me/${formatWA(shop?.whatsapp)}?text=${encodeURIComponent(orderTxt)}`, '_blank');
-    setShowDemandDrawer(false);
-    setDemandDesc('');
-    setDemandImageUrl('');
+
+    const cleanedNo = formatWA(shop.whatsapp);
+    let message = `Hi ${shop.name},\n\nI want to place an order coordinates:\n\n`;
+    
+    let totalValue = 0;
+    cart.forEach((item, idx) => {
+      const priceVal = Number(item.product.price);
+      const subtotal = priceVal * item.quantity;
+      totalValue += subtotal;
+      message += `${idx + 1}. ${item.product.name}\n   Size: ${item.selectedSize}\n   Color: ${item.selectedColor}\n   Qty: ${item.quantity} x $${priceVal.toFixed(2)}\n   Subtotal: $${subtotal.toFixed(2)}\n\n`;
+    });
+
+    message += `----------------------------\n`;
+    message += `Total Order: $${totalValue.toFixed(2)} USD\n\n`;
+    message += `Customer coordinates:\n`;
+    message += `- Name: ${deliveryDetails.fullName}\n`;
+    message += `- Phone: ${deliveryDetails.phone}\n`;
+    message += `- City: ${deliveryDetails.city}\n`;
+    message += `- Address/Directions: ${deliveryDetails.address}\n`;
+    if (deliveryDetails.notes.trim()) {
+      message += `- Notes: ${deliveryDetails.notes}\n`;
+    }
+
+    message += `\nThank you! Please confirm availability.`;
+
+    // Clear cart and redirect
+    saveCart([]);
+    setCheckoutMode(false);
+    setCartOpen(false);
+    window.open(`https://wa.me/${cleanedNo}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const handleDetailOrderWhatsApp = (prod: any) => {
     const text = `Hi ${shop?.name},\n\nI would like to order this item:\n\nProduct: ${prod.name}\nSize: ${selectedSize || 'Standard'}\nColor: ${selectedColor || 'Standard'}\nPrice: $${prod.price}\n\nIs this currently available for collection or delivery?`;
-    window.open(`https://wa.me/${formatWA(shop?.whatsapp)}?text=${encodeURIComponent(text)}`, '_blank');
-  };
-
-  const handleWishlistCheckout = () => {
-    if (wishlist.length === 0) return;
-    let text = `Hi ${shop?.name},\n\nI would like to order my selected Wishlist items:\n\n`;
-    wishlist.forEach((w, idx) => {
-      text += `${idx + 1}. ${w.name} - ${w.selectedSize || 'One size'} / ${w.selectedColor || 'Default'} - $${w.price}\n`;
-    });
-    const total = wishlist.reduce((acc, curr) => acc + Number(curr.price), 0);
-    text += `\nTotal Subtotal: $${total}\n\nAre these items available?`;
     window.open(`https://wa.me/${formatWA(shop?.whatsapp)}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -375,94 +344,108 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-8 text-white">
-        <div className="w-12 h-12 border-4 border-[#c8ff00] border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="font-mono text-xs text-zinc-400 uppercase tracking-widest">ThreadZW Secure Sync</p>
+      <div className="bg-[#000000] text-white min-h-screen flex flex-col items-center justify-center p-6">
+        <div className="w-10 h-10 border-2 border-white border-t-transparent rounded-full animate-spin mb-4" />
+        <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-500">SYNCING STOREFRONT...</span>
       </div>
     );
   }
 
   if (notFound || !shop) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-8 text-center text-white">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6">
-          <Package className="text-zinc-500" size={32} />
-        </div>
-        <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Shop Not Found</h2>
-        <p className="text-zinc-400 text-sm max-w-xs mb-6">Could not locate the requested store. Check the URL handle and try again.</p>
-        <button onClick={() => window.location.href = '/'} className="px-6 py-3 bg-zinc-100 hover:bg-zinc-200 text-black font-black text-xs uppercase tracking-widest rounded-full transition-transform active:scale-95">
+      <div className="bg-[#000000] text-white min-h-screen flex flex-col items-center justify-center p-8 text-center">
+        <Package size={40} className="text-zinc-600 mb-4" />
+        <h1 className="text-xl font-bold uppercase tracking-wide mb-2">Shop Not Found</h1>
+        <p className="text-zinc-500 text-xs mb-6 max-w-xs leading-relaxed">We could not pull details for this store. Check your web handle coordinates and try once more.</p>
+        <button 
+          onClick={() => window.location.href = '/'}
+          className="px-6 py-2 bg-white text-black font-semibold text-xs tracking-wider uppercase hover:bg-zinc-200 transition-all rounded-none"
+        >
           Return Home
         </button>
       </div>
     );
   }
 
-  const newArrivals = products.slice(0, 4);
-  const bestSellers = products.filter(p => p.tag === 'Best Seller' || p.is_featured);
-  const directionsData = getZimbabweDirections(shop.location || "Harare", shop.name);
+  const directionsData = getZimbabweDirections(shop.location || 'Harare', shop.name);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white flex justify-center selection:bg-[#c8ff00] selection:text-black">
-      {/* Toast popup */}
-      <AnimatePresence>
-        {innerToast && (
-          <motion.div initial={{ y: -50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -50, opacity: 0 }} className="fixed top-4 z-[999] px-4 py-3 bg-zinc-900 border border-zinc-800 text-white rounded-full flex items-center gap-2 shadow-2xl">
-            <CheckCircle2 size={16} className="text-[#c8ff00]" />
-            <span className="text-xs font-mono lowercase tracking-wide font-semibold">{innerToast}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div id="public_screen_wrapper" className="w-full max-w-[430px] min-h-screen bg-zinc-950 border-x border-zinc-900 flex flex-col relative pb-20">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white selection:text-black">
+      
+      {/* 430px Centered Mobile Canvas Frame conforming to design system requirements */}
+      <div className="max-w-[430px] mx-auto min-h-screen bg-[#000000] border-x border-zinc-900 pb-20 relative flex flex-col shadow-2xl">
         
-        {/* ===================== HEADER BAR ===================== */}
-        <header className="sticky top-0 bg-zinc-950/90 backdrop-blur-md z-50 border-b border-zinc-900 px-4 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800 overflow-hidden flex items-center justify-center shrink-0">
-              {shop.logo_url ? (
-                <img src={shop.logo_url} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                <span className="font-black text-sm text-[#c8ff00]">{shop.name.slice(0, 2).toUpperCase()}</span>
-              )}
-            </div>
-            <div>
-              <h1 className="text-sm font-black uppercase tracking-tight leading-none text-white">{shop.name}</h1>
-              <span className="text-[10px] text-zinc-500 font-mono lower">{shop.category || 'Incubator'}</span>
-            </div>
+        {/* ================= HEADER NAVIGATION ================= */}
+        <header className="sticky top-0 left-0 right-0 h-16 bg-[#000000] border-b border-zinc-900 px-4 flex items-center justify-between z-40 select-none">
+          {/* Hamburger Menu (Left) */}
+          <button 
+            id="mobile-menu-hamburger"
+            onClick={() => setMenuDrawerOpen(true)}
+            className="p-1 items-center justify-center hover:opacity-75 active:scale-95 transition-all text-white"
+          >
+            <Menu size={20} />
+          </button>
+
+          {/* Centered Logo (Strict stationary center behavior requested) */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center select-none pointer-events-none">
+            {shop.logo_url ? (
+              <ShopLogo 
+                url={shop.logo_url} 
+                alt="Logo" 
+                className="h-9 w-auto max-w-[120px] object-contain rounded-none filter invert contrast-200"
+              />
+            ) : (
+              <span className="font-mono text-xs font-black tracking-[0.14em] uppercase border border-white px-2.5 py-1">
+                {shop.name.slice(0, 16)}
+              </span>
+            )}
           </div>
-          
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => setShowShareModal(true)} className="p-2 bg-zinc-900 border border-zinc-800 hover:text-[#c8ff00] text-zinc-400 rounded-lg transition-all" title="Share shop">
-              <Share2 size={15} />
+
+          {/* Right Header Controls (Search & Cart) */}
+          <div className="flex items-center gap-3.5">
+            <button 
+              id="header-search-toggle"
+              onClick={() => setSearchOpen(!searchOpen)} 
+              className="p-1 text-white hover:opacity-75 transition-all"
+            >
+              <Search size={18} />
             </button>
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 bg-zinc-900 border border-zinc-800 hover:text-[#c8ff00] text-zinc-400 rounded-lg transition-all" title="Search catalog">
-              <Search size={15} />
-            </button>
-            <button onClick={() => setShowWhatsAppContact(true)} className="p-2 bg-emerald-950 border border-emerald-900/60 text-emerald-400 rounded-lg" title="Template contacts">
-              <WhatsAppIcon size={14} />
+            <button 
+              id="header-cart-toggle"
+              onClick={() => setCartOpen(true)} 
+              className="p-1 text-white hover:opacity-75 transition-all relative"
+            >
+              <ShoppingBag size={18} />
+              {getCartCount() > 0 && (
+                <div className="absolute -top-1 -right-1 bg-white text-black font-mono font-bold text-[8px] h-3.5 w-3.5 rounded-full flex items-center justify-center border border-black">
+                  {getCartCount()}
+                </div>
+              )}
             </button>
           </div>
         </header>
 
-        {/* ===================== NAV SEARCH EXPANDABLE ===================== */}
+        {/* Dynamic Search Line Drawer */}
         <AnimatePresence>
           {searchOpen && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="bg-zinc-900/40 border-b border-zinc-900 overflow-hidden px-4 py-3">
-              <div className="relative">
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="bg-[#000000] border-b border-zinc-900 px-4 py-3 text-left overflow-hidden"
+            >
+              <div className="flex gap-2 bg-zinc-950 p-2.5 border border-zinc-900">
+                <Search size={15} className="text-zinc-500 mt-0.5" />
                 <input 
-                  type="text" 
+                  type="text"
+                  placeholder="SEARCH PRODUCTS..."
                   value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    if (activeTab !== 'catalog') setActiveTab('catalog');
-                  }}
-                  placeholder="type clothing, footwear..." 
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-10 text-xs font-mono text-white focus:outline-none focus:border-[#c8ff00]"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-transparent border-none text-xs font-mono tracking-wider focus:outline-none placeholder-zinc-650 uppercase"
                 />
-                <Search size={14} className="absolute left-3.5 top-3.5 text-zinc-500" />
                 {searchQuery && (
-                  <button onClick={() => setSearchQuery('')} className="absolute right-3.5 top-3.5 text-zinc-500">
-                    <X size={14} />
+                  <button onClick={() => setSearchQuery('')} className="text-zinc-500 hover:text-white p-0.5">
+                    <X size={12} />
                   </button>
                 )}
               </div>
@@ -470,373 +453,290 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
           )}
         </AnimatePresence>
 
-        {/* ===================== VIEWS SWITCHER ===================== */}
-        <main className="flex-1">
+        {/* ================= MAIN CONTENT SPACE ================= */}
+        <main className="flex-1 w-full text-left scrollbar-none px-4 py-4 space-y-8">
           
-          {/* 1. HOME VIEW */}
+          {/* A. HOME VIEW (LAND DIRECTLY ON PRODUCTS, NO HERO BANNERS) */}
           {activeTab === 'home' && (
-            <div className="animate-fadeIn">
+            <div className="space-y-10 animate-fade">
               
-              {/* Cover Hero Banner */}
-              <div className="relative h-44 w-full bg-zinc-900 overflow-hidden border-b border-zinc-900">
-                {shop.banner_url ? (
-                  <img src={shop.banner_url} alt="Banner" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-tr from-zinc-950 to-zinc-900" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 text-left">
-                  <span className="px-2 py-0.5 bg-[#c8ff00] text-black rounded-full font-mono font-black text-[9px] uppercase tracking-wider">Verified Atelier</span>
-                  <p className="text-zinc-400 text-xs font-semibold mt-1.5 leading-snug">{shop.description || 'Welcome to curating fashion excellence'}</p>
-                </div>
-              </div>
-
-              {/* Quick Details Chips */}
-              <div className="px-4 py-3 flex gap-2 overflow-x-auto border-b border-zinc-900 scrollbar-none">
-                <div className="flex items-center gap-1 bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800 shrink-0 text-[10px] font-mono font-semibold text-zinc-300">
-                  <MapPin size={10} className="text-[#c8ff00]" />
-                  <span>{shop.location || 'ZW'}</span>
-                </div>
-                <div className="flex items-center gap-1 bg-zinc-900 px-3 py-1.5 rounded-full border border-zinc-800 shrink-0 text-[10px] font-mono font-semibold text-zinc-300">
-                  <Clock size={10} className="text-[#c8ff00]" />
-                  <span>{shop.hours || 'Mon-Sat'}</span>
-                </div>
-                <button onClick={() => setShowDirections(true)} className="flex items-center gap-1 bg-zinc-900/80 border border-zinc-800 px-3 py-1.5 rounded-full shrink-0 text-[10px] font-mono text-[#c8ff00] font-black uppercase">
-                  <span>Pin Map</span>
-                  <ArrowRight size={10} />
-                </button>
-              </div>
-
-              {/* Action Buttons center */}
-              <div className="grid grid-cols-2 gap-2.5 p-4 border-b border-zinc-900">
-                <button onClick={() => setShowWhatsAppContact(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
-                  <WhatsAppIcon size={14} />
-                  <span>Interactive WhatsApp</span>
-                </button>
-                <button onClick={() => setShowDirections(true)} className="bg-zinc-100 hover:bg-zinc-200 text-black py-3 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all">
-                  <MapPin size={12} />
-                  <span>Visit Shop Info</span>
-                </button>
-              </div>
-
-              {/* NEW ARRIVALS */}
-              <div className="py-5 border-b border-zinc-900">
-                <div className="px-4 mb-3 flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
-                    <Sparkles size={12} className="text-[#c8ff00]" />
-                    <span>Fall Drop Arrivals</span>
-                  </h3>
-                  <button onClick={() => { setActiveCategory('all'); setActiveTab('catalog'); }} className="text-[10px] font-mono text-[#c8ff00]">VIEW ALL</button>
-                </div>
-                <div className="flex gap-4 overflow-x-auto px-4 pb-1 scrollbar-none">
-                  {newArrivals.map((p) => (
-                    <div key={p.id} onClick={() => { setSelectedProduct(p); setActiveImageIdx(0); setSelectedColor(''); setSelectedSize(''); }} className="w-36 shrink-0 cursor-pointer group">
-                      <div className="aspect-[4/5] bg-zinc-900 border border-zinc-900 rounded-2xl overflow-hidden relative">
-                        <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        <button onClick={(e) => toggleWishlist(p, e)} className="absolute top-2.5 right-2.5 w-7 h-7 bg-zinc-950/80 rounded-full flex items-center justify-center border border-zinc-900">
-                          <Heart size={11} className={wishlist.some(item => item.id === p.id) ? "fill-[#c8ff00] text-[#c8ff00]" : "text-white"} />
-                        </button>
-                      </div>
-                      <h4 className="text-xs font-bold text-zinc-100 truncate mt-2.5 px-0.5 leading-tight uppercase">{p.name}</h4>
-                      <div className="flex items-center gap-1.5 mt-1 px-0.5 font-mono text-[11px]">
-                        <span className="text-[#c8ff00] font-bold">${p.price}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* FEATURED / BEST SELLERS */}
-              <div className="py-5 bg-zinc-900/30 border-b border-zinc-900">
-                <div className="px-4 mb-4 flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">Hot & Best Sellers</h3>
-                  <span className="text-[10px] font-mono text-zinc-500">COVETED</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3.5 px-4">
-                  {bestSellers.map((p) => (
-                    <div key={p.id} onClick={() => { setSelectedProduct(p); setActiveImageIdx(0); setSelectedColor(''); setSelectedSize(''); }} className="cursor-pointer flex flex-col group text-left">
-                      <div className="aspect-[4/5] bg-zinc-900 border border-zinc-900 rounded-2xl overflow-hidden relative">
-                        <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300 animate-fadeIn" />
-                        <span className="absolute top-2.5 left-2.5 bg-[#c8ff00] text-black text-[8px] font-black uppercase px-2 py-0.5 rounded-full font-mono">HOT</span>
-                        <button onClick={(e) => toggleWishlist(p, e)} className="absolute top-2.5 right-2.5 w-7 h-7 bg-zinc-950/85 rounded-full flex items-center justify-center border border-zinc-900">
-                          <Heart size={11} className={wishlist.some(item => item.id === p.id) ? "fill-[#c8ff00] text-[#c8ff00]" : "text-zinc-400"} />
-                        </button>
-                      </div>
-                      <h4 className="text-xs font-bold text-zinc-100 truncate mt-2.5 px-0.5 leading-tight uppercase">{p.name}</h4>
-                      <div className="flex items-center justify-between mt-1 px-0.5 font-mono text-[11px]">
-                        <span className="text-[#c8ff00] font-bold">${p.price}</span>
-                        <span className="text-[9px] text-zinc-500 uppercase tracking-widest">{p.category || 'Release'}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* DEMAND FORM PREVIEW LINK */}
-              <div className="p-4">
-                <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-4 text-center">
-                  <h4 className="text-xs font-bold uppercase text-[#c8ff00] mb-1">Custom Sizing Request?</h4>
-                  <p className="text-[11px] text-zinc-400 font-semibold mb-3">Upload a photo of any outfit and we will customize it for you.</p>
-                  <button onClick={() => setShowDemandDrawer(true)} className="w-full py-2.5 bg-zinc-100 hover:bg-zinc-200 text-black rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-95">
-                    <Upload size={12} />
-                    <span>UPLOAD CUSTOM PHOTO</span>
+              {/* Row 1: New Arrivals Drop */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-baseline border-b border-zinc-900 pb-2">
+                  <h2 className="font-mono text-xs font-black uppercase tracking-wider">NEW ARRIVALS</h2>
+                  <button 
+                    onClick={() => { setActiveTab('categories'); setActiveCategory('all'); }}
+                    className="text-zinc-500 hover:text-white font-mono text-[9px] uppercase tracking-wider flex items-center gap-1"
+                  >
+                    <span>VIEW ALL</span>
                   </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-3 gap-y-6">
+                  {getCatalogProducts().slice(0, 4).map((product) => (
+                    <ProductCard key={product.id} product={product} onClick={() => { setSelectedProduct(product); setActiveImageIdx(0); setSelectedSize(''); }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 2: Top Picks Drop */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-baseline border-b border-zinc-900 pb-2">
+                  <h2 className="font-mono text-xs font-black uppercase tracking-wider">TOP PICKS</h2>
+                  <button 
+                    onClick={() => { setActiveTab('categories'); setActiveCategory('all'); }}
+                    className="text-zinc-500 hover:text-white font-mono text-[9px] uppercase tracking-wider flex items-center gap-1"
+                  >
+                    <span>VIEW ALL</span>
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-3 gap-y-6">
+                  {getCatalogProducts().slice().reverse().slice(0, 4).map((product) => (
+                    <ProductCard key={product.id} product={product} onClick={() => { setSelectedProduct(product); setActiveImageIdx(0); setSelectedSize(''); }} />
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 3: All Featured Drops */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-baseline border-b border-zinc-900 pb-2">
+                  <h2 className="font-mono text-xs font-black uppercase tracking-wider">FEATURED PRODUCTS</h2>
+                  <button 
+                    onClick={() => { setActiveTab('categories'); setActiveCategory('all'); }}
+                    className="text-zinc-500 hover:text-white font-mono text-[9px] uppercase tracking-wider flex items-center gap-1"
+                  >
+                    <span>VIEW ALL</span>
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-x-3 gap-y-6">
+                  {getCatalogProducts().slice(2, 6).map((product) => (
+                    <ProductCard key={product.id} product={product} onClick={() => { setSelectedProduct(product); setActiveImageIdx(0); setSelectedSize(''); }} />
+                  ))}
                 </div>
               </div>
 
             </div>
           )}
 
-          {/* 2. CATALOG VIEW */}
-          {activeTab === 'catalog' && (
-            <div className="p-4 animate-fadeIn">
+          {/* B. CATEGORIES/CATALOG VIEW GRID */}
+          {activeTab === 'categories' && (
+            <div className="space-y-6 animate-fade">
               
-              {/* Category selector strip */}
-              <div className="flex gap-1.5 overflow-x-auto pb-3.5 scrollbar-none border-b border-zinc-900">
+              {/* Category selector row */}
+              <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none select-none border-b border-zinc-900">
                 <button 
-                  onClick={() => setActiveCategory('all')} 
-                  className={`px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase border transition-all shrink-0 ${activeCategory === 'all' ? 'bg-[#c8ff00] text-zinc-950 border-[#c8ff00] font-bold' : 'bg-zinc-900 text-zinc-400 border-zinc-800'}`}
+                  onClick={() => setActiveCategory('all')}
+                  className={`px-3 py-1.5 font-mono text-[10px] tracking-wider uppercase border text-center transition-all shrink-0 ${
+                    activeCategory === 'all' 
+                      ? 'bg-white text-black border-white' 
+                      : 'bg-transparent text-zinc-500 border-zinc-900 hover:text-white hover:border-zinc-850'
+                  }`}
                 >
-                  All ({(products.length)})
+                  ALL ITEMS
                 </button>
-                {DEFAULT_MOCK_CATEGORIES.filter(c => c.id !== 'all').map((cat) => {
-                  const itemsCount = products.filter(p => p.category?.toLowerCase() === cat.name.toLowerCase()).length;
-                  return (
-                    <button 
-                      key={cat.id} 
-                      onClick={() => setActiveCategory(cat.name)} 
-                      className={`px-3 py-1.5 rounded-lg text-[10px] font-mono uppercase border transition-all shrink-0 ${activeCategory.toLowerCase() === cat.name.toLowerCase() ? 'bg-[#c8ff00] text-zinc-950 border-[#c8ff00] font-bold' : 'bg-zinc-900 text-zinc-400 border-zinc-800'}`}
-                    >
-                      {cat.name} {itemsCount > 0 ? `(${itemsCount})` : ''}
-                    </button>
-                  );
-                })}
+                {categories.map((cat) => (
+                  <button 
+                    key={cat.id}
+                    onClick={() => setActiveCategory(cat.name)}
+                    className={`px-3 py-1.5 font-mono text-[10px] tracking-wider uppercase border text-center transition-all shrink-0 ${
+                      activeCategory.toLowerCase() === cat.name.toLowerCase() 
+                        ? 'bg-white text-black border-white' 
+                        : 'bg-transparent text-zinc-500 border-zinc-900 hover:text-white hover:border-zinc-850'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
               </div>
 
-              {/* Filtering summary bar with sort options */}
-              <div className="flex items-center justify-between py-3">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase">{getFilteredProducts().length} items found</span>
-                <div className="flex items-center gap-2">
+              {/* Sorter triggers */}
+              <div className="flex justify-between items-center text-xs text-zinc-400 border-b border-zinc-950 pb-2 bg-zinc-950 p-2 border border-zinc-900 select-none">
+                <div className="flex items-center gap-1 text-[10px] font-mono tracking-wider text-zinc-500">
+                  <span>SORT:</span>
                   <select 
                     value={sortOption} 
-                    onChange={(e: any) => setSortOption(e.target.value)} 
-                    className="bg-zinc-900 border border-zinc-800 text-zinc-300 text-[10px] py-1 px-1.5 rounded focus:outline-none focus:border-[#c8ff00] font-mono"
+                    onChange={(e: any) => setSortOption(e.target.value)}
+                    className="bg-transparent text-white font-mono focus:outline-none uppercase border-none hover:text-zinc-200 cursor-pointer text-[10px] tracking-tight"
                   >
-                    <option value="recent">Latest Drop</option>
-                    <option value="priceAsc">Price: Low-High</option>
-                    <option value="priceDesc">Price: High-Low</option>
-                    <option value="bestsellers">Bestsellers First</option>
+                    <option value="recent">RECENT RELEASES</option>
+                    <option value="priceAsc">PRICE: LOW TO HIGH</option>
+                    <option value="priceDesc">PRICE: HIGH TO LOW</option>
                   </select>
-                  <button onClick={() => setShowFiltersDrawer(true)} className="p-1 px-2 border border-zinc-800 bg-zinc-900 rounded text-[10px] font-mono text-zinc-300">Filters</button>
                 </div>
+                <span className="font-mono text-[9px] tracking-widest text-[#ffffff] font-extrabold uppercase">
+                  {getCatalogProducts().length} PRODUCTS
+                </span>
               </div>
 
-              {/* Products list grid */}
-              {products.length === 0 ? (
-                <div id="empty-storefront-welcome" className="py-14 px-5 text-center border border-dashed border-zinc-800 rounded-2xl bg-zinc-950/20 backdrop-blur-sm shadow-inner mt-2">
-                  <div className="w-12 h-12 bg-[#c8ff00]/10 border border-[#c8ff00]/15 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-                    <ShoppingBag className="text-[#c8ff00]" size={20} />
-                  </div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-tight mb-2">Garment Catalog Incoming</h3>
-                  <p className="font-sans text-[11px] text-zinc-400 max-w-xs mx-auto mb-5 leading-relaxed">
-                    Welcome to <span className="text-white font-bold">{shop?.name || "our shop"}</span>! We are busy preparing our curated garment catalog. Stay tuned for our upcoming drops or place a custom garment request.
-                  </p>
-                  
-                  <div className="flex flex-col gap-2 max-w-xs mx-auto">
-                    <button 
-                      id="btn-demand-custom"
-                      onClick={() => setShowDemandDrawer(true)}
-                      className="w-full py-2.5 bg-[#c8ff00] hover:bg-[#b0df00] text-black font-extrabold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all active:scale-98 cursor-pointer"
-                    >
-                      <Plus size={14} /> Request Custom Design
-                    </button>
-                    {shop?.whatsapp && (
-                      <a 
-                        id="btn-contact-whatsapp"
-                        href={`https://wa.me/${formatWA(shop.whatsapp)}?text=${encodeURIComponent(`Hi ${shop.name || "there"}, I am visiting your ThreadZW store and would like to inquire about upcoming apparel drops & custom fittings!`)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        referrerPolicy="no-referrer"
-                        className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-200 font-extrabold rounded-lg text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                      >
-                        <MessageSquare size={13} /> Inquire About Drops
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ) : getFilteredProducts().length === 0 ? (
-                <div className="py-20 text-center border border-dashed border-zinc-900 rounded-2xl">
-                  <Package className="mx-auto text-zinc-600 mb-2" size={24} />
-                  <p className="font-mono text-[10px] text-zinc-500">No matched designs. Reset filters or queries.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3.5">
-                  {getFilteredProducts().map((p) => (
-                    <div key={p.id} onClick={() => { setSelectedProduct(p); setActiveImageIdx(0); setSelectedColor(''); setSelectedSize(''); }} className="group cursor-pointer flex flex-col text-left">
-                      <div className="aspect-[4/5] bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-900 relative">
-                        <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-250" />
-                        {p.original_price && (
-                          <span className="absolute top-2.5 left-2.5 bg-white text-zinc-950 font-mono font-black text-[8px] px-2 py-0.5 rounded uppercase">Save {Math.round((1 - (p.price / p.original_price)) * 100)}%</span>
-                        )}
-                        <button onClick={(e) => toggleWishlist(p, e)} className="absolute top-2.5 right-2.5 w-7 h-7 bg-zinc-950/90 rounded-full flex items-center justify-center border border-zinc-850">
-                          <Heart size={11} className={wishlist.some(item => item.id === p.id) ? "fill-[#c8ff00] text-[#c8ff00]" : "text-zinc-400"} />
-                        </button>
-                      </div>
-                      <h4 className="text-xs font-bold text-zinc-200 mt-2.5 px-0.5 truncate leading-tight uppercase">{p.name}</h4>
-                      <div className="flex items-center justify-between mt-1 px-0.5 font-mono text-[11px]">
-                        <span className="text-[#c8ff00] font-bold">${p.price}</span>
-                        {p.original_price && (
-                          <span className="text-[10px] text-zinc-500 line-through">${p.original_price}</span>
-                        )}
-                      </div>
-                      <p className="text-[9px] text-[#c8ff00] font-mono uppercase bg-[#c8ff00]/5 border border-[#c8ff00]/10 px-1.5 py-0.5 rounded inline-block w-fit mt-1.5 ml-0.5">{p.category}</p>
-                    </div>
-                  ))}
+              {/* 2 per row product grid conforming strictly to pixel specification */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-6">
+                {getCatalogProducts().map((product) => (
+                  <ProductCard key={product.id} product={product} onClick={() => { setSelectedProduct(product); setActiveImageIdx(0); setSelectedSize(''); }} />
+                ))}
+              </div>
+
+              {getCatalogProducts().length === 0 && (
+                <div className="py-20 text-center border border-zinc-900">
+                  <span className="font-mono text-zinc-650 text-xs uppercase block mb-1">NO PIECES MATCHED</span>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest">TAP ANOTHER CATEGORY COORDINATE</span>
                 </div>
               )}
 
             </div>
           )}
 
-          {/* 3. CATEGORIES VIEW */}
-          {activeTab === 'categories' && (
-            <div className="p-4 animate-fadeIn">
-              <div className="mb-4">
-                <span className="text-[9px] font-mono text-[#c8ff00] uppercase font-bold tracking-widest block">Featured Wear</span>
-                <h3 className="text-base font-black uppercase tracking-tight">Browse Categories</h3>
+          {/* C. WHATSAPP LIVE ASSISTANT VIEW */}
+          {activeTab === 'contact' && (
+            <div className="space-y-6 animate-fade">
+              <div className="border border-zinc-900 p-6 space-y-4 rounded-none">
+                <span className="font-mono text-[9px] font-black tracking-widest text-emerald-400 uppercase">DIRECT DISPATCH CHANNEL</span>
+                <h3 className="text-sm font-bold uppercase tracking-wider block">WHATSAPP HELPLINE</h3>
+                
+                <p className="text-zinc-400 text-xs leading-relaxed font-sans font-medium">
+                  Have inquiries about specific custom streetwear creations, shipping speeds, or sizing assistance? Chat with local support directly.
+                </p>
+
+                <div className="bg-zinc-950 border border-zinc-900 p-4 space-y-3 font-mono text-[11px]">
+                  <div className="flex justify-between border-b border-zinc-900 pb-2 text-zinc-400">
+                    <span>WHATSAPP SUPPORT:</span>
+                    <span className="text-white">+{formatWA(shop.whatsapp)}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-zinc-900 pb-2 text-zinc-400">
+                    <span>BUSINESS STATUS:</span>
+                    <span className="text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+                      ONLINE NOW
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-zinc-400">
+                    <span>HOURS:</span>
+                    <span className="text-white">{shop.hours || 'Mon-Sat 8:30am - 6pm'}</span>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => window.open(`https://wa.me/${formatWA(shop.whatsapp)}?text=${encodeURIComponent("Hi " + shop.name + ", looking for assistance concerning your collections!")}`, '_blank')}
+                  className="w-full py-4.5 bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 rounded-none transition-transform active:scale-95 shadow-xl hover:bg-emerald-600"
+                >
+                  <WhatsAppIcon size={14} />
+                  <span>START CHAT CONVERSATION</span>
+                </button>
               </div>
-              
-              <div className="space-y-2">
-                {DEFAULT_MOCK_CATEGORIES.map((cat) => {
-                  const itemsCount = products.filter(p => !cat.id || cat.id === 'all' ? true : p.category?.toLowerCase() === cat.name.toLowerCase()).length;
-                  return (
-                    <div 
-                      key={cat.id} 
-                      onClick={() => {
-                        setActiveCategory(cat.id === 'all' ? 'all' : cat.name);
-                        setActiveTab('catalog');
-                      }}
-                      className="flex items-center justify-between p-4 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-850 rounded-xl cursor-pointer transition-colors"
+
+              {/* Zimbabwe Quick Messaging templates drops */}
+              <div className="space-y-3">
+                <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest block">QUICK ENQUIRIES TEMPLATES</span>
+                <div className="space-y-2 select-none">
+                  {[
+                    "Is your store open today for collections?",
+                    "Do you deliver to Bulawayo or Mutare?",
+                    "I want to send physical coordinates for custom tailoring."
+                  ].map((tpl, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => window.open(`https://wa.me/${formatWA(shop.whatsapp)}?text=${encodeURIComponent("Hi " + shop.name + ", " + tpl)}`, '_blank')}
+                      className="w-full text-left p-3.5 bg-zinc-950 border border-zinc-900 text-xs font-mono text-zinc-300 rounded-none hover:bg-zinc-900 transition-all flex justify-between items-center"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-950 border border-zinc-800 flex items-center justify-center">
-                          <Grid size={14} className="text-[#c8ff00]" />
-                        </div>
-                        <span className="text-xs font-bold uppercase tracking-wide text-zinc-100">{cat.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-zinc-500">{itemsCount} pieces</span>
-                        <ArrowRight size={12} className="text-zinc-600" />
-                      </div>
-                    </div>
-                  );
-                })}
+                      <span>"{tpl}"</span>
+                      <ArrowLeft className="rotate-180 text-zinc-650" size={12} />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          {/* 4. WISHLIST VIEW */}
-          {activeTab === 'wishlist' && (
-            <div className="p-4 animate-fadeIn">
-              <div className="mb-5">
-                <span className="text-[9px] font-mono text-[#c8ff00] uppercase font-bold tracking-widest block">Client Cart</span>
-                <h3 className="text-base font-black uppercase tracking-tight flex items-center gap-1.5">
-                  <ShoppingBag size={15} />
-                  <span>My Wishlist Basket</span>
-                </h3>
-              </div>
+          {/* D. LOCAL STORE VISIT & DIRECTIONS (ZIMBABWE PRESETS CO-ORDINATES) */}
+          {activeTab === 'visit' && (
+            <div className="space-y-6 animate-fade">
+              
+              <div className="border border-zinc-800 p-5 space-y-4">
+                <div className="flex items-center gap-2 text-[#ffffff]">
+                  <MapPin size={18} />
+                  <h3 className="font-mono text-xs font-black uppercase tracking-wider">{shop.name} HQ</h3>
+                </div>
 
-              {wishlist.length === 0 ? (
-                <div className="py-24 text-center border border-dashed border-zinc-900 rounded-2xl">
-                  <ShoppingBag className="mx-auto text-zinc-700 mb-3" size={28} />
-                  <p className="text-xs text-zinc-400 font-bold mb-4">Your basket list is empty.</p>
-                  <button onClick={() => setActiveTab('catalog')} className="px-5 py-2.5 bg-zinc-100 text-black text-[10px] font-black uppercase tracking-wider rounded-lg">
-                    Discover Products
+                <div className="space-y-4 bg-zinc-950 border border-zinc-900 p-4.5 font-mono text-xs text-zinc-400">
+                  <div>
+                    <span className="text-zinc-650 block text-[9px] uppercase tracking-wider font-extrabold mb-0.5">PHYSICAL HEADQUARTERS</span>
+                    <span className="text-white font-bold block">{directionsData.address}</span>
+                  </div>
+                  <hr className="border-zinc-900" />
+                  <div>
+                    <span className="text-zinc-650 block text-[9px] uppercase tracking-wider font-extrabold mb-0.5">ESTABLISHED LANDMARK</span>
+                    <span className="text-zinc-200 block">{directionsData.landmark}</span>
+                  </div>
+                  <hr className="border-zinc-900" />
+                  <div>
+                    <span className="text-zinc-650 block text-[9px] uppercase tracking-wider font-extrabold mb-1">LOCAL STEP-BY-STEP DIRECTIONS</span>
+                    <p className="text-[11px] text-zinc-300 leading-relaxed font-sans font-medium whitespace-pre-wrap">{directionsData.stepByStep}</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${directionsData.address}\nLandmark: ${directionsData.landmark}\nDirections: ${directionsData.stepByStep}`);
+                      triggerLocalToast("Directions Copied!");
+                    }}
+                    className="flex-1 py-3 bg-zinc-950 border border-zinc-900 text-zinc-300 hover:text-white font-mono text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-1.5"
+                  >
+                    <Copy size={11} />
+                    <span>COPY DETAILS</span>
+                  </button>
+
+                  <button 
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${shop.name} ${shop.location || 'Harare'} Zimbabwe`)}`, '_blank')}
+                    className="flex-1 py-3 bg-white text-black font-semibold text-[10px] uppercase tracking-widest flex items-center justify-center gap-1.5 hover:bg-zinc-200 transition-all"
+                  >
+                    <MapPin size={11} />
+                    <span>GOOGLE MAPS</span>
                   </button>
                 </div>
-              ) : (
-                <div className="space-y-3 pb-32">
-                  {wishlist.map((item) => (
-                    <div key={item.id} className="flex gap-3 bg-zinc-900/40 p-3 rounded-xl border border-zinc-900 relative">
-                      <div className="w-16 h-20 bg-zinc-900 rounded-lg overflow-hidden shrink-0 border border-zinc-850">
-                        <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 text-left flex flex-col justify-between">
-                        <div>
-                          <h4 className="text-xs font-bold text-zinc-200 uppercase tracking-tight line-clamp-1">{item.name}</h4>
-                          <span className="text-[10px] text-[#c8ff00] font-mono block mt-1">${item.price}</span>
-                          <div className="flex items-center gap-1.5 mt-2">
-                            <span className="px-1.5 py-0.5 bg-zinc-800 text-[8px] font-mono text-zinc-400 rounded">Size: {item.selectedSize}</span>
-                            <span className="px-1.5 py-0.5 bg-zinc-800 text-[8px] font-mono text-zinc-400 rounded">Color: {item.selectedColor}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <button onClick={() => toggleWishlist(item)} className="absolute top-3 right-3 text-zinc-600 hover:text-red-400 p-1" title="Remove item">
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
+              </div>
 
-                  <div className="pt-4 border-t border-zinc-900">
-                    <div className="flex items-center justify-between text-xs font-mono text-zinc-400 mb-4">
-                      <span>Subtotal Itemcount ({wishlist.length})</span>
-                      <span className="text-white font-bold">${wishlist.reduce((acc, curr) => acc + Number(curr.price), 0)}</span>
-                    </div>
-                    
-                    <button onClick={handleWishlistCheckout} className="w-full bg-[#c8ff00] text-black py-4 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-lg">
-                      <WhatsAppIcon size={14} />
-                      <span>CHECKOUT VIA WHATSAPP</span>
-                    </button>
-                    <p className="text-[10px] font-mono text-zinc-500 text-center mt-2.5 leading-relaxed">No direct payment needed here. We will finalize colors, mock size checks and delivery terms directly on secure chat.</p>
-                  </div>
-                </div>
-              )}
+              {/* Minimal Clean Grid Map Segment (Visual Blueprint conformant to anti-ai-slop rules) */}
+              <div className="border border-zinc-900 p-5 bg-zinc-950 flex flex-col items-center justify-center relative min-h-[160px]">
+                <div className="absolute inset-0 bg-[radial-gradient(#1c1c1c_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
+                <MapPin size={24} className="text-[#ffffff] relative z-10 mb-2 stroke-[1.5]" />
+                <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest relative z-10 block mb-1">SECURE ESTABLISHMENT ROADMAP</span>
+                <span className="text-[11px] text-white font-bold relative z-15 uppercase tracking-[0.08em]">{shop.location || "HARARE CENTER, ZIMBABWE"}</span>
+              </div>
+
             </div>
           )}
 
-          {/* 5. SHOP INFO VIEW */}
+          {/* E. INFORMATION PAGE / STORE POLICIES SIMPLE LISTS */}
           {activeTab === 'info' && (
-            <div className="p-4 text-left animate-fadeIn">
-              <div className="mb-4">
-                <span className="text-[9px] font-mono text-[#c8ff00] uppercase font-bold tracking-widest block">About Atelier</span>
-                <h3 className="text-base font-black uppercase tracking-tight">Shop Information</h3>
+            <div className="space-y-6 animate-fade">
+              <div className="border border-zinc-900 p-5 space-y-4">
+                <span className="font-mono text-[9px] font-black text-zinc-500 uppercase tracking-widest block">CURATED BRAND DETAILS</span>
+                <h3 className="text-sm font-bold uppercase tracking-wider block">ABOUT {shop.name.toUpperCase()}</h3>
+                <p className="text-zinc-400 text-xs leading-relaxed font-sans font-medium">
+                  {shop.description || "Premium bespoke clothing designed with local materials. Supporting sustainable independent Harare tailoring."}
+                </p>
               </div>
 
-              <div className="bg-zinc-900/40 border border-zinc-900 rounded-xl p-4 space-y-4 font-semibold text-xs text-zinc-300">
-                <div className="flex justify-between py-1 border-b border-zinc-900/70">
-                  <span className="text-zinc-500">Official Brand Name</span>
-                  <span className="text-white font-bold">{shop.name}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-zinc-900/70">
-                  <span className="text-zinc-500">Corporate Founder</span>
-                  <span className="text-white font-mono">ThreadZW Collective</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-zinc-900/70">
-                  <span className="text-zinc-500">Contact Number</span>
-                  <span className="text-emerald-400 font-mono">+{formatWA(shop.whatsapp)}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-zinc-900/70">
-                  <span className="text-zinc-500">Hours Opened</span>
-                  <span className="text-white">{shop.hours || 'Mon-Sat 8:30am - 6pm'}</span>
-                </div>
-                <div className="flex justify-between py-1 border-b border-zinc-900/70">
-                  <span className="text-zinc-500">Zimbabwe Headquarters</span>
-                  <span className="text-white truncate max-w-[180px]">{shop.location || 'Harare'}</span>
-                </div>
-                <div>
-                  <span className="text-zinc-500 block mb-1">Company mission statement</span>
-                  <p className="text-[11px] text-zinc-400 leading-relaxed font-normal">{shop.description || 'Dedicated to supporting local streetwear businesses'}</p>
-                </div>
-              </div>
-
-              <div className="mt-5 border border-zinc-900 bg-zinc-900/20 p-4 rounded-xl text-center">
-                <MapPin className="mx-auto text-zinc-600 mb-2" size={20} />
-                <h4 className="text-xs font-bold text-white uppercase mb-1">Step-by-Step Directions</h4>
-                <p className="text-[11px] text-zinc-500 mb-3.5">We are situated right next to major transport and shopping complexes.</p>
-                <button onClick={() => setShowDirections(true)} className="w-full bg-zinc-100 text-zinc-900 py-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1">
-                  <Map size={12} />
-                  <span>GET DIRECTIONS PATH</span>
-                </button>
+              {/* Standard List Accordions styled minimally in B&W */}
+              <div className="space-y-2 font-mono">
+                {[
+                  { title: "SHIPPING & DISPATCH SPEEDS", desc: "Local collection is available from our Harare address coordinates instantly during work hours. Nationwide courier parcels dispatch on Mon & Thurs each week via local courier services ($5-10 depend on suburb)." },
+                  { title: "RETURNS & REFUNDS CHARTER", desc: "No returns on tailored products. Shop-bought garments are eligible for size exchanges within 48 hours in pristine, sellable conditions with physical tag labels fully intact." },
+                  { title: "LOCAL PAYMENTS METHODS", desc: "Due to localization rules, we collect standard USD cash at pick up or coordinate directly via WhatsApp for Zimbabwean electronic transfers (Ecocash/Zipit)." },
+                  { title: "STORE CONCEPTS POLICIES", desc: "Each item is strictly limited to prevent excessive high street repetition. Handcrafted tailored street styles are processed within 3-5 standard working schedules." }
+                ].map((item, i) => (
+                  <details key={i} className="group border border-zinc-900 bg-zinc-950 cursor-pointer select-none">
+                    <summary className="p-4 flex items-center justify-between text-[11px] font-bold text-white uppercase tracking-wider hover:bg-zinc-900 transition-colors">
+                      <span>{item.title}</span>
+                      <ChevronDown size={12} className="text-zinc-500 group-open:rotate-180 transition-all" />
+                    </summary>
+                    <div className="px-4 pb-4 pt-1.5 text-left text-zinc-400 font-sans text-xs font-medium leading-relaxed border-t border-zinc-900/60">
+                      {item.desc}
+                    </div>
+                  </details>
+                ))}
               </div>
             </div>
           )}
@@ -844,546 +744,636 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
         </main>
 
         {/* ===================== BOTTOM NAVIGATION TABBAR ===================== */}
-        <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-zinc-950 border-t border-zinc-900 py-2 px-3 flex items-center justify-around z-[100]">
-          <button onClick={() => { setActiveTab('home'); setSearchOpen(false); }} className={`flex flex-col items-center gap-1 text-[10px] font-bold ${activeTab === 'home' ? 'text-[#c8ff00]' : 'text-zinc-500'}`}>
-            <Map size={15} />
-            <span className="font-mono">Home</span>
+        <nav className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-black border-t border-zinc-900 py-3.5 px-2.5 flex items-center justify-around z-30 select-none">
+          <button 
+            id="tab-home"
+            onClick={() => { setActiveTab('home'); }} 
+            className={`flex flex-col items-center gap-1 hover:opacity-100 transition-all ${activeTab === 'home' ? 'text-white' : 'text-zinc-600'}`}
+          >
+            <Grid size={15} />
+            <span className="font-mono text-[9px] uppercase tracking-wider">HOME</span>
           </button>
           
-          <button onClick={() => { setActiveTab('catalog'); setSearchOpen(false); }} className={`flex flex-col items-center gap-1 text-[10px] font-bold ${activeTab === 'catalog' ? 'text-[#c8ff00]' : 'text-zinc-500'}`}>
-            <Grid size={15} />
-            <span className="font-mono">Catalog</span>
-          </button>
-
-          <button onClick={() => { setActiveTab('categories'); setSearchOpen(false); }} className={`flex flex-col items-center gap-1 text-[10px] font-bold ${activeTab === 'categories' ? 'text-[#c8ff00]' : 'text-zinc-500'}`}>
+          <button 
+            id="tab-categories"
+            onClick={() => { setActiveTab('categories'); }} 
+            className={`flex flex-col items-center gap-1 hover:opacity-100 transition-all ${activeTab === 'categories' ? 'text-white' : 'text-zinc-600'}`}
+          >
             <Package size={15} />
-            <span className="font-mono">Categories</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider">DROPS</span>
           </button>
 
-          <button onClick={() => { setActiveTab('wishlist'); setSearchOpen(false); }} className={`flex flex-col items-center gap-1 text-[10px] font-bold relative ${activeTab === 'wishlist' ? 'text-[#c8ff00]' : 'text-zinc-500'}`}>
-            <Heart size={15} />
-            {wishlist.length > 0 && (
-              <span className="absolute -top-1 -right-2 bg-red-500 text-white font-mono font-black text-[8px] h-4 w-4 rounded-full flex items-center justify-center shrink-0 border border-zinc-950">{wishlist.length}</span>
-            )}
-            <span className="font-mono">Wishlist</span>
+          <button 
+            id="tab-whatsapp"
+            onClick={() => { setActiveTab('contact'); }} 
+            className={`flex flex-col items-center gap-1 hover:opacity-100 transition-all ${activeTab === 'contact' ? 'text-white' : 'text-zinc-600'}`}
+          >
+            <WhatsAppIcon size={14} className={activeTab === 'contact' ? 'text-emerald-400' : 'text-zinc-600'} />
+            <span className="font-mono text-[9px] uppercase tracking-wider">WHATSAPP</span>
           </button>
 
-          <button onClick={() => { setActiveTab('info'); setSearchOpen(false); }} className={`flex flex-col items-center gap-1 text-[10px] font-bold ${activeTab === 'info' ? 'text-[#c8ff00]' : 'text-zinc-500'}`}>
+          <button 
+            id="tab-info"
+            onClick={() => { setActiveTab('info'); }} 
+            className={`flex flex-col items-center gap-1 hover:opacity-100 transition-all ${activeTab === 'info' ? 'text-white' : 'text-zinc-600'}`}
+          >
             <Info size={15} />
-            <span className="font-mono">Info</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider">INFO</span>
           </button>
-        </nav>        {/* ===================== LAYOUT POPUPS & DRAWERS (ANIMATED OVERLAYS) ===================== */}
+        </nav>
 
-        {/* 1. PRODUCT DETAILS MODAL (SCREEN 3) */}
+        {/* =========================== INTERACTIVE OVERLAYS & DRAWERS =========================== */}
+
+        {/* 1. LEFT HAMBURGER MENU DRAWER */}
         <AnimatePresence>
-          {selectedProduct && (
+          {menuDrawerOpen && (
             <>
-              <div className="fixed inset-0 max-w-[430px] mx-auto bg-black/80 z-[200]" onClick={() => setSelectedProduct(null)} />
+              {/* Dim backdrop */}
+              <div className="fixed inset-0 bg-black/85 max-w-[430px] mx-auto z-[200]" onClick={() => setMenuDrawerOpen(false)} />
               <motion.div 
-                initial={{ y: '100%' }} 
-                animate={{ y: 0 }} 
-                exit={{ y: '100%' }} 
-                transition={{ type: 'spring', damping: 25 }} 
-                className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-zinc-950 text-white rounded-t-[32px] z-[201] border-t border-zinc-900 flex flex-col h-[92vh] max-h-[92vh] overflow-y-auto pb-32 scrollbar-none"
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'tween', duration: 0.22 }}
+                className="fixed top-0 bottom-0 left-0 w-[285px] max-w-[70vw] bg-[#000000] border-r border-zinc-900 z-[201] p-6 text-left flex flex-col justify-between"
               >
-                
-                {/* Image Section - Pinned & prominent at top */}
-                <div className="relative w-full aspect-[4/5] bg-zinc-900/60 overflow-hidden shrink-0 border-b border-zinc-900 group select-none">
-                  <img 
-                    src={selectedProduct.images[activeImageIdx] || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=300&q=80'} 
-                    alt="Details" 
-                    className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer"
-                  />
-                  
-                  {/* Backdrop shadows overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/35 z-10" />
-
-                  {/* Floating Transparent overlay Header */}
-                  <div className="absolute top-0 left-0 right-0 px-4 py-4 flex items-center justify-between z-30">
-                    <button onClick={() => setSelectedProduct(null)} className="w-10 h-10 bg-black/60 border border-white/10 rounded-full flex items-center justify-center backdrop-blur-md text-white hover:bg-black/80 active:scale-90 transition-all">
-                      <ArrowLeft size={16} />
-                    </button>
-                    <span className="text-[10px] font-mono tracking-widest font-black uppercase bg-black/60 border border-white/5 py-1.5 px-4 rounded-full backdrop-blur-md text-[#c8ff00]">{shop.name || "Storefront Catalog"}</span>
-                    <button onClick={() => toggleWishlist(selectedProduct)} className="w-10 h-10 bg-black/60 border border-white/10 rounded-full flex items-center justify-center backdrop-blur-md hover:bg-black/80 active:scale-90 transition-all">
-                      <Heart size={15} className={wishlist.some(i => i.id === selectedProduct.id) ? "fill-[#c8ff00] text-[#c8ff00]" : "text-white"} />
+                <div className="space-y-10">
+                  {/* Title identity */}
+                  <div className="flex justify-between items-center border-b border-zinc-900 pb-4">
+                    <span className="font-mono text-[10px] font-black uppercase tracking-widest">{shop.name.slice(0, 18)}</span>
+                    <button onClick={() => setMenuDrawerOpen(false)} className="text-zinc-500 hover:text-white p-0.5">
+                      <X size={16} />
                     </button>
                   </div>
 
-                  {/* Simple image swiper controls inside carousel */}
-                  {selectedProduct.images.length > 1 && (
-                    <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex justify-between items-center pointer-events-none z-20">
-                      <button 
-                        onClick={() => setActiveImageIdx(prev => prev > 0 ? prev - 1 : selectedProduct.images.length - 1)} 
-                        className="w-9 h-9 rounded-full bg-black/70 border border-zinc-800/85 pointer-events-auto flex items-center justify-center text-white active:scale-90 hover:bg-black transition-all font-bold text-sm"
-                      >
-                        &larr;
-                      </button>
-                      <button 
-                        onClick={() => setActiveImageIdx(prev => prev < selectedProduct.images.length - 1 ? prev + 1 : 0)} 
-                        className="w-9 h-9 rounded-full bg-black/70 border border-zinc-800/85 pointer-events-auto flex items-center justify-center text-white active:scale-90 hover:bg-black transition-all font-bold text-sm"
-                      >
-                        &rarr;
-                      </button>
-                    </div>
-                  )}
+                  {/* Complete requested drawer paths list */}
+                  <div className="flex flex-col space-y-4.5 font-mono text-xs font-bold uppercase tracking-wider select-none">
+                    <button 
+                      onClick={() => { setActiveTab('home'); setMenuDrawerOpen(false); }}
+                      className={`text-left py-1 hover:text-white transition-colors ${activeTab === 'home' ? 'text-white pl-2 border-l border-white' : 'text-zinc-550'}`}
+                    >
+                      HOME
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('categories'); setActiveCategory('all'); setMenuDrawerOpen(false); }}
+                      className={`text-left py-1 hover:text-white transition-colors ${activeTab === 'categories' ? 'text-white pl-2 border-l border-white' : 'text-zinc-550'}`}
+                    >
+                      TOP PICKS
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('categories'); setActiveCategory('all'); setMenuDrawerOpen(false); }}
+                      className="text-left py-1 text-zinc-550 hover:text-white transition-colors"
+                    >
+                      NEW ARRIVALS
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('categories'); setMenuDrawerOpen(false); }}
+                      className={`text-left py-1 hover:text-white transition-colors ${activeTab === 'categories' && activeCategory !== 'all' ? 'text-white pl-2 border-l border-white' : 'text-zinc-550'}`}
+                    >
+                      CATEGORIES
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('categories'); setMenuDrawerOpen(false); }}
+                      className="text-left py-1 text-zinc-550 hover:text-white transition-colors"
+                    >
+                      COLLECTIONS
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('categories'); setMenuDrawerOpen(false); }}
+                      className="text-left py-1 text-zinc-550 hover:text-white transition-colors"
+                    >
+                      ACCESSORIES
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('info'); setMenuDrawerOpen(false); }}
+                      className={`text-left py-1 hover:text-white transition-colors ${activeTab === 'info' ? 'text-white pl-2 border-l border-white' : 'text-zinc-550'}`}
+                    >
+                      ABOUT US
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('contact'); setMenuDrawerOpen(false); }}
+                      className={`text-left py-1 hover:text-white transition-colors ${activeTab === 'contact' ? 'text-white pl-2 border-l border-white' : 'text-zinc-550'}`}
+                    >
+                      CONTACT US
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('info'); setMenuDrawerOpen(false); }}
+                      className="text-left py-1 text-zinc-550 hover:text-white transition-colors"
+                    >
+                      STORE POLICIES
+                    </button>
+                  </div>
+                </div>
 
-                  {/* Thumbnail pagination selector indicators */}
-                  {selectedProduct.images.length > 1 && (
-                    <div className="absolute bottom-4 inset-x-0 flex justify-center gap-1.5 z-20">
-                      {selectedProduct.images.map((_: any, idx: number) => (
-                        <button 
-                          key={idx} 
-                          onClick={() => setActiveImageIdx(idx)}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${activeImageIdx === idx ? 'w-6 bg-[#c8ff00]' : 'w-1.5 bg-white/40'}`}
-                        />
-                      ))}
+                {/* Footnotes */}
+                <div className="font-mono text-[8px] text-zinc-650 tracking-wider">
+                  &copy; {new Date().getFullYear()} THREAD_ZW SYSTEM.<br />
+                  CURATING LOCAL DESIGNSETHICALLY.
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* 2. PRODUCT DETAILS DRAWER MODAL */}
+        <AnimatePresence>
+          {selectedProduct && (
+            <>
+              {/* Backing overlay */}
+              <div className="fixed inset-0 bg-black/90 max-w-[430px] mx-auto z-[150]" onClick={() => setSelectedProduct(null)} />
+              <motion.div 
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 26, stiffness: 180 }}
+                className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[#000000] border-t border-zinc-900 rounded-t-[20px] z-[151] flex flex-col h-[88vh] overflow-y-auto pb-24 scrollbar-none"
+              >
+                <div className="p-4 shrink-0 flex justify-between items-center bg-[#000000] sticky top-0 border-b border-zinc-900/60 z-20">
+                  <button onClick={() => setSelectedProduct(null)} className="p-1 hover:opacity-75 transition-all text-white flex items-center gap-1 font-mono text-[10px] tracking-widest font-black uppercase">
+                    <ArrowLeft size={16} />
+                    <span>CLOSE</span>
+                  </button>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-[#ffffff] font-extrabold bg-[#000000]">
+                    {selectedProduct.category || "GARMENT DETAIL"}
+                  </span>
+                  <div className="w-6 h-6" /> {/* Spacer */}
+                </div>
+
+                {/* Primary Photo display */}
+                <div className="w-full aspect-[4/5] bg-zinc-950 border-b border-zinc-900 group relative">
+                  <ProductImage 
+                    url={selectedProduct.images?.[activeImageIdx] || selectedProduct.images?.[activeImageIdx]} 
+                    alt="Garment view" 
+                    className="w-full h-full object-cover rounded-none"
+                  />
+                  {selectedProduct.original_price && (
+                    <div className="absolute bottom-4 left-4 bg-white text-black font-mono font-black text-[9px] px-2.5 py-1 uppercase tracking-wider">
+                      SALE DETECTED
                     </div>
                   )}
                 </div>
 
-                {/* Info & Details Section (Translucent / Solid sheet) */}
-                <div className="w-full bg-zinc-950 flex flex-col relative z-10">
+                {/* Text and selects area */}
+                <div className="px-5 py-6 text-left space-y-6">
                   
-                  {/* scroll components */}
-                  <div className="p-5 text-left space-y-5">
-                    
-                    {/* Floating mini images gallery at the top of scroll */}
-                    {selectedProduct.images.length > 1 && (
-                      <div className="flex gap-2.5 overflow-x-auto pb-3.5 scrollbar-none border-b border-zinc-900">
-                        {selectedProduct.images.map((img: string, i: number) => (
+                  {/* Thumbnail pagination selector indicators */}
+                  {selectedProduct.images && selectedProduct.images.length > 1 && (
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none select-none">
+                      {selectedProduct.images.map((imgUrl: string, idx: number) => {
+                        const resolvedUrl = getImageUrl(imgUrl) || imgUrl;
+                        return (
                           <button 
-                            key={i} 
-                            onClick={() => setActiveImageIdx(i)} 
-                            className={`w-14 h-16 rounded-xl overflow-hidden cursor-pointer border-2 shrink-0 transition-all ${activeImageIdx === i ? 'border-[#c8ff00] scale-102 ring-2 ring-[#c8ff00]/15' : 'border-zinc-800 hover:border-zinc-700'}`} 
+                            key={idx} 
+                            onClick={() => setActiveImageIdx(idx)}
+                            className={`w-14 h-16 bg-zinc-950 border shrink-0 overflow-hidden ${
+                              activeImageIdx === idx ? 'border-white brightness-110' : 'border-zinc-900 brightness-50 hover:brightness-100 transition-all'
+                            }`}
                           >
-                            <img src={img} className="w-full h-full object-cover" alt="Thumb" />
+                            <ProductImage url={resolvedUrl || undefined} className="w-full h-full object-cover" alt="Garment sample" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <h1 className="text-xl font-bold uppercase tracking-wider text-white select-none">
+                      {selectedProduct.name}
+                    </h1>
+                    <div className="flex items-baseline gap-2.5 font-mono select-none">
+                      <span className="text-lg font-black text-white">${selectedProduct.price}</span>
+                      {selectedProduct.original_price && (
+                        <span className="text-xs text-zinc-500 line-through">${selectedProduct.original_price}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <hr className="border-zinc-900" />
+
+                  {/* SIZES MATRIX (Clean grid with square borders) */}
+                  {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
+                    <div className="space-y-3">
+                      <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">SELECT SIZE</span>
+                      <div className="grid grid-cols-5 gap-2 select-none">
+                        {['S', 'M', 'L', 'XL', 'XXL'].map((sz) => {
+                          const isAvailable = selectedProduct.sizes.includes(sz);
+                          const isSelected = selectedSize === sz;
+                          return (
+                            <button
+                              key={sz}
+                              disabled={!isAvailable}
+                              onClick={() => setSelectedSize(sz)}
+                              className={`py-3.5 border font-mono text-[11px] font-bold text-center transition-all ${
+                                !isAvailable 
+                                  ? 'border-zinc-950 text-zinc-800 cursor-not-allowed line-through' 
+                                  : isSelected
+                                    ? 'bg-white text-black border-white' 
+                                    : 'bg-transparent text-white border-zinc-900 hover:border-zinc-700'
+                              }`}
+                            >
+                              {sz}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* COLORS MATRIX */}
+                  {selectedProduct.colours && selectedProduct.colours.length > 0 && (
+                    <div className="space-y-3">
+                      <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Garment color shade</span>
+                      <div className="flex gap-2.5 select-none text-xs">
+                        {selectedProduct.colours.map((col: string) => (
+                          <button 
+                            key={col}
+                            onClick={() => setSelectedColor(col)}
+                            className={`px-3 py-1.5 border font-mono text-[10px] uppercase transition-all ${
+                              selectedColor === col 
+                                ? 'bg-white text-black border-white font-bold' 
+                                : 'bg-transparent text-zinc-400 border-zinc-900 hover:text-white'
+                            }`}
+                          >
+                            {col}
                           </button>
                         ))}
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-mono tracking-widest text-[#c8ff00] uppercase font-bold">{selectedProduct.category}</span>
-                      {selectedProduct.original_price && (
-                        <span className="text-[9px] font-mono bg-white text-zinc-950 font-black px-2 py-0.5 rounded uppercase">Save {Math.round((1 - (selectedProduct.price / selectedProduct.original_price)) * 100)}%</span>
+                  <div className="space-y-2">
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Description details</span>
+                    <p className="text-zinc-400 text-xs leading-relaxed font-sans font-medium">
+                      {selectedProduct.description || "Ethically handcrafted item styled in Zimbabwe. Pristine lines, breathable weave weights."}
+                    </p>
+                  </div>
+
+                  <hr className="border-zinc-900" />
+
+                  {/* REVIEWS DISPATCH CONTAINER */}
+                  <div className="space-y-4">
+                    <span className="font-mono text-[9px] uppercase tracking-widest text-zinc-500 font-extrabold block">Garment Feedback ledger</span>
+                    
+                    <div className="space-y-3.5 select-all">
+                      {(reviews[selectedProduct.id] || []).map((rev, rIdx) => (
+                        <div key={rIdx} className="p-4 bg-zinc-950 border border-zinc-900 text-left space-y-2">
+                          <div className="flex justify-between items-baseline">
+                            <span className="font-bold text-xs text-zinc-200">{rev.name}</span>
+                            <span className="font-mono text-[8.5px] text-zinc-600">{rev.date || 'Review Ledger'}</span>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {[1,2,3,4,5].map(st => (
+                              <Star key={st} size={8.5} className={st <= rev.rating ? "fill-white text-white" : "text-zinc-800"} />
+                            ))}
+                          </div>
+                          <p className="text-zinc-400 text-[11px] leading-normal font-medium font-sans">{rev.text}</p>
+                        </div>
+                      ))}
+                      {(reviews[selectedProduct.id] || []).length === 0 && (
+                        <span className="text-[10px] font-mono text-zinc-700 italic block">No feedback entries processed for this piece yet.</span>
                       )}
                     </div>
-                    
-                    <div>
-                      <h3 className="text-2xl font-black uppercase text-white leading-tight tracking-tight">{selectedProduct.name}</h3>
-                      <div className="flex items-baseline gap-2.5 mt-1.5">
-                        <span className="text-2xl font-mono font-black text-[#c8ff00]">${selectedProduct.price}</span>
-                        {selectedProduct.original_price && (
-                          <span className="text-sm font-mono text-zinc-500 line-through">${selectedProduct.original_price}</span>
-                        )}
-                      </div>
-                    </div>
 
-                    <hr className="border-zinc-900" />
-
-                    {/* Colours Selector */}
-                    {selectedProduct.colours && selectedProduct.colours.length > 0 && (
-                      <div>
-                        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-2 font-black">Available Colors</span>
-                        <div className="flex gap-2.5">
-                          {selectedProduct.colours.map((c: string) => (
-                            <button 
-                              key={c} 
-                              onClick={() => setSelectedColor(c)}
-                              style={{ backgroundColor: getColorHex(c) }}
-                              className={`w-8 h-8 rounded-full border border-zinc-900 transition-all ${selectedColor === c ? 'ring-2 ring-[#c8ff00] ring-offset-2 ring-offset-zinc-950 scale-105' : 'hover:scale-102'}`}
-                              title={c}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Sizes Selector */}
-                    {selectedProduct.sizes && selectedProduct.sizes.length > 0 && (
-                      <div>
-                        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-2 font-black">Available Sizes</span>
-                        <div className="flex gap-2 flex-wrap">
-                          {selectedProduct.sizes.map((sz: string) => (
-                            <button 
-                              key={sz} 
-                              onClick={() => setSelectedSize(sz)} 
-                              className={`px-4 py-2 border rounded-xl text-xs font-mono uppercase transition-all ${selectedSize === sz ? 'bg-[#c8ff00] text-black border-[#c8ff00] font-black shadow-md' : 'bg-zinc-900/60 text-zinc-400 border-zinc-800 hover:border-zinc-700'}`}
-                            >
-                              {sz}
+                    <form onSubmit={(e) => handleWriteReviewSubmit(e, selectedProduct.id)} className="bg-zinc-950 p-4 border border-zinc-900 space-y-3 text-left">
+                      <span className="font-mono text-[9px] uppercase text-[#ffffff] font-extrabold tracking-widest block">Submit anonymous entry</span>
+                      <input 
+                        type="text" 
+                        placeholder="ENTER NAME..." 
+                        value={newReviewName} 
+                        onChange={(e) => setNewReviewName(e.target.value)}
+                        className="w-full bg-zinc-950 border border-zinc-900 p-2.5 text-xs font-mono text-white focus:outline-none placeholder-zinc-750 uppercase" 
+                        required
+                      />
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-mono text-[9px] text-zinc-550 uppercase">Score rating:</span>
+                        <div className="flex gap-1.5">
+                          {[1,2,3,4,5].map(n => (
+                            <button type="button" key={n} onClick={() => setNewReviewRating(n)} className="p-0.5">
+                              <Star size={12} className={n <= newReviewRating ? "fill-white text-white" : "text-zinc-800"} />
                             </button>
                           ))}
                         </div>
                       </div>
-                    )}
-
-                    {/* Description text */}
-                    <div>
-                      <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-1.5 font-black">Details</span>
-                      <p className="text-[12px] text-zinc-400 font-semibold leading-relaxed font-sans">{selectedProduct.description || "Curated premium clothes styled with local aesthetics."}</p>
-                    </div>
-
-                    <hr className="border-zinc-900" />
-
-                    {/* PRODUCT REVIEWS ENGINE (SCREEN 13) */}
-                    <div>
-                      <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block mb-3 font-black">Product Feedback</span>
-                      
-                      <div className="space-y-3 mb-4">
-                        {(reviews[selectedProduct.id] || []).map((rev, rIdx) => (
-                          <div key={rIdx} className="p-4 bg-zinc-900/40 border border-zinc-900 rounded-xl">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="font-bold text-xs text-zinc-200">{rev.name}</span>
-                              <span className="text-[8px] font-mono text-zinc-500">{rev.date}</span>
-                            </div>
-                            <div className="flex gap-0.5 mb-2">
-                              {[1,2,3,4,5].map(st => (
-                                <Star key={st} size={9} className={st <= rev.rating ? "fill-[#c8ff00] text-[#c8ff00]" : "text-zinc-700"} />
-                              ))}
-                            </div>
-                            <p className="text-[11px] text-zinc-400 font-semibold leading-normal">{rev.text}</p>
-                          </div>
-                        ))}
-                        {(reviews[selectedProduct.id] || []).length === 0 && (
-                          <p className="text-[10px] font-mono text-zinc-650 italic">No review comments left yet on this piece.</p>
-                        )}
-                      </div>
-
-                      {/* Review submit form */}
-                      <form onSubmit={(e) => handleWriteReviewSubmit(e, selectedProduct.id)} className="bg-zinc-900/40 p-4 rounded-2xl border border-zinc-900 text-left space-y-3">
-                        <span className="text-[10px] font-mono text-[#c8ff00] uppercase block font-black">Add Your Review</span>
-                        <input 
-                          type="text" 
-                          placeholder="Your Name" 
-                          value={newReviewName} 
-                          onChange={(e) => setNewReviewName(e.target.value)}
-                          className="w-full bg-zinc-955 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-[#c8ff00]" 
-                          required
-                        />
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono text-zinc-500">Rating:</span>
-                          <div className="flex gap-1">
-                            {[1,2,3,4,5].map(st => (
-                              <button key={st} type="button" onClick={() => setNewReviewRating(st)} className="p-0.5">
-                                <Star size={14} className={st <= newReviewRating ? "fill-[#c8ff00] text-[#c8ff00]" : "text-zinc-600"} />
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <textarea 
-                          placeholder="Write comments..." 
-                          rows={2} 
-                          value={newReviewComments} 
-                          onChange={(e) => setNewReviewComments(e.target.value)}
-                          className="w-full bg-zinc-955 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#c8ff00]" 
-                          required
-                        />
-                        <button type="submit" className="w-full py-2.5 bg-zinc-100 text-zinc-950 hover:bg-zinc-200 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-colors">Submit Review</button>
-                      </form>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Sticky Detail bottom checkout buttons - Always pinned at bottom of viewport */}
-                <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-zinc-950/95 backdrop-blur-md border-t border-zinc-900 p-4 grid grid-cols-2 gap-3 z-40">
-                  <button 
-                    onClick={() => handleDetailOrderWhatsApp(selectedProduct)} 
-                    className="bg-zinc-900 hover:bg-[#c8ff00]/10 hover:border-[#c8ff00] border border-zinc-800 py-3.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 text-white"
-                  >
-                    <WhatsAppIcon size={14} />
-                    <span className="uppercase tracking-widest text-[9px]">Chat on WhatsApp</span>
-                  </button>
-                  <button 
-                    onClick={() => { setSelectedProduct(null); setShowDirections(true); }} 
-                    className="bg-[#c8ff00] hover:bg-[#b0df00] text-black py-3.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-lg"
-                  >
-                    <MapPin size={12} />
-                    <span className="uppercase tracking-widest text-[9px]">Pin Shop Route</span>
-                  </button>
-                </div>
-
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* 2. VISIT SHOP DIRECTIONS DRAWER (SCREEN 8) */}
-        <AnimatePresence>
-          {showDirections && (
-            <>
-              <div className="fixed inset-0 max-w-[430px] mx-auto bg-black/80 z-[250]" onClick={() => setShowDirections(false)} />
-              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }} className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-zinc-950 text-white rounded-t-2xl z-[261] p-5 border-t border-zinc-900 text-left flex flex-col">
-                <div className="w-10 h-1 bg-zinc-800 rounded-full mx-auto mb-4" />
-                
-                <h3 className="text-sm font-black uppercase text-white mb-2 flex items-center gap-1.5">
-                  <MapPin size={16} className="text-[#c8ff00]" />
-                  <span>Physical Store directions</span>
-                </h3>
-
-                <div className="bg-zinc-900 border border-zinc-850 rounded-xl p-3.5 space-y-3.5 mb-5 font-semibold text-xs text-zinc-300">
-                  <div>
-                    <span className="text-zinc-500 block mb-0.5">Physical Address Coordinate</span>
-                    <p className="text-white font-bold">{directionsData.address}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 block mb-0.5">Primary Landmark</span>
-                    <p className="text-zinc-100">{directionsData.landmark}</p>
-                  </div>
-                  <div>
-                    <span className="text-zinc-500 block mb-1">Walking Path directions</span>
-                    <p className="text-[11px] text-zinc-400 font-mono whitespace-pre-wrap leading-relaxed">{directionsData.stepByStep}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${directionsData.address}\n\nLandmark: ${directionsData.landmark}\n\nDirections:\n${directionsData.stepByStep}`);
-                      triggerLocalToast("Directions copied successfully");
-                    }} 
-                    className="w-full py-3 bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-zinc-300 rounded-xl font-bold text-xs flex items-center justify-center gap-2"
-                  >
-                    <Copy size={12} />
-                    <span>Copy Route text block</span>
-                  </button>
-                  <button 
-                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${shop.name} ${shop.location || 'Harare'} Zimbabwe`)}`, '_blank')}
-                    className="w-full py-3 bg-[#c8ff00] text-black rounded-xl font-bold text-xs flex items-center justify-center gap-2"
-                  >
-                    <Map size={14} />
-                    <span>Open in Google Maps</span>
-                  </button>
-                </div>
-
-                <button onClick={() => setShowDirections(false)} className="text-zinc-400 hover:text-white font-mono text-[9px] uppercase tracking-widest text-center mt-4">Dismiss directions</button>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* 3. INTERACTIVE WHATSAPP MESSENGER TEMPLATES (SCREEN 9) */}
-        <AnimatePresence>
-          {showWhatsAppContact && (
-            <>
-              <div className="fixed inset-0 max-w-[430px] mx-auto bg-black/80 z-[250]" onClick={() => setShowWhatsAppContact(false)} />
-              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }} className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-zinc-950 text-white rounded-t-2xl z-[261] border-t border-zinc-900 text-left flex flex-col overflow-hidden pb-4">
-                
-                {/* Simulated Green WhatsApp Header */}
-                <div className="bg-emerald-900 border-b border-emerald-800 px-4 py-3.5 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
-                      {shop.logo_url ? <img src={shop.logo_url} className="w-full h-full object-cover" /> : null}
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white uppercase">{shop.name} helpline</h4>
-                      <span className="text-[9px] font-mono text-emerald-400 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                        Online & Active Helper
-                      </span>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowWhatsAppContact(false)} className="text-emerald-350 hover:text-white p-1">
-                    <X size={15} />
-                  </button>
-                </div>
-
-                <div className="p-4 space-y-4">
-                  <p className="text-[11px] text-zinc-400 font-semibold">Tap any quick inquiry template down below. We will prefills your WhatsApp messenger thread instantly to get rapid assistance!</p>
-                  
-                  <div className="space-y-2">
-                    {WHATSAPP_MESSAGE_TEMPLATES.map((tpl) => (
+                      <textarea 
+                        placeholder="Garment review details..." 
+                        rows={2} 
+                        value={newReviewComments} 
+                        onChange={(e) => setNewReviewComments(e.target.value)}
+                        className="w-full bg-zinc-950 border border-zinc-900 p-2.5 text-xs text-white focus:outline-none placeholder-zinc-700" 
+                        required
+                      />
                       <button 
-                        key={tpl.id} 
-                        onClick={() => {
-                          const num = formatWA(shop.whatsapp);
-                          const url = `https://wa.me/${num}?text=${encodeURIComponent(tpl.text)}`;
-                          window.open(url, '_blank');
-                        }}
-                        className="w-full text-left p-3.5 bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-850 rounded-xl flex items-center justify-between group active:scale-99 transition-all"
+                        type="submit" 
+                        className="w-full py-2.5 bg-white text-black font-semibold text-[10px] uppercase tracking-wider transition-colors hover:bg-zinc-200"
                       >
-                        <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#c8ff00] block mb-0.5">{tpl.title}</span>
-                          <p className="text-[11px] text-zinc-300 font-semibold italic">"{tpl.text}"</p>
-                        </div>
-                        <ArrowRight size={13} className="text-zinc-500 group-hover:translate-x-1 transition-transform" />
+                        SUBMIT DISPATCH REVIEW
                       </button>
-                    ))}
+                    </form>
                   </div>
 
-                  <a href={`https://wa.me/${formatWA(shop.whatsapp)}?text=Hi!+Curious+about+your+ThreadZW+catalog+pieces`} target="_blank" rel="noreferrer" className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                    <WhatsAppIcon size={14} />
-                    <span>Open direct custom chat helpline</span>
-                  </a>
                 </div>
 
+                {/* Sticky product buttons Conforming strictly to "Order on WhatsApp" visual guideline */}
+                <div className="sticky bottom-0 left-0 right-0 bg-[#000000] border-t border-zinc-900 p-4 grid grid-cols-2 gap-3.5 z-30">
+                  <button 
+                    onClick={() => handleDetailOrderWhatsApp(selectedProduct)}
+                    className="bg-zinc-950 hover:bg-zinc-900 border border-zinc-850 py-4 px-3 rounded-none font-bold text-xs flex items-center justify-center gap-2 text-white active:scale-95 transition-transform"
+                  >
+                    <WhatsAppIcon size={13} className="text-emerald-400" />
+                    <span className="font-mono text-[9.5px] uppercase tracking-widest text-emerald-400">WHATSAPP DIRECT</span>
+                  </button>
+                  <button 
+                    onClick={() => addToCart(selectedProduct)}
+                    className="bg-white hover:bg-zinc-200 text-black py-4 px-3 rounded-none font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition-all shadow-lg"
+                  >
+                    <ShoppingBag size={13} className="stroke-[2.2]" />
+                    <span className="font-mono text-[9.5px] uppercase tracking-widest font-black">ADD TO CART</span>
+                  </button>
+                </div>
               </motion.div>
             </>
           )}
         </AnimatePresence>
 
-        {/* 4. SHARE STORE MODAL (SCREEN 12) */}
+        {/* 3. RIGHT CART DRAWER SLIDE */}
         <AnimatePresence>
-          {showShareModal && (
+          {cartOpen && (
             <>
-              <div className="fixed inset-0 max-w-[430px] mx-auto bg-black/85 z-[250]" onClick={() => setShowShareModal(false)} />
-              <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="fixed inset-0 m-auto max-w-[360px] h-fit bg-zinc-900 border border-zinc-800 rounded-2xl z-[261] p-5 text-center flex flex-col shadow-2xl">
-                
-                <CheckCircle2 size={36} className="mx-auto text-[#c8ff00] mb-3" />
-                <h3 className="text-sm font-black uppercase text-white">Share secure storefront</h3>
-                <p className="text-[11px] text-zinc-400 font-semibold mt-1 mb-4 leading-relaxed">Let friends discover local streetwear designs on secure platforms.</p>
-
-                <div className="bg-zinc-950 border border-zinc-850 p-3.5 rounded-xl flex items-center justify-between mb-4">
-                  <span className="text-[11px] font-mono text-zinc-400 select-all truncate max-w-[200px]">{window.location.origin}/shop/{shop.slug}</span>
-                  <button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(`${window.location.origin}/shop/${shop.slug}`);
-                      triggerLocalToast("Store URL Link copied!");
-                    }} 
-                    className="p-2 bg-[#c8ff00] text-black rounded" 
-                    title="Copy URL"
-                  >
-                    <Copy size={12} />
+              <div className="fixed inset-0 bg-black/85 max-w-[430px] mx-auto z-[150]" onClick={() => setCartOpen(false)} />
+              <motion.div 
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'tween', duration: 0.25 }}
+                className="fixed top-0 bottom-0 right-0 w-[350px] max-w-[85vw] bg-[#000000] border-l border-zinc-900 z-[151] flex flex-col justify-between"
+              >
+                {/* Header */}
+                <div className="p-4 flex justify-between items-center border-b border-zinc-900/80 shrink-0 select-none">
+                  <div className="flex items-center gap-2 text-white font-mono font-black text-[10px] tracking-widest uppercase">
+                    <ShoppingBag size={15} />
+                    <span>CART SELECTIONS</span>
+                  </div>
+                  <button onClick={() => { setCartOpen(false); setCheckoutMode(false); }} className="text-zinc-500 hover:text-white p-0.5">
+                    <X size={16} />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => window.open(`https://wa.me/?text=Check+out+this+amazing+storefront+on+ThreadZW:+${encodeURIComponent(`${window.location.origin}/shop/${shop.slug}`)}`, '_blank')} className="py-2.5 bg-zinc-950 border border-zinc-800 hover:text-emerald-400 rounded-lg text-xs font-mono font-semibold">WhatsApp Share</button>
-                  <button onClick={() => window.open(`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/shop/${shop.slug}`)}`, '_blank')} className="py-2.5 bg-zinc-950 border border-zinc-800 hover:text-blue-400 rounded-lg text-xs font-mono font-semibold">Facebook Post</button>
-                </div>
+                {/* Sub Body (Cart Items / Checkout Form toggle) */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                  
+                  {!checkoutMode ? (
+                    /* A. View Cart items List */
+                    <div className="space-y-4">
+                      {cart.map((item, idx) => (
+                        <div key={idx} className="flex gap-3 bg-zinc-950 border border-zinc-900 p-3 relative text-left">
+                          <div className="w-16 h-20 bg-zinc-900 border border-zinc-900 overflow-hidden shrink-0">
+                            <ProductImage 
+                              url={item.product.images?.[0] || item.product.images?.[0]} 
+                              alt="Cart item" 
+                              className="w-full h-full object-cover" 
+                            />
+                          </div>
+                          <div className="flex-1 flex flex-col justify-between py-0.5 font-mono">
+                            <div className="space-y-0.5">
+                              <span className="text-[11px] font-bold text-white block truncate uppercase">{item.product.name}</span>
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-[10px] font-black text-white">${item.product.price}</span>
+                                <span className="text-[9px] text-zinc-550 lowercase tracking-tighter">Size: {item.selectedSize}</span>
+                              </div>
+                            </div>
 
-                <button onClick={() => setShowShareModal(false)} className="text-zinc-500 hover:text-white uppercase font-mono text-[9px] mt-4 tracking-widest">Close panel</button>
+                            {/* Quantity buttons */}
+                            <div className="flex items-center gap-2 select-none">
+                              <button onClick={() => updateCartQty(idx, -1)} className="w-6 h-6 border border-zinc-900 flex items-center justify-center hover:border-zinc-700 font-mono text-zinc-500 hover:text-white font-bold">&minus;</button>
+                              <span className="text-xs text-white font-bold font-mono">{item.quantity}</span>
+                              <button onClick={() => updateCartQty(idx, 1)} className="w-6 h-6 border border-zinc-900 flex items-center justify-center hover:border-zinc-700 font-mono text-zinc-500 hover:text-white font-bold">&plus;</button>
+                            </div>
+                          </div>
 
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-
-        {/* 5. UPLOAD CUSTOM DESIGN FORM DRAWER */}
-        <AnimatePresence>
-          {showDemandDrawer && (
-            <>
-              <div className="fixed inset-0 max-w-[430px] mx-auto bg-black/80 z-[280]" onClick={() => setShowDemandDrawer(false)} />
-              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }} className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-zinc-950 text-white rounded-t-2xl z-[281] p-5 border-t border-zinc-900 text-left flex flex-col">
-                <div className="w-10 h-1 bg-zinc-800 rounded-full mx-auto mb-4" />
-                
-                <h3 className="text-sm font-bold uppercase text-white mb-1.5">Custom Sizing Design</h3>
-                <p className="text-[11px] text-zinc-400 font-semibold mb-4 leading-relaxed">Let local designers check material sourcing options and tailors pricing constraints on WhatsApp!</p>
-
-                <form onSubmit={handleCustomRequestSubmit} className="space-y-4">
-                  <div>
-                    <span className="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-2">Upload visual crop</span>
-                    <div 
-                      onClick={() => document.getElementById('demand-input-files')?.click()}
-                      className="border-2 border-dashed border-zinc-800 bg-zinc-900/40 rounded-xl py-6 text-center cursor-pointer hover:bg-zinc-900 transition-colors relative h-28 flex flex-col justify-center items-center"
-                    >
-                      {demandImageUrl ? (
-                        <div className="absolute inset-0">
-                          <img src={demandImageUrl} alt="Query" className="w-full h-full object-contain p-2" />
+                          {/* Delete */}
+                          <button 
+                            onClick={() => {
+                              let copy = [...cart];
+                              copy.splice(idx, 1);
+                              saveCart(copy);
+                            }}
+                            className="absolute top-2 right-2 text-zinc-650 hover:text-white p-1"
+                          >
+                            <X size={12} />
+                          </button>
                         </div>
-                      ) : (
-                        <>
-                          <Plus size={16} className="text-zinc-600 mx-auto" />
-                          <span className="text-[10px] font-mono text-zinc-500 mt-1 block">Pick visual item layout picture</span>
-                        </>
+                      ))}
+
+                      {cart.length === 0 && (
+                        <div className="py-20 text-center border border-zinc-900/60 font-mono select-none">
+                          <ShoppingBag size={18} className="mx-auto text-zinc-700 mb-2 stroke-[1.2]" />
+                          <span className="text-[10px] text-zinc-600 uppercase tracking-widest block font-extrabold mb-1">Your cart is empty</span>
+                          <span className="text-[8.5px] text-zinc-500 uppercase tracking-wide">Coordinates catalog and select fine drops first.</span>
+                        </div>
                       )}
                     </div>
-                    <input id="demand-input-files" type="file" accept="image/*" onChange={handleCustomDemandUpload} className="hidden" />
-                  </div>
+                  ) : (
+                    /* B. Checkout Form: Conforms strictly to Deliveries Specification */
+                    <div className="space-y-4 text-left font-mono text-xs text-zinc-400">
+                      
+                      <div className="flex items-center gap-1 text-white uppercase font-bold border-b border-zinc-900 pb-1.5">
+                        <MapPin size={13} className="text-emerald-400" />
+                        <span className="text-[10px] tracking-widest">DISPATCH COORDINATES</span>
+                      </div>
 
-                  <div>
-                    <span className="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1.5">Describe your parameters</span>
-                    <textarea 
-                      placeholder="e.g. looking for this cargo pocket utility setup styled in medium, black cotton fleece fabric." 
-                      rows={2} 
-                      value={demandDesc} 
-                      onChange={(e) => setDemandDesc(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-[#c8ff00] font-sans"
-                      required
-                    />
-                  </div>
+                      <div className="space-y-3.5 pt-1.5">
+                        <div className="space-y-1">
+                          <span className="text-[9px] uppercase font-semibold text-zinc-500 block">Recipient Full name *</span>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. John Doe"
+                            value={deliveryDetails.fullName}
+                            onChange={(e) => setDeliveryDetails({ ...deliveryDetails, fullName: e.target.value })}
+                            className="w-full bg-[#000000] border border-zinc-900 p-2.5 text-xs text-white uppercase focus:outline-none placeholder-zinc-750"
+                            required
+                          />
+                        </div>
 
-                  <div>
-                    <span className="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1.5">Your whatsapp number</span>
-                    <input 
-                      type="tel" 
-                      placeholder="+263 7..." 
-                      value={customerWhatsApp} 
-                      onChange={(e) => setCustomerWhatsApp(e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-2.5 text-xs text-white focus:outline-none focus:border-[#c8ff00] font-mono"
-                    />
-                  </div>
+                        <div className="space-y-1">
+                          <span className="text-[9px] uppercase font-semibold text-zinc-500 block">Phone number *</span>
+                          <div className="flex border border-zinc-900 overflow-hidden bg-black">
+                            <span className="bg-zinc-950 px-2.5 py-2.5 text-xs text-zinc-500 border-r border-zinc-900 select-none">+263</span>
+                            <input 
+                              type="tel" 
+                              placeholder="77 622 3144"
+                              value={deliveryDetails.phone}
+                              onChange={(e) => setDeliveryDetails({ ...deliveryDetails, phone: e.target.value })}
+                              className="w-full bg-[#000000] p-2.5 text-xs text-white focus:outline-none placeholder-zinc-600"
+                              required
+                            />
+                          </div>
+                        </div>
 
-                  <div className="grid grid-cols-2 gap-2 pt-2">
-                    <button type="button" onClick={() => setShowDemandDrawer(false)} className="py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-lg font-bold text-xs">Cancel</button>
-                    <button type="submit" disabled={isUploadingDemand} className="py-3 bg-[#c8ff00] text-black rounded-lg font-bold text-xs disabled:opacity-50">
-                      {isUploadingDemand ? 'Processing...' : 'Submit Request'}
-                    </button>
-                  </div>
-                </form>
+                        <div className="space-y-1">
+                          <span className="text-[9px] uppercase font-semibold text-zinc-500 block">Select City *</span>
+                          <select 
+                            value={deliveryDetails.city}
+                            onChange={(e) => setDeliveryDetails({ ...deliveryDetails, city: e.target.value })}
+                            className="w-full bg-[#000000] border border-zinc-900 p-2.5 text-xs text-white focus:outline-none uppercase"
+                          >
+                            <option value="Harare">Harare</option>
+                            <option value="Bulawayo">Bulawayo</option>
+                            <option value="Mutare">Mutare</option>
+                            <option value="Gweru">Gweru</option>
+                            <option value="Victoria Falls">Victoria Falls</option>
+                            <option value="Other Zim Suburb">Other Zimbabwe Suburb</option>
+                          </select>
+                        </div>
 
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+                        <div className="space-y-1">
+                          <span className="text-[9px] uppercase font-semibold text-zinc-500 block">Deliveries address or Landmark directions *</span>
+                          <textarea 
+                            rows={3}
+                            placeholder="e.g. Near OK Mart, turn right at Total garage, 3rd shop on left."
+                            value={deliveryDetails.address}
+                            onChange={(e) => setDeliveryDetails({ ...deliveryDetails, address: e.target.value })}
+                            className="w-full bg-[#000000] border border-zinc-900 p-2.5 text-xs text-white focus:outline-none placeholder-zinc-700"
+                            required
+                          />
+                        </div>
 
-        {/* 6. ADVANCED FILTERS SYSTEM DRAWER */}
-        <AnimatePresence>
-          {showFiltersDrawer && (
-            <>
-              <div className="fixed inset-0 max-w-[430px] mx-auto bg-black/80 z-[250]" onClick={() => setShowFiltersDrawer(false)} />
-              <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', damping: 25 }} className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-zinc-950 text-white rounded-t-2xl z-[261] p-5 border-t border-zinc-900 text-left flex flex-col">
-                <div className="w-10 h-1 bg-zinc-800 rounded-full mx-auto mb-4" />
-                
-                <h3 className="text-sm font-black uppercase text-white mb-1.5 flex items-center justify-between">
-                  <span>Advanced Storefront Filters</span>
-                  <button onClick={() => { setPriceMax(100); setActiveCategory('all'); }} className="text-[10px] font-mono text-[#c8ff00] uppercase">Reset All</button>
-                </h3>
+                        <div className="space-y-1">
+                          <span className="text-[9px] uppercase font-semibold text-zinc-500 block">Special Order Notes (Optional)</span>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Tailor fit shoulders or gift wraps"
+                            value={deliveryDetails.notes}
+                            onChange={(e) => setDeliveryDetails({ ...deliveryDetails, notes: e.target.value })}
+                            className="w-full bg-[#000000] border border-zinc-900 p-2.5 text-xs text-white focus:outline-none placeholder-zinc-750"
+                          />
+                        </div>
+                      </div>
 
-                <div className="space-y-4 my-4 font-semibold text-xs">
-                  <div>
-                    <span className="text-zinc-500 block mb-2 font-mono text-[9px] uppercase">Selector category</span>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {['all', ...DEFAULT_MOCK_CATEGORIES.filter(c => c.id !== 'all').map(c => c.name)].map((catName) => (
-                        <button 
-                          key={catName} 
-                          type="button" 
-                          onClick={() => setActiveCategory(catName)}
-                          className={`px-3 py-1 text-[10px] font-mono rounded border uppercase ${activeCategory.toLowerCase() === catName.toLowerCase() ? 'bg-[#c8ff00] text-black border-[#c8ff00] font-bold' : 'bg-zinc-900 text-zinc-400 border-zinc-850'}`}
-                        >
-                          {catName}
-                        </button>
-                      ))}
                     </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <div className="flex justify-between text-[10px] font-mono text-zinc-500 mb-2">
-                      <span className="uppercase">Maximum Retail Price</span>
-                      <span className="text-white font-bold">${priceMax} USD</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min={10} 
-                      max={120} 
-                      value={priceMax} 
-                      onChange={(e) => setPriceMax(Number(e.target.value))}
-                      className="w-full accent-[#c8ff00]"
-                    />
-                    <div className="flex justify-between text-[9px] font-mono text-zinc-600 mt-1">
-                      <span>$10</span>
-                      <span>$120+</span>
-                    </div>
-                  </div>
                 </div>
 
-                <button onClick={() => setShowFiltersDrawer(false)} className="w-full py-3.5 bg-zinc-100 text-black rounded-xl font-bold text-xs uppercase tracking-wider text-center active:scale-95">Apply Selected Options</button>
+                {/* Sub Total Footer Checkout Actions */}
+                {cart.length > 0 && (
+                  <div className="p-4 bg-zinc-950 border-t border-zinc-900 font-mono space-y-3.5 shrink-0 select-none">
+                    
+                    {/* Cart Order Summary Values */}
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between text-zinc-500">
+                        <span>SUBTOTAL PIECES:</span>
+                        <span className="text-white hover:underline">
+                          {cart.reduce((acc, curr) => acc + curr.quantity, 0)} Items
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-zinc-500">
+                        <span>DELIVERY COST:</span>
+                        <span className="text-white font-semibold">CALCULATED AT DISPATCH</span>
+                      </div>
+                      <hr className="border-zinc-900 my-1" />
+                      <div className="flex justify-between text-white font-bold">
+                        <span>ORDER CALCULATED TOTAL:</span>
+                        <span className="text-[#ffffff] text-sm">${
+                          cart.reduce((acc, curr) => acc + (Number(curr.product.price) * curr.quantity), 0).toFixed(2)
+                        } USD</span>
+                      </div>
+                    </div>
+
+                    {/* Navigation Actions buttons */}
+                    {!checkoutMode ? (
+                      <button 
+                        onClick={() => setCheckoutMode(true)}
+                        className="w-full py-4.5 bg-white text-black font-semibold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 hover:bg-zinc-200 transition-all rounded-none"
+                      >
+                        <span>CONFIRM CHECKOUT DETAILS</span>
+                        <ChevronDown className="-rotate-90" size={13} />
+                      </button>
+                    ) : (
+                      <div className="mt-2 space-y-2.5">
+                        <button 
+                          onClick={handlePlaceWhatsAppOrder}
+                          className="w-full py-4.5 bg-emerald-500 text-white font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-emerald-600 transition-transform active:scale-95 rounded-none"
+                        >
+                          <WhatsAppIcon size={14} />
+                          <span>PLACE ORDER VIA WHATSAPP</span>
+                        </button>
+                        <button 
+                          onClick={() => setCheckoutMode(false)}
+                          className="w-full text-center hover:underline text-zinc-500 hover:text-white font-mono text-[9px] uppercase tracking-widest block pt-1"
+                        >
+                          &larr; Return to Cart edit
+                        </button>
+                      </div>
+                    )}
+
+                  </div>
+                )}
+
               </motion.div>
             </>
           )}
         </AnimatePresence>
 
+        {/* Global Inner Notification Banner */}
+        <AnimatePresence>
+          {innerToast && (
+            <motion.div 
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 30, opacity: 0 }}
+              className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-white text-black font-mono text-[9.5px] font-black uppercase px-4 py-2.5 border border-black z-[300] tracking-wider text-center flex items-center gap-2 shadow-[0_5px_15px_rgba(0,0,0,0.5)]"
+            >
+              <Check size={11} className="stroke-[3]" />
+              <span>{innerToast}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+      </div>
+    </div>
+  );
+};
+
+// ======================== SUB-COMPONENT: PRODUCT SEED CARD ========================
+
+interface ProductCardProps {
+  product: any;
+  onClick: () => void;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
+  return (
+    <div 
+      onClick={onClick}
+      className="group cursor-pointer select-none text-left space-y-2 flex flex-col justify-between h-full bg-[#000000]"
+    >
+      {/* Visual Product Box with Black overlay */}
+      <div className="w-full aspect-[4/5] bg-zinc-950 border border-zinc-900 overflow-hidden relative shrink-0">
+        <ProductImage 
+          url={product.images?.[0] || product.images?.[0]} 
+          alt="Garment card"
+          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500 rounded-none brightness-[0.88] group-hover:brightness-100" 
+        />
+        
+        {/* Anti AI Slop simple Sales badge */}
+        {product.original_price && (
+          <div className="absolute bottom-2.5 left-2.5 bg-[#000000] border border-zinc-800 text-white font-mono font-bold text-[8px] px-2 py-0.5 rounded-none uppercase tracking-wide">
+            Sale
+          </div>
+        )}
+      </div>
+
+      {/* Info details */}
+      <div className="space-y-1">
+        <span className="font-sans text-[11px] font-medium tracking-normal text-zinc-105 block leading-tight truncate group-hover:text-[#ffffff] transition-colors uppercase">
+          {product.name}
+        </span>
+        <div className="flex items-baseline gap-1.5 font-mono">
+          <span className="text-[12px] font-black text-[#ffffff]">${product.price}</span>
+          {product.original_price && (
+            <span className="text-[9px] text-zinc-600 line-through">${product.original_price}</span>
+          )}
+        </div>
       </div>
     </div>
   );

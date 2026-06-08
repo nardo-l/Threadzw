@@ -17,7 +17,7 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
   const [activating, setActivating] = useState(false);
   const [activationSuccess, setActivationSuccess] = useState(false);
 
-  const trialEnd = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+  const trialEnd = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
 
   const uploadShopImages = async (shopId: string) => {
     let avatarUrl = null;

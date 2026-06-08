@@ -111,15 +111,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
           >
             Start Free →
           </button>
-
-          <button 
-            onClick={() => {
-              window.location.href = '/shop/demo';
-            }}
-            className="w-full h-12.5 bg-transparent border-1.5 border-[#2A2A2A] text-white font-black text-sm rounded-full flex items-center justify-center gap-2 hover:bg-white/[0.04] active:scale-95 cursor-pointer"
-          >
-            View Demo Shop →
-          </button>
         </div>
 
         {/* Social Proof */}
@@ -380,16 +371,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
             </div>
           </div>
 
-          <div className="flex justify-center animate-fade-in">
-            <button 
-              onClick={() => {
-                window.location.href = '/shop/demo';
-              }}
-              className="w-full max-w-[200px] h-12.5 bg-transparent border-1.5 border-[#2A2A2A] text-white font-black text-sm rounded-full flex items-center justify-center gap-2 hover:bg-white/[0.04] transition-all cursor-pointer"
-            >
-              View Demo Shop →
-            </button>
-          </div>
+
         </div>
       </section>
 

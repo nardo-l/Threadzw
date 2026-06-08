@@ -6,6 +6,7 @@ import React, {
   useCallback 
 } from 'react'
 import { supabase } from '../lib/supabase'
+import { SUBSCRIPTION } from '../constants/subscription'
 
 export const SUB_STATUS = {
   TRIAL: 'trial',
@@ -165,7 +166,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
         
         let status: SubStatus = SUB_STATUS.TRIAL;
         let expiryStr: string | null = null;
-        let days = 3; // default fallback
+        let days = SUBSCRIPTION.TRIAL_DAYS; // default fallback
 
         if (shopData) {
           status = (shopData.subscription_status || 'trial') as SubStatus;
@@ -174,7 +175,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
             const diffMs = new Date(expiryStr).getTime() - Date.now();
             days = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
           } else {
-            days = 3;
+            days = SUBSCRIPTION.TRIAL_DAYS;
           }
         }
 
@@ -220,11 +221,11 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const isUrgent = subscription
     ?.status === SUB_STATUS.TRIAL
-    && subscription.daysRemaining <= 5
+    && subscription.daysRemaining <= SUBSCRIPTION.URGENT_DAYS
 
   const isCritical = subscription
     ?.status === SUB_STATUS.TRIAL
-    && subscription.daysRemaining <= 2
+    && subscription.daysRemaining <= SUBSCRIPTION.CRITICAL_DAYS
 
   // Legacy bridge computed constants
   const currentPlan = subscription?.status === SUB_STATUS.ACTIVE 

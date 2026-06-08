@@ -366,7 +366,7 @@ export const LockOverlay: React.FC<LockOverlayProps> = ({
       // 1. Log Payment transaction in payments
       const paymentsPayload = {
         shop_id: shop.id,
-        amount: 5,
+        amount: 7,
         ecocash_number: formattedEcoCashNum,
         whatsapp_number: formattedWhatsApp,
         reference: cleanRef,

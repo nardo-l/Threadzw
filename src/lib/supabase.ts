@@ -137,9 +137,9 @@ function getFallbackForRelation(
       is_live: true,
       subscription_status: 'trial',
       trial_started_at: new Date().toISOString(),
-      trial_ends_at: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      trial_ends_at: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
       trial_start: new Date().toISOString(),
-      trial_end: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+      trial_end: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString()
     };
     
     if (filterHandle) {

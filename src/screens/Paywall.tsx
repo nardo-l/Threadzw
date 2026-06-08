@@ -409,7 +409,7 @@ export const Paywall: React.FC<PaywallFlowProps> = ({
             owner_id: myShop.owner_id,
             whatsapp_number: whatsAppNumber.trim(),
             plan: 'standard',
-            amount: 5,
+            amount: 7,
             status: 'pending',
             receiving_number: '0789113734'
           });
