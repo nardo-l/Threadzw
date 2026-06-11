@@ -1,8 +1,9 @@
+// src/App.tsx
+
 import { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { OnboardingFlow } from './screens/OnboardingFlow';
-import { Paywall } from './screens/Paywall';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { Dashboard } from './screens/Dashboard';
 import { AddProduct } from './screens/AddProduct';
@@ -12,12 +13,16 @@ import { Analytics } from './screens/Analytics';
 import { Settings } from './screens/Settings';
 import { ShopEdit } from './screens/ShopEdit';
 import { SalesSystem } from './screens/SalesSystem';
+import { OrderManagement } from './screens/OrderManagement';
+import { Profile } from './screens/Profile';
+import { Support } from './screens/Support';
+import { Notifications } from './screens/Notifications';
+import { Search } from './screens/Search';
 import { ShopProfileView } from './components/buyer-flow/ShopProfileView';
 import { ProductDetail } from './screens/ProductDetail';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/ToastContainer';
-import { SubscriptionProvider } from './context/SubscriptionContext';
 import { FollowProvider } from './context/FollowContext';
 import { InventoryProvider } from './context/InventoryContext';
 import { Toaster } from 'sonner';
@@ -26,16 +31,15 @@ import { LandingPage } from './screens/LandingPage';
 import { AdminLeads } from './screens/AdminLeads';
 import { mockShop } from './data/mockData';
 import { SetupShop } from './screens/SetupShop';
-import { SubscriptionPage } from './pages/SubscriptionPage';
-import { PaymentSuccessPage } from './pages/PaymentSuccessPage';
-import { PaymentCancelledPage } from './pages/PaymentCancelledPage';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
+import { Login } from './screens/Login';
+import { SignUp } from './screens/SignUp';
 
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup';
 
-const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: string } => {
-  const path = window.location.pathname.toLowerCase().replace(/\/$/, '');
+const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?: string; id?: string } => {
+  const path = pathname.toLowerCase().replace(/\/$/, '');
 
   if (path === '/demo' || path === '/shop/demo' || path === '/store/demo') {
     return { stage: 'shop', handle: 'demo' };
@@ -43,7 +47,10 @@ const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: st
   if (path === '/admin') {
     return { stage: 'admin' };
   }
-  if (path === '/dashboard') {
+  if (path === '/onboarding') {
+    return { stage: 'onboarding' };
+  }
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/add-product' || path === '/settings' || path === '/edit-shop') {
     return { stage: 'dashboard' };
   }
   if (path === '/setup') {
@@ -51,7 +58,7 @@ const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: st
   }
   
   // Match /store/:slug or /shop/:handle
-  const shopMatch = window.location.pathname.match(/^\/(?:shop|store)\/@?([a-z0-9_-]+)$/i);
+  const shopMatch = pathname.match(/^\/(?:shop|store)\/@?([a-z0-9_-]+)$/i);
   if (shopMatch) {
     return {
       stage: 'shop',
@@ -60,7 +67,7 @@ const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: st
   }
 
   // Match /product/:id
-  const productMatch = window.location.pathname.match(/^\/product\/([a-z0-9_-]+)$/i);
+  const productMatch = pathname.match(/^\/product\/([a-z0-9_-]+)$/i);
   if (productMatch) {
     return {
       stage: 'product',
@@ -72,7 +79,10 @@ const getInitialStageAndParams = (): { stage: AppStage; handle?: string; id?: st
 };
 
 function AppContent() {
-  const initialData = getInitialStageAndParams();
+  const location = useLocation();
+  const cleanPath = location.pathname.toLowerCase().replace(/\/$/, '');
+  
+  const initialData = getInitialStageAndParams(location.pathname);
   const [appStage, setAppStageState] = useState<AppStage>(initialData.stage);
   const appStageRef = useRef<AppStage>(initialData.stage);
   
@@ -84,56 +94,38 @@ function AppContent() {
     // Synced path push
     if (stage === 'landing') window.history.pushState({}, '', '/');
     else if (stage === 'building') window.history.pushState({}, '', '/building');
-    else if (stage === 'paywall') window.history.pushState({}, '', '/paywall');
     else if (stage === 'dashboard') window.history.pushState({}, '', '/dashboard');
     else if (stage === 'admin') window.history.pushState({}, '', '/admin');
     else if (stage === 'setup') window.history.pushState({}, '', '/setup');
   };
 
-  const [paywallScreen, setPaywallScreen] = useState(1);
-  const [onboardingStep, setOnboardingStep] = useState(1);
-  const [myShop, setMyShop] = useState<any>(mockShop);
-  const [paywallMode, setPaywallMode] = useState<'signup' | 'payment'>('signup');
-  const [authLoading, setAuthLoading] = useState(false); // Immediate visual mockup loading
-
-  // Consolidated Onboarding Shop Context Data State
-  const [shopData, setShopData] = useState({
-    ownerName: '',
-    name: '',
-    category: '',
-    town: 'Harare',
-    whatsapp: '',
-    description: '',
-    instagram: '',
-    priceRange: '10-50',
-    productEstimate: '50-100'
-  });
-
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(mockShop.logo_url);
-  const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(mockShop.banner_url);
-
   const { session, loading } = useAuth();
 
-  // Sync stage to browser navigation popstate
+  // Keep appStage in sync with path transitions
   useEffect(() => {
-    const handlePopState = () => {
-      const data = getInitialStageAndParams();
-      setAppStageState(data.stage);
-      appStageRef.current = data.stage;
-    };
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+    const data = getInitialStageAndParams(location.pathname);
+    setAppStageState(data.stage);
+    appStageRef.current = data.stage;
+  }, [location.pathname]);
 
   // Route protection and syncing
   useEffect(() => {
     if (loading) return;
     
     // Allow public routes
-    const path = window.location.pathname;
-    if (path.startsWith('/shop/') || path.startsWith('/store/') || path === '/demo' || path === '/demo/' || path === '/admin' || path.startsWith('/product/')) {
+    const path = location.pathname.toLowerCase();
+    if (
+      path === '' ||
+      path === '/' ||
+      path === '/login' ||
+      path === '/signup' ||
+      path.startsWith('/shop/') || 
+      path.startsWith('/store/') || 
+      path === '/demo' || 
+      path === '/demo/' || 
+      path === '/admin' || 
+      path.startsWith('/product/')
+    ) {
       return;
     }
 
@@ -143,8 +135,7 @@ function AppContent() {
       if (
         appStageRef.current !== 'landing' && 
         appStageRef.current !== 'onboarding' &&
-        appStageRef.current !== 'building' && 
-        appStageRef.current !== 'paywall'
+        appStageRef.current !== 'building'
       ) {
         setAppStage('landing');
       }
@@ -154,20 +145,31 @@ function AppContent() {
       if (
         appStageRef.current !== 'dashboard' &&
         appStageRef.current !== 'onboarding' &&
-        appStageRef.current !== 'building' &&
-        appStageRef.current !== 'paywall'
+        appStageRef.current !== 'building'
       ) {
         setAppStage('dashboard');
       }
     }
-  }, [loading, session, shopLoading, hasShop]);
+  }, [loading, session, shopLoading, hasShop, location.pathname]);
 
-  if (loading || authLoading) {
+  if (loading) {
     return <SplashScreen />;
   }
 
+  // Standalone Login and Signup Router Blocks
+  if (cleanPath === '/login') {
+    return <Login />;
+  }
+
+  if (cleanPath === '/signup') {
+    return (
+      <OnboardingFlow 
+        setAppStage={setAppStage}
+      />
+    );
+  }
+
   // Handle public routes unconditionally to prevent any auth lag or state conflicts
-  const cleanPath = window.location.pathname.toLowerCase().replace(/\/$/, '');
   const isDemoUrl = cleanPath === '/demo' || cleanPath === '/shop/demo' || cleanPath === '/store/demo' || cleanPath.endsWith('/demo');
 
   if (isDemoUrl) {
@@ -175,11 +177,15 @@ function AppContent() {
       <Routes>
         <Route path="/demo" element={<StorefrontPage />} />
         <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/products" element={<StorefrontPage />} />
         <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/about" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug/products" element={<StorefrontPage />} />
         <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/store/:slug/about" element={<StorefrontPage />} />
         <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
@@ -189,11 +195,15 @@ function AppContent() {
     return (
       <Routes>
         <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/products" element={<StorefrontPage />} />
         <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/about" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug/products" element={<StorefrontPage />} />
         <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/store/:slug/about" element={<StorefrontPage />} />
         <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
@@ -207,11 +217,15 @@ function AppContent() {
     return (
       <Routes>
         <Route path="/shop/:slug" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/products" element={<StorefrontPage />} />
         <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/about" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
+        <Route path="/store/:slug/products" element={<StorefrontPage />} />
         <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/store/:slug/about" element={<StorefrontPage />} />
         <Route path="/demo" element={<StorefrontPage />} />
         <Route path="*" element={<StorefrontPage />} />
       </Routes>
@@ -253,23 +267,6 @@ function AppContent() {
     return (
       <OnboardingFlow 
         setAppStage={setAppStage}
-        setPaywallScreen={setPaywallScreen}
-      />
-    );
-  }
-
-  if (appStage === 'paywall') {
-    return (
-      <Paywall
-        paywallScreen={paywallScreen}
-        setPaywallScreen={setPaywallScreen}
-        paywallMode={paywallMode}
-        setPaywallMode={setPaywallMode}
-        myShop={myShop}
-        setMyShop={setMyShop}
-        setAppStage={setAppStage}
-        setOnboardingStep={setOnboardingStep}
-        shopData={shopData}
       />
     );
   }
@@ -278,7 +275,6 @@ function AppContent() {
     return (
       <BuildingScreen
         setAppStage={setAppStage}
-        setPaywallScreen={setPaywallScreen}
       />
     );
   }
@@ -287,7 +283,7 @@ function AppContent() {
     return <SetupShop onSetupComplete={refreshShop} />;
   }
 
-  if (appStage === 'dashboard') {
+  if (appStage === 'dashboard' || cleanPath === '/dashboard' || cleanPath.startsWith('/dashboard/')) {
     return (
       <Routes>
         <Route path="/" element={<Dashboard initialLocked={false} />} />
@@ -295,14 +291,22 @@ function AppContent() {
         <Route path="/add-product" element={<AddProduct />} />
         <Route path="/edit-product/:productId" element={<EditProduct />} />
         <Route path="/inventory" element={<Inventory />} />
-        <Route path="/sales" element={<SalesSystem />} />
+        <Route path="/sales" element={<OrderManagement />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
-        <Route path="/subscription" element={<SubscriptionPage />} />
-        <Route path="/payment-success" element={<PaymentSuccessPage />} />
-        <Route path="/payment-cancelled" element={<PaymentCancelledPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        
+        {/* Core Router Aliases requested in Part 4/8 */}
+        <Route path="/dashboard/products" element={<Inventory />} />
+        <Route path="/dashboard/edit" element={<ShopEdit />} />
+        <Route path="/dashboard/settings" element={<Settings />} />
+        <Route path="/dashboard/analytics" element={<Analytics />} />
+        
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     );
   }
@@ -315,17 +319,15 @@ function App() {
     <Router>
       <AuthProvider>
         <ToastProvider>
-          <SubscriptionProvider>
-            <FollowProvider>
-              <InventoryProvider>
-                <ShopProvider>
-                  <AppContent />
-                  <ToastContainer />
-                  <Toaster position="top-center" theme="dark" expand={false} richColors />
-                </ShopProvider>
-              </InventoryProvider>
-            </FollowProvider>
-          </SubscriptionProvider>
+          <FollowProvider>
+            <InventoryProvider>
+              <ShopProvider>
+                <AppContent />
+                <ToastContainer />
+                <Toaster position="top-center" theme="dark" expand={false} richColors />
+              </ShopProvider>
+            </InventoryProvider>
+          </FollowProvider>
         </ToastProvider>
       </AuthProvider>
     </Router>

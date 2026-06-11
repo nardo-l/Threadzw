@@ -1,10 +1,7 @@
+// src/screens/LandingPage.tsx
+
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { supabase } from '../lib/supabase';
-import { toast } from 'sonner';
-import { Shield, Eye, EyeOff, Lock, X } from 'lucide-react';
-import { useDemoShop } from '../hooks/useDemoShop';
-import { IPhoneMockup } from '../components/IPhoneMockup';
+import { useNavigate } from 'react-router-dom';
 
 interface LandingPageProps {
   onStartFree: () => void;
@@ -12,598 +9,873 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSuccess }) => {
-  const { demoShop, demoProducts, loading: demoLoading } = useDemoShop();
-  const [showSignIn, setShowSignIn] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please enter both email and password');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password
-      });
-
-      if (error) throw error;
-
-      toast.success('Signed in successfully! 👋');
-      setShowSignIn(false);
-      onLoginSuccess();
-    } catch (err: any) {
-      console.error('Sign in error:', err);
-      toast.error(err.message || 'Credentials entered are invalid.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const navigate = useNavigate();
 
   return (
-    <div className="bg-[#0B0B0B] text-white min-h-screen relative font-sans select-none overflow-x-hidden pb-10">
-      
-      {/* UPDATE 2: FIXED NAVBAR */}
-      <nav className="fixed top-0 left-0 right-0 h-[60px] bg-[#0B0B0B]/85 backdrop-blur-md border-b border-[#1A1A1A] z-[100] px-5 flex items-center justify-between">
-        <span className="threadzw-wordmark text-2xl select-none">ThreadZW</span>
+    <div style={{
+      minHeight: '100svh',
+      background: '#000000',
+      maxWidth: 430,
+      margin: '0 auto',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      color: '#ffffff'
+    }}>
 
-        <div className="flex items-center gap-6">
-          {/* Desktop Links (hidden on mobile) */}
-          <div className="hidden md:flex items-center gap-5 text-sm font-semibold tracking-wide text-[#A1A1AA]">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#problems" className="hover:text-white transition-colors">Why <span className="threadzw-wordmark">ThreadZW</span></a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-          </div>
-
-          <button 
-            onClick={() => setShowSignIn(true)}
-            className="text-[#A1A1AA] hover:text-white text-sm font-bold transition-all px-3 py-1.5 cursor-pointer"
+      {/* NAVBAR */}
+      <nav style={{
+        position: 'sticky',
+        top: 0,
+        background: 'rgba(0, 0, 0, 0.9)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '0 20px',
+        height: 56,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        zIndex: 100
+      }}>
+        <span style={{
+          fontSize: 20,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-0.5px'
+        }}>
+          ThreadZW
+        </span>
+        <div style={{
+          display: 'flex',
+          gap: 8,
+          alignItems: 'center'
+        }}>
+          <button
+            onClick={() => navigate('/login')}
+            style={{
+              background: 'transparent',
+              color: '#ffffff',
+              border: '1.5px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 10,
+              padding: '8px 16px',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer'
+            }}
           >
-            Login
+            Log in
           </button>
-
-          <button 
-            onClick={onStartFree}
-            className="bg-[#C6FF00] text-[#0B0B0B] font-extrabold text-[13px] rounded-full px-4.5 py-2 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer h-[38px] flex items-center justify-center shadow-[0_4px_20px_rgba(198,255,0,0.15)]"
+          <button
+            onClick={() => navigate('/signup')}
+            style={{
+              background: '#c8ff00',
+              color: '#000000',
+              border: 'none',
+              borderRadius: 10,
+              padding: '8px 16px',
+              fontWeight: 800,
+              fontSize: 13,
+              cursor: 'pointer'
+            }}
           >
             Start Free
           </button>
         </div>
       </nav>
 
-      {/* HERO SECTION */}
-      <section className="min-h-screen bg-[#0B0B0B] pt-[110px] pb-16 px-6 flex flex-col items-center justify-center text-center">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-[#1A1A1A] border border-[#2A2A2A] rounded-full px-3.5 py-1.5 mb-6 select-none animate-fade-in">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[#22C55E]"></span>
+      {/* FREE BETA BANNER */}
+      <div style={{
+        background: '#121215',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '10px 20px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8
+      }}>
+        <div style={{
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          background: '#c8ff00',
+          flexShrink: 0
+        }} />
+        <p style={{
+          fontSize: 13,
+          color: '#ffffff',
+          margin: 0,
+          fontWeight: 600,
+          textAlign: 'center'
+        }}>
+          Free for everyone — no card needed, no limits
+        </p>
+      </div>
+
+      {/* HERO */}
+      <div style={{
+        padding: '48px 24px 40px',
+        textAlign: 'center',
+        background: '#000000'
+      }}>
+        <div style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          background: '#121215',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: 10,
+          padding: '6px 14px',
+          marginBottom: 24
+        }}>
+          <div style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: '#00c864'
+          }} />
+          <span style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: '#a1a1aa',
+            letterSpacing: '0.5px',
+            textTransform: 'uppercase'
+          }}>
+            Made in Zimbabwe
           </span>
-          <span className="text-[#A1A1AA] text-xs font-bold leading-none tracking-wider">🇿🇼 Made in Zimbabwe</span>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-white font-black text-[40px] md:text-5xl leading-[1.05] tracking-tight max-w-[340px] md:max-w-xl mx-auto select-none">
-          Create your online <br className="md:hidden" />
-          shop in{' '}
-          <span className="relative inline-block text-white">
-            minutes.
-            <span className="absolute left-0 right-0 bottom-[-2px] h-[3.5px] bg-[#C6FF00] rounded-full" />
-          </span>
+        <h1 style={{
+          fontSize: 40,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-1.5px',
+          lineHeight: 1.05,
+          margin: '0 0 16px'
+        }}>
+          Create your online shop in minutes.
         </h1>
 
-        {/* Subheading */}
-        <p className="text-[#A1A1AA] text-[15px] md:text-lg leading-relaxed max-w-[305px] md:max-w-md mx-auto mt-6">
-          No website skills needed. Create your shop, upload products, and share your link.
+        <p style={{
+          fontSize: 16,
+          color: '#a1a1aa',
+          lineHeight: 1.6,
+          margin: '0 0 32px'
+        }}>
+          No website needed. Upload products, share your link, receive orders on WhatsApp.
         </p>
 
-        {/* CTA BUTTONS */}
-        <div className="flex flex-col gap-3 w-full max-w-[320px] mx-auto mt-8">
-          <button 
-            onClick={onStartFree}
-            className="w-full h-14 bg-[#C6FF00] text-[#0B0B0B] font-black text-base rounded-full flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01] active:scale-95 shadow-[0_0_40px_rgba(198,255,0,0.25)]"
-          >
-            Start Free →
-          </button>
-        </div>
+        <button
+          onClick={() => navigate('/signup')}
+          style={{
+            width: '100%',
+            padding: '16px',
+            background: '#c8ff00',
+            color: '#000000',
+            border: 'none',
+            borderRadius: 10,
+            fontWeight: 900,
+            fontSize: 16,
+            cursor: 'pointer',
+            marginBottom: 12,
+            letterSpacing: '0.3px'
+          }}
+        >
+          Start Free — No Card Needed
+        </button>
 
-        {/* Social Proof */}
-        <div className="flex items-center justify-center gap-2 mt-8 animate-fade-in">
-          <div className="flex -space-x-3.5">
-            {[
-              { label: 'K', bg: 'linear-gradient(135deg, #FF5E3A, #FF2A68)' },
-              { label: 'T', bg: 'linear-gradient(135deg, #1AD6FD, #1D62F0)' },
-              { label: 'B', bg: 'linear-gradient(135deg, #B224EF, #7579FF)' },
-              { label: 'A', bg: 'linear-gradient(135deg, #C6FF00, #407D02)' }
-            ].map((circle, idx) => (
-              <div 
-                key={idx}
-                style={{ background: circle.bg }}
-                className="w-8 h-8 rounded-full border border-[#0B0B0B] flex items-center justify-center text-white font-black text-[10px]"
+        <button
+          onClick={() => {
+            window.open('/shop/demo', '_blank');
+          }}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: 'transparent',
+            color: '#ffffff',
+            border: '1.5px solid rgba(255, 255, 255, 0.15)',
+            borderRadius: 10,
+            fontWeight: 700,
+            fontSize: 15,
+            cursor: 'pointer'
+          }}
+        >
+          View Demo Shop
+        </button>
+
+        {/* Social proof */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 10,
+          marginTop: 24
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            {['K','T','B','A'].map((letter, i) => (
+              <div
+                key={i}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  background: [
+                    '#c8ff00',
+                    '#121215',
+                    '#27272a',
+                    '#52525b'
+                  ][i],
+                  border: '2px solid #000000',
+                  marginLeft: i > 0 ? -8 : 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 11,
+                  fontWeight: 900,
+                  color: i === 0 ? '#000000' : '#ffffff'
+                }}
               >
-                {circle.label}
+                {letter}
               </div>
             ))}
           </div>
-          <p className="text-[#A1A1AA] text-xs font-semibold ml-1">
-            <span className="text-white font-black ml-1">+50 shops</span> already live 🇿🇼
+          <p style={{
+            fontSize: 13,
+            color: '#a1a1aa',
+            margin: 0
+          }}>
+            <strong style={{ color: '#ffffff' }}>
+              Shops already live
+            </strong>{' '}
+            across Zimbabwe
           </p>
         </div>
-
-        {/* PHONE MOCKUP WITH FLOATING BADGES */}
-        <div className="relative mt-14 max-w-[270px] mx-auto z-20">
-          {/* HIGH-FIDELITY IPHONE MOCKUP RENDER */}
-          <IPhoneMockup />
-
-          {/* FLOATING BADGES */}
-          {/* Badge 1: Top Right */}
-          <div className="absolute top-[-10px] right-[-16px] bg-[#151515] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg z-30">
-            <span className="text-sm">🔗</span>
-            <span className="text-white font-extrabold text-[9px] uppercase tracking-wide">Your own link</span>
-          </div>
-
-          {/* Badge 2: Bottom Left */}
-          <div className="absolute bottom-11 left-[-22px] bg-[#151515] border border-[#2A2A2A] rounded-xl px-2.5 py-1.5 flex items-center gap-1.5 shadow-lg z-30">
-            <span className="relative flex h-1.5 w-1.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#22C55E] opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#22C55E]"></span>
-            </span>
-            <span className="text-white font-extrabold text-[9px] uppercase tracking-wide">Shop is live</span>
-          </div>
-
-          {/* Badge 3: Bottom Right */}
-          <div className="absolute bottom-[-10px] right-[-10px] bg-[#C6FF00] rounded-xl px-2.5 py-1.5 flex items-center shadow-lg z-30">
-            <span className="text-[#0B0B0B] font-black text-[9px] uppercase tracking-wide">📦 3 orders today</span>
-          </div>
-        </div>
-      </section>
+      </div>
 
       {/* PROBLEM SECTION */}
-      <section id="problems" className="bg-[#0B0B0B] py-20 px-6">
-        <div className="max-w-md mx-auto text-center">
-          <span className="text-[#EF4444] text-[10px] font-black tracking-widest uppercase mb-2 block">Sound familiar?</span>
-          <h2 className="text-white font-black text-3xl tracking-tight leading-tight mt-1 mb-8">
-            Sound familiar?
-          </h2>
+      <div style={{
+        background: '#0e0e12',
+        padding: '40px 24px',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+      }}>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '2px',
+          color: '#c8ff00',
+          textTransform: 'uppercase',
+          margin: '0 0 12px',
+          background: '#121215',
+          display: 'inline-block',
+          padding: '3px 10px',
+          borderRadius: 6,
+          border: '1px solid rgba(255, 255, 255, 0.08)'
+        }}>
+          The Problem
+        </p>
+        <h2 style={{
+          fontSize: 30,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-0.8px',
+          lineHeight: 1.1,
+          margin: '0 0 28px'
+        }}>
+          Selling on Instagram is broken.
+        </h2>
 
-          <div className="space-y-3.5 text-left mb-8">
-            {[
-              "Customers ask prices in your comments",
-              "You explain sizes over 10 DMs",
-              "They ghost after you reply",
-              "Another sale lost."
-            ].map((pain, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
-                className="bg-[#151515] border border-[#2A2A2A] rounded-2xl p-5 flex items-center gap-4"
+        {[
+          {
+            title: 'Price questions all day',
+            desc: 'Customers DM asking how much every item costs instead of just seeing it.'
+          },
+          {
+            title: 'No product catalogue',
+            desc: 'Customers scroll through old posts trying to find what you sell.'
+          },
+          {
+            title: 'Sales lost while replying',
+            desc: 'By the time you reply to a DM the customer has moved on.'
+          },
+          {
+            title: 'Invisible to new customers',
+            desc: 'No way for new people to discover your shop online.'
+          }
+        ].map((item, i) => (
+          <div
+            key={i}
+            style={{
+              background: '#121215',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 14,
+              padding: '16px 18px',
+              marginBottom: 10,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 14
+            }}
+          >
+            <div style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: '#ff4444',
+              flexShrink: 0,
+              marginTop: 6
+            }} />
+            <div>
+              <p style={{
+                fontSize: 15,
+                fontWeight: 800,
+                color: '#ffffff',
+                margin: '0 0 4px'
+              }}>
+                {item.title}
+              </p>
+              <p style={{
+                fontSize: 13,
+                color: '#a1a1aa',
+                margin: 0,
+                lineHeight: 1.5
+              }}>
+                {item.desc}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* SOLUTION SECTION */}
+      <div style={{
+        background: '#000000',
+        padding: '40px 24px'
+      }}>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '2px',
+          color: '#c8ff00',
+          textTransform: 'uppercase',
+          margin: '0 0 12px'
+        }}>
+          The Solution
+        </p>
+        <h2 style={{
+          fontSize: 30,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-0.8px',
+          lineHeight: 1.1,
+          margin: '0 0 28px'
+        }}>
+          Your store. Always open.
+        </h2>
+
+        {[
+          {
+            step: '1',
+            title: 'Create your shop',
+            desc: 'Set up your storefront in minutes. Add logo, banner and products.'
+          },
+          {
+            step: '2',
+            title: 'Share your link',
+            desc: 'One link for Instagram bio, WhatsApp status, TikTok profile.'
+          },
+          {
+            step: '3',
+            title: 'Receive orders',
+            desc: 'Customers browse and order directly to your WhatsApp.'
+          }
+        ].map((item, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              gap: 16,
+              marginBottom: 24
+            }}
+          >
+            <div style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: '#c8ff00',
+              color: '#000000',
+              fontWeight: 900,
+              fontSize: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              {item.step}
+            </div>
+            <div style={{ paddingTop: 4 }}>
+              <p style={{
+                fontSize: 16,
+                fontWeight: 800,
+                color: '#ffffff',
+                margin: '0 0 4px'
+              }}>
+                {item.title}
+              </p>
+              <p style={{
+                fontSize: 14,
+                color: 'rgba(255,255,255,0.6)',
+                margin: 0,
+                lineHeight: 1.5
+              }}>
+                {item.desc}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* FEATURES SECTION */}
+      <div style={{
+        background: '#0e0e12',
+        padding: '40px 24px',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+      }}>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '2px',
+          color: '#c8ff00',
+          textTransform: 'uppercase',
+          margin: '0 0 12px',
+          background: '#121215',
+          display: 'inline-block',
+          padding: '3px 10px',
+          borderRadius: 6,
+          border: '1px solid rgba(255, 255, 255, 0.08)'
+        }}>
+          Features
+        </p>
+        <h2 style={{
+          fontSize: 30,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-0.8px',
+          margin: '0 0 28px'
+        }}>
+          Everything you need.
+        </h2>
+
+        {[
+          {
+            title: 'Your own shop link',
+            desc: 'threadzw.vercel.app/shop/yourshop'
+          },
+          {
+            title: 'Product catalogue',
+            desc: 'Customers browse without messaging first.'
+          },
+          {
+            title: 'Instagram-style categories',
+            desc: 'Organise products with cover images.'
+          },
+          {
+            title: 'WhatsApp ordering',
+            desc: 'Order details sent straight to your number.'
+          },
+          {
+            title: 'Shop analytics',
+            desc: 'See views and top products.'
+          },
+          {
+            title: 'Completely free',
+            desc: 'No card. No trial. Free for 4 months.'
+          }
+        ].map((item, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+              padding: '14px 0',
+              borderBottom: i < 5 ? '1px solid rgba(255, 255, 255, 0.06)' : 'none'
+            }}
+          >
+            <div style={{
+              width: 20,
+              height: 20,
+              borderRadius: '50%',
+              background: '#c8ff00',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              marginTop: 2
+            }}>
+              <svg
+                width="10" height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#000000"
+                strokeWidth="3.5"
               >
-                <div className="w-8 h-8 rounded-full bg-[#EF4444]/15 border border-[#EF4444]/20 flex items-center justify-center shrink-0">
-                  <span className="text-sm leading-none">❌</span>
-                </div>
-                <p className="text-white font-bold text-[15px]">{pain}</p>
-              </motion.div>
-            ))}
-          </div>
-          <p className="text-[#A1A1AA] text-sm md:text-base font-semibold leading-relaxed">
-            Most Zim brands go through this. There's a better way.
-          </p>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS SECTION */}
-      <section className="bg-[#111111] py-20 px-6">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-10">
-            <span className="text-[#C6FF00] text-[10px] font-black tracking-widest uppercase mb-2 block">The workflow</span>
-            <h2 className="text-white font-black text-3xl tracking-tight leading-tight mt-1">
-              How <span className="threadzw-wordmark">ThreadZW</span> works
-            </h2>
-          </div>
-
-          <div className="relative space-y-8 mb-10">
-            {/* Connection Line */}
-            <div className="absolute left-[22px] top-6 bottom-6 w-[1px] bg-[#2A2A2A]" />
-
-            {[
-              {
-                title: '🏪 Create your shop',
-                desc: 'Set up your storefront in minutes. Add your logo, banner, and products.'
-              },
-              {
-                title: '🔗 Share your link',
-                desc: 'One link. Share it on Instagram, WhatsApp, TikTok — anywhere.'
-              },
-              {
-                title: '💬 Customers order on WhatsApp',
-                desc: 'No checkout. No card needed. Just a message and a sale.'
-              }
-            ].map((step, idx) => (
-              <div key={idx} className="flex gap-4 items-start relative z-10">
-                <div className="w-11 h-11 rounded-full bg-[#C6FF00] text-[#0B0B0B] font-black text-base flex items-center justify-center shrink-0 shadow-md">
-                  {idx + 1}
-                </div>
-                <div className="pt-2">
-                  <h4 className="text-white font-extrabold text-[15px] leading-tight">{step.title}</h4>
-                  <p className="text-[#A1A1AA] text-[13px] mt-1.5 leading-relaxed">{step.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-center">
-            <button 
-              onClick={onStartFree}
-              className="px-8 h-12.5 bg-[#C6FF00] text-[#0B0B0B] font-black text-sm rounded-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_30px_rgba(198,255,0,0.15)]"
-            >
-              Start Free →
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* DEMO STORE PREVIEW */}
-      <section className="bg-[#0B0B0B] py-20 px-6">
-        <div className="max-w-md mx-auto text-center">
-          <span className="text-[#C6FF00] text-[10px] font-black tracking-widest uppercase mb-2 block">Demo Store</span>
-          <h2 className="text-white font-black text-2xl md:text-3xl tracking-tight leading-tight mt-1 mb-2">
-            See what your shop looks like
-          </h2>
-          <p className="text-[#A1A1AA] text-sm font-semibold mb-8">Professional. Beautiful. Yours.</p>
-
-          {/* PHONE MOCKUP FOR LIVE DEMO SHOP */}
-          <div className="relative max-w-[260px] mx-auto mb-8">
-            <div className="bg-[#151515] border-2 border-[#2A2A2A] rounded-[36px] p-2.5 shadow-[0_40px_80px_rgba(0,0,0,0.6)] select-none">
-              {/* NOTCH */}
-              <div className="w-[60px] h-1.5 bg-[#0B0B0B] rounded-full mx-auto mb-2" />
-              
-              {/* SCREEN */}
-              <div className="bg-[#0B0B0B] rounded-[26px] overflow-hidden text-left pb-3 min-h-[300px]">
-                {demoLoading ? (
-                  /* SHIMMER SKELETON WHILE LOADING */
-                  <div className="flex flex-col h-[320px]">
-                    <div className="w-full h-[100px] animate-shimmer" />
-                    <div className="relative px-3.5">
-                      <div className="absolute top-[-18px] left-4 w-12 h-12 rounded-full border-[3px] border-[#0B0B0B] animate-shimmer bg-white/[0.04]" />
-                    </div>
-                    <div className="pt-9 px-3.5 space-y-2">
-                      <div className="w-28 h-4 rounded animate-shimmer bg-white/[0.04]" />
-                      <div className="w-16 h-1.5 rounded animate-shimmer bg-white/[0.04]" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5 px-3.5 mt-4 flex-1">
-                      <div className="rounded-[10px] h-[55px] animate-shimmer bg-white/[0.04]" />
-                      <div className="rounded-[10px] h-[55px] animate-shimmer bg-white/[0.04]" />
-                    </div>
-                  </div>
-                ) : (
-                  /* RENDER LIVE DEMO DATA */
-                  <div>
-                    {/* Banner */}
-                    <div 
-                      style={{
-                        height: 100,
-                        backgroundImage: demoShop?.banner_url ? `url(${demoShop.banner_url})` : 'none',
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        backgroundColor: '#1E1B4B'
-                      }}
-                      className="relative flex items-center justify-center text-xs tracking-widest opacity-80"
-                    >
-                      {!demoShop?.banner_url && (
-                        <span className="font-sans font-black text-white/40 tracking-wider">
-                          {demoShop?.name ? demoShop.name.toUpperCase() : 'DEMO SHOP'}
-                        </span>
-                      )}
-                      {/* Avatar circle */}
-                      <div 
-                        style={{
-                          backgroundImage: demoShop?.logo_url ? `url(${demoShop.logo_url})` : 'none',
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                          backgroundColor: '#1A1A1A'
-                        }}
-                        className="absolute bottom-[-18px] left-4 w-12 h-12 rounded-full border-[3px] border-[#0B0B0B] flex items-center justify-center shadow-lg"
-                      >
-                        {!demoShop?.logo_url && (
-                          <span className="text-white font-sans font-black text-[10px]">
-                            {demoShop?.name ? demoShop.name.charAt(0).toUpperCase() : 'D'}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Shop Info */}
-                    <div className="pt-7 px-3.5">
-                      <h3 className="text-white font-black text-sm leading-none truncate">
-                        {demoShop?.name || 'Demo Store'}
-                      </h3>
-                      <p className="text-[#A1A1AA] text-[10px] mt-1 font-semibold truncate">
-                        @{demoShop?.handle || 'demo'} · {demoShop?.location || 'Harare'}
-                      </p>
-                    </div>
-
-                    {/* Grid Items */}
-                    <div className="px-3.5 mt-2.5">
-                      {demoProducts.length === 0 ? (
-                        <div className="py-8 text-center text-[10px] font-sans font-black text-white/30 tracking-tight">
-                          No products in stock
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {demoProducts.slice(0, 4).map((product, i) => (
-                            <div 
-                              key={product.id || i}
-                              className="bg-[#151515] rounded-[10px] h-[72px] flex flex-col items-center justify-center gap-1 border border-[#222222] overflow-hidden p-1 text-center"
-                            >
-                              {product.image_url ? (
-                                <img 
-                                  src={product.image_url} 
-                                  alt="" 
-                                  className="w-8 h-8 object-cover rounded-md mx-auto"
-                                  referrerPolicy="no-referrer"
-                                />
-                              ) : (
-                                <div className="w-8 h-8 rounded-md bg-[#222] animate-shimmer" />
-                              )}
-                              <span className="text-[#C6FF00] font-black text-[10px]">${product.price}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* WhatsApp Button */}
-                    <div className="mx-3.5 mt-2.5 bg-[#25D366] text-white font-extrabold text-[10px] py-2 rounded-[10px] text-center shadow-md">
-                      Chat on WhatsApp
-                    </div>
-                  </div>
-                )}
-              </div>
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{
+                fontSize: 15,
+                fontWeight: 800,
+                color: '#ffffff',
+                margin: '0 0 2px'
+              }}>
+                {item.title}
+              </p>
+              <p style={{
+                fontSize: 13,
+                color: '#a1a1aa',
+                margin: 0
+              }}>
+                {item.desc}
+              </p>
             </div>
           </div>
+        ))}
+      </div>
 
+      {/* FREE BETA SECTION */}
+      <div style={{
+        background: '#121215',
+        margin: '32px 16px',
+        borderRadius: 20,
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '28px 24px',
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        <div style={{
+          height: 3,
+          background: '#c8ff00',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0
+        }} />
 
-        </div>
-      </section>
+        <p style={{
+          fontSize: 11,
+          fontWeight: 800,
+          letterSpacing: '2px',
+          color: '#c8ff00',
+          textTransform: 'uppercase',
+          margin: '0 0 12px'
+        }}>
+          Free Beta
+        </p>
 
-      {/* PRICING SECTION */}
-      <section id="pricing" className="bg-[#111111] py-20 px-6">
-        <div className="max-w-md mx-auto text-center">
-          <span className="text-[#A1A1AA] text-[10px] font-black tracking-widest uppercase mb-2 block">Pricing</span>
-          <h2 className="text-white font-black text-3xl tracking-tight leading-tight mt-1 mb-8">
-            Simple pricing
-          </h2>
+        <h2 style={{
+          fontSize: 28,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-0.5px',
+          margin: '0 0 8px'
+        }}>
+          Free for 4 months.
+        </h2>
 
-          <div className="bg-[#151515] border-2 border-[#C6FF00] rounded-[24px] p-7 text-left shadow-[0_8px_32px_rgba(198,255,0,0.06)]">
-            <div className="inline-flex items-center bg-[#C6FF00] text-[#0B0B0B] font-black text-[10px] uppercase tracking-wider rounded-full px-3.5 py-1 mb-4">
-              🎁 28 days free
-            </div>
+        <p style={{
+          fontSize: 14,
+          color: 'rgba(255,255,255,0.6)',
+          lineHeight: 1.6,
+          margin: '0 0 24px'
+        }}>
+          ThreadZW is completely free while we build and improve the platform. No card required. No hidden charges. We may ask for your feedback after one month of use.
+        </p>
 
-            <div className="flex items-baseline gap-1 mt-2">
-              <span className="text-[#C6FF00] font-black text-60px leading-none">$7</span>
-              <span className="text-[#A1A1AA] text-lg font-bold">/month</span>
-            </div>
-            <p className="text-[#A1A1AA] text-xs font-semibold mt-1">Then $7/month · Cancel any time</p>
-
-            <div className="h-[1px] bg-[#2A2A2A] my-5" />
-
-            <div className="space-y-3 mb-6">
-              {[
-                'Your own shop link',
-                'Unlimited products',
-                'WhatsApp ordering',
-                'Visit shop directions',
-                'Sales tracking',
-                'No website needed'
-              ].map((benefit, i) => (
-                <div key={i} className="flex gap-2.5 items-center">
-                  <span className="text-[#C6FF00] font-bold text-sm">✓</span>
-                  <span className="text-white font-semibold text-sm">{benefit}</span>
-                </div>
-              ))}
-            </div>
-
-            <button 
-              onClick={onStartFree}
-              className="w-full h-13.5 bg-[#C6FF00] text-[#0B0B0B] font-black text-base rounded-full flex items-center justify-center gap-1 hover:opacity-95 transition-all cursor-pointer"
-            >
-              Start Free →
-            </button>
-            <p className="text-[#A1A1AA] text-[11px] text-center mt-3 font-semibold">Pay via EcoCash or InnBucks. No card needed.</p>
-          </div>
-        </div>
-      </section>
-
-      {/* BUILT IN ZIMBABWE SECTION */}
-      <section className="bg-[#0B0B0B] py-20 px-6 text-center">
-        <div className="max-w-md mx-auto">
-          <span className="text-[56px] leading-none mb-4 block">🇿🇼</span>
-          <h2 className="text-white font-black text-3xl tracking-tight leading-tight mt-4 mb-3">
-            Built for Zim. By Zim. 🇿🇼
-          </h2>
-          <p className="text-[#A1A1AA] text-[15px] leading-relaxed max-w-[340px] mx-auto mb-8">
-            <span className="threadzw-wordmark">ThreadZW</span> was built specifically for Zimbabwean clothing brands. We understand how business works here.
-          </p>
-
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { title: '+50 shops live', sub: 'Merchant growth' },
-              { title: '$7/month', sub: 'Flat pricing' },
-              { title: '28 day free trial', sub: 'No payment upfront' }
-            ].map((stat, i) => (
-              <div 
-                key={i}
-                className="bg-[#151515] border border-[#2A2A2A] rounded-2xl p-4 flex flex-col justify-center items-center"
+        {[
+          'No credit card needed',
+          'No usage limits',
+          'Unlimited products',
+          'Full access to all features'
+        ].map((item, i) => (
+          <div
+            key={i}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              marginBottom: 10
+            }}
+          >
+            <div style={{
+              width: 18,
+              height: 18,
+              borderRadius: '50%',
+              background: '#c8ff00',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <svg
+                width="9" height="9"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#000000"
+                strokeWidth="3.5"
               >
-                <span className="text-white font-black text-sm md:text-md text-center">{stat.title}</span>
-                <span className="text-[#A1A1AA] text-[9px] font-semibold text-center mt-1 uppercase tracking-wide">{stat.sub}</span>
-              </div>
-            ))}
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <span style={{
+              fontSize: 14,
+              color: 'rgba(255,255,255,0.8)'
+            }}>
+              {item}
+            </span>
           </div>
-        </div>
-      </section>
+        ))}
 
-      {/* FINAL CTA SECTION */}
-      <section 
-        style={{
-          background: 'linear-gradient(160deg, #0B0B0B 0%, #111111 100%)'
-        }}
-        className="py-24 px-6 text-center border-t border-[#151515]"
-      >
-        <div className="max-w-md mx-auto">
-          <h2 className="text-white font-black text-[34px] leading-tight tracking-tight mb-4">
-            Your shop is waiting.
-          </h2>
-          
-          <div className="flex flex-col gap-3 w-full max-w-[320px] mx-auto mt-8">
-            <button 
-              onClick={onStartFree}
-              className="w-full h-14 bg-[#C6FF00] text-[#0B0B0B] font-black text-base rounded-full flex items-center justify-center gap-1.5 cursor-pointer hover:scale-[1.01] active:scale-95 transition-all shadow-[0_0_40px_rgba(198,255,0,0.2)]"
-            >
-              Start Free →
-            </button>
-            <button 
-              onClick={() => setShowSignIn(true)}
-              className="w-full h-12.5 bg-transparent border-1.5 border-[#2A2A2A] text-white font-black text-sm rounded-full flex items-center justify-center gap-2 hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
-            >
-              Login
-            </button>
-          </div>
-        </div>
-      </section>
+        <button
+          onClick={() => navigate('/signup')}
+          style={{
+            width: '100%',
+            padding: '15px',
+            background: '#c8ff00',
+            color: '#000000',
+            border: 'none',
+            borderRadius: 10,
+            fontWeight: 900,
+            fontSize: 16,
+            cursor: 'pointer',
+            marginTop: 20
+          }}
+        >
+          Create Your Shop Now
+        </button>
+      </div>
+
+      {/* FAQ SECTION */}
+      <div style={{
+        padding: '0 24px 40px',
+        background: '#000000'
+      }}>
+        <h2 style={{
+          fontSize: 28,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-0.5px',
+          margin: '0 0 20px'
+        }}>
+          Questions.
+        </h2>
+
+        {[
+          {
+            q: 'Is ThreadZW really free?',
+            a: 'Yes. Completely free for the next 4 months. No card, no trial, no limits.'
+          },
+          {
+            q: 'Do my customers need to download anything?',
+            a: 'No. Your store works in any browser. Customers tap your link and browse immediately.'
+          },
+          {
+            q: 'How do I receive payments from customers?',
+            a: 'ThreadZW handles ordering. Payments go directly between you and your customers via EcoCash, cash, or bank transfer.'
+          },
+          {
+            q: 'Can I customise my store?',
+            a: 'Yes. Upload your logo, banner, products and create your own categories.'
+          },
+          {
+            q: 'What happens after 4 months?',
+            a: 'We will let you know before anything changes. The goal is to keep ThreadZW affordable for Zimbabwean businesses.'
+          }
+        ].map((item, i) => (
+          <FaqItem 
+            key={i} 
+            question={item.q} 
+            answer={item.a} 
+          />
+        ))}
+      </div>
+
+      {/* FINAL CTA */}
+      <div style={{
+        background: '#0e0e12',
+        padding: '48px 24px',
+        textAlign: 'center',
+        borderTop: '1px solid rgba(255, 255, 255, 0.05)'
+      }}>
+        <h2 style={{
+          fontSize: 36,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-1px',
+          lineHeight: 1.1,
+          margin: '0 0 12px',
+          textTransform: 'uppercase'
+        }}>
+          Your shop is waiting.
+        </h2>
+        <p style={{
+          fontSize: 15,
+          color: 'rgba(255,255,255,0.5)',
+          margin: '0 0 28px'
+        }}>
+          Free. No card. Start in minutes.
+        </p>
+        <button
+          onClick={() => navigate('/signup')}
+          style={{
+            width: '100%',
+            padding: '16px',
+            background: '#c8ff00',
+            color: '#000000',
+            border: 'none',
+            borderRadius: 10,
+            fontWeight: 900,
+            fontSize: 16,
+            cursor: 'pointer',
+            marginBottom: 12
+          }}
+        >
+          Start Free
+        </button>
+        <button
+          onClick={() => navigate('/login')}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: 'transparent',
+            color: 'rgba(255,255,255,0.6)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 10,
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer'
+          }}
+        >
+          Already have an account? Log in
+        </button>
+      </div>
 
       {/* FOOTER */}
-      <footer className="bg-[#0B0B0B] border-t border-[#151515] py-12 px-6 text-center">
-        <div className="text-xl mb-2">
-          <span className="threadzw-wordmark text-[#C6FF00]">ThreadZW</span>
-        </div>
-        <p className="text-[#A1A1AA] text-xs font-semibold">Made in Zimbabwe 🇿🇼</p>
-        
-        {/* Foot Links */}
-        <div className="flex justify-center gap-4 text-xs text-neutral-600 font-bold mt-5 mb-6">
-          <span className="hover:text-neutral-400 cursor-pointer">Terms</span>
-          <span>·</span>
-          <span className="hover:text-neutral-400 cursor-pointer">Privacy</span>
-          <span>·</span>
-          <span className="hover:text-neutral-400 cursor-pointer">Contact</span>
-        </div>
-
-        <p className="text-neutral-600 text-[10px] leading-relaxed">
-          © 2025 <span className="threadzw-wordmark text-[10px]">ThreadZW</span>
+      <div style={{
+        background: '#000000',
+        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+        padding: '20px 24px 40px',
+        textAlign: 'center'
+      }}>
+        <p style={{
+          fontSize: 16,
+          fontWeight: 900,
+          color: '#ffffff',
+          margin: '0 0 4px'
+        }}>
+          ThreadZW
         </p>
-      </footer>
-
-      {/* SIGN IN BOTTOM SHEET */}
-      <AnimatePresence>
-        {showSignIn && (
-          <>
-            {/* Backdrop */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowSignIn(false)}
-              className="fixed inset-0 bg-black z-[1000]"
-            />
-
-            {/* Bottom Sheet */}
-            <motion.div 
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-[#151515] border-t border-[#2A2A2A] rounded-t-[24px] z-[1001] p-6 pb-12 shadow-2xl"
+        <p style={{
+          fontSize: 12,
+          color: 'rgba(255, 255, 255, 0.3)',
+          margin: '0 0 16px'
+        }}>
+          Made in Zimbabwe
+        </p>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 20
+        }}>
+          {['Terms', 'Privacy', 'Contact'].map(link => (
+            <span
+              key={link}
+              style={{
+                fontSize: 12,
+                color: 'rgba(255, 255, 255, 0.3)',
+                cursor: 'pointer'
+              }}
             >
-              {/* Drag Handle */}
-              <div className="w-12 h-1 bg-[#2A2A2A] rounded-full mx-auto mb-6 shrink-0" />
+              {link}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-white font-black text-2xl tracking-tight leading-none">Welcome back 👋</h3>
-                <button 
-                  onClick={() => setShowSignIn(false)}
-                  className="w-8 h-8 rounded-full bg-neutral-800 text-neutral-400 flex items-center justify-center cursor-pointer hover:bg-neutral-700/80 transition-all"
-                >
-                  <X size={15} />
-                </button>
-              </div>
+// FAQ accordion item
+interface FaqItemProps {
+  question: string;
+  answer: string;
+}
 
-              <form onSubmit={handleSignIn} className="space-y-4 text-left">
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-[#A1A1AA] mb-1.5">
-                    Email Address
-                  </label>
-                  <input 
-                    type="email" 
-                    placeholder="you@domain.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full h-12 px-4 rounded-xl bg-[#0B0B0B] border border-[#2A2A2A] text-white focus:outline-none focus:border-[#C6FF00] transition-colors font-semibold placeholder:text-neutral-700 text-sm"
-                  />
-                </div>
+const FaqItem: React.FC<FaqItemProps> = ({ question, answer }) => {
+  const [open, setOpen] = useState(false);
 
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-[#A1A1AA] mb-1.5 flex justify-between items-center">
-                    <span>Password</span>
-                    <button 
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-[#C6FF00] font-bold text-[11px] capitalize focus:outline-none cursor-pointer"
-                    >
-                      {showPassword ? 'Hide' : 'Show'}
-                    </button>
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type={showPassword ? 'text' : 'password'} 
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="w-full h-12 px-4 rounded-xl bg-[#0B0B0B] border border-[#2A2A2A] text-white focus:outline-none focus:border-[#C6FF00] transition-colors font-semibold placeholder:text-neutral-700 text-sm"
-                    />
-                    <div className="absolute right-4 top-[14px] text-neutral-700">
-                      <Lock size={16} />
-                    </div>
-                  </div>
-                </div>
-
-                <button 
-                  type="submit"
-                  disabled={loading}
-                  className="w-full h-13 bg-[#C6FF00] text-[#0B0B0B] font-black text-base rounded-full mt-2 cursor-pointer flex items-center justify-center gap-1.5 tracking-wide shadow-lg disabled:opacity-50"
-                >
-                  {loading ? 'Signing In...' : 'Sign In →'}
-                </button>
-              </form>
-
-              <div className="text-center mt-6">
-                <span className="text-[#A1A1AA] text-xs">Don't have an account? </span>
-                <button 
-                  onClick={() => {
-                    setShowSignIn(false);
-                    onStartFree();
-                  }}
-                  className="text-[#C6FF00] font-black text-xs cursor-pointer hover:underline"
-                >
-                  Start Free →
-                </button>
-              </div>
-
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
+  return (
+    <div style={{
+      background: '#121215',
+      borderRadius: 12,
+      marginBottom: 8,
+      overflow: 'hidden',
+      border: '1px solid rgba(255, 255, 255, 0.05)'
+    }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          padding: '16px 18px',
+          background: 'none',
+          border: 'none',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          gap: 12,
+          textAlign: 'left'
+        }}
+      >
+        <span style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: '#ffffff'
+        }}>
+          {question}
+        </span>
+        <svg
+          width="16" height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="2.5"
+          style={{
+            flexShrink: 0,
+            transform: open ? 'rotate(45deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease'
+          }}
+        >
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      {open && (
+        <div style={{
+          padding: '0 18px 16px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+        }}>
+          <p style={{
+            fontSize: 14,
+            color: '#a1a1aa',
+            lineHeight: 1.6,
+            margin: '12px 0 0'
+          }}>
+            {answer}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

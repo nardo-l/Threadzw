@@ -24,8 +24,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
-import { useSubscription } from '../context/SubscriptionContext';
-import { UpgradeSheet } from '../components/UpgradeSheet';
 import { FieldError } from '../components/ui/FieldError';
 
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
@@ -82,7 +80,6 @@ const PHOTO_SLOTS_CONFIG = [
 export const NewListing: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { isAtProductLimit } = useSubscription();
   const { addProduct, userShop } = useInventory();
   
   // --- Form State ---
@@ -106,19 +103,12 @@ export const NewListing: React.FC = () => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const [showUpgradeSheet, setShowUpgradeSheet] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [createdProductId, setCreatedProductId] = useState<string | null>(null);
   
   const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
   
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    if (isAtProductLimit) {
-      setShowUpgradeSheet(true);
-    }
-  }, [isAtProductLimit]);
 
   // --- Draft Logic ---
   useEffect(() => {
@@ -1212,14 +1202,6 @@ export const NewListing: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Upgrade Sheet */}
-      <UpgradeSheet 
-        isOpen={showUpgradeSheet} 
-        onClose={() => {
-          setShowUpgradeSheet(false);
-          if (isAtProductLimit) navigate('/shop-centre');
-        }} 
-      />
     </div>
   );
 };

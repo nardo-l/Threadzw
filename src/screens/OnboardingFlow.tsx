@@ -7,7 +7,7 @@ import {
   DollarSign, BarChart2, MapPin, Tag, Trophy, AlertTriangle, RefreshCw, HelpCircle, Shirt, Briefcase, Gem, Sparkles,
   X, MessageCircle, Unlock
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, getDeterministicShopId } from '../lib/supabase';
 import { toast } from 'sonner';
 import { mapError } from '../lib/utils';
 import { useDemoShop } from '../hooks/useDemoShop';
@@ -300,7 +300,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         setTimeout(() => setVisibleChecks(v => [...v, 2]), 2400),
         setTimeout(() => setVisibleChecks(v => [...v, 3]), 3200),
         setTimeout(() => {
-          setScreen(27); // Advances to Paywall Screen 1 (Phase 5)
+          handleFinishPaywall();
         }, 5000)
       ];
 
@@ -393,7 +393,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           throw authError;
         }
       } else {
-        activeUserId = authData.user?.id || '';
+        // Sign up succeeded, let's explicitly sign in to establish a fully active session
+        try {
+          const { data: sData, error: sErr } = await supabase.auth.signInWithPassword({
+            email: email.trim().toLowerCase(),
+            password: password
+          });
+          if (!sErr && sData.user) {
+            activeUserId = sData.user.id;
+          } else {
+            activeUserId = authData.user?.id || '';
+          }
+        } catch (_) {
+          activeUserId = authData.user?.id || '';
+        }
       }
 
       if (!activeUserId) {
@@ -448,10 +461,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         }
       }
 
-      // 3. Connect/Insert shop config
+      // 3. Connect/Insert shop config with deterministic valid UUID
       const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
       const generatedSlug = await generateUniqueSlug(shopName || 'My Shop');
+      const shopId = getDeterministicShopId(activeUserId);
       const { error: shopError } = await supabase.from('shops').upsert({
+        id: shopId,
         owner_id: activeUserId,
         name: shopName || 'My Shop',
         handle: cleanUsername,
@@ -467,6 +482,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         subscription_status: 'trial',
         trial_started_at: new Date().toISOString(),
         trial_ends_at: trialEnds.toISOString(),
+        trial_start_date: new Date().toISOString(),
+        trial_end_date: trialEnds.toISOString(),
         is_live: true
       });
 
@@ -1698,7 +1715,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   <p className="text-center text-white/40 text-[11px] leading-tight font-medium">
-                    Build activates your 28-day trial instantly.
+                    Your shop will be live instantly. No limit on products.
                   </p>
                 </div>
 
@@ -1812,7 +1829,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                     {/* Terms Card */}
                     <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/15 rounded-xl p-3.5 text-[11px] text-[#c8ff00] leading-snug font-bold">
-                      🔒 By signing up you agree to our terms. Your 28-day trial starts immediately.
+                      By signing up you agree to our terms. Your account is free and active immediately.
                     </div>
                   </div>
                 </div>
@@ -1845,7 +1862,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         <span>Launching...</span>
                       </div>
                     ) : (
-                      'Activate Free Trial →'
+                      'Create Account — Free'
                     )}
                   </button>
 

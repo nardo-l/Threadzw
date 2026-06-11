@@ -53,95 +53,10 @@ export const parseDate = (dateVal: any): Date | null => {
 };
 
 export const getShopStatus = (shop: any, claims?: any[]): ShopStatusResult => {
-  if (!shop) {
-    return {
-      status: 'expired',
-      isLive: false,
-      label: 'Locked',
-      daysLeft: 0
-    };
-  }
-
-  const now = new Date();
-
-  // 1. Check direct active field or explicit active status (Primary Source of truth)
-  if (shop.subscription_status === 'active') {
-    const parsedSubEnd = parseDate(shop.subscription_end || shop.subscription_ends_at || shop.current_period_end);
-    const daysLeft = parsedSubEnd ? Math.max(0, Math.ceil((parsedSubEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))) : 28;
-    return {
-      status: 'active',
-      isLive: true,
-      label: 'Active',
-      daysLeft
-    };
-  }
-
-  // 1.5. Explicit active by expiration dates
-  const parsedSubEnd = parseDate(shop.subscription_end || shop.subscription_ends_at || shop.current_period_end);
-  if (parsedSubEnd && parsedSubEnd > now) {
-    return {
-      status: 'active',
-      isLive: true,
-      label: 'Active',
-      daysLeft: Math.ceil(
-        (parsedSubEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-      )
-    };
-  }
-
-  // 2. Pending payment verification check
-  const pendingClaim = claims?.find(c => c.status === 'pending');
-  if (shop.subscription_status === 'pending_verification' || pendingClaim) {
-    return {
-      status: 'pending_verification',
-      isLive: true, // Let them navigate while pending, or restrict gently depending on client configuration
-      label: 'Awaiting Verification',
-      claimId: pendingClaim?.id,
-      submittedAt: pendingClaim?.submitted_at || shop.updated_at,
-      daysLeft: 0
-    };
-  }
-
-  // 3. Free trial state running
-  let trialEndVal = shop.trial_end || shop.trial_ends_at;
-  const trialStart = shop.trial_started_at || shop.trial_start || shop.created_at;
-
-  // High-res resiliency fallback logic
-  if (trialStart) {
-    const trialStartDate = parseDate(trialStart);
-    if (trialStartDate) {
-      const trialDaysInMs = TRIAL_DAYS * 24 * 60 * 60 * 1000;
-      const computedEndDate = new Date(trialStartDate.getTime() + trialDaysInMs);
-
-      const parsedTrialEnd = parseDate(trialEndVal);
-      if (computedEndDate > now && (!parsedTrialEnd || parsedTrialEnd < computedEndDate)) {
-        trialEndVal = computedEndDate.toISOString();
-      }
-    }
-  }
-
-  const finalTrialEnd = parseDate(trialEndVal);
-  if (finalTrialEnd && finalTrialEnd > now) {
-    const hoursLeft = Math.ceil(
-      (finalTrialEnd.getTime() - now.getTime()) / (1000 * 60 * 60)
-    );
-    const daysLeft = Math.ceil(hoursLeft / 24);
-
-    return {
-      status: 'trial',
-      isLive: true,
-      label: 'Free Trial',
-      daysLeft,
-      hoursLeft,
-      trialEnds: finalTrialEnd.toISOString()
-    };
-  }
-
-  // 4. Trial expired, no active sub, no pending payment verification -> Expired (Locked out)
   return {
-    status: 'expired',
-    isLive: false,
-    label: 'Expired',
-    daysLeft: 0
+    status: 'active',
+    isLive: true,
+    label: 'Free Beta Active',
+    daysLeft: 999
   };
 };

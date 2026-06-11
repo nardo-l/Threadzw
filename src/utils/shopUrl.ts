@@ -1,18 +1,14 @@
 // src/utils/shopUrl.ts
 
+const BASE_URL = 
+  import.meta.env.VITE_APP_URL
+  || 'https://threadzw.vercel.app';
+
 export const getShopUrl = (slug: string): string => {
   if (!slug) return '';
-  
-  // Clean slug before using in URL
-  const cleanSlug = slug
+  const clean = slug
     .toLowerCase()
     .replace(/\s+/g, '')
     .replace(/[^a-z0-9]/g, '');
-  
-  const baseUrl = 
-    import.meta.env.VITE_APP_URL 
-    || window.location.origin
-    || 'https://threadzw.vercel.app';
-  
-  return `${baseUrl}/shop/${cleanSlug}`;
+  return `${BASE_URL}/shop/${clean}`;
 };

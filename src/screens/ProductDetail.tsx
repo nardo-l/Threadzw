@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { resolveImageUrl, ShopLogo } from '../components/ui/ShopImage';
 
 interface SizeVariant {
   size: string;
@@ -207,16 +208,31 @@ export const ProductDetail: React.FC = () => {
           className="relative w-full h-[70vh] bg-[#121215] overflow-hidden rounded-b-[28px] focus:outline-none"
         >
           <AnimatePresence mode="wait">
-            <motion.img 
-              key={currentImage}
-              src={product.images?.[currentImage] || 'https://via.placeholder.com/600x800'} 
-              className="w-full h-full object-cover select-none"
-              referrerPolicy="no-referrer"
-              initial={{ opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.35 }}
-            />
+            {(() => {
+              const imageUrl = resolveImageUrl(product.images?.[currentImage]);
+              const getSafeBusterValue = (updatedAt: any): string => {
+                if (!updatedAt) return '1';
+                const dateObj = new Date(updatedAt);
+                const time = dateObj.getTime();
+                return isNaN(time) ? '1' : String(time);
+              };
+              const srcWithBust = (imageUrl && !imageUrl.startsWith('blob:') && !imageUrl.startsWith('data:') && !imageUrl.includes('unsplash.com'))
+                ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue((product as any)?.updated_at || (product as any)?.created_at)}`
+                : imageUrl || 'https://via.placeholder.com/600x800';
+
+              return (
+                <motion.img 
+                  key={currentImage}
+                  src={srcWithBust} 
+                  className="w-full h-full object-cover select-none"
+                  referrerPolicy="no-referrer"
+                  initial={{ opacity: 0, scale: 1.03 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.35 }}
+                />
+              );
+            })()}
           </AnimatePresence>
 
           {/* Sold out overlay tag */}
@@ -379,11 +395,13 @@ export const ProductDetail: React.FC = () => {
           >
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-[#0d0d0d] border border-white/10 overflow-hidden shrink-0 flex items-center justify-center font-bold text-[#C6FF00]">
-                {shop.avatar_url ? (
-                  <img src={shop.avatar_url} className="w-full h-full object-cover" alt="" />
-                ) : (
-                  shop.name[0].toUpperCase()
-                )}
+                <ShopLogo 
+                  shop={shop}
+                  name={shop.name}
+                  url={shop.avatar_url}
+                  size={48}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h4 className="font-extrabold text-sm text-white mb-0.5">{shop.name}</h4>

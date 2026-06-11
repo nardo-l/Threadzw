@@ -390,6 +390,8 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
           <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center select-none pointer-events-none">
             {shop.logo_url ? (
               <ShopLogo 
+                shop={shop}
+                name={shop.name}
                 url={shop.logo_url} 
                 alt="Logo" 
                 className="h-9 w-auto max-w-[120px] object-contain rounded-none filter invert contrast-200"

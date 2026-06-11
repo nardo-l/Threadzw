@@ -202,7 +202,7 @@ export const AdminLeads: React.FC = () => {
       // Ensure overdue flagged state is not explicitly resolved
       if (shop.payment_overdue_flagged === false) return false;
 
-      const trialEndStr = shop.trial_end || shop.trial_ends_at;
+      const trialEndStr = shop.trial_end_date || shop.trial_end || shop.trial_ends_at;
       if (!trialEndStr) return false;
       const trialEnd = new Date(trialEndStr);
 
@@ -225,8 +225,8 @@ export const AdminLeads: React.FC = () => {
 
       return isTrialExpired && isSubExpiredOrNull && !hasPendingClaim && isOverdue3Days;
     }).sort((a, b) => {
-      const aEnd = new Date(a.trial_end || a.trial_ends_at || 0);
-      const bEnd = new Date(b.trial_end || b.trial_ends_at || 0);
+      const aEnd = new Date(a.trial_end_date || a.trial_end || a.trial_ends_at || 0);
+      const bEnd = new Date(b.trial_end_date || b.trial_end || b.trial_ends_at || 0);
       return aEnd.getTime() - bEnd.getTime();
     });
   };

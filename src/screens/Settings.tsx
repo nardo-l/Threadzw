@@ -7,14 +7,13 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { HowToPay } from './HowToPay';
 import { getShopStatus } from '../utils/shopStatus';
+import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
   const [shop, setShop] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [currentScreen, setCurrentScreen] = useState<'menu' | 'howToPay'>('menu');
 
   useEffect(() => {
     const fetchShop = async () => {
@@ -77,9 +76,9 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const statusObj = shop ? getShopStatus(shop) : null;
-  const daysLeft = statusObj ? statusObj.daysLeft : 0;
-  const isUrgent = statusObj ? (statusObj.daysLeft <= 3 && (statusObj.status === 'trial' || statusObj.status === 'active')) : false;
+  const statusObj = { status: 'free', daysLeft: 999 };
+  const daysLeft = 999;
+  const isUrgent = false;
 
   if (loading) {
     return (
@@ -87,11 +86,6 @@ export const Settings: React.FC = () => {
         <div className="w-8 h-8 rounded-full border-2 border-neon border-t-transparent animate-spin" />
       </div>
     );
-  }
-
-  // If we are looking at the "How to Pay" screen
-  if (currentScreen === 'howToPay') {
-    return <HowToPay onBack={() => setCurrentScreen('menu')} />;
   }
 
   return (
@@ -105,7 +99,7 @@ export const Settings: React.FC = () => {
           {/* 1. Edit Profile */}
           <div 
             onClick={() => {
-              toast.info('Profile editing is managed in your main profile screen');
+              navigate('/profile');
             }} 
             style={{ 
               background: 'none', 
@@ -154,9 +148,9 @@ export const Settings: React.FC = () => {
             <ChevronRight size={18} className="text-[#A1A1AA]" />
           </div>
 
-          {/* 2b. Publish / Pause Shop */}
+          {/* Shop Visibility Switch */}
           <div 
-            onClick={togglePublishState} 
+            onClick={togglePublishState}
             style={{ 
               background: 'none', 
               borderBottom: '1px solid #1A1A1A', 
@@ -166,79 +160,20 @@ export const Settings: React.FC = () => {
               gap: 14, 
               cursor: 'pointer' 
             }}
-            className="group active:opacity-80 transition-all"
+            className="group active:opacity-80 transition-all select-none"
           >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border transition-all ${
-              shop?.is_live 
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                : 'bg-amber-500/10 text-[#c8ff00] border-[#c8ff00]/20'
-            }`}>
-              <Globe size={18} className={shop?.is_live ? 'animate-pulse' : ''} />
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${shop?.is_live ? 'bg-[#c8ff00]/10 text-[#c8ff00]' : 'bg-[#EF4444]/15 text-[#EF4444]'}`}>
+              <Globe size={18} />
             </div>
             <div className="flex-1">
-              <div className="text-white font-bold text-[15px] flex items-center gap-2">
-                {shop?.is_live ? 'Shop is Published' : 'Shop is Offline (Draft)'}
-                <span className={`w-2 h-2 rounded-full ${shop?.is_live ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'}`} />
-              </div>
+              <div className="text-white font-bold text-[15px]">Shop Visibility</div>
               <p className="text-[#A1A1AA] text-xs mt-0.5">
-                {shop?.is_live 
-                  ? 'Your store is live on ThreadZW. Click to pause/unpublish.' 
-                  : 'Your store is hidden. Click to PUBLISH instantly! 🚀'}
+                Current status: <span className={shop?.is_live ? 'text-[#c8ff00] font-bold' : 'text-[#EF4444] font-bold'}>{shop?.is_live ? 'LIVE (Tap to Paused)' : 'OFFLINE (Tap to publish)'}</span>
               </p>
             </div>
-            {shop?.is_live ? (
-              <span className="text-xs text-stone-500 font-bold uppercase tracking-wider border border-stone-800 px-2.5 py-1.5 rounded bg-[#111]">Pause</span>
-            ) : (
-              <span className="text-xs text-black font-black uppercase tracking-wider bg-[#c8ff00] px-2.5 py-1.5 rounded shadow-[0_0_10px_rgba(200,255,0,0.3)]">Publish</span>
-            )}
-          </div>
-
-          {/* 3. Separator */}
-          <div className="h-[1px] bg-[#1A1A1A] my-3 w-full" />
-
-          {/* 4. How to Pay (NEW) */}
-          <div 
-            onClick={() => setCurrentScreen('howToPay')}
-            style={{ 
-              background: 'none', 
-              borderBottom: '1px solid #1A1A1A', 
-              padding: '16px 0', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: 14, 
-              cursor: 'pointer' 
-            }}
-            className="group active:opacity-80 transition-all"
-          >
-            <div 
-              style={{
-                background: 'rgba(198,255,0,0.08)',
-                border: '1px solid rgba(198,255,0,0.15)'
-              }}
-              className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-            >
-              <span className="text-[18px] leading-none">💸</span>
+            <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 ${shop?.is_live ? 'bg-[#c8ff00]' : 'bg-zinc-800'}`}>
+              <div className={`w-5 h-5 rounded-full bg-black transition-transform duration-200 ${shop?.is_live ? 'translate-x-4' : 'translate-x-0'}`} />
             </div>
-            <div className="flex-1 flex items-center justify-between">
-              <div>
-                <div className="text-white font-bold text-[15px] flex items-center">
-                  How to Pay
-                  {isUrgent && (
-                    <span 
-                      style={{ 
-                        background: 'rgba(239,68,68,0.1)', 
-                        border: '1px solid rgba(239,68,68,0.2)' 
-                      }} 
-                      className="rounded-full px-2 py-0.5 text-[#EF4444] text-[11px] font-bold ml-2 select-none"
-                    >
-                      Pay now
-                    </span>
-                  )}
-                </div>
-                <p className="text-[#A1A1AA] text-xs mt-0.5">EcoCash payment guide</p>
-              </div>
-            </div>
-            <ChevronRight size={18} className="text-[#A1A1AA]" />
           </div>
 
           {/* 5. Privacy & Terms */}
@@ -267,7 +202,33 @@ export const Settings: React.FC = () => {
             <ChevronRight size={18} className="text-[#A1A1AA]" />
           </div>
 
-          {/* 6. Separator */}
+          {/* 6. Help & Support */}
+          <div 
+            onClick={() => {
+              navigate('/support');
+            }} 
+            style={{ 
+              background: 'none', 
+              borderBottom: '1px solid #1A1A1A', 
+              padding: '16px 0', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 14, 
+              cursor: 'pointer' 
+            }}
+            className="group active:opacity-80 transition-all"
+          >
+            <div className="w-10 h-10 rounded-full bg-[#1A1A1A] text-sky-400 border border-[#222222] flex items-center justify-center flex-shrink-0">
+              <Shield size={18} />
+            </div>
+            <div className="flex-1">
+              <div className="text-white font-bold text-[15px]">Help & Support</div>
+              <p className="text-[#A1A1AA] text-xs mt-0.5">Read FAQs, log tickets & contact support</p>
+            </div>
+            <ChevronRight size={18} className="text-[#A1A1AA]" />
+          </div>
+
+          {/* 6b. Separator */}
           <div className="h-[1px] bg-[#1A1A1A] my-3 w-full" />
 
           {/* 7. Log Out */}
@@ -302,45 +263,7 @@ export const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* Nav Bar */}
-      <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-[#0E0E12] border-t border-white/[0.04] z-50 flex items-center pb-safe">
-        <div className="flex items-center justify-around w-full px-4 gap-2">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
-          >
-            <Home size={20} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Dashboard</span>
-          </button>
-          <button 
-            onClick={() => navigate('/sales')}
-            className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
-          >
-            <ShoppingBag size={20} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Sales</span>
-          </button>
-          <button 
-            onClick={() => navigate('/inventory')}
-            className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
-          >
-            <Package size={20} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Products</span>
-          </button>
-          <button 
-            onClick={() => navigate('/analytics')}
-            className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-[#A1A1AA] hover:text-white"
-          >
-            <BarChart3 size={20} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Analytics</span>
-          </button>
-          <button 
-            className="flex-shrink-0 flex flex-col items-center gap-1 px-4 py-1.5 rounded-xl transition-all text-neon"
-          >
-            <GearIcon size={20} />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Settings</span>
-          </button>
-        </div>
-      </div>
+      <BottomNavBar />
     </div>
   );
 };

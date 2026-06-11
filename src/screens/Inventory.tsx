@@ -5,8 +5,9 @@ import {
   Plus, Search, Edit3, Copy, Star, AlertCircle, ShoppingBag, Trash2, CheckCircle2, 
   X, Filter, Home, Package, BarChart3, Settings, Eye, ChevronRight, Sparkles, LogOut, Check
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, getDeterministicShopId } from '../lib/supabase';
 import { toast } from 'sonner';
+import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 
 interface Product {
   id: string;
@@ -63,7 +64,7 @@ export const Inventory: React.FC = () => {
           } catch (_) {}
         }
         if (!shop) {
-          shop = { id: 'local-shop-' + session.user.id };
+          shop = { id: getDeterministicShopId(session.user.id) };
         }
       }
 
@@ -76,8 +77,9 @@ export const Inventory: React.FC = () => {
             .eq('shop_id', shop.id)
             .order('created_at', { ascending: false });
           
-          if (!error && data && data.length > 0) {
+          if (!error && data) {
             prodData = data;
+            localStorage.setItem(`products_${shop.id}`, JSON.stringify(data));
           } else {
             const cached = localStorage.getItem(`products_${shop.id}`);
             if (cached) {
@@ -318,11 +320,11 @@ export const Inventory: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4">
-            {filtered.map(p => {
+            {filtered.map((p, index) => {
               const isSoldOut = p.total_stock === 0 || p.status === 'sold_out';
               return (
                 <motion.div 
-                  key={p.id} 
+                  key={`${p.id}-${index}`} 
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-[#121217] rounded-3xl overflow-hidden border border-white/[0.05] p-2.5 flex flex-col justify-between group relative"
@@ -599,27 +601,8 @@ export const Inventory: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STEADY NAVIGATION BAR FOOTER */}
-      <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-[#0E0E12] border-t border-white/[0.04] z-50 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth flex items-center pb-safe">
-        <div className="flex items-center justify-around w-full min-w-max px-4 gap-2">
-          <NavTab icon={<Home size={20} />} label="Dashboard" onClick={() => navigate('/dashboard')} />
-          <NavTab icon={<ShoppingBag size={20} />} label="Sales" onClick={() => navigate('/sales')} />
-          <NavTab icon={<Package size={20} />} label="Products" active />
-          <NavTab icon={<BarChart3 size={20} />} label="Analytics" onClick={() => navigate('/analytics')} />
-          <NavTab icon={<Settings size={20} />} label="Settings" onClick={() => navigate('/settings')} />
-        </div>
-      </div>
+      <BottomNavBar />
 
     </div>
   );
 };
-
-const NavTab = ({ icon, label, active, onClick }: any) => (
-  <button 
-    onClick={onClick}
-    className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-5 py-1.5 rounded-xl transition-all cursor-pointer ${active ? 'text-[#C6FF00]' : 'text-zinc-500 hover:text-white'}`}
-  >
-    {icon}
-    <span className="text-[9px] font-mono font-bold uppercase tracking-widest">{label}</span>
-  </button>
-);

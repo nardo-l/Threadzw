@@ -173,22 +173,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const fileName = `${session.user.id}/avatar-${Date.now()}.${ext}`;
       let publicUrl = '';
 
-      try {
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
 
-        if (uploadError) throw uploadError;
+      if (uploadError) throw uploadError;
 
-        const { data } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
+      const { data } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
 
-        publicUrl = data.publicUrl;
-      } catch (uploadErr) {
-        console.warn('Avatars upload inside AuthContext failed, falling back to local object URL. Error:', uploadErr);
-        publicUrl = URL.createObjectURL(file);
-      }
+      publicUrl = data.publicUrl;
 
       return { error: null, publicUrl };
     } catch (error: any) {

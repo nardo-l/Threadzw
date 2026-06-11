@@ -51,12 +51,9 @@ export const BuildingScreen: React.FC<BuildingScreenProps> = ({
       });
     }, intervalTime);
 
-    // Redirect to Paywall Screen 1 after exactly 5 seconds
+    // Redirect to Dashboard stage after exactly 5 seconds
     const redirectTimer = setTimeout(() => {
-      if (setPaywallScreen) {
-        setPaywallScreen(1);
-      }
-      setAppStage('paywall');
+      setAppStage('dashboard');
     }, 5000);
 
     return () => {

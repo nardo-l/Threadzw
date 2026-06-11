@@ -39,12 +39,14 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
 
     try {
       // 1. Create or update the shop
+      const cleanHandle = shopFormData.handle.toLowerCase();
       const { data: newShop, error } = await supabase
         .from('shops')
         .upsert({
           owner_id: user.id,
           name: shopFormData.name,
-          handle: shopFormData.handle,
+          handle: cleanHandle,
+          slug: cleanHandle,
           categories: [shopFormData.category],
           description: shopFormData.description || '',
           location: shopFormData.town,
@@ -62,12 +64,26 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
 
       // 2. Upload Logo
       const { avatarUrl } = await uploadShopImages(newShop.id);
+      let finalAvatarUrl = newShop.logo_url;
       if (avatarUrl) {
+        finalAvatarUrl = avatarUrl;
         await supabase.from('shops').update({ logo_url: avatarUrl }).eq('id', newShop.id);
       }
 
       // 3. Update Profile
       await supabase.from('profiles').update({ has_shop: true }).eq('id', user.id);
+
+      // Save complete shop record to localStorage to prevent cache misalignments
+      const activatedShop = {
+        ...newShop,
+        logo_url: finalAvatarUrl,
+        slug: cleanHandle,
+        handle: cleanHandle,
+        is_live: true,
+        setup_complete: true
+      };
+      localStorage.setItem('threadzw_shop', JSON.stringify(activatedShop));
+      localStorage.setItem(`shop_${user.id}`, JSON.stringify(activatedShop));
 
       await refreshInventory();
       setActivationSuccess(true);

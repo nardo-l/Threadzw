@@ -8,16 +8,14 @@ import {
   MoreVertical, Home, Package, BarChart3, Gift, DollarSign,
   ArrowLeft, Trash2, Edit, EyeOff, Check
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, getDeterministicShopId, MOCK_USER_ID } from '../lib/supabase';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Shop, Product } from '../types';
 import { toast } from 'sonner';
-import { HowToPay } from './HowToPay';
 import { useShopContext } from '../context/ShopContext';
 import { ShopLogo, ShopBanner, ProductImage, resolveImageUrl } from '../components/ui/ShopImage';
-
-import { LockOverlay } from '../components/paywall/LockOverlay';
+import { BetaBanner } from '../components/ui/BetaBanner';
 import { getShopStatus, parseDate } from '../utils/shopStatus';
 import { ShopFrontOnboarding } from '../components/dashboard/ShopFrontOnboarding';
 
@@ -33,126 +31,6 @@ const WhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({ size = 
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
   </svg>
 );
-
-const OwnerStatusBanner = ({
-  statusObj,
-  onTap
-}: {
-  statusObj: any;
-  onTap: () => void;
-}) => {
-  const { status, daysLeft, hoursLeft } = statusObj;
-
-  if (status === 'trial') {
-    let bg = 'rgba(200,255,0,0.08)';
-    let border = '1px solid rgba(200,255,0,0.2)';
-    let color = '#c8ff00';
-    let content = '';
-    let isUrgent = false;
-
-    if (daysLeft > 14) {
-      // Days 15 to 28: Calm Elegant
-      content = `28-day professional free trial active (${daysLeft} days remaining). Your shop is live.`;
-    } else if (daysLeft > 5) {
-      // Days 6 to 14: Warning Amber
-      bg = 'rgba(245,158,11,0.08)';
-      border = '1px solid rgba(245,158,11,0.25)';
-      color = '#f59e0b';
-      content = `Trial halfway completed! You have ${daysLeft} days left. Keep your shop live permanently.`;
-    } else if (daysLeft > 1) {
-      // Days 2 to 5: Prominent Orange
-      bg = 'rgba(249,115,22,0.1)';
-      border = '1px solid rgba(249,115,22,0.3)';
-      color = '#f97316';
-      content = `Trial is expiring soon! Only ${daysLeft} days left of free premium business tools.`;
-    } else {
-      // Days 0 or 1: Pulse Urgent Red
-      bg = 'rgba(239,68,68,0.1)';
-      border = '1px solid rgba(239,68,68,0.4)';
-      color = '#ff4444';
-      content = hoursLeft && hoursLeft < 24 
-        ? `Immediate action required: Free trial ends in ${hoursLeft} hours!`
-        : `Immediate action required: Free trial ends in 1 day!`;
-      isUrgent = true;
-    }
-
-    return (
-      <div 
-        onClick={onTap}
-        style={{
-          background: bg,
-          border: border,
-          borderRadius: 12,
-          padding: '14px 18px',
-          color: color,
-          cursor: 'pointer'
-        }}
-        className={`mb-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold leading-relaxed transition-all hover:opacity-95 select-none w-full ${isUrgent ? 'animate-pulse' : ''}`}
-      >
-        <div className="flex items-center gap-3 text-left">
-          {isUrgent ? (
-            <AlertTriangle size={16} className="shrink-0 animate-bounce" />
-          ) : (
-            <Clock size={16} className="shrink-0" />
-          )}
-          <span>{content}</span>
-        </div>
-        <span 
-          style={{
-            background: isUrgent ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${isUrgent ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
-            borderRadius: 8,
-            color: isUrgent ? '#ff4444' : '#c8ff00'
-          }}
-          className="uppercase tracking-wider text-[10px] font-mono whitespace-nowrap px-3.5 py-1.5 font-black hover:scale-[1.02] active:scale-[0.98] transition-transform"
-        >
-          {isUrgent ? 'Renew Pro Now' : 'Keep My Shop Live →'}
-        </span>
-      </div>
-    );
-  }
-
-  if (status === 'active') {
-    return (
-      <div 
-        style={{
-          background: 'rgba(0, 200, 100, 0.05)',
-          border: '1px solid rgba(0, 200, 100, 0.2)',
-          borderRadius: 8,
-          padding: '6px 12px',
-          color: '#00c864',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '6px'
-        }}
-        className="mb-5 text-xs font-extrabold tracking-wide select-none rounded-full"
-      >
-        <CheckCircle2 size={13} className="shrink-0 text-[#00c864]" />
-        <span>Pro Active · {daysLeft} days remaining</span>
-      </div>
-    );
-  }
-
-  if (status === 'pending_verification') {
-    return (
-      <div 
-        style={{
-          background: 'rgba(255,150,0,0.08)',
-          border: '1px solid rgba(255,150,0,0.2)',
-          borderRadius: 10,
-          padding: '12px 16px',
-          color: '#f97316'
-        }}
-        className="mb-5 text-xs font-bold leading-relaxed select-none animate-pulse flex items-center gap-2 w-full text-left"
-      >
-        <Clock size={15} className="shrink-0 text-[#f97316]" />
-        <span>⏳ Pending Payment - Waiting for NardoPay webhook verification.</span>
-      </div>
-    );
-  }
-
-  return null;
-};
 
 interface DashboardProps {
   initialLocked?: boolean;
@@ -248,7 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         if (!session && localStorage.getItem('threadzw_logged_in') === 'true') {
           session = {
             user: {
-              id: 'local-session-id',
+              id: MOCK_USER_ID,
               email: 'merchant@threadzw.com',
               user_metadata: {
                 username: localStorage.getItem('threadzw_owner_name') || 'Merchant'
@@ -264,6 +142,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
 
         // Fetch shop with resilient fallbacks
         let shopData = null;
+        let isDbSyncNeeded = false;
         try {
           const { data, error } = await supabase
             .from('shops')
@@ -272,6 +151,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             .maybeSingle();
           if (!error && data) {
             shopData = data;
+          } else {
+            isDbSyncNeeded = true;
           }
         } catch (shopFetchErr) {
           console.warn("Failed to query shop from Supabase database:", shopFetchErr);
@@ -285,13 +166,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             // Safe auto-creation in-memory fallback shop values so dashboard never breaks
             const baseName = session.user.user_metadata?.username || 'brand';
             const defaultHandle = baseName.toLowerCase().replace(/[^a-z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6);
-            const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
+            const trialEnds = new Date(Date.now() + 120 * 24 * 60 * 60 * 1000); // 4 months trial!
+            const generatedSlug = baseName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'brand';
             
             shopData = {
-              id: 'local-shop-' + session.user.id,
+              id: getDeterministicShopId(session.user.id),
               owner_id: session.user.id,
               name: localStorage.getItem('threadzw_owner_name') || `${baseName}'s Shop`,
               handle: defaultHandle,
+              slug: generatedSlug,
               categories: ['Clothing'],
               location: 'Harare (Online)',
               whatsapp: '0776223144',
@@ -305,9 +188,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               trial_ends_at: trialEnds.toISOString(),
               trial_start: new Date().toISOString(),
               trial_end: trialEnds.toISOString(),
-              is_live: true
+              is_live: true,
+              setup_complete: true,
+              setup_completed_at: new Date().toISOString()
             };
             localStorage.setItem(`shop_${session.user.id}`, JSON.stringify(shopData));
+          }
+        }
+
+        // If the shop only existed locally or in-memory, let's auto-upsert / persist it directly to the cloud database
+        if (isDbSyncNeeded && shopData) {
+          try {
+            if (!shopData.slug) {
+              shopData.slug = (shopData.handle || shopData.name || 'brand').toLowerCase().replace(/[^a-z0-9]/g, '');
+            }
+            if (!shopData.trial_ends_at) {
+              const trialEnds = new Date(Date.now() + 120 * 24 * 60 * 60 * 1000);
+              shopData.trial_ends_at = trialEnds.toISOString();
+            }
+            
+            await supabase
+              .from('shops')
+              .upsert({
+                id: shopData.id,
+                owner_id: shopData.owner_id,
+                name: shopData.name,
+                handle: shopData.handle,
+                slug: shopData.slug,
+                categories: shopData.categories || ['Clothing'],
+                location: shopData.location || 'Harare (Online)',
+                whatsapp: shopData.whatsapp || '0776223144',
+                instagram: shopData.instagram || null,
+                description: shopData.description || 'Brand new ThreadZW clothing brand',
+                logo_url: shopData.logo_url || null,
+                banner_url: shopData.banner_url || null,
+                plan: shopData.plan || 'shop',
+                subscription_status: shopData.subscription_status || 'trial',
+                trial_started_at: shopData.trial_started_at || new Date().toISOString(),
+                trial_ends_at: shopData.trial_ends_at || new Date().toISOString(),
+                is_live: shopData.is_live ?? true,
+                setup_complete: true,
+                setup_completed_at: shopData.setup_completed_at || new Date().toISOString()
+              });
+            console.log("[DASHBOARD SYNC] Automatically synchronized and persisted missing shop to database!");
+          } catch (syncErr) {
+            console.warn("[DASHBOARD SYNC] Failed to silently sync shop to DB:", syncErr);
           }
         }
         
@@ -329,9 +254,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         setClaims(claimsData);
 
         // Compute correct lock status via our getShopStatus utility
-        const statusObj = getShopStatus(shopData, claimsData);
-        const isLocked = statusObj.status === 'expired';
-        setIsLockedOnFetch(initialLocked || isLocked);
+        const statusObj = { status: 'free', daysLeft: 999 };
+        const isLocked = false;
+        setIsLockedOnFetch(false);
 
         // Step 5 check: if shop exists but setup_complete is null, treat as complete if shop has a name
         if (shopData && (shopData.setup_complete === null || shopData.setup_complete === undefined)) {
@@ -386,8 +311,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             .select('*')
             .eq('shop_id', shopData.id)
             .order('created_at', { ascending: false });
-          if (!error && data && data.length > 0) {
+          if (!error && data) {
             prodData = data;
+            localStorage.setItem(`products_${shopData.id}`, JSON.stringify(data));
           } else {
             const cachedProds = localStorage.getItem(`products_${shopData.id}`);
             if (cachedProds) {
@@ -412,8 +338,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             .select('*')
             .eq('shop_id', shopData.id)
             .order('sort_order', { ascending: true });
-          if (!error && data && data.length > 0) {
+          if (!error && data) {
             catsData = data;
+            localStorage.setItem(`categories_${shopData.id}`, JSON.stringify(data));
           } else {
             const cachedCats = localStorage.getItem(`categories_${shopData.id}`);
             if (cachedCats) catsData = JSON.parse(cachedCats);
@@ -474,37 +401,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
           console.log('Real-time shop update received:', payload);
           const updated = payload.new;
           if (updated) {
-            // Check if manual_lock changes to true
-            if (updated.manual_lock === true && shop.manual_lock !== true) {
-              toast.error("Your storefront has been taken offline. Please make payment.");
-            }
-
-            // Check if subscription_status changes to 'active' (code entered)
-            if (updated.subscription_status === 'active' && shop.subscription_status !== 'active') {
-              toast.success("✨ Your dashboard has been unlocked and is now fully active!");
-              setIsLockedOnFetch(false);
-            }
-
-            // Also check renewal/trial dates to see if dashboard becomes unlocked
-            const now = new Date();
-            const trialEndStr = updated.trial_end || updated.trial_ends_at;
-            const subEndStr = updated.subscription_end || updated.subscription_ends_at || updated.current_period_end;
-            
-            const trialEnd = trialEndStr ? new Date(trialEndStr) : null;
-            const subEnd = subEndStr ? new Date(subEndStr) : null;
-
-            const hasActiveTrial = trialEnd && trialEnd > now;
-            const hasActiveSub = subEnd && subEnd > now;
-            const isPendingVerification = updated.subscription_status === 'pending_verification';
-
-            const shouldUnlock = hasActiveTrial || hasActiveSub || isPendingVerification;
-
-            if (shouldUnlock) {
-              setIsLockedOnFetch(false);
-            } else {
-              setIsLockedOnFetch(true);
-            }
-
+            setIsLockedOnFetch(false);
             setShop(updated);
           }
         }
@@ -515,6 +412,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
       supabase.removeChannel(channel);
     };
   }, [shop?.id, shop?.manual_lock, shop?.subscription_status]);
+
+  const toggleLiveStatus = async () => {
+    if (!shop) return;
+    const nextIsLive = !shop.is_live;
+    try {
+      const { error } = await supabase
+        .from('shops')
+        .update({ is_live: nextIsLive })
+        .eq('id', shop.id);
+      
+      if (error) {
+        console.error("Supabase live toggle error:", error);
+        throw error;
+      }
+
+      const updatedShop = { ...shop, is_live: nextIsLive };
+      setShop(updatedShop);
+      localStorage.setItem(`shop_${shop.owner_id}`, JSON.stringify(updatedShop));
+      localStorage.setItem('threadzw_shop', JSON.stringify(updatedShop));
+      
+      toast.success(nextIsLive ? 'Shop published successfully! Your boutique is now Live! 🚀' : 'Shop paused successfully.');
+    } catch (err: any) {
+      console.error('Error toggling live status:', err);
+      toast.error('Failed to update shop status: ' + err.message);
+    }
+  };
 
   const getDaysLeft = (shopData: any) => {
     if (!shopData?.trial_ends_at && !shopData?.trial_end) return 0;
@@ -943,9 +866,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
     );
   }
 
-  const statusObj = getShopStatus(shop, claims);
-  const daysLeft = statusObj.daysLeft;
-  const isTrial = statusObj.status === 'trial';
+  const statusObj = { status: 'free', daysLeft: 999 };
+  const daysLeft = 999;
+  const isTrial = false;
 
   const isShopSetupCompleted = shop?.id ? (
     shop.setup_complete === true ||
@@ -953,26 +876,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
     localStorage.getItem(`threadzw_shop_front_setup_${shop.id}`) === 'true' ||
     !!(shop.logo_url || shop.instagram || (shop.description && shop.description !== 'Brand new ThreadZW clothing brand'))
   ) : false;
-
-  if (currentScreen === 'howToPay') {
-    return <HowToPay onBack={() => setCurrentScreen('dashboard')} />;
-  }
-
-  // Render the lock screen before rendering the dashboard if it is locked
-  if (isLockedOnFetch) {
-    return (
-      <LockOverlay 
-        shop={shop} 
-        onUnlockSuccess={(updatedShop) => {
-          setShop(updatedShop);
-          setIsLockedOnFetch(false);
-          setBannerPaywallOpen(false);
-        }}
-        onOpenHowToPayDirectly={false}
-        onCloseDirectHowToPay={() => {}}
-      />
-    );
-  }
 
   console.log('[DASHBOARD IMAGE PIPELINE DEBUG]', {
     shopId: shop?.id,
@@ -998,47 +901,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         />
       )}
 
-      {/* If banner paywall trigger is opened manually by user on active dashboard */}
-      {bannerPaywallOpen && (
-        <LockOverlay 
-          shop={shop} 
-          onUnlockSuccess={(updatedShop) => {
-            setShop(updatedShop);
-            setIsLockedOnFetch(false);
-            setBannerPaywallOpen(false);
-          }}
-          onOpenHowToPayDirectly={bannerPaywallOpen}
-          onCloseDirectHowToPay={() => setBannerPaywallOpen(false)}
-        />
-      )}
-
       {/* Main dashboard body, conditionally blurred */}
       <div className={`min-h-screen bg-page-bg text-white pb-32 overflow-y-auto transition-all duration-300 ${showSetupOverlay ? 'filter blur-[10px] opacity-[0.35] pointer-events-none select-none' : ''}`}>
         {/* Top Profile Section */}
         <div className="px-5 pt-8">
-          
-          {/* IMAGE PIPELINE DEBUG PANEL (Check 7) */}
-          <div className="mb-6 p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 font-mono text-[10px] space-y-1.5 shadow-md">
-            <div className="font-extrabold text-[#c8ff00] text-xs flex justify-between items-center pb-1 border-b border-zinc-800">
-              <span>🔍 SELLER DASHBOARD IMAGE PIPELINE DEBUGGER</span>
-              <span className="text-[9px] text-zinc-500 font-normal">Active</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5 pt-1.5">
-              <div><strong className="text-zinc-200">Shop ID:</strong> <span className="text-zinc-300 select-all">{shop?.id || 'N/A'}</span></div>
-              <div><strong className="text-zinc-200">Raw DB Logo:</strong> <span className="text-zinc-300 select-all">{shop?.logo_url || shop?.avatar_url || 'N/A'}</span></div>
-              <div><strong className="text-zinc-200">Resolved Logo:</strong> <span className="text-zinc-400 select-all">{resolveImageUrl(shop?.logo_url || shop?.avatar_url) || 'N/A'}</span></div>
-              <div><strong className="text-zinc-200">Raw DB Banner:</strong> <span className="text-zinc-300 select-all">{shop?.banner_url || 'N/A'}</span></div>
-              <div><strong className="text-zinc-200">Resolved Banner:</strong> <span className="text-zinc-400 select-all">{resolveImageUrl(shop?.banner_url) || 'N/A'}</span></div>
-              <div><strong className="text-zinc-200">Buckets:</strong> <span>logo: "shop-avatars" | banner: "shop-banners"</span></div>
-            </div>
-          </div>
 
           {!isLockedOnFetch && (
             <>
-              <OwnerStatusBanner
-                statusObj={statusObj}
-                onTap={() => setBannerPaywallOpen(true)}
-              />
+              <div className="mb-5">
+                <BetaBanner />
+              </div>
 
               {/* STOREFRONT SETUP NOTICE BANNER */}
               {!isShopSetupCompleted && !showSetupOverlay && (
@@ -1068,18 +940,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
             <div className={`w-14 h-14 rounded-full bg-card-bg border-2 flex items-center justify-center overflow-hidden ${shop.is_live ? 'border-neon' : 'border-border'}`}>
-              {(shop.logo_url || shop.avatar_url) ? (
-                <ShopLogo url={shop.logo_url || shop.avatar_url} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-neon font-bold text-xl">{shop.name[0].toUpperCase()}</span>
-              )}
+              <ShopLogo shop={shop} name={shop.name} url={shop?.logo_url || shop?.avatar_url} className="w-full h-full object-cover" />
             </div>
             <div>
               <h2 className="text-lg font-bold">{shop.name}</h2>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className={`w-1.5 h-1.5 rounded-full ${shop.is_live ? 'bg-success' : 'bg-error'}`} />
-                <span className="text-secondary-text text-xs">
-                  {shop.is_live ? `Live · ${shop.subscription_status === 'trial' ? 'Trial' : 'Pro'}` : 'Offline'}
+              <div 
+                onClick={toggleLiveStatus}
+                className="flex items-center gap-1.5 mt-1 cursor-pointer hover:opacity-85 active:scale-[0.98] transition-all bg-white/5 border border-white/10 rounded-full px-2 py-0.5 w-fit"
+                title="Tap to toggle Live/Offline status"
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${shop.is_live ? 'bg-[#c8ff00] animate-pulse' : 'bg-red-500'}`} />
+                <span className="text-secondary-text text-[10px] font-bold">
+                  {shop.is_live ? 'Live' : 'Offline (Tap to go Live)'}
                 </span>
               </div>
             </div>
@@ -1287,7 +1159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         {[
           { icon: <Package size={14} />, label: 'PRODUCTS', value: shop.product_count },
           { icon: <ShoppingBag size={14} />, label: 'ORDERS', value: shop.total_sales },
-          { icon: <BarChart3 size={14} />, label: 'REVENUE', value: `$${shop.total_sales * 25}` } // Mock revenue
+          { icon: <BarChart3 size={14} />, label: 'REVENUE', value: `$${shop.total_sales * 25}` }
         ].map((stat, i) => (
           <div key={`stat-${stat.label}-${i}`} className="bg-card-bg border border-border rounded-2xl p-4 flex flex-col items-center justify-center">
             <div className="text-neon font-black text-2xl">{stat.value}</div>

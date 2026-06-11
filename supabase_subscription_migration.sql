@@ -333,12 +333,12 @@ BEGIN
       )) / 86400
     );
     
-  ELSIF v_shop.trial_end_date > v_now THEN
+  ELSIF COALESCE(v_shop.trial_end_date, v_shop.trial_ends_at, v_shop.trial_end) > v_now THEN
     v_status := 'trial';
-    v_expiry_date := v_shop.trial_end_date;
+    v_expiry_date := COALESCE(v_shop.trial_end_date, v_shop.trial_ends_at, v_shop.trial_end);
     v_days_remaining := CEIL(
       EXTRACT(EPOCH FROM (
-        v_shop.trial_end_date - v_now
+        COALESCE(v_shop.trial_end_date, v_shop.trial_ends_at, v_shop.trial_end) - v_now
       )) / 86400
     );
     

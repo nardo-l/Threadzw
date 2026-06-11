@@ -138,6 +138,8 @@ export const ShopEdit = () => {
   const [isLive, setIsLive] = useState(true);
   const [productCount, setProductCount] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [showCustomOverlayToast, setShowCustomOverlayToast] = useState(false);
 
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -339,8 +341,8 @@ export const ShopEdit = () => {
           .getPublicUrl(filePath);
 
         publicUrl = data.publicUrl;
-      } catch (uploadErr) {
-        console.warn(`${bucket} upload to storage failed, falling back to local object URL. Error:`, uploadErr);
+      } catch (uploadErr: any) {
+        console.warn("Storage upload failed, falling back to local preview url. Error:", uploadErr);
         publicUrl = URL.createObjectURL(file);
       }
 
@@ -348,16 +350,20 @@ export const ShopEdit = () => {
       const bustUrl = publicUrl.startsWith('blob:') ? publicUrl : `${publicUrl}?t=${Date.now()}`;
 
       // Save URL to shops table
-      const { error: dbError } = await supabase
-        .from('shops')
-        .update(
-          type === 'logo' 
-            ? { logo_url: publicUrl }
-            : { banner_url: publicUrl }
-        )
-        .eq('owner_id', user?.id || '');
+      try {
+        const { error: dbError } = await supabase
+          .from('shops')
+          .update(
+            type === 'logo' 
+              ? { logo_url: publicUrl }
+              : { banner_url: publicUrl }
+          )
+          .eq('owner_id', user?.id || '');
 
-      if (dbError) throw dbError;
+        if (dbError) throw dbError;
+      } catch (dbErr: any) {
+        console.warn("Database update failed for image path, caching locally. Error:", dbErr);
+      }
 
       // Update local state immediately
       if (type === 'logo') {
@@ -384,11 +390,19 @@ export const ShopEdit = () => {
         console.warn('Cache update warning:', e);
       }
 
-      toast.success(
-        type === 'logo' 
-          ? 'Logo updated!' 
-          : 'Banner updated!'
-      );
+      if (publicUrl.startsWith('blob:')) {
+        toast.error(
+          type === 'logo'
+            ? 'Logo preview active. Configure storage RLS to upload to cloud.'
+            : 'Banner preview active. Configure storage RLS to upload to cloud.'
+        );
+      } else {
+        toast.success(
+          type === 'logo' 
+            ? 'Logo updated!' 
+            : 'Banner updated!'
+        );
+      }
 
       // Trigger active layout rebuild
       await refreshInventory();
@@ -454,6 +468,23 @@ export const ShopEdit = () => {
   };
 
   const handleSave = async () => {
+    console.log('[EDIT_SHOP_PAGE] Save Changes clicked');
+    console.log('[EDIT_SHOP_PAGE] Current States:', {
+      shopId,
+      user: user?.id,
+      shopName,
+      handle,
+      originalHandle,
+      tagline,
+      categories,
+      city,
+      suburb,
+      onlineOnly,
+      area,
+      whatsapp,
+      instagram
+    });
+
     const errors: Record<string, string> = {};
     if (!shopName.trim()) errors.shopName = 'Shop name is required';
     if (!handle.trim()) errors.handle = 'Shop handle is required';
@@ -463,22 +494,62 @@ export const ShopEdit = () => {
       if (!landmark.trim()) errors.landmark = 'Please add your landmark';
       if (!directions.trim()) errors.directions = 'Please add directions';
     }
-    const cleanWhatsapp = whatsapp.replace(/\D/g, '');
-    if (!whatsapp.trim() || cleanWhatsapp.length !== 9) {
-      errors.whatsapp = 'Please enter a valid 9-digit WhatsApp number';
+
+    // Standardize & clean Zimbabwean WhatsApp input format
+    let cleanWhatsapp = whatsapp.replace(/\D/g, '');
+    if (cleanWhatsapp.startsWith('0')) {
+      cleanWhatsapp = cleanWhatsapp.substring(1);
     }
+    
+    if (!whatsapp.trim() || cleanWhatsapp.length !== 9) {
+      errors.whatsapp = 'Please enter a valid 9-digit WhatsApp number (e.g. 077... or 77...)';
+    }
+    
     if (!handleAvailable) errors.handle = handleError || 'This handle is already taken';
 
     if (Object.keys(errors).length > 0) {
+      console.warn('[EDIT_SHOP_PAGE] Validation failed:', errors);
       setValidationErrors(errors);
+      const firstErrorVal = Object.values(errors)[0];
+      showToast(firstErrorVal, 'error');
+      setSaveError(firstErrorVal);
       const firstErrorKey = Object.keys(errors)[0];
       const element = document.getElementById(`field-${firstErrorKey}`);
       if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
 
+    // Try verifying and restoring shopId if undefined
+    let activeShopId = shopId;
+    if (!activeShopId && user?.id) {
+      console.log('[EDIT_SHOP_PAGE] shopId empty, querying by owner_id:', user.id);
+      try {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) {
+          activeShopId = dbShop.id;
+          setShopId(dbShop.id);
+          console.log('[EDIT_SHOP_PAGE] Recovered missing shopId:', dbShop.id);
+        }
+      } catch (recoveryErr) {
+        console.error('[EDIT_SHOP_PAGE] Error recovering active shopId:', recoveryErr);
+      }
+    }
+
+    if (!activeShopId) {
+      setSaveError('Shop identifier not found. Please refresh page and verify shop setup.');
+      showToast('Shop identifier missing', 'error');
+      console.error('[EDIT_SHOP_PAGE] Save aborted: activeShopId is empty');
+      return;
+    }
+
     setSaving(true);
     setValidationErrors({});
+    setSaveError(null);
+    setSaveSuccess(false);
 
     try {
       const cleanBanner = bannerUrl ? bannerUrl.split('?')[0] : null;
@@ -529,6 +600,7 @@ export const ShopEdit = () => {
         trading_hours: tradingHours,
         banner_url: cleanBanner,
         logo_url: cleanAvatar,
+        updated_at: new Date().toISOString()
       };
 
       Object.keys(updateData).forEach(key => {
@@ -537,28 +609,44 @@ export const ShopEdit = () => {
         }
       });
 
+      console.log('[EDIT_SHOP_PAGE] Sending database update:', updateData);
+
       // Update shop in database
-      const { error: updateError } = await supabase
+      const { data, error: updateError } = await supabase
         .from('shops')
         .update(updateData)
-        .eq('id', shopId);
+        .eq('id', activeShopId)
+        .select()
+        .single();
 
       if (updateError) {
+        console.error('[EDIT_SHOP_PAGE] Supabase error response:', updateError);
+        
         if (updateError.code === '23505') {
           setHandleError('This handle was just taken by someone else. Try a different one.');
           setHandleAvailable(false);
           setSaving(false);
           return;
         }
+
+        if (updateError.code === '42501') {
+          setSaveError('Permission denied. Please make sure you are logged in as the owner of this shop.');
+          showToast('Update permission denied', 'error');
+          setSaving(false);
+          return;
+        }
+
         throw updateError;
       }
+
+      console.log('[EDIT_SHOP_PAGE] Database update successful:', data);
 
       // Save changes locally in localStorage immediately to prevent stale states
       try {
         if (user?.id) {
           const cachedKey = `shop_${user.id}`;
           const cached = localStorage.getItem(cachedKey);
-          let mergedObj = { id: shopId, owner_id: user.id, ...updateData };
+          let mergedObj = { id: activeShopId, owner_id: user.id, ...updateData };
           if (cached) {
             mergedObj = { ...JSON.parse(cached), ...updateData };
           }
@@ -569,7 +657,7 @@ export const ShopEdit = () => {
           }
         }
       } catch (e) {
-        console.warn("Error caching shop updates directly in ShopEdit onSave:", e);
+        console.warn("[EDIT_SHOP_PAGE] Error caching shop updates locally:", e);
       }
 
       // Sync state and memory to avoid stale data
@@ -577,12 +665,18 @@ export const ShopEdit = () => {
       await refreshShop();
 
       setHasChanges(false);
+      setSaveSuccess(true);
       showToast('Shop updated successfully', 'success');
-      setTimeout(() => navigate('/settings'), 800);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        navigate('/settings');
+      }, 1000);
 
-    } catch (err) {
-      console.error('Save error:', err);
-      showToast('Could not save changes -- please try again', 'error');
+    } catch (err: any) {
+      console.error('[EDIT_SHOP_PAGE] Caught unexpected save error:', err);
+      const msg = err?.message || 'Could not save changes -- please try again';
+      setSaveError(msg);
+      showToast(msg, 'error');
     } finally {
       setSaving(false);
     }
@@ -812,6 +906,7 @@ export const ShopEdit = () => {
                   <>
                     <ShopLogo 
                       url={avatarPreview || avatarUrl} 
+                      name={shopName}
                       alt="Logo" 
                       className="w-full h-full object-cover"
                     />
@@ -1619,6 +1714,51 @@ export const ShopEdit = () => {
           </div>
         </section>
 
+        {/* Bottom Save Changes Section */}
+        <section className="pt-6 space-y-3">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full py-4 text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+            style={{
+              background: saveSuccess
+                ? '#10b981'
+                : saving
+                  ? '#1f2937'
+                  : '#c8ff00',
+              color: saveSuccess || saving
+                ? '#ffffff'
+                : '#000000',
+              border: 'none',
+              borderRadius: '14px',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              fontWeight: 800,
+              fontFamily: 'sans-serif'
+            }}
+          >
+            {saving ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Saving...
+              </>
+            ) : saveSuccess ? (
+              <>
+                <Check size={16} />
+                Saved!
+              </>
+            ) : (
+              'Save Changes'
+            )}
+          </button>
+
+          {saveError && (
+            <p className="text-xs text-red-500 text-center font-mono mt-1">
+              {saveError}
+            </p>
+          )}
+        </section>
+
         {/* Danger Zone */}
         <section className="pt-10 border-t border-border">
           <button 
@@ -1631,29 +1771,6 @@ export const ShopEdit = () => {
 
           {dangerZoneExpanded && (
             <div className="space-y-4 animate-wipe overflow-hidden">
-              {/* Pause Shop */}
-              <div className={`bg-elevated rounded-16 p-5 border-l-4 ${isLive ? 'border-amber' : 'border-green'}`}>
-                <h3 className={`font-syne font-bold text-lg mb-1 ${isLive ? 'text-amber' : 'text-green'}`}>
-                  {isLive ? 'Pause Your Shop' : 'Shop is Paused'}
-                </h3>
-                <p className="font-sans text-sm text-muted mb-6">
-                  {isLive 
-                    ? 'Your products will be hidden from the feed while paused. All data is preserved.'
-                    : 'Your shop is currently hidden. Unpause to make it visible to buyers again.'
-                  }
-                </p>
-                <button 
-                  onClick={() => setShowPauseModal(true)}
-                  className={`px-6 py-2.5 rounded-pill font-syne font-bold text-sm border transition-all ${
-                    isLive 
-                      ? 'border-amber text-amber hover:bg-amber/10' 
-                      : 'border-green text-green hover:bg-green/10'
-                  }`}
-                >
-                  {isLive ? 'Pause Shop' : 'Unpause Shop'}
-                </button>
-              </div>
-
               {/* Delete Shop */}
               <div className="bg-elevated rounded-16 p-5 border-l-4 border-red">
                 <h3 className="font-syne font-bold text-lg text-red mb-1">Delete Your Shop</h3>

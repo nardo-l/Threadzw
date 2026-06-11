@@ -1,92 +1,217 @@
+// src/screens/Login.tsx
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Eye, EyeOff } from 'lucide-react';
-import { useInventory } from '../context/InventoryContext';
+import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { setIsAuthenticated } = useInventory();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login
-    setIsAuthenticated(true);
-    navigate('/');
+    if (!email || !password) {
+      toast.error('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password
+      });
+
+      if (error) throw error;
+
+      toast.success('Signed in successfully');
+      localStorage.setItem('threadzw_logged_in', 'true');
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error('Sign in error:', err);
+      toast.error(err.message || 'Invalid login credentials');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex-1 flex flex-col p-8 pt-20 gap-12 overflow-y-auto no-scrollbar min-h-screen bg-[#0d0d0d]"
-    >
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="text-6xl font-syne font-black italic text-[#C6FF00] uppercase tracking-tighter">threadZW</h1>
-        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-[#555]">SaaS Infrastructure</p>
+    <div style={{
+      minHeight: '100svh',
+      background: '#000000',
+      maxWidth: 430,
+      margin: '0 auto',
+      padding: '40px 24px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      color: '#ffffff'
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <h1 style={{
+          fontSize: 36,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-1.5px',
+          margin: '0 0 8px'
+        }}>
+          ThreadZW
+        </h1>
+        <p style={{
+          fontSize: 14,
+          color: '#a1a1aa',
+          margin: 0
+        }}>
+          SaaS Business Platform
+        </p>
       </div>
 
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-syne font-black uppercase text-white">Owner Access</h2>
-          <p className="font-sans text-[#555]">Sign in to manage your storefront.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <h2 style={{
+            fontSize: 24,
+            fontWeight: 800,
+            color: '#ffffff',
+            margin: 0
+          }}>
+            Owner Login
+          </h2>
+          <p style={{
+            fontSize: 14,
+            color: '#a1a1aa',
+            margin: 0
+          }}>
+            Sign in to manage your storefront
+          </p>
         </div>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest ml-1 text-[#555]">Business Email</label>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#a1a1aa'
+            }}>
+              Business Email
+            </label>
             <input 
               type="email"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="you@threadzw.com"
-              className="border-2 rounded-2xl p-5 outline-none focus:border-[#C6FF00] transition-all bg-[#111] border-[#222] text-white"
+              placeholder="you@yourshop.com"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                fontSize: 15,
+                border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 10,
+                outline: 'none',
+                background: '#121215',
+                color: '#ffffff'
+              }}
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest ml-1 text-[#555]">Password</label>
-            <div className="relative">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#a1a1aa'
+            }}>
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
               <input 
                 type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full border-2 rounded-2xl p-5 outline-none focus:border-[#C6FF00] transition-all bg-[#111] border-[#222] text-white"
+                placeholder="Password"
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  paddingRight: 44,
+                  fontSize: 15,
+                  border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: 10,
+                  outline: 'none',
+                  background: '#121215',
+                  color: '#ffffff'
+                }}
               />
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 hover:text-[#C6FF00] text-[#555]"
+                style={{
+                  position: 'absolute',
+                  right: 14,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: '#a1a1aa',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <Link 
-              to="/forgot-password" 
-              className="text-[10px] font-black uppercase tracking-widest self-end mt-2 active:opacity-70 transition-opacity text-[#C6FF00]"
-            >
-              Forgot Key?
-            </Link>
           </div>
 
           <button 
             type="submit"
-            className="mt-4 py-5 text-black rounded-full font-black uppercase tracking-widest text-lg shadow-lg active:scale-95 transition-all bg-[#C6FF00] shadow-[#C6FF00]/10"
+            disabled={loading}
+            style={{
+              marginTop: 12,
+              padding: '15px',
+              background: '#c8ff00',
+              color: '#000000',
+              border: 'none',
+              borderRadius: 10,
+              fontWeight: 900,
+              fontSize: 16,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              letterSpacing: '0.5px'
+            }}
           >
-            Terminal Login ✓
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
-      </div>
 
-      <p className="mt-auto text-center text-sm text-[#555]">
-        Don't have an account? <Link to="/signup" className="font-black uppercase tracking-widest text-[11px] text-[#C6FF00] ml-2">Build Store →</Link>
-      </p>
-    </motion.div>
+        <p style={{
+          textAlign: 'center',
+          fontSize: 14,
+          color: '#a1a1aa',
+          marginTop: 12
+        }}>
+          Don't have an account?{' '}
+          <Link 
+            to="/signup" 
+            style={{
+              fontWeight: 800,
+              color: '#c8ff00',
+              textDecoration: 'none'
+            }}
+          >
+            Get Started Free
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 };

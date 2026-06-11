@@ -14,6 +14,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { ShareSheet } from '../components/ShareSheet';
 import { Avatar } from '../components/Avatar';
+import { ShopLogo, ShopBanner, ProductImage } from '../components/ui/ShopImage';
 
 export const ShopProfile: React.FC = () => {
   const { id: shopHandle } = useParams();
@@ -132,23 +133,11 @@ export const ShopProfile: React.FC = () => {
       
       {/* Banner & Cover */}
       <div className="h-[260px] relative overflow-hidden group">
-        {shop.banner_url ? (
-          <img 
-            src={shop.banner_url} 
-            alt="Banner" 
-            className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
-            referrerPolicy="no-referrer"
-          />
-        ) : (
-          <div className="w-full h-full bg-neutral-950 grid grid-cols-4 grid-rows-4 gap-4 p-4 opacity-50">
-             {[...Array(16)].map((_, i) => (
-                <div key={`banner-grid-cell-${i}`} className="border border-neutral-800/40 rounded-xl" />
-             ))}
-             <div className="absolute inset-0 flex items-center justify-center">
-                <h2 className="text-[12vw] font-black uppercase italic tracking-tighter text-neutral-800/10 select-none">{shop.name}</h2>
-             </div>
-          </div>
-        )}
+        <ShopBanner 
+          shop={shop}
+          className="w-full h-full object-cover transition-transform duration-[1500ms] group-hover:scale-105"
+          height="100%"
+        />
         
         {/* Soft shadow overlay for readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
@@ -166,11 +155,10 @@ export const ShopProfile: React.FC = () => {
         {/* Floating circular profile logo overlapping banner */}
         <div className="absolute -bottom-14 left-6 z-[30]">
           <div className="w-28 h-28 rounded-full border-4 border-[#0B0B0B] bg-[#111] overflow-hidden shadow-xl flex items-center justify-center">
-             <Avatar 
-               url={shop.logo_url} 
+             <ShopLogo 
+               shop={shop}
                size={112} 
                className="w-full h-full rounded-full object-cover"
-               ring={false}
              />
           </div>
         </div>
@@ -353,18 +341,14 @@ export const ShopProfile: React.FC = () => {
                       className={`flex flex-col bg-[#111] border border-neutral-800/80 rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:border-neutral-700/80 relative ${isSoldOut ? 'opacity-50' : ''}`}
                     >
                       <div className="aspect-[4/5] relative bg-neutral-900 overflow-hidden">
-                        {product.images?.[0] ? (
-                          <img 
-                            src={product.images[0]} 
-                            alt={product.name} 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                            referrerPolicy="no-referrer" 
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-neutral-700">
-                            <ShoppingBag size={32} />
-                          </div>
-                        )}
+                        <ProductImage 
+                          product={product}
+                          index={0}
+                          width="100%"
+                          height="100%"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          alt={product.name}
+                        />
                         
                         <div className="absolute top-3 right-3 z-10 font-bold text-[9px] uppercase tracking-wide">
                           {isSoldOut ? (

@@ -1,7 +1,7 @@
+// src/screens/SignUp.tsx
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion } from 'motion/react';
-import { Eye, EyeOff } from 'lucide-react';
 import { useInventory } from '../context/InventoryContext';
 
 export const SignUp: React.FC = () => {
@@ -10,92 +10,193 @@ export const SignUp: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
-    // Save name to context for onboarding
+    if (!name || !email || !password) return;
+    // Save info and go directly to onboarding flow
     updateUserData({ name });
-    // Navigate to verification
-    navigate('/verify', { state: { email } });
+    navigate('/signup');
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex-1 flex flex-col p-8 pt-20 gap-10 overflow-y-auto no-scrollbar min-h-screen bg-[#0d0d0d]"
-    >
-      <div className="flex flex-col items-center gap-2">
-        <h1 className="text-6xl font-syne font-black italic text-[#C6FF00] uppercase tracking-tighter">threadZW</h1>
-        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-[#555]">Business Infrastructure</p>
+    <div style={{
+      minHeight: '100svh',
+      background: '#000000',
+      maxWidth: 430,
+      margin: '0 auto',
+      padding: '40px 24px',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      color: '#ffffff'
+    }}>
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <h1 style={{
+          fontSize: 36,
+          fontWeight: 900,
+          color: '#ffffff',
+          letterSpacing: '-1.5px',
+          margin: '0 0 8px'
+        }}>
+          ThreadZW
+        </h1>
+        <p style={{
+          fontSize: 14,
+          color: '#a1a1aa',
+          margin: 0
+        }}>
+          Create Your Storefront
+        </p>
       </div>
 
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-syne font-black uppercase text-white">Create Shop</h2>
-          <p className="font-sans text-[#555]">The professional way to sell on WhatsApp.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <h2 style={{
+            fontSize: 24,
+            fontWeight: 800,
+            color: '#ffffff',
+            margin: 0
+          }}>
+            Get Started Free
+          </h2>
+          <p style={{
+            fontSize: 14,
+            color: '#a1a1aa',
+            margin: 0
+          }}>
+            Create your account to start building your shop
+          </p>
         </div>
 
-        <form onSubmit={handleSignUp} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest ml-1 text-[#555]">Owner Full Name</label>
+        <form onSubmit={handleSignUp} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#a1a1aa'
+            }}>
+              Your Name
+            </label>
             <input 
               type="text"
               required
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="Simba Makoni"
-              className="border-2 rounded-2xl p-5 outline-none focus:border-[#C6FF00] transition-all bg-[#111] border-[#222] text-white"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                fontSize: 15,
+                border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 10,
+                outline: 'none',
+                background: '#121215',
+                color: '#ffffff'
+              }}
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest ml-1 text-[#555]">Business Email</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#a1a1aa'
+            }}>
+              Business Email
+            </label>
             <input 
               type="email"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="shop@threadzw.com"
-              className="border-2 rounded-2xl p-5 outline-none focus:border-[#C6FF00] transition-all bg-[#111] border-[#222] text-white"
+              placeholder="you@yourshop.com"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                fontSize: 15,
+                border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 10,
+                outline: 'none',
+                background: '#121215',
+                color: '#ffffff'
+              }}
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest ml-1 text-[#555]">Access Password</label>
-            <div className="relative">
-              <input 
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full border-2 rounded-2xl p-5 outline-none focus:border-[#C6FF00] transition-all bg-[#111] border-[#222] text-white"
-              />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 hover:text-[#C6FF00] text-[#555]"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#a1a1aa'
+            }}>
+              Create Password
+            </label>
+            <input 
+              type="password"
+              required
+              minLength={6}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                fontSize: 15,
+                border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: 10,
+                outline: 'none',
+                background: '#121215',
+                color: '#ffffff'
+              }}
+            />
           </div>
 
           <button 
             type="submit"
-            className="mt-4 py-5 text-black rounded-full font-black uppercase tracking-widest text-lg shadow-lg active:scale-95 transition-all bg-[#C6FF00] shadow-[#C6FF00]/10"
+            style={{
+              marginTop: 12,
+              padding: '15px',
+              background: '#c8ff00',
+              color: '#000000',
+              border: 'none',
+              borderRadius: 10,
+              fontWeight: 900,
+              fontSize: 16,
+              cursor: 'pointer',
+              letterSpacing: '0.5px'
+            }}
           >
-            Launch Storefront ✓
+            Create Account — Free
           </button>
         </form>
-      </div>
 
-      <p className="mt-auto text-center text-sm text-[#555]">
-        Already have an account? <Link to="/login" className="font-black uppercase tracking-widest text-[11px] text-[#C6FF00] ml-2">Sign In →</Link>
-      </p>
-    </motion.div>
+        <p style={{
+          textAlign: 'center',
+          fontSize: 14,
+          color: '#a1a1aa',
+          marginTop: 12
+        }}>
+          Already have an account?{' '}
+          <Link 
+            to="/login" 
+            style={{
+              fontWeight: 800,
+              color: '#c8ff00',
+              textDecoration: 'none'
+            }}
+          >
+            Log in
+          </Link>
+        </p>
+      </div>
+    </div>
   );
 };

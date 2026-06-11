@@ -202,7 +202,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
       };
 
       let updatedShop;
-      const isLocalPlaceholder = !shop?.id || String(shop.id).startsWith('local-shop-');
+      const isLocalPlaceholder = !shop?.id || String(shop.id).startsWith('local-shop-') || String(shop.id) === '55555555-5555-5555-5555-555555555555';
       if (shop?.id && !isLocalPlaceholder) {
         const { data, error } = await supabase
           .from('shops')

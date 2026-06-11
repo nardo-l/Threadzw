@@ -97,21 +97,33 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
         bannerUrl = await uploadImage(bannerFile, 'shop-banners', `${myShop.id}/banner_${Date.now()}`);
       }
 
+      const updatedFields = {
+        name: formData.name,
+        handle: formData.handle.toLowerCase(),
+        slug: formData.handle.toLowerCase(),
+        categories: [formData.category],
+        description: formData.description,
+        location: `${formData.area}${formData.landmark ? `, ${formData.landmark}` : ''}${formData.directions ? ` (${formData.directions})` : ''}`,
+        instagram: formData.instagram,
+        logo_url: logoUrl,
+        banner_url: bannerUrl,
+        setup_complete: true,
+        is_live: true
+      };
+
       const { error: updateError } = await supabase
         .from('shops')
-        .update({
-          name: formData.name,
-          handle: formData.handle.toLowerCase(),
-          categories: [formData.category],
-          description: formData.description,
-          location: `${formData.area}${formData.landmark ? `, ${formData.landmark}` : ''}${formData.directions ? ` (${formData.directions})` : ''}`,
-          instagram: formData.instagram,
-          logo_url: logoUrl,
-          banner_url: bannerUrl
-        })
+        .update(updatedFields)
         .eq('id', myShop.id);
 
       if (updateError) throw updateError;
+
+      // Update local storage cache to keep details in sync immediately
+      const mergedShop = { ...myShop, ...updatedFields };
+      localStorage.setItem('threadzw_shop', JSON.stringify(mergedShop));
+      if (myShop.owner_id) {
+        localStorage.setItem(`shop_${myShop.owner_id}`, JSON.stringify(mergedShop));
+      }
 
       toast.success('Shop setup complete!', { style: { background: '#22c55e', color: 'white' } });
       onComplete();
