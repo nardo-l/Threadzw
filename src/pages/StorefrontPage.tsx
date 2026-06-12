@@ -342,7 +342,11 @@ export const StorefrontPage: React.FC = () => {
   const cleanSlug = useMemo(() => {
     const activeSlug = slug || (window.location.pathname.toLowerCase().replace(/\/$/, '').endsWith('/demo') ? 'demo' : null);
     if (!activeSlug) return null;
-    return decodeURIComponent(activeSlug)
+    let decoded = activeSlug;
+    try {
+      decoded = decodeURIComponent(activeSlug);
+    } catch (_) {}
+    return decoded
       .toLowerCase()
       .trim()
       .replace(/\s+/g, '')
@@ -365,7 +369,14 @@ export const StorefrontPage: React.FC = () => {
         let shopErr = null;
 
         // Strip leading '@' or spaces, and resolve any hyphen or casing mismatch
-        const decodedSlug = slug ? decodeURIComponent(slug).trim() : null;
+        let decodedSlug = null;
+        if (slug) {
+          try {
+            decodedSlug = decodeURIComponent(slug).trim();
+          } catch (_) {
+            decodedSlug = slug.trim();
+          }
+        }
         const decodedNoAt = decodedSlug ? decodedSlug.replace(/^@/, '') : null;
         const fullyCleaned = cleanSlug ? cleanSlug.replace(/[^a-z0-9]/g, '') : null;
         const decNoAt = decodedNoAt || '';
@@ -593,54 +604,29 @@ export const StorefrontPage: React.FC = () => {
         productList = productList.filter((p: any) => p.is_published !== false);
         setProducts(productList);
 
-        // Build elegant category list from actual products
-        const internalCatIds = [
-          ...new Set(productList.map(p => p.category_id).filter(Boolean))
-        ];
-
+        // Build elegant category list from actual products and global_categories
         let fetchedCategories: any[] = [];
         try {
-          if (internalCatIds.length > 0) {
-            const { data: catData, error: catErr } = await supabase
-              .from('categories')
-              .select('*')
-              .in('id', internalCatIds)
-              .order('sort_order', { ascending: true });
-            if (catErr) throw catErr;
-            fetchedCategories = catData || [];
+          const { data: catData, error: catErr } = await supabase
+            .from('global_categories')
+            .select('*')
+            .eq('visible', true)
+            .order('sort_order', { ascending: true });
+          if (!catErr && catData) {
+            fetchedCategories = catData;
           }
         } catch (catErr) {
-          console.warn("Failed to fetch categories for storefront:", catErr);
+          console.warn("Failed to fetch global categories:", catErr);
         }
 
-        if (fetchedCategories.length === 0) {
-          const cachedCats = localStorage.getItem(`categories_${shopData.id}`);
-          if (cachedCats) {
-            try {
-              fetchedCategories = JSON.parse(cachedCats);
-            } catch (_) {}
-          }
-        }
+        // Only display categories that contain products from that shop.
+        // We perform a case-insensitive check of each category name against the product collection's category values.
+        const activeCategoryNames = new Set(productList.map(p => p.category?.trim().toLowerCase()).filter(Boolean));
+        const matchedCategories = fetchedCategories.filter(cat => 
+          cat.visible && activeCategoryNames.has(cat.name?.trim().toLowerCase())
+        );
 
-        const buildUniqueList: any[] = [...fetchedCategories];
-        productList.forEach(p => {
-          if (p.category) {
-            const exists = buildUniqueList.some(
-              c => c.name.toLowerCase() === p.category.toLowerCase()
-            );
-            if (!exists) {
-              const cleanedCatName = p.category;
-              buildUniqueList.push({
-                id: cleanedCatName.toLowerCase(),
-                name: cleanedCatName,
-                cover_image_url: null,
-                is_dynamic: true
-              });
-            }
-          }
-        });
-
-        setCategories(buildUniqueList);
+        setCategories(matchedCategories);
 
       } catch (err) {
         console.error('Storefront load failed:', err);
@@ -665,6 +651,13 @@ export const StorefrontPage: React.FC = () => {
   };
 
   const activeCategory = categoryId || 'all';
+
+  const categoryInfo = useMemo(() => {
+    if (!activeCategory || activeCategory === 'all') return null;
+    return categories.find(
+      c => c.id === activeCategory || c.name.toLowerCase() === activeCategory.toLowerCase()
+    );
+  }, [categories, activeCategory]);
 
   const selectCategory = (catId: string) => {
     if (catId === 'all') {
@@ -1158,10 +1151,42 @@ export const StorefrontPage: React.FC = () => {
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Catalog</span>
             </button>
-            <h1 className="text-base font-bold uppercase tracking-wider font-sans text-[#D7FF00]">
-              {activeCategory} Collection
+            <h1 className="text-[10px] font-bold uppercase tracking-widest font-mono text-zinc-500">
+              Category View
             </h1>
           </div>
+
+          {/* Category Hero Block showing Category image and name */}
+          {categoryInfo ? (
+            <div className="relative h-44 rounded-2xl overflow-hidden mb-8 border border-zinc-900 group">
+              <div className="absolute inset-0 bg-neutral-950">
+                <ImageWithSkeleton
+                  src={getCategoryCover(categoryInfo.name, categoryInfo.cover_image_url)}
+                  alt={categoryInfo.name}
+                  skeletonType="banner"
+                  className="w-full h-full rounded-2xl object-cover brightness-50 group-hover:scale-105 transition-transform duration-700"
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              <div className="absolute bottom-5 left-5 right-5 flex flex-col">
+                <span className="text-[9px] uppercase tracking-widest text-[#D7FF00] font-mono leading-none mb-1">
+                  ThreadZW Category
+                </span>
+                <h2 className="text-2xl font-extrabold uppercase tracking-widest font-sans text-white">
+                  {categoryInfo.name}
+                </h2>
+              </div>
+            </div>
+          ) : (
+            <div className="relative h-28 rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 flex flex-col justify-center px-6 mb-8">
+              <span className="text-[9px] uppercase tracking-widest text-[#D7FF00] font-mono leading-none mb-1">
+                ThreadZW Category
+              </span>
+              <h2 className="text-xl font-extrabold uppercase tracking-widest font-sans text-white">
+                {activeCategory}
+              </h2>
+            </div>
+          )}
 
           {filteredProducts.length === 0 ? (
             <div className="text-center py-20 px-4 border border-dashed border-zinc-900 rounded-lg">

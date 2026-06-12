@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  X, ArrowLeft, Plus, Trash2, Camera, Sparkles, Check, ChevronRight, Loader2
+  X, ArrowLeft, Plus, Trash2, Camera, Sparkles, Check, ChevronRight, Loader2, ChevronDown, Search
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { uploadImage } from '../utils/uploadImage';
+import { useGlobalCategories } from '../hooks/useGlobalCategories';
 
 interface SizeStock {
   active: boolean;
@@ -27,6 +28,11 @@ export const AddProduct: React.FC = () => {
   const [publishing, setPublishing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
+
+  // Global Categories System
+  const { categories: globalCats, loading: globalCatsLoading } = useGlobalCategories();
+  const [catSearch, setCatSearch] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // SCREEN 1: Photos State
   const [images, setImages] = useState<string[]>([]);
@@ -416,9 +422,8 @@ export const AddProduct: React.FC = () => {
     })
   };
 
-  const categories = dbCategories.length > 0 
-    ? dbCategories 
-    : ['Tops', 'Bottoms', 'Hoodies', 'Sneakers', 'Accessories', 'New Drop'];
+  // Dynamic categories fetched from the global_categories table (filter admin-disabled ones)
+  const categories = globalCats.filter(c => c.visible).map(c => c.name);
   const tagOptions = ['New Drop', 'Best Seller', 'Limited', 'None'];
 
   return (
@@ -616,30 +621,89 @@ export const AddProduct: React.FC = () => {
                     </div>
 
                     {/* Category Selector */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative z-30" id="category-selector-wrapper">
                       <label className="text-[11px] font-bold uppercase tracking-[1.5px] text-white/40 block">
-                        Category
+                        Category *
                       </label>
                       
-                      {/* Horizontal scroll select */}
-                      <div className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-track-transparent">
-                        {categories.map((cat) => {
-                          const isSelected = selectedCategory === cat;
-                          return (
-                            <button
-                              key={`category-pill-${cat}`}
-                              type="button"
-                              onClick={() => setSelectedCategory(cat)}
-                              className={`shrink-0 text-[13px] font-bold px-4 py-2 border rounded-[8px] transition-all cursor-pointer ${
-                                isSelected 
-                                  ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-[#c8ff00]' 
-                                  : 'bg-white/[0.05] border-white/10 text-white/50 hover:text-white'
-                              }`}
-                            >
-                              {cat}
-                            </button>
-                          );
-                        })}
+                      {/* Searchable Dropdown Selector */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setDropdownOpen(!dropdownOpen)}
+                          className="w-full flex items-center justify-between text-[13px] font-bold bg-white/[0.05] border-[1.5px] border-white/10 hover:border-white/20 focus:border-[#c8ff00] rounded-[10px] px-4 py-3 text-left text-white outline-none transition-all cursor-pointer"
+                        >
+                          <span className={selectedCategory ? 'text-white' : 'text-white/40'}>
+                            {selectedCategory || 'Select category...'}
+                          </span>
+                          <ChevronDown size={16} className={`text-white/40 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-[#c8ff00]' : ''}`} />
+                        </button>
+
+                        {/* Dropdown overlay background click catcher */}
+                        {dropdownOpen && (
+                          <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
+                        )}
+
+                        {/* Searchable dropdown options panel */}
+                        {dropdownOpen && (
+                          <div className="absolute z-50 left-0 right-0 mt-1.5 bg-[#121214] border border-white/10 rounded-[12px] shadow-2xl p-2 space-y-2 max-h-[220px] overflow-y-auto">
+                            <div className="relative flex items-center bg-white/[0.03] border border-white/5 rounded-lg px-2.5 py-1.5 z-50">
+                              <Search size={14} className="text-white/30 shrink-0 mr-2" />
+                              <input
+                                type="text"
+                                value={catSearch}
+                                onChange={(e) => setCatSearch(e.target.value)}
+                                placeholder="Search categories..."
+                                className="w-full text-xs bg-transparent border-0 text-white outline-none placeholder-white/20"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              {catSearch && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setCatSearch(''); }}
+                                  className="text-xs text-white/40 hover:text-white"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="space-y-0.5 z-50 relative">
+                              {(() => {
+                                const list = globalCats.filter(c => c.visible && c.name.toLowerCase().includes(catSearch.toLowerCase()));
+                                if (list.length === 0) {
+                                  return (
+                                    <div className="text-[11px] text-white/30 text-center py-4">
+                                      No categories found
+                                    </div>
+                                  );
+                                }
+                                return list.map((cat) => {
+                                  const isSelected = selectedCategory === cat.name;
+                                  return (
+                                    <button
+                                      key={`cat-opt-${cat.id}`}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedCategory(cat.name);
+                                        setDropdownOpen(false);
+                                        setCatSearch('');
+                                      }}
+                                      className={`w-full flex items-center justify-between text-xs font-bold px-3 py-2.5 rounded-lg cursor-pointer transition-all text-left ${
+                                        isSelected
+                                          ? 'bg-[#c8ff00]/10 text-[#c8ff00]'
+                                          : 'text-white/60 hover:bg-white/[0.03] hover:text-white'
+                                      }`}
+                                    >
+                                      <span>{cat.name}</span>
+                                      {isSelected && <Check size={14} className="text-[#c8ff00]" />}
+                                    </button>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

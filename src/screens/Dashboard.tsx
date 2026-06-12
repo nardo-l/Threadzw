@@ -18,6 +18,7 @@ import { ShopLogo, ShopBanner, ProductImage, resolveImageUrl } from '../componen
 import { BetaBanner } from '../components/ui/BetaBanner';
 import { getShopStatus, parseDate } from '../utils/shopStatus';
 import { ShopFrontOnboarding } from '../components/dashboard/ShopFrontOnboarding';
+import { getShopUrl, getAbsoluteShopUrl } from '../utils/shopUrl';
 
 // Official WhatsApp SVG icon component
 const WhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => (
@@ -67,7 +68,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
   const [editingCategory, setEditingCategory] = useState<any | null>(null);
   const [catNameInput, setCatNameInput] = useState('');
   const [catImageInput, setCatImageInput] = useState('');
-  const [activeDashboardTab, setActiveDashboardTab] = useState<'products' | 'categories' | 'demands'>('products');
+  const [activeDashboardTab, setActiveDashboardTab] = useState<'products' | 'categories' | 'demands' | 'storefront'>('products');
+  const [storefrontPreviewSize, setStorefrontPreviewSize] = useState<'mobile' | 'full'>('mobile');
 
   const [claims, setClaims] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1100,13 +1102,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               fontWeight: 700,
               fontFamily: 'monospace'
             }}>
-              threadzw.vercel.app/shop/{shop.slug || shop.handle}
+              threadzw.vercel.app/shop/{shop.slug || shop.handle || 'undefined'}
             </p>
           </div>
           
           <button
             onClick={() => {
-              const shopLink = `https://threadzw.vercel.app/shop/${shop.slug || shop.handle}`;
+              const activeSlug = shop.slug || shop.handle;
+              if (!activeSlug) {
+                console.error("[DASHBOARD ROUTING] Cannot copy link: both slug and handle are missing", shop);
+                toast.error("Shop slug is missing! Please configure a handle in settings first.");
+                return;
+              }
+              const shopLink = getAbsoluteShopUrl(activeSlug);
+              console.log("[DASHBOARD ROUTING] Copying absolute shop URL to clipboard:", shopLink);
               navigator.clipboard.writeText(shopLink);
               toast.success('Link copied!');
             }}
@@ -1126,29 +1135,68 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         </div>
 
         <div className="mt-3 flex flex-col sm:flex-row gap-3">
-          <Button variant="secondary" fullWidth className="h-11 text-[13px]" onClick={() => window.open(`/shop/${shop.slug || shop.handle}`, '_blank')}>
+          <Button 
+            variant="secondary" 
+            fullWidth 
+            className="h-11 text-[13px]" 
+            onClick={() => {
+              const activeSlug = shop.slug || shop.handle;
+              if (!activeSlug) {
+                console.error("[DASHBOARD ROUTING] Cannot navigate: slug and handle are missing in shop object", shop);
+                toast.error("Broken navigation: Shop slug is missing! Set your handle in settings.");
+                return;
+              }
+              const path = getShopUrl(activeSlug);
+              console.log("[DASHBOARD ROUTING] Navigating instantly to live storefront relative path:", path);
+              navigate(path);
+            }}
+          >
             <Eye size={14} className="mr-2" /> View Shop
           </Button>
-          <Button variant="secondary" fullWidth className="h-11 text-[13px]" onClick={() => {
-            const shopLink = `https://threadzw.vercel.app/shop/${shop.slug || shop.handle}`;
-            if (navigator.share) {
-              navigator.share({
-                title: shop.name || 'My Shop',
-                text: `Check out ${shop.name || 'My Shop'} on ThreadZW`,
-                url: shopLink
-              }).catch(() => {});
-            } else {
-              navigator.clipboard.writeText(shopLink);
-              toast.success('Link copied ✓');
-            }
-          }}>
+          <Button 
+            variant="secondary" 
+            fullWidth 
+            className="h-11 text-[13px]" 
+            onClick={() => {
+              const activeSlug = shop.slug || shop.handle;
+              if (!activeSlug) {
+                console.error("[DASHBOARD ROUTING] Cannot share: slug and handle are missing", shop);
+                toast.error("Cannot share link - Shop slug/handle is missing!");
+                return;
+              }
+              const shopLink = getAbsoluteShopUrl(activeSlug);
+              console.log("[DASHBOARD ROUTING] Initiating share for shop URL:", shopLink);
+              if (navigator.share) {
+                navigator.share({
+                  title: shop.name || 'My Shop',
+                  text: `Check out ${shop.name || 'My Shop'} on ThreadZW`,
+                  url: shopLink
+                }).catch(() => {});
+              } else {
+                navigator.clipboard.writeText(shopLink);
+                toast.success('Link copied ✓');
+              }
+            }}
+          >
             <Share2 size={14} className="mr-2" /> Share My Shop
           </Button>
-          <Button variant="secondary" fullWidth className="h-11 text-[13px] flex items-center justify-center gap-2" onClick={() => {
-            const shopLink = `https://threadzw.vercel.app/shop/${shop.slug || shop.handle}`;
-            const shareMessage = `Check out my shop on ThreadZW!\n\n${shopLink}`;
-            window.open('https://wa.me/?text=' + encodeURIComponent(shareMessage), '_blank');
-          }}>
+          <Button 
+            variant="secondary" 
+            fullWidth 
+            className="h-11 text-[13px] flex items-center justify-center gap-2" 
+            onClick={() => {
+              const activeSlug = shop.slug || shop.handle;
+              if (!activeSlug) {
+                console.error("[DASHBOARD ROUTING] WhatsApp share aborted: slug/handle missing", shop);
+                toast.error("Cannot share on WhatsApp - Shop slug/handle is missing!");
+                return;
+              }
+              const shopLink = getAbsoluteShopUrl(activeSlug);
+              console.log("[DASHBOARD ROUTING] Initiating WhatsApp share for:", shopLink);
+              const shareMessage = `Check out my shop on ThreadZW!\n\n${shopLink}`;
+              window.open('https://wa.me/?text=' + encodeURIComponent(shareMessage), '_blank');
+            }}
+          >
             <WhatsAppIcon size={16} className="text-[#25D366] shrink-0" /> Share WhatsApp
           </Button>
         </div>
@@ -1219,10 +1267,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
       <div className="mt-10 px-5">
         
         {/* Tab Headers */}
-        <div className="flex border-b border-white/5 mb-6">
+        <div className="flex border-b border-white/5 mb-6 overflow-x-auto scrollbar-none whitespace-nowrap">
           <button 
             onClick={() => setActiveDashboardTab('products')}
-            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors ${
+            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors px-2 ${
               activeDashboardTab === 'products' ? 'text-[#c8ff00] border-b-2 border-[#c8ff00]' : 'text-zinc-500 hover:text-white'
             }`}
           >
@@ -1231,7 +1279,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
           
           <button 
             onClick={() => setActiveDashboardTab('categories')}
-            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors ${
+            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors px-2 ${
               activeDashboardTab === 'categories' ? 'text-[#c8ff00] border-b-2 border-[#c8ff00]' : 'text-zinc-500 hover:text-white'
             }`}
           >
@@ -1240,11 +1288,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
           
           <button 
             onClick={() => setActiveDashboardTab('demands')}
-            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors ${
+            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors px-2 ${
               activeDashboardTab === 'demands' ? 'text-[#c8ff00] border-b-2 border-[#c8ff00]' : 'text-zinc-500 hover:text-white'
             }`}
           >
             Requests ({demandRequests.length})
+          </button>
+
+          <button 
+            onClick={() => setActiveDashboardTab('storefront')}
+            className={`flex-1 pb-3 text-center text-xs font-black uppercase tracking-wider transition-colors px-3 flex items-center justify-center gap-1.5 ${
+              activeDashboardTab === 'storefront' ? 'text-[#c8ff00] border-b-2 border-[#c8ff00]' : 'text-zinc-500 hover:text-white'
+            }`}
+          >
+            <span>Live Storefront 🏡</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#c8ff00] animate-pulse" />
           </button>
         </div>
 
@@ -1489,6 +1547,128 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Tab Contents: Live Storefront */}
+        {activeDashboardTab === 'storefront' && (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <dt className="text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-widest">
+                  Storefront Navigation
+                </dt>
+                <dd className="font-extrabold text-white text-[17px] tracking-tight mt-0.5 flex items-center gap-2">
+                  <span>🏪 My Live Boutique</span>
+                  <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-mono tracking-widest uppercase font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-ping" />
+                    Interactive Simulator
+                  </span>
+                </dd>
+                <p className="text-secondary-text text-xs mt-1.5 leading-relaxed">
+                  Browse products, place orders, and test checkout directly in the dashboard exactly like a buyer.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="secondary"
+                  size="sm"
+                  className="px-3 text-[11px] h-8 font-black uppercase tracking-wider"
+                  onClick={() => {
+                    const iframe = document.getElementById('storefront-iframe') as HTMLIFrameElement;
+                    if (iframe) {
+                      iframe.src = iframe.src; // Force reload
+                      toast.success('Boutique simulator synced!');
+                    }
+                  }}
+                >
+                  Sync Sim
+                </Button>
+                <Button 
+                  variant="secondary"
+                  size="sm"
+                  className="px-3 text-[11px] h-8 font-black uppercase tracking-wider"
+                  onClick={() => {
+                    const activeSlug = shop.slug || shop.handle;
+                    if (!activeSlug) {
+                      console.error("[SIMULATOR] Cannot open in new tab: shop slug/handle missing", shop);
+                      toast.error("Shop slug/handle is missing!");
+                      return;
+                    }
+                    const url = getShopUrl(activeSlug);
+                    console.log("[SIMULATOR] Opening shop in new tab:", url);
+                    window.open(url, '_blank');
+                  }}
+                >
+                  New Tab &rarr;
+                </Button>
+              </div>
+            </div>
+
+            {/* Smartphone Viewpoint Simulator */}
+            <div className="flex flex-col items-center justify-center py-5 bg-card-bg border border-border rounded-2xl">
+              
+              {/* Size selector buttons */}
+              <div className="flex items-center gap-1.5 mb-5 bg-[#121214] p-1 rounded-xl border border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setStorefrontPreviewSize('mobile')}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
+                    storefrontPreviewSize === 'mobile' 
+                      ? 'bg-[#c8ff00] text-black shadow-sm' 
+                      : 'text-zinc-500 hover:text-white'
+                  }`}
+                >
+                  📱 Mobile Layout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStorefrontPreviewSize('full')}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-lg transition-all ${
+                    storefrontPreviewSize === 'full' 
+                      ? 'bg-[#c8ff00] text-black shadow-sm' 
+                      : 'text-zinc-500 hover:text-white'
+                  }`}
+                >
+                  🖥️ Full Canvas
+                </button>
+              </div>
+
+              {/* Viewport content */}
+              <div className="w-full px-2 sm:px-4 flex justify-center">
+                <div 
+                  className={`transition-all duration-300 w-full relative ${
+                    storefrontPreviewSize === 'mobile' 
+                      ? 'max-w-[375px] h-[640px] rounded-[42px] border-[12px] border-zinc-800 shadow-2xl bg-black overflow-hidden relative' 
+                      : 'max-w-2xl h-[560px] rounded-xl border border-white/5 shadow-xl bg-black overflow-hidden'
+                  }`}
+                >
+                  {/* Smartphone Notch */}
+                  {storefrontPreviewSize === 'mobile' && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-zinc-800 rounded-b-2xl z-20 flex items-center justify-center">
+                      <div className="w-10 h-1 bg-black/40 rounded-full mb-1" />
+                    </div>
+                  )}
+
+                  {/* Absolute positioning of iframe */}
+                  <iframe 
+                    id="storefront-iframe"
+                    src={getShopUrl(shop.slug || shop.handle) || "/demo"} 
+                    className="w-full h-full border-0 bg-black"
+                    title={`${shop.name} Storefront Preview`}
+                    allow="clipboard-write"
+                  />
+                </div>
+              </div>
+
+              {/* Status footer for the preview */}
+              <div className="mt-4 text-center text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest flex items-center justify-center gap-1.5 select-none">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#c8ff00] animate-pulse" />
+                Live sandbox {getShopUrl(shop.slug || shop.handle) || "/demo"}
+              </div>
+
+            </div>
           </div>
         )}
 

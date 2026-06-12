@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { getShopUrl } from '../utils/shopUrl';
 import { 
   User, Mail, Calendar, Key, Shield, HelpCircle, 
   ChevronRight, ArrowLeft, LogOut, Globe, Settings, MapPin, Tag 
@@ -138,15 +139,17 @@ export const Profile: React.FC = () => {
 
             <div className="p-4 flex justify-between items-center text-sm">
               <span className="text-zinc-500 font-bold">Storefront Link</span>
-              <a 
-                href={`https://threadzw.store/shop/${shop?.slug || shop?.handle}`} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="text-[#c8ff00] text-xs font-mono font-bold flex items-center gap-1 hover:underline"
-              >
-                <Globe size={13} />
-                /{shop?.slug || shop?.handle || 'demo'}
-              </a>
+              {shop?.slug || shop?.handle ? (
+                <Link 
+                  to={getShopUrl(shop.slug || shop.handle)} 
+                  className="text-[#c8ff00] text-xs font-mono font-bold flex items-center gap-1 hover:underline"
+                >
+                  <Globe size={13} />
+                  /{shop.slug || shop.handle}
+                </Link>
+              ) : (
+                <span className="text-zinc-500 text-xs font-mono">No active shop handle</span>
+              )}
             </div>
 
           </div>

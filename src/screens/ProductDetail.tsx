@@ -9,6 +9,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { resolveImageUrl, ShopLogo } from '../components/ui/ShopImage';
+import { getShopUrl } from '../utils/shopUrl';
 
 interface SizeVariant {
   size: string;
@@ -296,7 +297,17 @@ export const ProductDetail: React.FC = () => {
 
             {/* View store brand */}
             <div 
-              onClick={() => navigate(`/shop/${shop.handle}`)} 
+              onClick={() => {
+                const activeSlug = (shop as any).slug || shop.handle;
+                const path = getShopUrl(activeSlug);
+                console.log("[PRODUCT DETAIL ROUTING] Brand line click: navigating to store path:", path);
+                if (path) {
+                  navigate(path);
+                } else {
+                  console.warn("[PRODUCT DETAIL ROUTING] Broken link prevented: slug/handle missing on", shop);
+                  toast.error("Unable to load store storefront!");
+                }
+              }} 
               className="flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-white cursor-pointer select-none"
             >
               <span className="lowercase font-bold">@{shop.handle}</span>
@@ -390,7 +401,17 @@ export const ProductDetail: React.FC = () => {
 
           {/* Brand profile link block card */}
           <div 
-            onClick={() => navigate(`/shop/${shop.handle}`)}
+            onClick={() => {
+              const activeSlug = (shop as any).slug || shop.handle;
+              const path = getShopUrl(activeSlug);
+              console.log("[PRODUCT DETAIL ROUTING] Brand card click: navigating to store path:", path);
+              if (path) {
+                navigate(path);
+              } else {
+                console.warn("[PRODUCT DETAIL ROUTING] Broken link prevented: slug/handle missing on", shop);
+                toast.error("Unable to load store storefront!");
+              }
+            }}
             className="p-5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 rounded-[28px] flex items-center justify-between group cursor-pointer transition-all duration-300"
           >
             <div className="flex items-center gap-3.5">

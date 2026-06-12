@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { toast } from 'sonner';
+import { getShopUrl } from '../utils/shopUrl';
 
 import { Avatar } from '../components/Avatar';
 
@@ -630,7 +631,15 @@ const StoryItem = memo(({ item, viewedStories, onView }: { item: any; viewedStor
           setStoriesViewerOpen(true, item.id);
           if (!isViewed) onView(item.id);
         } else {
-          navigate(`/shop/${item.id}`);
+          const activeSlug = item.slug || item.handle || item.id;
+          const path = getShopUrl(activeSlug);
+          console.log("[HOME FEED SYSTEM] Circle click, navigating to:", path);
+          if (path) {
+            navigate(path);
+          } else {
+            console.warn("[HOME FEED SYSTEM] Broken link prevented: slug/handle/id missing on", item);
+            toast.error("Unable to load store storefront!");
+          }
         }
       }}
       className="flex flex-col items-center gap-3 flex-shrink-0 group"
@@ -700,7 +709,17 @@ const ShopCard = memo(({ shop, onFollow, formatFollowers }: { shop: any; onFollo
 
   return (
     <div 
-      onClick={() => navigate(`/shop/${shop.id}`)}
+      onClick={() => {
+        const activeSlug = shop.slug || shop.handle || shop.id;
+        const path = getShopUrl(activeSlug);
+        console.log("[HOME FEED SYSTEM] ShopCard clicked, navigating to storefront path:", path);
+        if (path) {
+          navigate(path);
+        } else {
+          console.warn("[HOME FEED SYSTEM] Broken link prevented: slug/handle/id missing on highlighted shop", shop);
+          toast.error("Unable to load store storefront!");
+        }
+      }}
       className="w-[200px] flex-shrink-0 border border-white/5 rounded-[32px] p-6 flex flex-col items-center text-center gap-4 cursor-pointer transition-all hover:bg-white/5 bg-card shadow-heavy group"
     >
       <div className="relative p-1.5 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent">

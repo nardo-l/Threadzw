@@ -36,7 +36,7 @@ export const AccountUnavailable: React.FC<AccountUnavailableProps> = ({ variant 
         <button 
           onClick={() => {
             localStorage.clear();
-            window.location.href = '/auth?mode=signin';
+            navigate('/auth?mode=signin');
           }}
           className="text-xs font-mono text-white/60 uppercase tracking-widest hover:text-white transition-colors"
         >

@@ -1,7 +1,7 @@
 // src/screens/PublicShopPage.tsx
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { parseShopConfig } from '../utils/configHelper';
 import { useToast } from '../context/ToastContext';
@@ -51,6 +51,7 @@ interface CartItem {
 
 export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
   const { shopSlug } = useParams<{ shopSlug?: string }>();
+  const navigate = useNavigate();
   const currentSlug = shopSlug || handle || '';
   const { showToast } = useToast();
 
@@ -358,7 +359,7 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
         <h1 className="text-xl font-bold uppercase tracking-wide mb-2">Shop Not Found</h1>
         <p className="text-zinc-500 text-xs mb-6 max-w-xs leading-relaxed">We could not pull details for this store. Check your web handle coordinates and try once more.</p>
         <button 
-          onClick={() => window.location.href = '/'}
+          onClick={() => navigate('/')}
           className="px-6 py-2 bg-white text-black font-semibold text-xs tracking-wider uppercase hover:bg-zinc-200 transition-all rounded-none"
         >
           Return Home

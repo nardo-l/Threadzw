@@ -10,6 +10,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useInventory } from '../context/InventoryContext';
 import { MOCK_SHOPS } from '../data/mockData';
+import { getShopUrl } from '../utils/shopUrl';
 
 export const Following: React.FC = () => {
   const navigate = useNavigate();
@@ -73,7 +74,16 @@ export const Following: React.FC = () => {
           <div 
             key={shop.id}
             className="bg-card p-4 rounded-card border border-white/5 flex items-center gap-4 group active:scale-[0.98] transition-all"
-            onClick={() => navigate(`/shop/${shop.id}`)}
+            onClick={() => {
+              const activeSlug = (shop as any).handle || (shop as any).slug || shop.id;
+              const path = getShopUrl(activeSlug);
+              console.log("[FOLLOWING ROUTING] Following shop click: navigating to store path:", path);
+              if (path) {
+                navigate(path);
+              } else {
+                console.warn("[FOLLOWING ROUTING] Broken link prevented: slug/handle missing on", shop);
+              }
+            }}
           >
             <div className="relative">
               <div className="w-16 h-16 rounded-2xl bg-elevated flex items-center justify-center text-3xl border border-white/10 relative overflow-hidden">

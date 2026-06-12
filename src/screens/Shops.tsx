@@ -6,6 +6,7 @@ import { useShops } from '../hooks/useShops';
 import { ShopCardShimmer } from '../components/ui/Shimmer';
 import { ScreenError } from '../components/ui/ScreenError';
 import { EmptyState } from '../components/ui/EmptyState';
+import { getShopUrl } from '../utils/shopUrl';
 
 import { Avatar } from '../components/Avatar';
 
@@ -95,7 +96,21 @@ export const Shops: React.FC = () => {
             <h3 className="text-lg font-syne font-bold px-2 text-white">Shops Near You</h3>
             <div className="flex flex-col gap-4">
               {shops.slice(0, 3).map(shop => (
-                <ShopCard key={shop.id} shop={shop} onClick={() => navigate(`/shop/${shop.handle}`)} />
+                <ShopCard 
+                  key={shop.id} 
+                  shop={shop} 
+                  onClick={() => {
+                    const activeSlug = shop.slug || shop.handle;
+                    const path = getShopUrl(activeSlug);
+                    console.log("[SHOPS ROUTING] Clicked ShopCard, navigating to:", path);
+                    if (path) {
+                      navigate(path);
+                    } else {
+                      console.warn("[SHOPS ROUTING] Broken link prevented: slug/handle missing", shop);
+                      toast.error("Unable to load store storefront!");
+                    }
+                  }} 
+                />
               ))}
             </div>
           </section>
@@ -107,7 +122,20 @@ export const Shops: React.FC = () => {
               <div className="flex flex-col gap-4">
                 {newShops.map(shop => (
                   <div key={shop.id} className="relative">
-                    <ShopCard shop={shop} onClick={() => navigate(`/shop/${shop.handle}`)} />
+                    <ShopCard 
+                      shop={shop} 
+                      onClick={() => {
+                        const activeSlug = shop.slug || shop.handle;
+                        const path = getShopUrl(activeSlug);
+                        console.log("[SHOPS ROUTING] Clicked New ShopCard, navigating to:", path);
+                        if (path) {
+                          navigate(path);
+                        } else {
+                          console.warn("[SHOPS ROUTING] Broken link prevented: slug/handle missing on new shop", shop);
+                          toast.error("Unable to load store storefront!");
+                        }
+                      }} 
+                    />
                     <span className="absolute -top-2 -right-2 text-black text-[8px] font-mono font-black px-2 py-1 rounded-pill shadow-lg uppercase tracking-widest bg-[#f59e0b]">NEW</span>
                   </div>
                 ))}
