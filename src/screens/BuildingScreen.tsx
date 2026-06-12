@@ -69,9 +69,14 @@ export const BuildingScreen: React.FC<BuildingScreenProps> = ({
       
       {/* WORDMARK TOP CENTER */}
       <div className="pt-12 text-center">
-        <span className="threadzw-wordmark text-[#c8ff00] text-3xl tracking-tighter uppercase inline-block">
-          ThreadZW
-        </span>
+        <div className="flex justify-center mb-1">
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            className="h-10 w-auto object-contain" 
+          />
+        </div>
       </div>
 
       {/* LARGE ANIMATED ICON CENTER SCREEN & CHECKLIST */}

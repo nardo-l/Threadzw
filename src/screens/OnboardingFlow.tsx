@@ -553,18 +553,24 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             <ArrowLeft className="w-5 h-5" />
           </button>
           
-          <span className="threadzw-wordmark text-[#c8ff00] font-black uppercase text-base tracking-tighter">
-            ThreadZW
-          </span>
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            className="h-6 w-auto object-contain" 
+          />
           <div className="w-10 h-10" />
         </div>
       )}
 
       {screen === 1 && (
         <div className="h-14 flex items-center justify-center pt-5">
-          <span className="threadzw-wordmark text-[#c8ff00] font-black uppercase text-xl tracking-tighter">
-            ThreadZW
-          </span>
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            className="h-7 w-auto object-contain" 
+          />
         </div>
       )}
 
@@ -1883,9 +1889,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 26 && (
               <div className="flex-1 flex flex-col justify-between fixed inset-0 bg-[#0a0a0a] z-50 text-center select-none overflow-hidden pb-8 pt-8 px-6 font-sans">
                 {/* WORDMARK */}
-                <span className="threadzw-wordmark text-[#c8ff00] font-black uppercase tracking-widest text-2xl pt-8">
-                  ThreadZW
-                </span>
+                <div className="flex justify-center pt-8">
+                  <img 
+                    src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+                    alt="ThreadZW Logo" 
+                    referrerPolicy="no-referrer"
+                    className="h-8 w-auto object-contain" 
+                  />
+                </div>
 
                 {/* ANIMATED BIG SPINNER */}
                 <div className="flex-1 flex flex-col items-center justify-center space-y-12 shrink-0">

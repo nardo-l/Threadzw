@@ -35,14 +35,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
         justifyContent: 'space-between',
         zIndex: 100
       }}>
-        <span style={{
-          fontSize: 20,
-          fontWeight: 900,
-          color: '#ffffff',
-          letterSpacing: '-0.5px'
-        }}>
-          ThreadZW
-        </span>
+        <div 
+          onClick={() => navigate('/')} 
+          style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+        >
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            style={{ height: '24px', width: 'auto', objectFit: 'contain' }} 
+          />
+        </div>
         <div style={{
           display: 'flex',
           gap: 8,
@@ -768,14 +771,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree, onLoginSu
         padding: '20px 24px 40px',
         textAlign: 'center'
       }}>
-        <p style={{
-          fontSize: 16,
-          fontWeight: 900,
-          color: '#ffffff',
-          margin: '0 0 4px'
-        }}>
-          ThreadZW
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            style={{ height: '20px', width: 'auto', objectFit: 'contain' }} 
+          />
+        </div>
         <p style={{
           fontSize: 12,
           color: 'rgba(255, 255, 255, 0.3)',

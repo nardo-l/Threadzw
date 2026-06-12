@@ -12,9 +12,14 @@ export const SplashScreen: React.FC = () => {
 
       <div className="flex flex-col items-center justify-center">
         {/* Brand Display Header */}
-        <h1 className="threadzw-wordmark text-[28px]">
-          ThreadZW
-        </h1>
+        <div className="flex justify-center mb-4">
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            className="h-9 w-auto object-contain" 
+          />
+        </div>
 
         {/* Circular Indicator spinner */}
         <div 

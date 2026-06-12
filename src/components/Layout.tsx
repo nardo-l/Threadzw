@@ -40,10 +40,12 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           onClick={() => navigate('/')}
           className="mb-12 cursor-pointer flex items-center gap-2 group"
         >
-          <div className="w-8 h-8 bg-[#C6FF00] rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
-            <span className="text-black font-black text-lg italic">T</span>
-          </div>
-          <h1 className="text-xl font-black uppercase italic tracking-tighter">thread<span className="text-[#C6FF00]">ZW</span></h1>
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            className="h-9 w-auto object-contain transition-transform group-hover:scale-105" 
+          />
         </div>
 
         <nav className="flex flex-col gap-1.5">
@@ -82,11 +84,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header */}
         <header className="lg:hidden flex items-center justify-between px-6 h-20 sticky top-0 z-[60] bg-[#0B0B0B]/80 backdrop-blur-xl border-b border-white/5">
-          <div className="flex items-center gap-2" onClick={() => navigate('/')}>
-             <div className="w-7 h-7 bg-[#C6FF00] rounded-lg flex items-center justify-center">
-              <span className="text-black font-black text-sm italic">T</span>
-            </div>
-            <h1 className="text-[18px] font-black uppercase italic tracking-tighter">thread<span className="text-[#C6FF00]">ZW</span></h1>
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <img 
+              src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+              alt="ThreadZW Logo" 
+              referrerPolicy="no-referrer"
+              className="h-8 w-auto object-contain" 
+            />
           </div>
           
           <div className="flex items-center gap-4">

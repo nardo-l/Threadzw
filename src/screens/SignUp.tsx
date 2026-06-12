@@ -33,15 +33,14 @@ export const SignUp: React.FC = () => {
       color: '#ffffff'
     }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <h1 style={{
-          fontSize: 36,
-          fontWeight: 900,
-          color: '#ffffff',
-          letterSpacing: '-1.5px',
-          margin: '0 0 8px'
-        }}>
-          ThreadZW
-        </h1>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <img 
+            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
+            alt="ThreadZW Logo" 
+            referrerPolicy="no-referrer"
+            style={{ height: '36px', width: 'auto', objectFit: 'contain' }} 
+          />
+        </div>
         <p style={{
           fontSize: 14,
           color: '#a1a1aa',
