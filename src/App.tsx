@@ -1,7 +1,7 @@
 // src/App.tsx
 
 import { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { OnboardingFlow } from './screens/OnboardingFlow';
 import { BuildingScreen } from './screens/BuildingScreen';
@@ -80,6 +80,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const cleanPath = location.pathname.toLowerCase().replace(/\/$/, '');
   
   const initialData = getInitialStageAndParams(location.pathname);
@@ -92,11 +93,11 @@ function AppContent() {
     appStageRef.current = stage;
     setAppStageState(stage);
     // Synced path push
-    if (stage === 'landing') window.history.pushState({}, '', '/');
-    else if (stage === 'building') window.history.pushState({}, '', '/building');
-    else if (stage === 'dashboard') window.history.pushState({}, '', '/dashboard');
-    else if (stage === 'admin') window.history.pushState({}, '', '/admin');
-    else if (stage === 'setup') window.history.pushState({}, '', '/setup');
+    if (stage === 'landing') navigate('/');
+    else if (stage === 'building') navigate('/building');
+    else if (stage === 'dashboard') navigate('/dashboard');
+    else if (stage === 'admin') navigate('/admin');
+    else if (stage === 'setup') navigate('/setup');
   };
 
   const { session, loading } = useAuth();

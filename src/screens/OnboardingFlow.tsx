@@ -504,20 +504,31 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     }
   };
 
-  const handleFinishPaywall = async () => {
+  const handleFinishPaywall = () => {
     try {
       localStorage.setItem('threadzw_onboarding_complete', 'true');
       localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
       localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
       
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user?.id) {
-        await supabase.from('profiles').update({
-          onboarding_complete: true // Mark as finished to prevent duplicate layouts
-        }).eq('id', session.user.id);
-      }
+      // Perform session retrieval and profile status update in the background
+      supabase.auth.getSession().then(({ data }) => {
+        const sessionResult = data?.session;
+        if (sessionResult?.user?.id) {
+          (async () => {
+            try {
+              await supabase.from('profiles').update({
+                onboarding_complete: true
+              }).eq('id', sessionResult.user.id);
+            } catch (err) {
+              console.warn("Background onboarding_complete update failed:", err);
+            }
+          })();
+        }
+      }).catch(err => {
+        console.warn("Background auth session retrieval failed:", err);
+      });
     } catch (e) {
-      console.error(e);
+      console.error("Local storage onboarding completion flag setting failed:", e);
     } finally {
       setAppStage('dashboard');
     }
