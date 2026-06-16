@@ -350,9 +350,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       toast.error('This shop handle username is already taken.');
       return;
     }
-    if (!email.includes('@') || !email.includes('.')) {
-      toast.error('Enter a valid email address.');
-      return;
+    const isEmail = email.includes('@');
+    if (isEmail) {
+      if (!email.includes('.')) {
+        toast.error('Enter a valid email address.');
+        return;
+      }
+    } else {
+      const cleanEmailUsername = email.trim().replace(/[^a-zA-Z0-9_-]/g, '');
+      if (cleanEmailUsername.length < 3) {
+        toast.error('Enter a valid username (at least 3 characters).');
+        return;
+      }
     }
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters.');
@@ -1792,12 +1801,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                     {/* Email address */}
                     <div className="text-left">
-                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-bold block mb-1">Email address</label>
+                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-bold block mb-1">Email address or Username</label>
                       <input 
-                        type="email"
+                        type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@example.com"
+                        placeholder="Username or Email address"
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
                       />
                     </div>

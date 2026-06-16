@@ -239,15 +239,15 @@ export const Auth: React.FC = () => {
                 </AnimatePresence>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500 ml-1">Routing Address</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500 ml-1">Routing Address or Username</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-500" />
                     <input
-                      type="email"
+                      type="text"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@node.com"
+                      placeholder="Username or email address"
                       className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
                     />
                   </div>

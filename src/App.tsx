@@ -171,37 +171,21 @@ function AppContent() {
   }
 
   // Handle public routes unconditionally to prevent any auth lag or state conflicts
-  const isDemoUrl = cleanPath === '/demo' || cleanPath === '/shop/demo' || cleanPath === '/store/demo' || cleanPath.endsWith('/demo');
+  const isPublicShopPath = cleanPath === '/demo' || cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/');
 
-  if (isDemoUrl) {
+  if (isPublicShopPath) {
     return (
       <Routes>
         <Route path="/demo" element={<StorefrontPage />} />
         <Route path="/shop/:slug" element={<StorefrontPage />} />
         <Route path="/shop/:slug/products" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/product" element={<StorefrontPage />} />
         <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/about" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
         <Route path="/store/:slug/products" element={<StorefrontPage />} />
-        <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/store/:slug/about" element={<StorefrontPage />} />
-        <Route path="*" element={<StorefrontPage />} />
-      </Routes>
-    );
-  }
-
-  if (cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/')) {
-    return (
-      <Routes>
-        <Route path="/shop/:slug" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/products" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/about" element={<StorefrontPage />} />
-        <Route path="/store/:slug" element={<StorefrontPage />} />
-        <Route path="/store/:slug/products" element={<StorefrontPage />} />
+        <Route path="/store/:slug/product" element={<StorefrontPage />} />
         <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/store/:slug/about" element={<StorefrontPage />} />
@@ -219,11 +203,13 @@ function AppContent() {
       <Routes>
         <Route path="/shop/:slug" element={<StorefrontPage />} />
         <Route path="/shop/:slug/products" element={<StorefrontPage />} />
+        <Route path="/shop/:slug/product" element={<StorefrontPage />} />
         <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/about" element={<StorefrontPage />} />
         <Route path="/store/:slug" element={<StorefrontPage />} />
         <Route path="/store/:slug/products" element={<StorefrontPage />} />
+        <Route path="/store/:slug/product" element={<StorefrontPage />} />
         <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/store/:slug/about" element={<StorefrontPage />} />

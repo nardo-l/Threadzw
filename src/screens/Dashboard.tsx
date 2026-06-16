@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Settings, ShoppingBag, Eye, Plus, 
-  ArrowUpRight, Share2, Clock, CheckCircle2, 
+  ArrowUpRight, Share2, Clock, CheckCircle2, Copy,
   AlertTriangle, ChevronRight, ChevronLeft, Pencil, Zap, Image as ImageIcon,
   MoreVertical, Home, Package, BarChart3, Gift, DollarSign,
   ArrowLeft, Trash2, Edit, EyeOff, Check
@@ -201,8 +201,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
         // If the shop only existed locally or in-memory, let's auto-upsert / persist it directly to the cloud database
         if (isDbSyncNeeded && shopData) {
           try {
-            if (!shopData.slug) {
+            if (!shopData.slug || shopData.slug === 'undefined') {
               shopData.slug = (shopData.handle || shopData.name || 'brand').toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (!shopData.slug || shopData.slug === 'undefined') {
+                shopData.slug = 'brand_' + Math.random().toString(36).substring(2, 6);
+              }
+            }
+            if (!shopData.handle || shopData.handle === 'undefined') {
+              shopData.handle = shopData.slug;
             }
             if (!shopData.trial_ends_at) {
               const trialEnds = new Date(Date.now() + 120 * 24 * 60 * 60 * 1000);
@@ -233,8 +239,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                 setup_completed_at: shopData.setup_completed_at || new Date().toISOString()
               });
             console.log("[DASHBOARD SYNC] Automatically synchronized and persisted missing shop to database!");
+            
+            // Sync with global shop context immediately
+            try {
+              await refreshShop();
+            } catch (refErr) {
+              console.warn("Could not reload global shop context after local dashboard sync:", refErr);
+            }
           } catch (syncErr) {
             console.warn("[DASHBOARD SYNC] Failed to silently sync shop to DB:", syncErr);
+          }
+        } else if (shopData) {
+          // If the shop was loaded from DB but contains undefined/missing slug or handle, update it
+          let needsUpdate = false;
+          if (!shopData.slug || shopData.slug === 'undefined') {
+            shopData.slug = (shopData.handle || shopData.name || 'brand').toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!shopData.slug || shopData.slug === 'undefined') {
+              shopData.slug = 'brand_' + Math.random().toString(36).substring(2, 6);
+            }
+            needsUpdate = true;
+          }
+          if (!shopData.handle || shopData.handle === 'undefined') {
+            shopData.handle = shopData.slug;
+            needsUpdate = true;
+          }
+          
+          if (needsUpdate) {
+            try {
+              await supabase
+                .from('shops')
+                .update({ slug: shopData.slug, handle: shopData.handle })
+                .eq('id', shopData.id);
+              localStorage.setItem(`shop_${session.user.id}`, JSON.stringify(shopData));
+              await refreshShop();
+            } catch (updErr) {
+              console.warn("Failed to update shop's empty slug/handle:", updErr);
+            }
           }
         }
         
@@ -1102,13 +1142,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               fontWeight: 700,
               fontFamily: 'monospace'
             }}>
-              threadzw.vercel.app/shop/{shop.slug || shop.handle || 'undefined'}
+              threadzw.vercel.app/shop/{shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand')}
             </p>
           </div>
           
           <button
             onClick={() => {
-              const activeSlug = shop.slug || shop.handle;
+              const activeSlug = shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand');
               if (!activeSlug) {
                 console.error("[DASHBOARD ROUTING] Cannot copy link: both slug and handle are missing", shop);
                 toast.error("Shop slug is missing! Please configure a handle in settings first.");
@@ -1140,7 +1180,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             fullWidth 
             className="h-11 text-[13px]" 
             onClick={() => {
-              const activeSlug = shop.slug || shop.handle;
+              const activeSlug = shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand');
               if (!activeSlug) {
                 console.error("[DASHBOARD ROUTING] Cannot navigate: slug and handle are missing in shop object", shop);
                 toast.error("Broken navigation: Shop slug is missing! Set your handle in settings.");
@@ -1158,7 +1198,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             fullWidth 
             className="h-11 text-[13px]" 
             onClick={() => {
-              const activeSlug = shop.slug || shop.handle;
+              const activeSlug = shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand');
               if (!activeSlug) {
                 console.error("[DASHBOARD ROUTING] Cannot share: slug and handle are missing", shop);
                 toast.error("Cannot share link - Shop slug/handle is missing!");
@@ -1185,7 +1225,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
             fullWidth 
             className="h-11 text-[13px] flex items-center justify-center gap-2" 
             onClick={() => {
-              const activeSlug = shop.slug || shop.handle;
+              const activeSlug = shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand');
               if (!activeSlug) {
                 console.error("[DASHBOARD ROUTING] WhatsApp share aborted: slug/handle missing", shop);
                 toast.error("Cannot share on WhatsApp - Shop slug/handle is missing!");
@@ -1590,7 +1630,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   size="sm"
                   className="px-3 text-[11px] h-8 font-black uppercase tracking-wider"
                   onClick={() => {
-                    const activeSlug = shop.slug || shop.handle;
+                    const activeSlug = shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand');
                     if (!activeSlug) {
                       console.error("[SIMULATOR] Cannot open in new tab: shop slug/handle missing", shop);
                       toast.error("Shop slug/handle is missing!");
@@ -1654,7 +1694,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
                   {/* Absolute positioning of iframe */}
                   <iframe 
                     id="storefront-iframe"
-                    src={getShopUrl(shop.slug || shop.handle) || "/demo"} 
+                    src={getShopUrl(shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand')) || "/demo"} 
                     className="w-full h-full border-0 bg-black"
                     title={`${shop.name} Storefront Preview`}
                     allow="clipboard-write"
@@ -1665,7 +1705,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               {/* Status footer for the preview */}
               <div className="mt-4 text-center text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest flex items-center justify-center gap-1.5 select-none">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#c8ff00] animate-pulse" />
-                Live sandbox {getShopUrl(shop.slug || shop.handle) || "/demo"}
+                Live sandbox {getShopUrl(shop.slug || shop.handle || (shop.name ? shop.name.toLowerCase().replace(/[^a-z0-9]/g, '') : 'brand')) || "/demo"}
               </div>
 
             </div>
@@ -1701,6 +1741,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ initialLocked = false }) =
               <div className="mb-4 px-1">
                 <h4 className="font-extrabold text-[#c8ff00] text-[17px] truncate">{selectedProduct.name}</h4>
                 <p className="text-white/40 text-[12px] font-semibold mt-0.5">Choose an action for this product</p>
+              </div>
+
+              {/* Product URL Share Board */}
+              <div className="mb-4 p-3 bg-white/[0.02] border border-white/[0.04] rounded-xl flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] uppercase font-mono tracking-widest text-[#c8ff00] font-extrabold">Public Product Link</span>
+                  <span className="text-[8px] bg-[#c8ff00]/10 text-[#c8ff00] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded leading-none font-bold">
+                    Direct Checkout
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-black/40 border border-white/5 rounded-xl px-2.5 py-2 flex-1 min-w-0 flex items-center">
+                    <span className="text-xs text-white/60 font-mono truncate select-all">
+                      {`${import.meta.env.VITE_APP_URL || window.location.origin}/shop/${shop?.slug || shop?.handle || 'brand'}/product/${selectedProduct.id}`}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const link = `${import.meta.env.VITE_APP_URL || window.location.origin}/shop/${shop?.slug || shop?.handle || 'brand'}/product/${selectedProduct.id}`;
+                      navigator.clipboard.writeText(link);
+                      toast.success('Product Link copied!');
+                    }}
+                    title="Copy link"
+                    className="p-2.5 bg-[#c8ff00] hover:bg-[#b5e600] active:scale-95 text-black rounded-lg transition-all flex items-center justify-center shrink-0 cursor-pointer"
+                  >
+                    <Copy size={13} />
+                  </button>
+                  <a
+                    href={`${import.meta.env.VITE_APP_URL || window.location.origin}/shop/${shop?.slug || shop?.handle || 'brand'}/product/${selectedProduct.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Open live"
+                    className="p-2.5 bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-white border border-white/10 rounded-lg transition-all cursor-pointer flex items-center justify-center shrink-0"
+                  >
+                    <Eye size={13} />
+                  </a>
+                </div>
               </div>
 
               {/* Options List */}

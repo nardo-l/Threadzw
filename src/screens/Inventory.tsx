@@ -37,6 +37,7 @@ export const Inventory: React.FC = () => {
   // States for interactive modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
+  const [shop, setShop] = useState<any>(null);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -44,31 +45,34 @@ export const Inventory: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      let shop = null;
+      let shopData = null;
       try {
         const { data } = await supabase
           .from('shops')
-          .select('id')
+          .select('id, slug, handle, name')
           .eq('owner_id', session.user.id)
           .maybeSingle();
-        if (data) shop = data;
+        if (data) shopData = data;
       } catch (err) {
         console.warn("DB shops query failed in Inventory:", err);
       }
 
-      if (!shop) {
+      if (!shopData) {
         const cached = localStorage.getItem(`shop_${session.user.id}`) || localStorage.getItem('threadzw_shop');
         if (cached) {
           try {
-            shop = JSON.parse(cached);
+            shopData = JSON.parse(cached);
           } catch (_) {}
         }
-        if (!shop) {
-          shop = { id: getDeterministicShopId(session.user.id) };
+        if (!shopData) {
+          shopData = { id: getDeterministicShopId(session.user.id), name: 'My Shop', slug: 'demo', handle: 'demo' };
         }
       }
 
-      if (shop) {
+      setShop(shopData);
+
+      if (shopData) {
+        const shop = shopData;
         let prodData = [];
         try {
           const { data, error } = await supabase
@@ -228,6 +232,12 @@ export const Inventory: React.FC = () => {
     }
   };
 
+  const getProductUrl = (productId: string) => {
+    const slugVal = shop?.slug || shop?.handle || 'demo';
+    const base = import.meta.env.VITE_APP_URL || window.location.origin;
+    return `${base}/shop/${slugVal}/product/${productId}`;
+  };
+
   // Filtering calculations query
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -368,7 +378,22 @@ export const Inventory: React.FC = () => {
                     
                     <div className="flex items-center justify-between mt-2.5">
                       <span className="text-[#C6FF00] font-mono text-sm font-extrabold">${p.price}</span>
-                      <span className="text-[10px] font-mono text-zinc-500">{p.total_stock} Units</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const link = getProductUrl(p.id);
+                            navigator.clipboard.writeText(link);
+                            toast.success('Product Link copied!');
+                          }}
+                          className="p-1 px-1.5 rounded bg-white/[0.04] border border-white/5 text-zinc-500 hover:text-[#C6FF00] hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/10 transition-all text-[9px] uppercase tracking-wider font-mono font-extrabold flex items-center gap-1 cursor-pointer"
+                          title="Copy listing URL"
+                        >
+                          <Copy size={10} className="stroke-[2.5]" />
+                          <span>Link</span>
+                        </button>
+                        <span className="text-[10px] font-mono text-zinc-500">{p.total_stock} Units</span>
+                      </div>
                     </div>
                   </div>
 
@@ -422,7 +447,7 @@ export const Inventory: React.FC = () => {
             >
               <div className="w-12 h-1 bg-zinc-700 rounded-full mx-auto mb-5 shrink-0" />
 
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-black shrink-0 border border-white/10">
                     <img src={selectedProduct.images?.[0]} className="w-full h-full object-cover" alt="" />
@@ -438,6 +463,42 @@ export const Inventory: React.FC = () => {
                 >
                   <X size={14} />
                 </button>
+              </div>
+
+              {/* Product URL Share Board */}
+              <div className="mb-5 p-4 bg-zinc-950/85 border border-white/5 rounded-2xl flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] uppercase font-mono tracking-widest text-[#C6FF00] font-extrabold">Public Product Link</span>
+                  <span className="text-[8px] bg-[#C6FF00]/10 text-[#C6FF00] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded leading-none font-bold">
+                    Scan & Order
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="bg-black/40 border border-white/5 rounded-xl px-3 py-2.5 flex-1 min-w-0 flex items-center">
+                    <span className="text-xs text-zinc-400 font-mono truncate select-all">{getProductUrl(selectedProduct.id)}</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(getProductUrl(selectedProduct.id));
+                      toast.success('Product Link copied to clipboard!');
+                    }}
+                    title="Copy link to clipboard"
+                    className="p-3 bg-[#C6FF00] hover:bg-[#b5e600] active:scale-95 text-black rounded-xl transition-all font-mono font-black text-xs uppercase cursor-pointer flex items-center justify-center shrink-0"
+                  >
+                    <Copy size={14} />
+                  </button>
+                  <a
+                    href={getProductUrl(selectedProduct.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Preview public details"
+                    className="p-3 bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-white border border-white/10 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                    </svg>
+                  </a>
+                </div>
               </div>
 
               {/* ACTION TILES ASSISTANT */}

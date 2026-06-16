@@ -18,12 +18,15 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "Users can view all profiles" on public.profiles;
 create policy "Users can view all profiles" on public.profiles
   for select using (true);
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile" on public.profiles
   for update using (auth.uid() = id);
 
+drop policy if exists "Users can insert own profile" on public.profiles;
 create policy "Users can insert own profile" on public.profiles
   for insert with check (auth.uid() = id);
 
@@ -64,10 +67,12 @@ create table if not exists public.shops (
 
 alter table public.shops enable row level security;
 
+drop policy if exists "Anyone can view live shops" on public.shops;
 create policy "Anyone can view live shops"
   on public.shops for select
-  using (is_live = true);
+  using (true);
 
+drop policy if exists "Owners can manage own shops" on public.shops;
 create policy "Owners can manage own shops"
   on public.shops for all
   using (auth.uid() = owner_id);
@@ -101,14 +106,17 @@ alter table public.subscriptions enable row level security;
 alter table public.shops 
   add column if not exists subscription_id uuid references public.subscriptions(id);
 
+drop policy if exists "Owners can view own subscriptions" on public.subscriptions;
 create policy "Owners can view own subscriptions"
   on public.subscriptions for select
   using (auth.uid() = owner_id);
 
+drop policy if exists "Owners can insert own subscriptions" on public.subscriptions;
 create policy "Owners can insert own subscriptions"
   on public.subscriptions for insert
   with check (auth.uid() = owner_id);
 
+drop policy if exists "Owners can update own subscriptions" on public.subscriptions;
 create policy "Owners can update own subscriptions"
   on public.subscriptions for update
   using (auth.uid() = owner_id);
@@ -180,29 +188,30 @@ create table public.products (
 
 alter table public.products enable row level security;
 
+drop policy if exists "Anyone can view active products from live shops" on public.products;
 create policy "Anyone can view active products from live shops"
   on public.products for select
   using (
     status != 'deleted' and
-    exists (
-      select 1 from public.shops
-      where shops.id = products.shop_id
-      and shops.is_live = true
-    )
+    coalesce(is_published, true) != false
   );
 
+drop policy if exists "Owners can view own products" on public.products;
 create policy "Owners can view own products"
   on public.products for select
   using (auth.uid() = owner_id);
 
+drop policy if exists "Owners can insert own products" on public.products;
 create policy "Owners can insert own products"
   on public.products for insert
   with check (auth.uid() = owner_id);
 
+drop policy if exists "Owners can update own products" on public.products;
 create policy "Owners can update own products"
   on public.products for update
   using (auth.uid() = owner_id);
 
+drop policy if exists "Owners can delete own products" on public.products;
 create policy "Owners can delete own products"
   on public.products for delete
   using (auth.uid() = owner_id);
@@ -994,27 +1003,115 @@ create index if not exists idx_admin_settings_key on public.admin_settings(key);
 -- NEW AUTOMATED TRIGGERS
 -- ═══════════════════════════════════════════════════════════════════════════
 
--- TRIGGER 1: Auto create profile on user signup
+-- TRIGGER 1: Auto create profile and shop on user signup
 create or replace function public.handle_new_user()
 returns trigger 
 language plpgsql 
 security definer 
 set search_path = public
 as $function$
+declare
+  v_display_name text;
+  v_handle text;
+  v_clean_handle text;
+  v_shop_id uuid;
+  v_trial_ends timestamptz;
 begin
+  -- Determine display name
+  v_display_name := coalesce(
+    new.raw_user_meta_data->>'display_name', 
+    new.raw_user_meta_data->>'username', 
+    split_part(new.email, '@', 1)
+  );
+  if v_display_name = '' then
+    v_display_name := split_part(new.email, '@', 1);
+  end if;
+
+  -- Determine initial handle/username
+  v_handle := coalesce(
+    new.raw_user_meta_data->>'handle', 
+    new.raw_user_meta_data->>'username', 
+    split_part(new.email, '@', 1)
+  );
+  if v_handle = '' then
+    v_handle := split_part(new.email, '@', 1);
+  end if;
+
+  -- Standardize the handle/username (lowercase alphanumeric, hyphen, underscore)
+  v_clean_handle := lower(regexp_replace(v_handle, '[^a-zA-Z0-9_-]', '', 'g'));
+  if length(v_clean_handle) < 3 then
+    v_clean_handle := v_clean_handle || '_user';
+  end if;
+
+  -- Ensure handle uniqueness inside profiles
+  while exists (select 1 from public.profiles where handle = v_clean_handle and id != new.id) loop
+    v_clean_handle := v_clean_handle || floor(random() * 10)::text;
+  end loop;
+
+  -- 1) Create or update profile
   insert into public.profiles (id, email, display_name, handle, created_at)
   values (
     new.id, 
     new.email, 
-    coalesce(new.raw_user_meta_data->>'display_name', ''), 
-    coalesce(new.raw_user_meta_data->>'handle', ''), 
+    v_display_name, 
+    v_clean_handle, 
     now()
   )
-  on conflict (id) do nothing;
+  on conflict (id) do update set
+    display_name = coalesce(nullif(public.profiles.display_name, ''), excluded.display_name),
+    handle = coalesce(nullif(public.profiles.handle, ''), excluded.handle);
+
+  -- Determine the deterministic stable shop ID (first character of user uuid replaced with 'e')
+  v_shop_id := ('e' || substring(new.id::text from 2))::uuid;
+  v_trial_ends := now() + interval '28 days';
+
+  -- 2) Create or update corresponding business shop
+  insert into public.shops (
+    id,
+    owner_id,
+    name,
+    handle,
+    slug,
+    description,
+    categories,
+    location,
+    whatsapp,
+    is_live,
+    subscription_status,
+    plan,
+    trial_started_at,
+    trial_ends_at,
+    created_at,
+    updated_at
+  )
+  values (
+    v_shop_id,
+    new.id,
+    v_display_name,
+    v_clean_handle,
+    v_clean_handle,
+    'Zim clothing store',
+    array['Clothing']::text[],
+    'Harare',
+    '0776223144',
+    true,
+    'active',
+    'free',
+    now(),
+    v_trial_ends,
+    now(),
+    now()
+  )
+  on conflict (owner_id) do update set
+    handle = coalesce(nullif(public.shops.handle, ''), excluded.handle),
+    slug = coalesce(nullif(public.shops.slug, ''), excluded.slug),
+    name = coalesce(nullif(public.shops.name, ''), excluded.name);
+
   return new;
 end;
 $function$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();

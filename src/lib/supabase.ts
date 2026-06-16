@@ -28,6 +28,21 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export const MOCK_USER_ID = '00000000-0000-0000-0000-000000000000';
 
+export function getDeterministicUserId(email: string): string {
+  if (!email) return MOCK_USER_ID;
+  const clean = email.trim().toLowerCase();
+  if (clean === 'merchant@threadzw.com') return MOCK_USER_ID;
+  
+  // Calculate a deterministic hash of the email to generate a valid stable UUID
+  let hash = 0;
+  for (let i = 0; i < clean.length; i++) {
+    hash = (hash << 5) - hash + clean.charCodeAt(i);
+    hash |= 0;
+  }
+  const hex = Math.abs(hash).toString(16).padEnd(12, 'f').slice(0, 12);
+  return `00000000-0000-4000-a000-${hex}`;
+}
+
 export function getDeterministicShopId(userId: string): string {
   if (!userId || userId === 'local-session-id' || userId === MOCK_USER_ID) {
     return '55555555-5555-5555-5555-555555555555';
@@ -72,6 +87,9 @@ supabase.auth.getSession = async () => {
     ]);
     if (result && result.data && result.data.session) {
       // Real session exists! Return it so the real UUID is used
+      if (result.data.session.user?.id) {
+        localStorage.setItem('supabase_logged_in_user_id', result.data.session.user.id);
+      }
       return result;
     }
   } catch (err) {
@@ -82,11 +100,12 @@ supabase.auth.getSession = async () => {
   if (localStorage.getItem('threadzw_logged_in') === 'true') {
     const email = localStorage.getItem('threadzw_owner_email') || 'merchant@threadzw.com';
     const name = localStorage.getItem('threadzw_owner_name') || 'Merchant';
+    const loggedInId = localStorage.getItem('supabase_logged_in_user_id') || MOCK_USER_ID;
     return {
       data: {
         session: {
           user: {
-            id: MOCK_USER_ID,
+            id: loggedInId,
             email: email,
             user_metadata: {
               username: name
@@ -104,16 +123,23 @@ const originalOnAuthStateChange = supabase.auth.onAuthStateChange.bind(supabase.
 supabase.auth.onAuthStateChange = (callback: any) => {
   authListeners.add(callback);
   const { data: { subscription } } = originalOnAuthStateChange((event, session) => {
+    if (session?.user?.id) {
+      localStorage.setItem('supabase_logged_in_user_id', session.user.id);
+    } else if (localStorage.getItem('threadzw_logged_in') !== 'true') {
+      localStorage.removeItem('supabase_logged_in_user_id');
+    }
+
     if (!session && localStorage.getItem('threadzw_logged_in') === 'true') {
       const email = localStorage.getItem('threadzw_owner_email') || 'merchant@threadzw.com';
       const name = localStorage.getItem('threadzw_owner_name') || 'Merchant';
+      const loggedInId = localStorage.getItem('supabase_logged_in_user_id') || MOCK_USER_ID;
       const mockSession = {
         access_token: 'mock-access-token',
         expires_in: 3600,
         refresh_token: 'mock-refresh-token',
         token_type: 'bearer',
         user: {
-          id: MOCK_USER_ID,
+          id: loggedInId,
           email: email,
           user_metadata: {
             username: name
@@ -144,10 +170,20 @@ supabase.auth.onAuthStateChange = (callback: any) => {
 
 const originalSignInWithPassword = supabase.auth.signInWithPassword.bind(supabase.auth);
 supabase.auth.signInWithPassword = async (credentials: any) => {
+  if (credentials && credentials.email) {
+    let emailStr = credentials.email.trim();
+    if (!emailStr.includes('@')) {
+      emailStr = `${emailStr.toLowerCase()}@threadzw.com`;
+    }
+    credentials.email = emailStr;
+  }
   try {
     const { data, error } = await originalSignInWithPassword(credentials);
     if (!error && data?.session) {
       localStorage.setItem('threadzw_logged_in', 'true');
+      if (data.session.user?.id) {
+        localStorage.setItem('supabase_logged_in_user_id', data.session.user.id);
+      }
       localStorage.setItem('threadzw_owner_email', credentials.email);
       localStorage.setItem('threadzw_owner_name', credentials.email.split('@')[0]);
       notifyAuthChange('SIGNED_IN', data.session);
@@ -173,6 +209,9 @@ supabase.auth.signInWithPassword = async (credentials: any) => {
       
       if (!signUpResult.error && signUpResult.data?.session) {
         localStorage.setItem('threadzw_logged_in', 'true');
+        if (signUpResult.data.user?.id) {
+          localStorage.setItem('supabase_logged_in_user_id', signUpResult.data.user.id);
+        }
         localStorage.setItem('threadzw_owner_email', email);
         localStorage.setItem('threadzw_owner_name', email.split('@')[0]);
         const userId = signUpResult.data.user?.id;
@@ -193,8 +232,9 @@ supabase.auth.signInWithPassword = async (credentials: any) => {
     }
     
     // Absolute fallback: mock login session
+    const deterministicId = getDeterministicUserId(email);
     const mockUser = {
-      id: MOCK_USER_ID,
+      id: deterministicId,
       email: email,
       user_metadata: {
         display_name: email.split('@')[0],
@@ -214,6 +254,7 @@ supabase.auth.signInWithPassword = async (credentials: any) => {
     localStorage.setItem('thread_has_account', 'true');
     localStorage.setItem('threadzw_owner_email', email);
     localStorage.setItem('threadzw_owner_name', email.split('@')[0]);
+    localStorage.setItem('supabase_logged_in_user_id', deterministicId);
     
     const mockProfile = {
       id: mockUser.id,
@@ -234,8 +275,9 @@ supabase.auth.signInWithPassword = async (credentials: any) => {
   } catch (err: any) {
     console.error("Top-level catch in proxied signInWithPassword:", err);
     const email = credentials?.email || 'merchant@threadzw.com';
+    const deterministicId = getDeterministicUserId(email);
     const mockUser = {
-      id: MOCK_USER_ID,
+      id: deterministicId,
       email: email,
       user_metadata: {
         display_name: email.split('@')[0],
@@ -253,6 +295,73 @@ supabase.auth.signInWithPassword = async (credentials: any) => {
     localStorage.setItem('thread_has_account', 'true');
     localStorage.setItem('threadzw_owner_email', email);
     localStorage.setItem('threadzw_owner_name', email.split('@')[0]);
+    localStorage.setItem('supabase_logged_in_user_id', deterministicId);
+    notifyAuthChange('SIGNED_IN', mockSession);
+    return {
+      data: { user: mockUser, session: mockSession },
+      error: null
+    };
+  }
+};
+
+const originalSignUp = supabase.auth.signUp.bind(supabase.auth);
+supabase.auth.signUp = async (options: any) => {
+  if (options && options.email) {
+    let emailStr = options.email.trim();
+    if (!emailStr.includes('@')) {
+      emailStr = `${emailStr.toLowerCase()}@threadzw.com`;
+    }
+    options.email = emailStr;
+  }
+  
+  try {
+    const result = await originalSignUp(options);
+    if (!result.error && result.data?.session) {
+      localStorage.setItem('threadzw_logged_in', 'true');
+      if (result.data.user?.id) {
+        localStorage.setItem('supabase_logged_in_user_id', result.data.user.id);
+      }
+      localStorage.setItem('threadzw_owner_email', options.email);
+      localStorage.setItem('threadzw_owner_name', options.email.split('@')[0]);
+      notifyAuthChange('SIGNED_IN', result.data.session);
+    }
+    return result;
+  } catch (err: any) {
+    console.error("signUp proxy catch:", err);
+    const email = options?.email || 'merchant@threadzw.com';
+    const deterministicId = getDeterministicUserId(email);
+    const mockUser = {
+      id: deterministicId,
+      email: email,
+      user_metadata: options?.options?.data || {
+        display_name: email.split('@')[0],
+        handle: email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') || 'merchant'
+      }
+    };
+    const mockSession = {
+      access_token: 'mock-access-token',
+      expires_in: 3600,
+      refresh_token: 'mock-refresh-token',
+      token_type: 'bearer',
+      user: mockUser
+    };
+    localStorage.setItem('threadzw_logged_in', 'true');
+    localStorage.setItem('thread_has_account', 'true');
+    localStorage.setItem('threadzw_owner_email', email);
+    localStorage.setItem('threadzw_owner_name', email.split('@')[0]);
+    localStorage.setItem('supabase_logged_in_user_id', deterministicId);
+    
+    const mockProfile = {
+      id: mockUser.id,
+      display_name: mockUser.user_metadata.display_name,
+      handle: mockUser.user_metadata.handle || email.split('@')[0],
+      email: mockUser.email,
+      onboarding_complete: true,
+      style_preferences: { town: 'Harare' },
+      created_at: new Date().toISOString()
+    };
+    localStorage.setItem(`profile_${mockUser.id}`, JSON.stringify(mockProfile));
+    
     notifyAuthChange('SIGNED_IN', mockSession);
     return {
       data: { user: mockUser, session: mockSession },
@@ -264,6 +373,7 @@ supabase.auth.signInWithPassword = async (credentials: any) => {
 const originalSignOut = supabase.auth.signOut.bind(supabase.auth);
 supabase.auth.signOut = async () => {
   localStorage.removeItem('threadzw_logged_in');
+  localStorage.removeItem('supabase_logged_in_user_id');
   localStorage.removeItem('threadzw_owner_email');
   localStorage.removeItem('threadzw_owner_name');
   notifyAuthChange('SIGNED_OUT', null);
@@ -277,16 +387,29 @@ supabase.auth.signOut = async () => {
 
 // Helper to find the active user ID from cached storage keys dynamically
 function getLoggedUserId(): string {
+  const loggedInId = localStorage.getItem('supabase_logged_in_user_id');
+  if (loggedInId && loggedInId !== 'undefined' && loggedInId !== MOCK_USER_ID) {
+    return loggedInId;
+  }
+
+  // If there is an active logged-in email, resolve its distinct user ID
+  const loggedInEmail = localStorage.getItem('threadzw_owner_email');
+  if (loggedInEmail) {
+    return getDeterministicUserId(loggedInEmail);
+  }
+
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith('shop_') && key !== 'shop_local-session-id' && key !== `shop_${MOCK_USER_ID}`) {
-      return key.substring(5);
+    if (key && key.startsWith('shop_') && key !== 'shop_local-session-id' && key !== 'shop_undefined' && key !== `shop_${MOCK_USER_ID}`) {
+      const parts = key.substring(5);
+      if (parts && parts !== 'undefined') return parts;
     }
   }
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith('profile_') && key !== 'profile_local-session-id' && key !== `profile_${MOCK_USER_ID}`) {
-      return key.substring(8);
+    if (key && key.startsWith('profile_') && key !== 'profile_local-session-id' && key !== 'profile_undefined' && key !== `profile_${MOCK_USER_ID}`) {
+      const parts = key.substring(8);
+      if (parts && parts !== 'undefined') return parts;
     }
   }
   return MOCK_USER_ID;

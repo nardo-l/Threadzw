@@ -101,14 +101,14 @@ export const Login: React.FC = () => {
               letterSpacing: '1px',
               color: '#a1a1aa'
             }}>
-              Business Email
+              Business Email or Username
             </label>
             <input 
-              type="email"
+              type="text"
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="you@yourshop.com"
+              placeholder="you@yourshop.com or username"
               style={{
                 width: '100%',
                 padding: '14px 16px',

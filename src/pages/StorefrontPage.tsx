@@ -15,6 +15,7 @@ import {
 } from '../components/ui/ShopImage';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
+import { mockProducts } from '../data/mockData';
 import { 
   Search, 
   Menu, 
@@ -82,12 +83,13 @@ interface ProductDetailPageProps {
   allProducts: any[];
   onBack: () => void;
   getShopPath: (suffix: string) => string;
+  onProductSelect?: (product: any) => void;
 }
 
-const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, allProducts, onBack, getShopPath }) => {
+const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, allProducts, onBack, getShopPath, onProductSelect }) => {
   const [activeImageIdx, setActiveImageIdx] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>('');
-  const [selectedColor, setSelectedColor] = useState<string>('VINTAGE BLACK');
+  const [selectedColor, setSelectedColor] = useState<string>('');
   const navigate = useNavigate();
 
   const images = useMemo(() => {
@@ -96,13 +98,40 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, al
     return [];
   }, [product]);
 
-  const sizesList = useMemo(() => {
+  const sizesList = useMemo<string[]>(() => {
     if (!product?.sizes) return ['S', 'M', 'L', 'XL'];
     if (Array.isArray(product.sizes)) {
-      return product.sizes.map((s: any) => typeof s === 'string' ? s : s?.size || s?.size_label || s).filter(Boolean);
+      const rawSizes = product.sizes.map((s: any) => typeof s === 'string' ? s : s?.size || s?.size_label || s).filter(Boolean);
+      return Array.from(new Set(rawSizes)) as string[];
     }
     return ['S', 'M', 'L', 'XL'];
   }, [product]);
+
+  const coloursList = useMemo<string[]>(() => {
+    const list = product?.colours || product?.colors;
+    if (product && Array.isArray(list)) {
+      return list.map((c: any) => typeof c === 'string' ? c.trim() : '').filter(Boolean);
+    }
+    return [];
+  }, [product]);
+
+  const isSoldOut = useMemo(() => {
+    return product?.status === 'sold_out' || product?.total_stock <= 0;
+  }, [product]);
+
+  const isSizeOutOfStock = useCallback((sz: string) => {
+    if (isSoldOut) return true;
+    if (Array.isArray(product?.sizes)) {
+      const sizeObj = product.sizes.find((s: any) => {
+        const repr = typeof s === 'string' ? s : s?.size || s?.size_label;
+        return repr === sz;
+      });
+      if (sizeObj && typeof sizeObj === 'object') {
+        return (sizeObj.quantity ?? 0) <= 0;
+      }
+    }
+    return false;
+  }, [product, isSoldOut]);
 
   // Dynamic related products in same category
   const relatedProducts = useMemo(() => {
@@ -113,11 +142,18 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, al
 
   useEffect(() => {
     if (sizesList.length > 0) {
-      setSelectedSize(sizesList[0]);
+      // Choose first in-stock size if possible
+      const firstAvailable = sizesList.find(sz => !isSizeOutOfStock(sz));
+      setSelectedSize(firstAvailable || sizesList[0]);
+    }
+    if (coloursList.length > 0) {
+      setSelectedColor(coloursList[0]);
+    } else {
+      setSelectedColor('');
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setActiveImageIdx(0);
-  }, [product, sizesList]);
+  }, [product, sizesList, coloursList, isSizeOutOfStock]);
 
   const handleOrderWhatsApp = () => {
     const rawNum = shop.whatsapp_number || shop.whatsapp || '';
@@ -133,7 +169,7 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, al
   };
 
   return (
-    <div className="min-h-screen bg-[#070707] text-white flex flex-col font-sans pb-16">
+    <div className="bg-[#070707] text-white flex flex-col font-sans pb-16">
       {/* Product Detail Navbar */}
       <div className="sticky top-0 z-50 bg-[#070707]/90 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-zinc-900">
         <button 
@@ -143,9 +179,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, al
           <ArrowLeft className="w-4 h-4 text-[#D7FF00]" />
           <span>Back</span>
         </button>
-        <span className="text-[10px] uppercase font-mono tracking-widest text-[#D7FF00] bg-zinc-950 px-2 py-1 rounded border border-zinc-900">
-          In Stock
-        </span>
+        {isSoldOut ? (
+          <span className="text-[10px] uppercase font-mono tracking-widest text-red-500 bg-zinc-950 px-2 py-1 rounded border border-zinc-900">
+            Sold Out
+          </span>
+        ) : (
+          <span className="text-[10px] uppercase font-mono tracking-widest text-[#D7FF00] bg-zinc-950 px-2 py-1 rounded border border-zinc-900">
+            In Stock
+          </span>
+        )}
       </div>
 
       <div className="max-w-2xl mx-auto w-full px-4 lg:px-6 pt-6 flex-1">
@@ -206,42 +248,50 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, al
                   <span className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase">Select Size</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {sizesList.map((sz: string) => (
+                  {sizesList.map((sz: string, idx: number) => {
+                    const isOut = isSizeOutOfStock(sz);
+                    return (
+                      <button
+                        key={`${sz}-${idx}`}
+                        disabled={isOut}
+                        onClick={() => setSelectedSize(sz)}
+                        className={`px-4 py-2.5 rounded text-xs font-bold font-mono border transition-all cursor-pointer ${
+                          selectedSize === sz 
+                            ? 'bg-white text-black border-white' 
+                            : isOut
+                              ? 'bg-zinc-950 text-zinc-600 border-zinc-900/60 line-through cursor-not-allowed opacity-50'
+                              : 'bg-zinc-950 text-white border-zinc-900 hover:border-zinc-700'
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Dynamic Color Selection */}
+            {coloursList.length > 0 && (
+              <div className="mb-6">
+                <span className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase block mb-2">Color Selection</span>
+                <div className="flex flex-wrap gap-3">
+                  {coloursList.map((color) => (
                     <button
-                      key={sz}
-                      onClick={() => setSelectedSize(sz)}
-                      className={`px-4 py-2.5 rounded text-xs font-bold font-mono border transition-all cursor-pointer ${
-                        selectedSize === sz 
-                          ? 'bg-white text-black border-white' 
-                          : 'bg-zinc-950 text-white border-zinc-900 hover:border-zinc-700'
+                      key={color}
+                      onClick={() => setSelectedColor(color)}
+                      className={`px-3 py-1.5 rounded-full text-[9px] font-mono tracking-widest border transition-all cursor-pointer ${
+                        selectedColor === color
+                          ? 'border-[#D7FF00] text-[#D7FF00] bg-zinc-950'
+                          : 'border-zinc-900 text-zinc-400 hover:text-zinc-300'
                       }`}
                     >
-                      {sz}
+                      {color}
                     </button>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* Custom Retro Color Selection */}
-            <div className="mb-6">
-              <span className="text-[10px] text-zinc-400 font-mono tracking-widest uppercase block mb-2">Color Selection</span>
-              <div className="flex flex-wrap gap-3">
-                {['VINTAGE BLACK', 'CHROME SILVER', 'OFF-WHITE', 'MINT LIME'].map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-3 py-1.5 rounded-full text-[9px] font-mono tracking-widest border transition-all ${
-                      selectedColor === color
-                        ? 'border-[#D7FF00] text-[#D7FF00] bg-zinc-950'
-                        : 'border-zinc-900 text-zinc-400 hover:text-zinc-300'
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Description profile */}
             {product.description && (
@@ -256,10 +306,15 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, al
             {/* Order actions */}
             <button
               onClick={handleOrderWhatsApp}
-              className="w-full bg-[#D7FF00] hover:bg-[#c9ee00] text-black font-extrabold uppercase text-xs tracking-widest py-4 rounded-md transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(215,255,0,0.15)] cursor-pointer"
+              disabled={isSoldOut}
+              className={`w-full text-black font-extrabold uppercase text-xs tracking-widest py-4 rounded-md transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(215,255,0,0.15)] cursor-pointer ${
+                isSoldOut
+                  ? 'bg-zinc-800 text-zinc-500 shadow-none cursor-not-allowed border border-zinc-950'
+                  : 'bg-[#D7FF00] hover:bg-[#c9ee00]'
+              }`}
             >
               <MessageCircle className="w-4 h-4 text-black stroke-[3]" />
-              Order on WhatsApp
+              {isSoldOut ? 'Sold Out' : 'Order on WhatsApp'}
             </button>
           </div>
         </div>
@@ -272,10 +327,16 @@ const ProductDetailPage: React.FC<ProductDetailPageProps> = ({ product, shop, al
               You May Also Like
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {relatedProducts.map((relProduct: any) => (
+              {relatedProducts.map((relProduct: any, idx: number) => (
                 <div
-                  key={relProduct.id}
-                  onClick={() => navigate(getShopPath(`/product/${relProduct.id}`))}
+                  key={relProduct.id || `related-${idx}`}
+                  onClick={() => {
+                    if (onProductSelect) {
+                      onProductSelect(relProduct);
+                    } else {
+                      navigate(getShopPath(`/product/${relProduct.id}`));
+                    }
+                  }}
                   className="group bg-zinc-950 border border-zinc-900 rounded overflow-hidden cursor-pointer flex flex-col"
                 >
                   <div className="aspect-[3/4] overflow-hidden bg-zinc-900 relative">
@@ -315,6 +376,7 @@ export const StorefrontPage: React.FC = () => {
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); // null | 'not_found' | 'offline'
+  const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
   
   // UI Panels
   const [openDrawer, setOpenDrawer] = useState(false);
@@ -323,21 +385,18 @@ export const StorefrontPage: React.FC = () => {
 
   // Normalize path suffix to decide which of our 'pages' gets showing
   const activeView = useMemo(() => {
-    if (productId) {
-      return 'product-detail';
-    }
     if (categoryId) {
       return 'category';
     }
     const path = location.pathname.toLowerCase().replace(/\/$/, '');
-    if (path.endsWith('/products')) {
+    if (path.endsWith('/products') || path.endsWith('/product')) {
       return 'products';
     }
     if (path.endsWith('/about')) {
       return 'about';
     }
     return 'home';
-  }, [productId, categoryId, location.pathname]);
+  }, [categoryId, location.pathname]);
 
   const cleanSlug = useMemo(() => {
     const activeSlug = slug || (window.location.pathname.toLowerCase().replace(/\/$/, '').endsWith('/demo') ? 'demo' : null);
@@ -362,11 +421,14 @@ export const StorefrontPage: React.FC = () => {
       }
 
       try {
-        setLoading(true);
+        if (!shop) {
+          setLoading(true);
+        }
         setError(null);
 
         let shopData = null;
         let shopErr = null;
+        let uuidProduct = null;
 
         // Strip leading '@' or spaces, and resolve any hyphen or casing mismatch
         let decodedSlug = null;
@@ -377,6 +439,44 @@ export const StorefrontPage: React.FC = () => {
             decodedSlug = slug.trim();
           }
         }
+
+        // Direct UUID Product and Shop Lookup Bypass:
+        // Highly resilient path for direct product links where the slug of parent shop might be 'demo' or fallback,
+        // but the productId is a distinct DB UUID.
+        if (productId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId.trim())) {
+          try {
+            const cleanProdId = productId.trim();
+            const { data: dbProd, error: dbProdErr } = await supabase
+              .from('products')
+              .select('*')
+              .eq('id', cleanProdId)
+              .maybeSingle();
+
+            if (!dbProdErr && dbProd) {
+              uuidProduct = dbProd;
+              console.log("[STOREFRONT RESOLUTION] Directly resolved product:", dbProd.name);
+
+              if (dbProd.shop_id) {
+                const { data: dbShop, error: dbShopErr } = await supabase
+                  .from('shops')
+                  .select('*')
+                  .eq('id', dbProd.shop_id)
+                  .maybeSingle();
+
+                if (!dbShopErr && dbShop) {
+                  shopData = dbShop;
+                  uuidProduct.shop = dbShop;
+                  console.log("[STOREFRONT RESOLUTION] Separately resolved shop from product shop_id:", dbShop.name);
+                }
+              }
+            } else if (dbProdErr) {
+              console.warn("[STOREFRONT RESOLUTION] Direct product query error:", dbProdErr);
+            }
+          } catch (err) {
+            console.warn("[STOREFRONT RESOLUTION] Direct product lookup exception:", err);
+          }
+        }
+
         const decodedNoAt = decodedSlug ? decodedSlug.replace(/^@/, '') : null;
         const fullyCleaned = cleanSlug ? cleanSlug.replace(/[^a-z0-9]/g, '') : null;
         const decNoAt = decodedNoAt || '';
@@ -590,6 +690,22 @@ export const StorefrontPage: React.FC = () => {
             } catch (_) {}
           }
         }
+
+        // Try load default mockProducts for demo slug
+        if ((!productList || productList.length === 0) && (cleanSlug === 'demo' || slug === 'demo')) {
+          productList = mockProducts.map((p: any) => ({
+            ...p,
+            colours: p.colors || [],
+            sizes: p.sizes?.map((sz: string) => ({
+              size: sz,
+              quantity: (p.stock && typeof p.stock === 'object') ? ((p.stock as any)[sz] ?? 5) : 5
+            })) || [],
+            total_stock: p.stock ? Object.values(p.stock).reduce((szAcc: number, b: any) => szAcc + (typeof b === 'number' ? b : 0), 0) : 10,
+            status: 'active',
+            is_published: true,
+            created_at: new Date().toISOString()
+          }));
+        }
         
         // Format logic sorting: featured first, then descending created_at
         productList = [...productList].sort((a, b) => {
@@ -600,8 +716,11 @@ export const StorefrontPage: React.FC = () => {
           return timeB - timeA;
         });
 
-        // Filter out drafts
-        productList = productList.filter((p: any) => p.is_published !== false);
+        // Filter out drafts, but allow the active product to be viewed even if unpublished
+        if (uuidProduct && !productList.some((p: any) => p.id?.toLowerCase() === uuidProduct.id?.toLowerCase())) {
+          productList.push(uuidProduct);
+        }
+        productList = productList.filter((p: any) => p.is_published !== false || p.id?.toLowerCase() === productId?.toLowerCase());
         setProducts(productList);
 
         // Build elegant category list from actual products and global_categories
@@ -635,7 +754,7 @@ export const StorefrontPage: React.FC = () => {
         setLoading(false);
       }
     },
-    [cleanSlug, slug]
+    [cleanSlug, slug, productId]
   );
 
   useEffect(() => {
@@ -690,9 +809,22 @@ export const StorefrontPage: React.FC = () => {
     return products.filter(p => p.is_featured === true);
   }, [products]);
 
-  const selectedProduct = useMemo(() => {
-    if (!productId || products.length === 0) return null;
-    return products.find(p => p.id === productId) || null;
+  const handleProductClick = (product: any) => {
+    setSelectedProduct(product);
+    navigate(getShopPath(`/product/${product.id}`));
+  };
+
+  // Sync URL productId with selectedProduct state
+  useEffect(() => {
+    if (productId && products.length > 0) {
+      const lowerProductId = productId.toLowerCase().trim();
+      const found = products.find(p => p.id?.toLowerCase().trim() === lowerProductId);
+      if (found) {
+        setSelectedProduct(found);
+      }
+    } else if (!productId) {
+      setSelectedProduct(null);
+    }
   }, [productId, products]);
 
   // Loading indicator screen
@@ -738,19 +870,6 @@ export const StorefrontPage: React.FC = () => {
           This fashion collection is temporarily unavailable. Check back soon!
         </p>
       </div>
-    );
-  }
-
-  // Sub-routing detail view check
-  if (activeView === 'product-detail' && selectedProduct) {
-    return (
-      <ProductDetailPage
-        product={selectedProduct}
-        shop={shop}
-        allProducts={products}
-        onBack={() => navigate(getShopPath())}
-        getShopPath={getShopPath}
-      />
     );
   }
 
@@ -914,13 +1033,13 @@ export const StorefrontPage: React.FC = () => {
                   </span>
                 </button>
 
-                {categories.map((cat: any) => {
+                {categories.map((cat: any, idx: number) => {
                   const isSelected = activeCategory === cat.id || activeCategory.toLowerCase() === cat.name.toLowerCase();
                   const coverImage = getCategoryCover(cat.name, cat.cover_image_url);
 
                   return (
                     <button
-                      key={cat.id}
+                      key={cat.id || `category-pill-${idx}`}
                       onClick={() => selectCategory(cat.id)}
                       className="flex flex-col items-center gap-2 select-none flex-shrink-0 cursor-pointer"
                     >
@@ -958,10 +1077,10 @@ export const StorefrontPage: React.FC = () => {
               </div>
               
               <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none">
-                {featuredProductsList.map((product) => (
+                {featuredProductsList.map((product, idx: number) => (
                   <div
-                    key={product.id}
-                    onClick={() => navigate(getShopPath(`/product/${product.id}`))}
+                    key={product.id || `featured-${idx}`}
+                    onClick={() => handleProductClick(product)}
                     className="w-56 flex-shrink-0 bg-zinc-950 border border-zinc-900 rounded overflow-hidden cursor-pointer shadow-lg group hover:border-[#D7FF00] transition-all"
                   >
                     <div className="aspect-[3/4] w-full bg-zinc-900 overflow-hidden relative">
@@ -1019,15 +1138,15 @@ export const StorefrontPage: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-x-4 gap-y-8 select-none">
-                {filteredProducts.map((product) => {
+                {filteredProducts.map((product, idx: number) => {
                   const discount = product.original_price && product.original_price > product.price 
                     ? Math.round(((product.original_price - product.price) / product.original_price) * 100) 
                     : 0;
 
                   return (
                     <div
-                      key={product.id}
-                      onClick={() => navigate(getShopPath(`/product/${product.id}`))}
+                      key={product.id || `catalog-curated-${idx}`}
+                      onClick={() => handleProductClick(product)}
                       className="group flex flex-col cursor-pointer bg-zinc-950/20 border border-zinc-900 rounded overflow-hidden hover:border-zinc-750 transition-all duration-300"
                     >
                       {/* Frame image 3:4 */}
@@ -1101,15 +1220,15 @@ export const StorefrontPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-4 gap-y-8 select-none">
-              {filteredProducts.map((product) => {
+              {filteredProducts.map((product, idx: number) => {
                 const discount = product.original_price && product.original_price > product.price 
                   ? Math.round(((product.original_price - product.price) / product.original_price) * 100) 
                   : 0;
 
                 return (
                   <div
-                    key={product.id}
-                    onClick={() => navigate(getShopPath(`/product/${product.id}`))}
+                    key={product.id || `search-prod-${idx}`}
+                    onClick={() => handleProductClick(product)}
                     className="group flex flex-col cursor-pointer bg-zinc-950/20 border border-zinc-900 rounded overflow-hidden hover:border-zinc-750 transition-all duration-300"
                   >
                     <div className="aspect-[3/4] bg-zinc-950 w-full overflow-hidden relative">
@@ -1197,15 +1316,15 @@ export const StorefrontPage: React.FC = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-x-4 gap-y-8 select-none">
-              {filteredProducts.map((product) => {
+              {filteredProducts.map((product, idx: number) => {
                 const discount = product.original_price && product.original_price > product.price 
                   ? Math.round(((product.original_price - product.price) / product.original_price) * 100) 
                   : 0;
 
                 return (
                   <div
-                    key={product.id}
-                    onClick={() => navigate(getShopPath(`/product/${product.id}`))}
+                    key={product.id || `category-prod-${idx}`}
+                    onClick={() => handleProductClick(product)}
                     className="group flex flex-col cursor-pointer bg-zinc-950/20 border border-zinc-900 rounded overflow-hidden hover:border-zinc-750 transition-all duration-300"
                   >
                     <div className="aspect-[3/4] bg-zinc-950 w-full overflow-hidden relative">
@@ -1409,11 +1528,11 @@ export const StorefrontPage: React.FC = () => {
                         Categories
                       </span>
                       <div className="space-y-3">
-                        {categories.map((cat: any) => {
+                        {categories.map((cat: any, idx: number) => {
                           const isSel = activeCategory === cat.id || activeCategory.toLowerCase() === cat.name.toLowerCase();
                           return (
                             <button
-                              key={cat.id}
+                              key={cat.id || `drawer-category-${idx}`}
                               onClick={() => {
                                 selectCategory(cat.id);
                                 setOpenDrawer(false);
@@ -1439,6 +1558,70 @@ export const StorefrontPage: React.FC = () => {
                 <span className="text-[9px] uppercase font-mono text-zinc-500 block">Open: {(shop?.opening_hours || 'Mon-Sat 9am - 6pm')}</span>
                 <span className="text-[10px] uppercase font-mono text-zinc-300 block mt-1">Loc: {shop?.city}</span>
               </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* -------------------------------------------------------------
+          PRODUCT DETAIL OVERLAY (MODAL / SHEET)
+          ------------------------------------------------------------- */}
+      <AnimatePresence>
+        {(productId || selectedProduct) && (
+          <>
+            {/* Backdrop Layer */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setSelectedProduct(null);
+                navigate(getShopPath());
+              }}
+              className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 cursor-pointer overflow-y-auto flex items-center justify-center p-0 md:p-6"
+            >
+              {/* Main Overlay Body: slide up and fade in */}
+              <motion.div
+                initial={{ y: 50, opacity: 0, scale: 0.95 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: 50, opacity: 0, scale: 0.95 }}
+                transition={{ type: 'spring', damping: 26, stiffness: 220 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-[#070707] border-t md:border border-zinc-900 w-full max-w-4xl md:rounded-2xl overflow-hidden shadow-2xl flex flex-col h-full md:h-[85vh] max-h-screen md:max-h-[85vh] cursor-default relative"
+              >
+                {/* Floating Absolute Close Button for Premium Visual Feedback */}
+                <button
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    navigate(getShopPath());
+                  }}
+                  className="absolute top-4 right-4 z-50 p-2.5 bg-black/80 hover:bg-[#D7FF00] hover:text-black text-white border border-zinc-900 rounded-full transition-all cursor-pointer backdrop-blur-sm"
+                  title="Close product detail"
+                >
+                  <X className="w-4 h-4 stroke-[2.5]" />
+                </button>
+
+                {/* Inner Scrollable product view */}
+                <div className="overflow-y-auto flex-1 scrollbar-none md:scrollbar-thin">
+                  {selectedProduct ? (
+                    <ProductDetailPage
+                      product={selectedProduct}
+                      shop={shop}
+                      allProducts={products}
+                      onBack={() => {
+                        setSelectedProduct(null);
+                        navigate(getShopPath());
+                      }}
+                      getShopPath={getShopPath}
+                      onProductSelect={handleProductClick}
+                    />
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center py-24 min-h-[50vh]">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-t-transparent border-[#D7FF00]" />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
             </motion.div>
           </>
         )}

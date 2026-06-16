@@ -31,19 +31,12 @@ export const EditProduct: React.FC = () => {
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Global Categories System
-  const { categories: globalCats, loading: globalCatsLoading } = useGlobalCategories();
-  const [catSearch, setCatSearch] = useState('');
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-
   // SCREEN 1: Photos State
   const [images, setImages] = useState<string[]>([]);
 
   // SCREEN 2: Basic Info
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [dbCategories, setDbCategories] = useState<string[]>([]);
   const [selectedTag, setSelectedTag] = useState('None');
 
   // SCREEN 3: Sizes & Availability
@@ -58,8 +51,8 @@ export const EditProduct: React.FC = () => {
     'XXL': { active: false, stock: 10 },
   });
 
-  // Colors swatches State
-  const swatches = ['⚫', '⚪', '🟤', '🔴', '🔵', '🟡', '🟢', '+'];
+  // Colors optional State
+  const swatches = ['⚫', '⚪', '🟤', '🔴', '🔵', '🟡', '🟢'];
   const swatchToName: Record<string, string> = {
     '⚫': 'Midnight Black',
     '⚪': 'Sail White',
@@ -68,10 +61,19 @@ export const EditProduct: React.FC = () => {
     '🔵': 'Cobalt Blue',
     '🟡': 'Sun Yellow',
     '🟢': 'Forest Green',
-    '+': 'Custom Color'
   };
-  const [activeSwatch, setActiveSwatch] = useState('⚫');
-  const [colorName, setColorName] = useState('Midnight Black');
+  const [selectedColors, setSelectedColors] = useState<string[]>(['Midnight Black']);
+  const [showCustomColorInput, setShowCustomColorInput] = useState(false);
+  const [customColorText, setCustomColorText] = useState('');
+
+  const handleAddCustomColor = () => {
+    const trimmed = customColorText.trim();
+    if (trimmed && !selectedColors.includes(trimmed)) {
+      setSelectedColors([...selectedColors, trimmed]);
+    }
+    setCustomColorText('');
+    setShowCustomColorInput(false);
+  };
 
   // Visibility toggle
   const [isVisible, setIsVisible] = useState(true);
@@ -125,20 +127,6 @@ export const EditProduct: React.FC = () => {
         setShopId(shop.id);
         setShopHandle(shop.handle || 'kure');
 
-        // Fetch custom categories
-        try {
-          const { data: catList } = await supabase
-            .from('categories')
-            .select('name')
-            .eq('shop_id', shop.id)
-            .order('sort_order', { ascending: true });
-          if (catList && catList.length > 0) {
-            setDbCategories(catList.map((c: any) => c.name));
-          }
-        } catch (catErr) {
-          console.warn("Bypassing dynamic category fetch inside EditProduct:", catErr);
-        }
-
         // Fetch product info matching product ID and shop ID
         const { data: product, error } = await supabase
           .from('products')
@@ -154,7 +142,6 @@ export const EditProduct: React.FC = () => {
         // Populating state settings
         setName(product.name || '');
         setPrice(product.price ? product.price.toString() : '');
-        setSelectedCategory(product.category || 'All');
         setDescription(product.description || '');
         setImages(product.images || []);
         setIsFeatured(product.is_featured || false);
@@ -216,19 +203,8 @@ export const EditProduct: React.FC = () => {
         }
 
         // Pre-populate colours swatches selection
-        if (product.colours && Array.isArray(product.colours) && product.colours[0]) {
-          const loadedColor = product.colours[0];
-          setColorName(loadedColor);
-          
-          // Match matching circular unicode glyph if exact
-          const matchingSwatch = Object.entries(swatchToName).find(
-            ([_, nameVal]) => nameVal.toLowerCase() === loadedColor.toLowerCase()
-          );
-          if (matchingSwatch) {
-            setActiveSwatch(matchingSwatch[0]);
-          } else {
-            setActiveSwatch('+');
-          }
+        if (product.colours && Array.isArray(product.colours)) {
+          setSelectedColors(product.colours.filter((c: any) => typeof c === 'string' && c.trim() !== ''));
         }
 
         // Match optional product tags representation
@@ -247,12 +223,6 @@ export const EditProduct: React.FC = () => {
 
     fetchProductAndShop();
   }, [productId]);
-
-  // Sync color name when swatch selected
-  const handleSwatchClick = (swatch: string) => {
-    setActiveSwatch(swatch);
-    setColorName(swatchToName[swatch] || '');
-  };
 
   // Upload actions handles
   const triggerFilePicker = () => {
@@ -402,7 +372,7 @@ export const EditProduct: React.FC = () => {
   // Navigation handlers
   const goNext = () => {
     if (step === 1 && images.length === 0) return;
-    if (step === 2 && (!name || !price || !selectedCategory)) return;
+    if (step === 2 && (!name || !price)) return;
     
     if (step === 3) {
       const activeSizes = Object.values(sizeStock).filter(s => s.active);
@@ -424,7 +394,7 @@ export const EditProduct: React.FC = () => {
 
   // Update Database parameters on save
   const handleSaveChanges = async () => {
-    if (!name || !price || !selectedCategory || images.length === 0) {
+    if (!name || !price || images.length === 0) {
       toast.error('Required product components missing.');
       return;
     }
@@ -447,11 +417,11 @@ export const EditProduct: React.FC = () => {
       const updatePayload = {
         name: name.trim(),
         price: parseFloat(price),
-        category: selectedCategory,
+        category: null,
         description: description.trim() || null,
         images,
         sizes: configuredSizes,
-        colours: colorName.trim() ? [colorName.trim()] : [],
+        colours: selectedColors,
         total_stock: totalStock,
         is_published: isVisible,
         is_featured: isFeatured,
@@ -494,7 +464,7 @@ export const EditProduct: React.FC = () => {
 
   // Validate state
   const isScreen1Valid = images.length > 0;
-  const isScreen2Valid = name.trim() !== '' && price.trim() !== '' && selectedCategory !== '';
+  const isScreen2Valid = name.trim() !== '' && price.trim() !== '';
   const isScreen3Valid = Object.values(sizeStock).some(s => s.active && s.stock > 0);
 
   const slideVariants = {
@@ -512,8 +482,6 @@ export const EditProduct: React.FC = () => {
     })
   };
 
-  // Dynamic categories fetched from the global_categories table (filter admin-disabled ones)
-  const categories = globalCats.filter(c => c.visible).map(c => c.name);
   const tagOptions = ['New Drop', 'Best Seller', 'Limited', 'None'];
 
   if (loading) {
@@ -721,94 +689,6 @@ export const EditProduct: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Category Selector */}
-                    {/* Category Selector */}
-                    <div className="space-y-2 relative z-30" id="category-selector-wrapper">
-                      <label className="text-[11px] font-bold uppercase tracking-[1.5px] text-white/40 block">
-                        Category *
-                      </label>
-                      
-                      {/* Searchable Dropdown Selector */}
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setDropdownOpen(!dropdownOpen)}
-                          className="w-full flex items-center justify-between text-[13px] font-bold bg-white/[0.05] border-[1.5px] border-white/10 hover:border-white/20 focus:border-[#c8ff00] rounded-[10px] px-4 py-3 text-left text-white outline-none transition-all cursor-pointer"
-                        >
-                          <span className={selectedCategory ? 'text-white' : 'text-white/40'}>
-                            {selectedCategory || 'Select category...'}
-                          </span>
-                          <ChevronDown size={16} className={`text-white/40 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-[#c8ff00]' : ''}`} />
-                        </button>
-
-                        {/* Dropdown overlay background click catcher */}
-                        {dropdownOpen && (
-                          <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                        )}
-
-                        {/* Searchable dropdown options panel */}
-                        {dropdownOpen && (
-                          <div className="absolute z-50 left-0 right-0 mt-1.5 bg-[#121214] border border-white/10 rounded-[12px] shadow-2xl p-2 space-y-2 max-h-[220px] overflow-y-auto">
-                            <div className="relative flex items-center bg-white/[0.03] border border-white/5 rounded-lg px-2.5 py-1.5 z-50">
-                              <Search size={14} className="text-white/30 shrink-0 mr-2" />
-                              <input
-                                type="text"
-                                value={catSearch}
-                                onChange={(e) => setCatSearch(e.target.value)}
-                                placeholder="Search categories..."
-                                className="w-full text-xs bg-transparent border-0 text-white outline-none placeholder-white/20"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              {catSearch && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); setCatSearch(''); }}
-                                  className="text-xs text-white/40 hover:text-white"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
-
-                            <div className="space-y-0.5 z-50 relative">
-                              {(() => {
-                                const list = globalCats.filter(c => c.visible && c.name.toLowerCase().includes(catSearch.toLowerCase()));
-                                if (list.length === 0) {
-                                  return (
-                                    <div className="text-[11px] text-white/30 text-center py-4">
-                                      No categories found
-                                    </div>
-                                  );
-                                }
-                                return list.map((cat) => {
-                                  const isSelected = selectedCategory === cat.name;
-                                  return (
-                                    <button
-                                      key={`cat-opt-${cat.id}`}
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedCategory(cat.name);
-                                        setDropdownOpen(false);
-                                        setCatSearch('');
-                                      }}
-                                      className={`w-full flex items-center justify-between text-xs font-bold px-3 py-2.5 rounded-lg cursor-pointer transition-all text-left ${
-                                        isSelected
-                                          ? 'bg-[#c8ff00]/10 text-[#c8ff00]'
-                                          : 'text-white/60 hover:bg-white/[0.03] hover:text-white'
-                                      }`}
-                                    >
-                                      <span>{cat.name}</span>
-                                      {isSelected && <Check size={14} className="text-[#c8ff00]" />}
-                                    </button>
-                                  );
-                                });
-                              })()}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
                     {/* Tag Optional Selector */}
                     <div className="space-y-2">
                       <label className="text-[11px] font-bold uppercase tracking-[1.5px] text-white/40 block">
@@ -856,7 +736,7 @@ export const EditProduct: React.FC = () => {
                 <div className="space-y-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
                     <h1 className="text-3xl font-black tracking-tight text-white">Sizes & stock.</h1>
-                    <p className="text-white/50 text-[13px]">Select category & tap sizes to activate.</p>
+                    <p className="text-white/50 text-[13px]">Select colours & tap sizes to activate.</p>
                   </div>
 
                   {/* Size type selection tab */}
@@ -963,41 +843,89 @@ export const EditProduct: React.FC = () => {
                     )}
 
                     {/* Colors swatches */}
-                    <div className="space-y-2 pt-1">
-                      <label className="text-[11px] font-bold uppercase tracking-[1.5px] text-white/40 block">
-                        Colours
-                      </label>
-                      <div className="flex justify-between items-center bg-white/[0.03] border border-white/[0.06] p-3 rounded-xl">
-                        <div className="flex gap-2 font-mono">
+                    <div className="space-y-4 pt-1">
+                      <div>
+                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#c8ff00] block mb-2">
+                          Colours selection (Tap to toggle)
+                        </label>
+                        <div className="flex flex-wrap gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                           {swatches.map((sw) => {
-                            const isSelected = activeSwatch === sw;
+                            const swatchName = swatchToName[sw];
+                            const isSelected = selectedColors.includes(swatchName);
                             return (
                               <button
                                 key={`swatch-${sw}`}
                                 type="button"
-                                onClick={() => handleSwatchClick(sw)}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedColors(selectedColors.filter(c => c !== swatchName));
+                                  } else {
+                                    setSelectedColors([...selectedColors, swatchName]);
+                                  }
+                                }}
                                 className={`w-9 h-9 rounded-full flex items-center justify-center text-sm transition-all relative cursor-pointer ${
-                                  sw === '+' ? 'bg-white/[0.08] hover:bg-white/10 text-white font-heavy border border-white/20' : ''
-                                } ${
-                                  isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a]' : ''
+                                  isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a]' : 'opacity-60 hover:opacity-100'
                                 }`}
+                                title={swatchName}
                               >
-                                {sw !== '+' ? sw : <Plus size={14} />}
+                                {sw}
                               </button>
                             );
                           })}
+
+                          {/* Custom Color Add Trigger */}
+                          <button
+                            type="button"
+                            onClick={() => setShowCustomColorInput(true)}
+                            className="w-9 h-9 rounded-full bg-white/[0.08] hover:bg-white/10 text-white font-heavy border border-white/20 flex items-center justify-center cursor-pointer transition-all"
+                            title="Add Custom Color"
+                          >
+                            <Plus size={14} />
+                          </button>
                         </div>
                       </div>
-                      
-                      {/* Swatch color name input */}
-                      {activeSwatch && (
-                        <input
-                          type="text"
-                          value={colorName}
-                          onChange={(e) => setColorName(e.target.value)}
-                          placeholder="e.g. Midnight Black"
-                          className="w-full text-[13px] font-medium bg-white/[0.05] border border-white/10 focus:border-[#c8ff00] rounded-lg px-3.5 py-2.5 text-white placeholder-white/25 outline-none outline-0"
-                        />
+
+                      {showCustomColorInput && (
+                        <div className="flex gap-2 animate-none">
+                          <input
+                            type="text"
+                            value={customColorText}
+                            onChange={(e) => setCustomColorText(e.target.value)}
+                            placeholder="Type custom colour name (e.g. Acid Lime)..."
+                            className="flex-grow text-[13px] font-medium bg-white/[0.05] border border-[#c8ff00]/40 focus:border-[#c8ff00] rounded-lg px-3.5 py-2.5 text-white placeholder-white/25 outline-none outline-0"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCustomColor}
+                            className="px-4 bg-[#c8ff00] text-black font-extrabold text-xs uppercase rounded-lg hover:opacity-90 cursor-pointer font-sans"
+                          >
+                            Add
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Active Color Palette tags display */}
+                      {selectedColors.length > 0 && (
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] uppercase tracking-[1px] text-white/30 font-bold block">Active Palette:</span>
+                          <div className="flex flex-wrap gap-1.5 font-sans">
+                            {selectedColors.map((colName) => (
+                              <div
+                                key={`active-col-${colName}`}
+                                className="flex items-center gap-1.5 px-2.5 py-1 bg-[#c8ff00]/10 border border-[#c8ff00]/20 text-[#c8ff00] rounded-full text-xs font-semibold"
+                              >
+                                <span>{colName}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedColors(selectedColors.filter(c => c !== colName))}
+                                  className="text-white/40 hover:text-white font-bold cursor-pointer text-[10px]"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
 
@@ -1069,9 +997,6 @@ export const EditProduct: React.FC = () => {
                           <h4 className="font-extrabold text-[14px] leading-tight line-clamp-1 text-white">
                             {name || 'Product name'}
                           </h4>
-                          <span className="shrink-0 bg-white/[0.06] border border-white/10 px-1.5 py-0.5 text-[8.5px] text-white/55 font-bold rounded-[6px]">
-                            {selectedCategory || 'Category'}
-                          </span>
                         </div>
                         <p className="text-[#c8ff00] font-black text-[16px] leading-none">
                           ${parseFloat(price) ? parseFloat(price) : '0'}
@@ -1201,9 +1126,7 @@ export const EditProduct: React.FC = () => {
                     <p className="text-[#c8ff00] font-black text-[18px] leading-none">
                       ${price}
                     </p>
-                    <span className="inline-block self-start px-2 py-0.5 bg-white/5 border border-white/10 text-[9px] text-white/50 font-bold rounded-[6px] uppercase tracking-wider">
-                      {selectedCategory}
-                    </span>
+
                   </div>
                 </div>
 

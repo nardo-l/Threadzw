@@ -121,9 +121,9 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
       return;
     }
 
-    // Feature 5: Enforce Trial Product Limit
-    const isTrial = myShop?.subscription_status === 'trial';
-    const maxProducts = isTrial ? 3 : 1000;
+    // Feature 5: Enforce Trial Product Limit - Disabled, completely free 
+    const isTrial = false;
+    const maxProducts = 1000;
     
     try {
       // Get current product count

@@ -48,6 +48,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (initialSession) {
             setSession(initialSession);
             localStorage.setItem('threadzw_logged_in', 'true');
+            if (initialSession.user?.id) {
+              localStorage.setItem('supabase_logged_in_user_id', initialSession.user.id);
+            }
             // Fetch profile with timeout protection
             try {
               const profileResult = await Promise.race([
@@ -72,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(null);
             setProfile(null);
             localStorage.removeItem('threadzw_logged_in');
+            localStorage.removeItem('supabase_logged_in_user_id');
           }
         }
       } catch (e) {
@@ -80,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setProfile(null);
           localStorage.removeItem('threadzw_logged_in');
+          localStorage.removeItem('supabase_logged_in_user_id');
         }
       } finally {
         if (mounted) {
@@ -95,6 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (currentSession) {
           setSession(currentSession);
           localStorage.setItem('threadzw_logged_in', 'true');
+          if (currentSession.user?.id) {
+            localStorage.setItem('supabase_logged_in_user_id', currentSession.user.id);
+          }
           try {
             const { data: profileCheck } = await supabase
               .from('profiles')
@@ -118,6 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setProfile(null);
           localStorage.removeItem('threadzw_logged_in');
+          localStorage.removeItem('supabase_logged_in_user_id');
         }
         setLoading(false);
       }
@@ -230,6 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsGuest(true)
     setSessionExpired(false)
     localStorage.removeItem('threadzw_logged_in')
+    localStorage.removeItem('supabase_logged_in_user_id')
     localStorage.removeItem('threadzw_onboarding_complete')
     localStorage.removeItem('threadzw_onboarding_step')
     localStorage.removeItem('threadzw_onboarding_states')

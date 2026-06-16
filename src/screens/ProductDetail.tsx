@@ -105,8 +105,9 @@ export const ProductDetail: React.FC = () => {
       toast.error('please select a size first');
       return;
     }
+    const cleanPhone = (shop.whatsapp || '').replace(/[^0-9]/g, '') || '263';
     const message = `hi! I saw your ${product.name} on threadzw and I'm interested. ${selectedSize ? `Is it available in size ${selectedSize}?` : ''}`;
-    const url = `https://wa.me/${shop.whatsapp?.replace(/\+/g, '') || '263'}/?text=${encodeURIComponent(message)}`;
+    const url = `https://wa.me/${cleanPhone}/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
   };
 

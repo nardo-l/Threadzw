@@ -92,21 +92,8 @@ export const DashboardView: React.FC<{ myShop: any }> = ({ myShop }) => {
     return Object.values(counts).sort((a, b) => b.revenue - a.revenue).slice(0, 4);
   }, [dashboardOrders]);
 
-  if (myShop?.subscription_status === 'trial') {
-    return (
-      <div className="flex flex-col min-h-screen bg-black items-center justify-center p-10 text-center">
-         <div className="w-16 h-16 rounded-3xl bg-primary/20 flex items-center justify-center text-primary mb-6">
-            <Target size={32} />
-         </div>
-         <h2 className="text-2xl font-syne font-black tracking-tighter uppercase italic mb-2">PRO ANALYTICS</h2>
-         <p className="text-white/40 text-sm mb-10 leading-relaxed max-w-xs">Unlock deep insights, growth charts, and customer trends. Available for Thread Pro members.</p>
-         <button onClick={() => setSellerFlowState('paywall')} className="w-full h-14 bg-white text-black rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">
-           Upgrade to Pro
-         </button>
-         <button onClick={() => setSellerFlowState('live')} className="mt-6 text-white/30 text-[10px] font-black uppercase tracking-widest italic">Return to Hub</button>
-      </div>
-    );
-  }
+  // Free always - no subscription trial check
+  const isTrial = false;
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans pb-20">
