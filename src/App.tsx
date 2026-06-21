@@ -1,6 +1,6 @@
 // src/App.tsx
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { OnboardingFlow } from './screens/OnboardingFlow';
@@ -9,7 +9,6 @@ import { Dashboard } from './screens/Dashboard';
 import { AddProduct } from './screens/AddProduct';
 import { EditProduct } from './screens/EditProduct';
 import { Inventory } from './screens/Inventory';
-import { Analytics } from './screens/Analytics';
 import { Settings } from './screens/Settings';
 import { ShopEdit } from './screens/ShopEdit';
 import { SalesSystem } from './screens/SalesSystem';
@@ -50,28 +49,67 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   if (path === '/onboarding') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/add-product' || path === '/settings' || path === '/edit-shop') {
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/add-product' || path.startsWith('/edit-product') || path === '/settings' || path === '/edit-shop') {
     return { stage: 'dashboard' };
   }
   if (path === '/setup') {
     return { stage: 'setup' };
   }
   
-  // Match /store/:slug or /shop/:handle
-  const shopMatch = pathname.match(/^\/(?:shop|store)\/@?([a-z0-9_-]+)$/i);
-  if (shopMatch) {
-    return {
-      stage: 'shop',
-      handle: shopMatch[1].replace(/^@/, '').toLowerCase()
-    };
-  }
-
   // Match /product/:id
   const productMatch = pathname.match(/^\/product\/([a-z0-9_-]+)$/i);
   if (productMatch) {
     return {
       stage: 'product',
       id: productMatch[1]
+    };
+  }
+
+  // Deep parse for permanent unique storefront URLs
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length > 0) {
+    const firstSegment = segments[0];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 's', 'shop', 'store'];
+    
+    if (firstSegment === 's') {
+      const shopId = segments[1];
+      if (shopId) {
+        return { stage: 'shop', id: shopId };
+      }
+    }
+    
+    if (firstSegment === 'shop' || firstSegment === 'store') {
+      const secondSegment = segments[1];
+      if (secondSegment) {
+        if (secondSegment.includes('--')) {
+          const idx = secondSegment.lastIndexOf('--');
+          return { stage: 'shop', id: secondSegment.substring(idx + 2) };
+        } else {
+          return { stage: 'shop', id: secondSegment };
+        }
+      }
+    }
+    
+    if (firstSegment.includes('--')) {
+      const idx = firstSegment.lastIndexOf('--');
+      const slugPart = firstSegment.substring(0, idx);
+      const idPart = firstSegment.substring(idx + 2);
+      // Since it has '--', it's always a persistent storefront URL, regardless of whether the slug is a reserved word
+      return { stage: 'shop', handle: slugPart, id: idPart };
+    }
+
+    // Default: If it's not a reserved route, treat as raw slug storefront
+    if (!reserved.includes(firstSegment.toLowerCase())) {
+      return { stage: 'shop', handle: firstSegment.toLowerCase() };
+    }
+  }
+
+  // Match /store/:slug or /shop/:handle (Legacy backup support)
+  const shopMatch = pathname.match(/^\/(?:shop|store)\/@?([a-z0-9_-]+)$/i);
+  if (shopMatch) {
+    return {
+      stage: 'shop',
+      handle: shopMatch[1].replace(/^@/, '').toLowerCase()
     };
   }
 
@@ -102,6 +140,39 @@ function AppContent() {
 
   const { session, loading } = useAuth();
 
+  // Handle public routes unconditionally to prevent any auth lag or state conflicts
+  const isPublicShopPath = useMemo(() => {
+    const segments = cleanPath.split('/').filter(Boolean);
+    if (cleanPath === '/demo' || cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/') || cleanPath.startsWith('/s/')) {
+      return true;
+    }
+    if (segments.length > 0) {
+      const firstSegment = segments[0];
+      if (firstSegment.includes('--')) {
+        // Since it has '--', it's always a persistent storefront URL
+        return true;
+      }
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api'];
+      if (!reserved.includes(firstSegment.toLowerCase())) {
+        return true;
+      }
+    }
+    return false;
+  }, [cleanPath]);
+
+  const isDashboardSubPath = useMemo(() => {
+    return (
+      appStage === 'dashboard' ||
+      cleanPath === '/dashboard' ||
+      cleanPath.startsWith('/dashboard/') ||
+      cleanPath === '/inventory' ||
+      cleanPath === '/settings' ||
+      cleanPath === '/edit-shop' ||
+      cleanPath === '/add-product' ||
+      cleanPath.startsWith('/edit-product/')
+    );
+  }, [appStage, cleanPath]);
+
   // Keep appStage in sync with path transitions
   useEffect(() => {
     const data = getInitialStageAndParams(location.pathname);
@@ -114,6 +185,10 @@ function AppContent() {
     if (loading) return;
     
     // Allow public routes
+    if (isPublicShopPath) {
+      return;
+    }
+
     const path = location.pathname.toLowerCase();
     if (
       path === '' ||
@@ -151,7 +226,7 @@ function AppContent() {
         setAppStage('dashboard');
       }
     }
-  }, [loading, session, shopLoading, hasShop, location.pathname]);
+  }, [loading, session, shopLoading, hasShop, location.pathname, isPublicShopPath]);
 
   if (loading) {
     return <SplashScreen />;
@@ -170,25 +245,39 @@ function AppContent() {
     );
   }
 
-  // Handle public routes unconditionally to prevent any auth lag or state conflicts
-  const isPublicShopPath = cleanPath === '/demo' || cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/');
-
-  if (isPublicShopPath) {
+  if (isPublicShopPath || appStage === 'shop') {
     return (
       <Routes>
         <Route path="/demo" element={<StorefrontPage />} />
+        
+        {/* Support formatting in /s/:slug */}
+        <Route path="/s/:slug" element={<StorefrontPage />} />
+        <Route path="/s/:slug/products" element={<StorefrontPage />} />
+        <Route path="/s/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/s/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/s/:slug/about" element={<StorefrontPage />} />
+
+        {/* Supports both /shop/:slug--id and /shop/:slug formats */}
         <Route path="/shop/:slug" element={<StorefrontPage />} />
         <Route path="/shop/:slug/products" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/product" element={<StorefrontPage />} />
         <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/shop/:slug/about" element={<StorefrontPage />} />
+
+        {/* Supports both /store/:slug--id and /store/:slug formats */}
         <Route path="/store/:slug" element={<StorefrontPage />} />
         <Route path="/store/:slug/products" element={<StorefrontPage />} />
-        <Route path="/store/:slug/product" element={<StorefrontPage />} />
         <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
         <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
         <Route path="/store/:slug/about" element={<StorefrontPage />} />
+
+        {/* Supports direct root path, e.g. /:slug--id */}
+        <Route path="/:slug" element={<StorefrontPage />} />
+        <Route path="/:slug/products" element={<StorefrontPage />} />
+        <Route path="/:slug/product/:productId" element={<StorefrontPage />} />
+        <Route path="/:slug/category/:categoryId" element={<StorefrontPage />} />
+        <Route path="/:slug/about" element={<StorefrontPage />} />
+
         <Route path="*" element={<StorefrontPage />} />
       </Routes>
     );
@@ -196,27 +285,6 @@ function AppContent() {
 
   if (session && shopLoading) {
     return <SplashScreen />;
-  }
-
-  if (appStage === 'shop') {
-    return (
-      <Routes>
-        <Route path="/shop/:slug" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/products" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/product" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/about" element={<StorefrontPage />} />
-        <Route path="/store/:slug" element={<StorefrontPage />} />
-        <Route path="/store/:slug/products" element={<StorefrontPage />} />
-        <Route path="/store/:slug/product" element={<StorefrontPage />} />
-        <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/store/:slug/about" element={<StorefrontPage />} />
-        <Route path="/demo" element={<StorefrontPage />} />
-        <Route path="*" element={<StorefrontPage />} />
-      </Routes>
-    );
   }
 
   if (appStage === 'product') {
@@ -270,29 +338,16 @@ function AppContent() {
     return <SetupShop onSetupComplete={refreshShop} />;
   }
 
-  if (appStage === 'dashboard' || cleanPath === '/dashboard' || cleanPath.startsWith('/dashboard/')) {
+  if (isDashboardSubPath) {
     return (
       <Routes>
         <Route path="/" element={<Dashboard initialLocked={false} />} />
         <Route path="/dashboard" element={<Dashboard initialLocked={false} />} />
-        <Route path="/add-product" element={<AddProduct />} />
-        <Route path="/edit-product/:productId" element={<EditProduct />} />
         <Route path="/inventory" element={<Inventory />} />
-        <Route path="/sales" element={<OrderManagement />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/support" element={<Support />} />
-        <Route path="/notifications" element={<Notifications />} />
-        <Route path="/search" element={<Search />} />
-        <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
-        
-        {/* Core Router Aliases requested in Part 4/8 */}
-        <Route path="/dashboard/products" element={<Inventory />} />
-        <Route path="/dashboard/edit" element={<ShopEdit />} />
-        <Route path="/dashboard/settings" element={<Settings />} />
-        <Route path="/dashboard/analytics" element={<Analytics />} />
-        
+        <Route path="/add-product" element={<AddProduct />} />
+        <Route path="/edit-product/:id" element={<EditProduct />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     );

@@ -12,12 +12,12 @@
   --color-card-bg: #151515;
   --color-ele-bg: #1A1A1A;
   --color-border: #2A2A2A;
-  --color-neon: #c8ff00;
-  --color-neon-text: #0B0B0B;
-  --color-secondary-text: #A1A1AA;
-  --color-success: #22C55E;
+  --color-neon: #C6FF00;
+  --color-neon-text: #000000;
+  --color-secondary-text: #A0A0A0;
+  --color-success: #C6FF00;
   --color-error: #EF4444;
-  --color-warm: #FF7A00;
+  --color-warm: #C6FF00;
 }
 
 :root {
@@ -25,7 +25,7 @@
   --card-radius: 14px;
   --chip-radius: 8px;
   --input-radius: 10px;
-  --color-lime: #c8ff00;
+  --color-lime: #C6FF00;
   --color-bg: #0a0a0a;
   --color-text: #ffffff;
   --color-subtext: rgba(255,255,255,0.5);
@@ -35,13 +35,13 @@
 
 /* Custom Global Typography Overrides for Lime Green Text */
 .threadzw-wordmark,
-[class*="text-[#c8ff00]"],
+[class*="text-[#C6FF00]"],
 [class*="text-[#C6FF00]"],
 [class*="text-neon"],
 [class*="text-lime"],
-[style*="color: rgb(200, 255, 0)"],
 [style*="color: rgb(198, 255, 0)"],
-[style*="color:#c8ff00"],
+[style*="color: rgb(198, 255, 0)"],
+[style*="color:#C6FF00"],
 [style*="color:#C6FF00"] {
   font-family: var(--font-wordmark) !important;
   font-weight: 950 !important;
@@ -60,7 +60,7 @@ button {
 }
 
 /* Primary Button Style (lime green background) */
-button[class*="bg-[#c8ff00]"],
+button[class*="bg-[#C6FF00]"],
 button[class*="bg-[#C6FF00]"],
 button[class*="bg-neon"],
 button[class*="bg-lime"],
@@ -170,7 +170,7 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
   border-color: var(--color-lime) !important;
   outline: none !important;
-  background-color: rgba(200, 255, 0, 0.04) !important;
+  background-color: rgba(198, 255, 0, 0.04) !important;
 }
 
 /* Cards and Modals Override */
@@ -338,5 +338,150 @@ img.loaded {
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
+}
+
+/* Add Product and Edit Product light theme alignment styles */
+.add-product-light, .edit-product-light {
+  --color-text: #18181b !important;
+  --color-subtext: #71717a !important;
+  background-color: #F9FAFB !important;
+  color: #18181b !important;
+}
+
+.add-product-light .text-white, 
+.edit-product-light .text-white {
+  color: #09090b !important;
+}
+
+.add-product-light .text-white\/50, 
+.edit-product-light .text-white\/50 {
+  color: #52525b !important;
+}
+
+.add-product-light .text-white\/30, 
+.edit-product-light .text-white\/30,
+.add-product-light .text-white\/40, 
+.edit-product-light .text-white\/40 {
+  color: #71717a !important;
+}
+
+.add-product-light select, 
+.add-product-light textarea,
+.add-product-light input,
+.edit-product-light select, 
+.edit-product-light textarea,
+.edit-product-light input {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+  color: #18181b !important;
+}
+
+.add-product-light input::placeholder, 
+.edit-product-light input::placeholder,
+.add-product-light textarea::placeholder, 
+.edit-product-light textarea::placeholder {
+  color: #a1a1aa !important;
+}
+
+.add-product-light .bg-white\/\[0\.02\],
+.add-product-light .bg-white\/\[0\.03\],
+.add-product-light .bg-white\/\[0\.04\],
+.add-product-light .bg-white\/\[0\.05\],
+.edit-product-light .bg-white\/\[0\.02\],
+.edit-product-light .bg-white\/\[0\.03\],
+.edit-product-light .bg-white\/\[0\.04\],
+.edit-product-light .bg-white\/\[0\.05\] {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+}
+
+.add-product-light .border-white\/10,
+.add-product-light .border-white\/\[0\.04\],
+.add-product-light .border-white\/\[0\.05\],
+.add-product-light .border-white\/\[0\.06\],
+.add-product-light .border-white\/\[0\.08\],
+.edit-product-light .border-white\/10,
+.edit-product-light .border-white\/\[0\.04\],
+.edit-product-light .border-white\/\[0\.05\],
+.edit-product-light .border-white\/\[0\.06\],
+.edit-product-light .border-white\/\[0\.08\] {
+  border-color: #e4e4e7 !important;
+}
+
+.add-product-light .bg-neutral-900,
+.edit-product-light .bg-neutral-900 {
+  background-color: #f4f4f5 !important;
+}
+
+.add-product-light .disabled\:bg-neutral-800,
+.edit-product-light .disabled\:bg-neutral-800 {
+  background-color: #e4e4e7 !important;
+  color: #a1a1aa !important;
+}
+
+/* Sales Centre / CRM Light Theme overrides */
+.sales-system-light {
+  --color-text: #18181b !important;
+  --color-subtext: #52525b !important;
+  background-color: #F9FAFB !important;
+  color: #18181b !important;
+}
+
+.sales-system-light select,
+.sales-system-light textarea,
+.sales-system-light input {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+  color: #18181b !important;
+}
+
+.sales-system-light .text-white {
+  color: #09090b !important;
+}
+
+.sales-system-light .text-white\/30,
+.sales-system-light .text-white\/40,
+.sales-system-light .text-white\/50,
+.sales-system-light .text-white\/60,
+.sales-system-light .text-white\/70,
+.sales-system-light .text-zinc-400,
+.sales-system-light .text-zinc-500 {
+  color: #52525b !important;
+}
+
+.sales-system-light .border-white\/5,
+.sales-system-light .border-white\/10,
+.sales-system-light .border-white\/\[0\.04\],
+.sales-system-light .border-white\/\[0\.05\],
+.sales-system-light .border-white\/\[0\.06\],
+.sales-system-light .border-white\/\[0\.08\] {
+  border-color: #e4e4e7 !important;
+}
+
+.sales-system-light .bg-white\/\[0\.02\],
+.sales-system-light .bg-white\/\[0\.03\],
+.sales-system-light .bg-white\/\[0\.04\],
+.sales-system-light .bg-white\/\[0\.1\],
+.sales-system-light .bg-white\/5 {
+  background-color: #ffffff !important;
+  border-color: #e4e4e7 !important;
+}
+
+.sales-system-light .bg-\[\#121215\],
+.sales-system-light .bg-\[\#151518\],
+.sales-system-light .bg-\[\#18181b\],
+.sales-system-light .bg-\[\#1a1a1f\],
+.sales-system-light .bg-neutral-900 {
+  background-color: #ffffff !important;
+  border: 1px solid #e4e4e7 !important;
+}
+
+.sales-system-light .text-\[\#C6FF00\] {
+  color: #18181b !important;
+}
+
+.sales-system-light button[class*="disabled:bg-"] {
+  background-color: #f4f4f5 !important;
+  color: #a1a1aa !important;
 }
 

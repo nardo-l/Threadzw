@@ -57,7 +57,7 @@ export const Support: React.FC = () => {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-[#c8ff00] uppercase font-black font-mono">Merchant Resource</span>
+          <span className="text-[10px] font-mono tracking-widest text-[#C6FF00] uppercase font-black font-mono">Merchant Resource</span>
           <h1 className="text-xl font-black italic tracking-tighter uppercase">Help & Support</h1>
         </div>
       </div>
@@ -135,7 +135,7 @@ export const Support: React.FC = () => {
                 onClick={() => setType('bug')}
                 className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
                   type === 'bug' 
-                    ? 'bg-[#c8ff00] text-black font-extrabold' 
+                    ? 'bg-[#C6FF00] text-black font-extrabold' 
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -146,7 +146,7 @@ export const Support: React.FC = () => {
                 onClick={() => setType('feature')}
                 className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
                   type === 'feature' 
-                    ? 'bg-[#c8ff00] text-black font-extrabold' 
+                    ? 'bg-[#C6FF00] text-black font-extrabold' 
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -162,7 +162,7 @@ export const Support: React.FC = () => {
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 rows={4}
-                className="w-full bg-black/25 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#c8ff00] placeholder-zinc-700"
+                className="w-full bg-black/25 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#C6FF00] placeholder-zinc-700"
                 placeholder={type === 'bug' ? 'e.g., The analytics page shows $0.00 even though I recorded sales...' : 'e.g., I would love to be able to sort categories by rank drag-and-drop...'}
               />
             </div>

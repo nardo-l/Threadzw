@@ -100,8 +100,7 @@ export const Shops: React.FC = () => {
                   key={shop.id} 
                   shop={shop} 
                   onClick={() => {
-                    const activeSlug = shop.slug || shop.handle;
-                    const path = getShopUrl(activeSlug);
+                    const path = getShopUrl(shop.slug || shop.handle, shop.id);
                     console.log("[SHOPS ROUTING] Clicked ShopCard, navigating to:", path);
                     if (path) {
                       navigate(path);
@@ -125,8 +124,7 @@ export const Shops: React.FC = () => {
                     <ShopCard 
                       shop={shop} 
                       onClick={() => {
-                        const activeSlug = shop.slug || shop.handle;
-                        const path = getShopUrl(activeSlug);
+                        const path = getShopUrl(shop.slug || shop.handle, shop.id);
                         console.log("[SHOPS ROUTING] Clicked New ShopCard, navigating to:", path);
                         if (path) {
                           navigate(path);

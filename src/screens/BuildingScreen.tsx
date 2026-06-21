@@ -65,7 +65,7 @@ export const BuildingScreen: React.FC<BuildingScreenProps> = ({
   }, [setAppStage, setPaywallScreen]);
 
   return (
-    <div id="shop-building-screen" className="fixed inset-0 bg-[#0a0a0a] text-white flex flex-col justify-between z-50 font-sans selection:bg-[#c8ff00]/30 select-none overflow-hidden">
+    <div id="shop-building-screen" className="fixed inset-0 bg-[#0a0a0a] text-white flex flex-col justify-between z-50 font-sans selection:bg-[#C6FF00]/30 select-none overflow-hidden">
       
       {/* WORDMARK TOP CENTER */}
       <div className="pt-12 text-center">
@@ -87,16 +87,16 @@ export const BuildingScreen: React.FC<BuildingScreenProps> = ({
           <motion.div 
             animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.4, 0.15] }}
             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-            className="absolute w-32 h-32 rounded-full bg-[#c8ff00]"
+            className="absolute w-32 h-32 rounded-full bg-[#C6FF00]"
           />
           {/* Spinning dashed circle border */}
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-            className="absolute w-28 h-28 rounded-full border-2 border-dashed border-[#c8ff00]"
+            className="absolute w-28 h-28 rounded-full border-2 border-dashed border-[#C6FF00]"
           />
           {/* Inner Badge */}
-          <div className="relative w-22 h-22 bg-[#121212] border border-white/10 rounded-full flex items-center justify-center text-[#c8ff00]">
+          <div className="relative w-22 h-22 bg-[#121212] border border-white/10 rounded-full flex items-center justify-center text-[#C6FF00]">
             <Store className="w-10 h-10" />
           </div>
         </div>
@@ -114,7 +114,7 @@ export const BuildingScreen: React.FC<BuildingScreenProps> = ({
                       animate={{ opacity: 1, x: 0 }}
                       className="flex items-center gap-3"
                     >
-                      <span className="text-[#c8ff00] text-lg font-bold">✓</span>
+                      <span className="text-[#C6FF00] text-lg font-bold">✓</span>
                       <span className="text-white font-bold text-base tracking-tight">
                         {item}
                       </span>
@@ -136,7 +136,7 @@ export const BuildingScreen: React.FC<BuildingScreenProps> = ({
       <div className="w-full h-[3px] bg-white/5 relative">
         <div 
           style={{ width: `${progress}%` }} 
-          className="h-full bg-[#c8ff00] transition-all duration-75 ease-out" 
+          className="h-full bg-[#C6FF00] transition-all duration-75 ease-out" 
         />
       </div>
 

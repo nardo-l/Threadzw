@@ -835,20 +835,20 @@ supabase.from = function(relation: string) {
                   };
 
                   if (Array.isArray(val.data)) {
-                    const hasDemo = val.data.some((s: any) => s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo');
+                    const hasDemo = val.data.some((s: any) => s && (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo'));
                     if (!hasDemo) {
                       val.data = [...val.data, demoShopRecord];
                     } else {
                       val.data = val.data.map((s: any) => {
-                        if (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo') {
+                        if (s && (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo')) {
                           return { ...s, ...demoShopRecord };
                         }
                         return s;
                       });
                     }
-                  } else {
+                  } else if (val.data) {
                     const s = val.data;
-                    if (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo') {
+                    if (s && (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo')) {
                       val.data = { ...s, ...demoShopRecord };
                     }
                   }

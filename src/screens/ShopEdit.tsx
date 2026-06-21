@@ -794,10 +794,10 @@ export const ShopEdit = () => {
       {showCustomOverlayToast && (
         <div id="custom-overlay-toast" className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce cursor-pointer flex items-center justify-center w-[calc(100%-32px)] max-w-[398px]">
           <div style={{
-            background: 'rgba(200,255,0,0.12)',
-            border: '1px solid rgba(200,255,0,0.25)',
+            background: 'rgba(198, 255, 0,0.12)',
+            border: '1px solid rgba(198, 255, 0,0.25)',
             borderRadius: '10px',
-            color: '#c8ff00',
+            color: '#C6FF00',
             fontSize: '13px',
             padding: '12px 16px'
           }} className="font-extrabold shadow-[0_4px_24px_rgba(0,0,0,0.9)] flex items-center gap-2 w-full justify-center">
@@ -1573,7 +1573,7 @@ export const ShopEdit = () => {
                   <div className="flex gap-1.5 items-center">
                     <input
                       type="color"
-                      value={brandColorAccent || '#c8ff00'}
+                      value={brandColorAccent || '#C6FF00'}
                       onChange={e => {
                         setBrandColorAccent(e.target.value);
                         markChanged();
@@ -1726,7 +1726,7 @@ export const ShopEdit = () => {
                 ? '#10b981'
                 : saving
                   ? '#1f2937'
-                  : '#c8ff00',
+                  : '#C6FF00',
               color: saveSuccess || saving
                 ? '#ffffff'
                 : '#000000',

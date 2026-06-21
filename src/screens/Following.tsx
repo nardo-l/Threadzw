@@ -75,8 +75,7 @@ export const Following: React.FC = () => {
             key={shop.id}
             className="bg-card p-4 rounded-card border border-white/5 flex items-center gap-4 group active:scale-[0.98] transition-all"
             onClick={() => {
-              const activeSlug = (shop as any).handle || (shop as any).slug || shop.id;
-              const path = getShopUrl(activeSlug);
+              const path = getShopUrl((shop as any).handle || (shop as any).slug, shop.id);
               console.log("[FOLLOWING ROUTING] Following shop click: navigating to store path:", path);
               if (path) {
                 navigate(path);

@@ -168,7 +168,7 @@ export const OrderManagement: React.FC = () => {
             placeholder="Search reference, product, customer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 bg-white/[0.03] border border-white/10 rounded-xl pl-10 pr-4 text-xs text-white focus:outline-none focus:border-[#c8ff00] transition-all placeholder-zinc-500"
+            className="w-full h-11 bg-white/[0.03] border border-white/10 rounded-xl pl-10 pr-4 text-xs text-white focus:outline-none focus:border-[#C6FF00] transition-all placeholder-zinc-500"
           />
         </div>
 
@@ -185,7 +185,7 @@ export const OrderManagement: React.FC = () => {
                 onClick={() => setActiveStatusTab(tab)}
                 className={`flex-shrink-0 px-4 py-2 text-[10px] font-mono font-bold uppercase tracking-wider rounded-lg transition-all ${
                   isActive 
-                    ? 'bg-[#c8ff00] text-black font-extrabold' 
+                    ? 'bg-[#C6FF00] text-black font-extrabold' 
                     : 'bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 border border-white/[0.02]'
                 }`}
               >
@@ -200,7 +200,7 @@ export const OrderManagement: React.FC = () => {
       <div className="px-5 mt-6 space-y-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-[#c8ff00]" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#C6FF00]" />
             <p className="text-zinc-500 text-xs font-mono font-bold uppercase tracking-wider mt-3">Syncing operations log...</p>
           </div>
         ) : filteredOrders.length === 0 ? (
@@ -208,7 +208,7 @@ export const OrderManagement: React.FC = () => {
             <Receipt size={28} className="text-zinc-600 mb-3" />
             <h3 className="font-extrabold text-sm text-zinc-300">No active bookings</h3>
             <p className="text-xs text-zinc-500 mt-2 max-w-xs leading-relaxed">
-              No orders registered under <span className="text-[#c8ff00] font-mono">"{activeStatusTab.toUpperCase()}"</span> category for this store node.
+              No orders registered under <span className="text-[#C6FF00] font-mono">"{activeStatusTab.toUpperCase()}"</span> category for this store node.
             </p>
           </div>
         ) : (
@@ -247,7 +247,7 @@ export const OrderManagement: React.FC = () => {
                   <div className="mt-4">
                     <h3 className="text-sm font-extrabold text-white leading-snug">{itm.product_name}</h3>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[11px] font-semibold text-[#c8ff00] bg-[#c8ff00]/10 px-1.5 py-0.5 rounded">M</span>
+                      <span className="text-[11px] font-semibold text-[#C6FF00] bg-[#C6FF00]/10 px-1.5 py-0.5 rounded">M</span>
                       <span className="text-[11px] text-zinc-500">{itm.quantity} item • walk-in sale</span>
                     </div>
                   </div>
@@ -261,7 +261,7 @@ export const OrderManagement: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-[8.5px] uppercase font-mono tracking-widest text-[#A1A1AA]/50 font-bold block">Order Value</span>
-                      <span className="text-sm font-black font-mono text-[#c8ff00] block mt-0.5">${itm.total_price.toFixed(2)}</span>
+                      <span className="text-sm font-black font-mono text-[#C6FF00] block mt-0.5">${itm.total_price.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -296,7 +296,7 @@ export const OrderManagement: React.FC = () => {
                   <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase font-black block">Order Detail System</span>
                   <div className="flex items-center gap-2 mt-1">
                     <h3 className="text-lg font-black text-white italic uppercase tracking-tight">{selectedOrder.order_reference}</h3>
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#c8ff00]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF00]" />
                   </div>
                 </div>
                 <button 
@@ -316,7 +316,7 @@ export const OrderManagement: React.FC = () => {
                     <ShoppingBag size={20} />
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-[#c8ff00] text-[15px] leading-snug">{selectedOrder.product_name}</h4>
+                    <h4 className="font-extrabold text-[#C6FF00] text-[15px] leading-snug">{selectedOrder.product_name}</h4>
                     <p className="text-zinc-500 text-xs mt-1 font-medium">Quantity: {selectedOrder.quantity || 1} • Size: {selectedOrder.size || 'M'} • Channel: {selectedOrder.channel}</p>
                     <div className="text-xs font-black font-mono text-white mt-1.5">${selectedOrder.sale_price.toFixed(2)} unit</div>
                   </div>
@@ -385,7 +385,7 @@ export const OrderManagement: React.FC = () => {
 
                   <div className="p-4 flex justify-between items-center">
                     <span className="text-zinc-500 font-black text-xs uppercase text-[#A1A1AA]">Total Value</span>
-                    <span className="text-lg font-black font-mono text-[#c8ff00]">${selectedOrder.total_price.toFixed(2)}</span>
+                    <span className="text-lg font-black font-mono text-[#C6FF00]">${selectedOrder.total_price.toFixed(2)}</span>
                   </div>
 
                 </div>

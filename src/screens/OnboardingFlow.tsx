@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { mapError } from '../lib/utils';
 import { useDemoShop } from '../hooks/useDemoShop';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
+import { getAppHost, getAbsoluteShopUrl } from '../utils/shopUrl';
 
 // Hero icon component
 interface HeroIconProps {
@@ -193,6 +194,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   // Paywall Step (1 to 4) on custom Phase 5
   const [paywallStep, setPaywallStep] = useState(1);
+  const [tempUserId, setTempUserId] = useState<string>('');
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -502,6 +504,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       localStorage.setItem('threadzw_logged_in', 'true');
       localStorage.removeItem('threadzw_onboarding_step');
       localStorage.setItem('threadzw_owner_name', shopName || 'Merchant');
+      setTempUserId(activeUserId);
 
       // Proceed to Building Screen countdown animation state
       setScreen(26);
@@ -513,33 +516,59 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     }
   };
 
-  const handleFinishPaywall = () => {
+  const handleFinishPaywall = async () => {
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      if (!userId) {
+        toast.error("User session not found.");
+        return;
+      }
+      
+      const shopId = getDeterministicShopId(userId);
+      
+      // 1. Verify: Store exists and Store ID exists in Database
+      const { data: dbShop, error: dbError } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('id', shopId)
+        .maybeSingle();
+        
+      if (dbError || !dbShop) {
+        toast.error("Validation failed: Newly created store could not be verified in database.");
+        return;
+      }
+      
+      if (!dbShop.id || dbShop.id !== shopId) {
+        toast.error("Validation failed: Store ID mismatch or missing.");
+        return;
+      }
+      
+      // 2. Verify: Store URL is valid
+      const shopUrl = getAbsoluteShopUrl(dbShop.slug || dbShop.handle, dbShop.id);
+      if (!shopUrl || !shopUrl.includes('/shop/') || !shopUrl.startsWith('http')) {
+        toast.error("Validation failed: Generated store URL format is invalid.");
+        return;
+      }
+      
+      // Validation passed - proceed to mark complete
       localStorage.setItem('threadzw_onboarding_complete', 'true');
       localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
       localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
       
-      // Perform session retrieval and profile status update in the background
-      supabase.auth.getSession().then(({ data }) => {
-        const sessionResult = data?.session;
-        if (sessionResult?.user?.id) {
-          (async () => {
-            try {
-              await supabase.from('profiles').update({
-                onboarding_complete: true
-              }).eq('id', sessionResult.user.id);
-            } catch (err) {
-              console.warn("Background onboarding_complete update failed:", err);
-            }
-          })();
-        }
-      }).catch(err => {
-        console.warn("Background auth session retrieval failed:", err);
-      });
-    } catch (e) {
-      console.error("Local storage onboarding completion flag setting failed:", e);
-    } finally {
+      try {
+        await supabase.from('profiles').update({
+          onboarding_complete: true
+        }).eq('id', userId);
+      } catch (err) {
+        console.warn("Background onboarding_complete update failed:", err);
+      }
+      
+      toast.success("Store validated! Entering dashboard...");
       setAppStage('dashboard');
+    } catch (e) {
+      console.error("Onboarding completion validation failed:", e);
+      toast.error("An error occurred during final store validation.");
     }
   };
 
@@ -553,13 +582,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const filteredCities = zimCities.filter(c => c.toLowerCase().includes(citySearch.toLowerCase()));
 
   return (
-    <div id="threadzw-immersive-onboarding" className="fixed inset-0 bg-[#0a0a0a] text-white flex flex-col font-sans select-none overflow-hidden z-[45] selection:bg-[#c8ff00]/30">
+    <div id="threadzw-immersive-onboarding" className="fixed inset-0 bg-[#0a0a0a] text-white flex flex-col font-sans select-none overflow-hidden z-[45] selection:bg-[#C6FF00]/30">
       
       {/* 1. TOP PROGRESS BAR */}
       <div className="w-full h-[3px] bg-white/5 relative z-50">
         <div 
           style={{ width: `${currentProgress}%` }} 
-          className="h-full bg-[#c8ff00] transition-all duration-300 ease-out" 
+          className="h-full bg-[#C6FF00] transition-all duration-300 ease-out" 
         />
       </div>
 
@@ -626,7 +655,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </div>
                 <button 
                   onClick={() => setScreen(2)}
-                  className="w-full h-13 mt-6 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer transition-transform"
+                  className="w-full h-13 mt-6 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px] flex items-center justify-center gap-1.5 active:scale-[0.98] cursor-pointer transition-transform"
                 >
                   Let's go &rarr;
                 </button>
@@ -636,7 +665,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* SCREEN 2: DM PRICES */}
             {screen === 2 && (
               <div className="flex-1 flex flex-col justify-center space-y-8 my-auto">
-                <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block text-center">
+                <span className="text-[#C6FF00] text-[11px] font-black uppercase tracking-widest block text-center">
                   PHASE 1: REALITY CHECK
                 </span>
                 <h1 className="text-2xl font-[900] text-center tracking-tight text-white leading-snug">
@@ -648,7 +677,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     onClick={() => setQ1Answer('yes')}
                     className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
                       q1Answer === 'yes' 
-                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        ? 'bg-[#C6FF00]/5 border-[#C6FF00]' 
                         : 'bg-white/5 border-white/10 hover:border-white/20'
                     }`}
                   >
@@ -663,7 +692,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     }}
                     className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
                       q1Answer === 'no' 
-                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        ? 'bg-[#C6FF00]/5 border-[#C6FF00]' 
                         : 'bg-white/5 border-white/10 hover:border-white/20'
                     }`}
                   >
@@ -687,7 +716,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* SCREEN 3: 2AM BUYING */}
             {screen === 3 && (
               <div className="flex-1 flex flex-col justify-center space-y-8 my-auto">
-                <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block text-center">
+                <span className="text-[#C6FF00] text-[11px] font-black uppercase tracking-widest block text-center">
                   PHASE 1: REALITY CHECK
                 </span>
                 <h1 className="text-2xl font-[900] text-center tracking-tight text-white leading-snug">
@@ -702,11 +731,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     }}
                     className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
                       q2Answer === 'yes' 
-                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        ? 'bg-[#C6FF00]/5 border-[#C6FF00]' 
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
-                               <CheckCircle2 className="text-[#c8ff00] w-10 h-10" />
+                               <CheckCircle2 className="text-[#C6FF00] w-10 h-10" />
                     <span className="font-extrabold text-sm">Yes they can</span>
                   </button>
 
@@ -714,7 +743,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     onClick={() => setQ2Answer('no')}
                     className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
                       q2Answer === 'no' 
-                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        ? 'bg-[#C6FF00]/5 border-[#C6FF00]' 
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
@@ -731,7 +760,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white/5 border border-white/10 rounded-2xl p-4 flex gap-4 items-center"
                   >
-                    <Clock size={28} className="text-[#c8ff00] shrink-0" />
+                    <Clock size={28} className="text-[#C6FF00] shrink-0" />
                     <div className="text-left">
                       <h4 className="font-black text-white text-base">67% of browsing happens after 9pm</h4>
                       <p className="text-white/50 text-xs">While you sleep, sales disappear.</p>
@@ -744,7 +773,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* SCREEN 4: GOOGLE INVISIBLE */}
             {screen === 4 && (
               <div className="flex-1 flex flex-col justify-center space-y-8 my-auto">
-                <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block text-center">
+                <span className="text-[#C6FF00] text-[11px] font-black uppercase tracking-widest block text-center">
                   PHASE 1: REALITY CHECK
                 </span>
                 <h1 className="text-2xl font-[900] text-center tracking-tight text-white leading-snug">
@@ -759,11 +788,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     }}
                     className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
                       q3Answer === 'yes' 
-                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        ? 'bg-[#C6FF00]/5 border-[#C6FF00]' 
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
-                    <Search className="text-[#c8ff00] w-10 h-10" />
+                    <Search className="text-[#C6FF00] w-10 h-10" />
                     <span className="font-extrabold text-sm">Yes it does</span>
                   </button>
 
@@ -771,7 +800,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     onClick={() => setQ3Answer('no')}
                     className={`aspect-square rounded-2xl p-5 flex flex-col items-center justify-center gap-3 border transition-all ${
                       q3Answer === 'no' 
-                        ? 'bg-[#c8ff00]/5 border-[#c8ff00]' 
+                        ? 'bg-[#C6FF00]/5 border-[#C6FF00]' 
                         : 'bg-white/5 border-white/10'
                     }`}
                   >
@@ -795,12 +824,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         <span className="flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#00c864' }} className="inline-block" /> VintageZim</span>
                         <span className="text-[#22C55E] font-bold">ONLINE</span>
                       </div>
-                      <div className="flex justify-between text-white border border-[#c8ff00]/30 bg-[#c8ff00]/5 p-1 rounded-md animate-pulse gap-2 items-center">
+                      <div className="flex justify-between text-white border border-[#C6FF00]/30 bg-[#C6FF00]/5 p-1 rounded-md animate-pulse gap-2 items-center">
                         <span className="font-bold text-white flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff4444' }} className="inline-block" /> [Your Store]</span>
                         <span className="text-[#EF4444] font-bold">NOT FOUND</span>
                       </div>
                     </div>
-                    <p className="text-[#c8ff00] font-black text-xs text-center mt-3">
+                    <p className="text-[#C6FF00] font-black text-xs text-center mt-3">
                       Your competitors are searchable.
                     </p>
                   </motion.div>
@@ -842,7 +871,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(6)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] flex items-center justify-center gap-1"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px] flex items-center justify-center gap-1"
                 >
                   That ends today &rarr;
                 </button>
@@ -854,7 +883,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="flex-1 flex flex-col justify-center space-y-6">
                   <div className="text-center">
-                    <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block mb-4">
+                    <span className="text-[#C6FF00] text-[11px] font-black uppercase tracking-widest block mb-4">
                       PHASE 2: WAKE UP
                     </span>
                     <motion.div 
@@ -884,7 +913,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(7)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Show me what I'm losing &rarr;
                 </button>
@@ -911,9 +940,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         initial={{ height: 0 }}
                         animate={{ height: "130px" }}
                         transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
-                        className="w-full bg-[#c8ff00] rounded-t-lg"
+                        className="w-full bg-[#C6FF00] rounded-t-lg"
                       />
-                      <span className="font-bold text-xs text-[#c8ff00]">Online</span>
+                      <span className="font-bold text-xs text-[#C6FF00]">Online</span>
                     </div>
                   </div>
 
@@ -925,7 +954,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(8)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Continue &rarr;
                 </button>
@@ -974,7 +1003,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     initial={{ opacity: 0, x: -10 }} 
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 2 }}
-                    className="bg-[#EF4444]/5 border border-[#c8ff00]/40 p-4 rounded-xl flex items-center justify-between text-xs font-bold animate-pulse font-sans"
+                    className="bg-[#EF4444]/5 border border-[#C6FF00]/40 p-4 rounded-xl flex items-center justify-between text-xs font-bold animate-pulse font-sans"
                   >
                     <span className="text-white font-[950] flex items-center gap-1.5"><div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ff4444' }} className="inline-block" /> Your store</span>
                     <span className="text-[#EF4444] font-black">still offline</span>
@@ -987,7 +1016,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 9 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="flex-1 flex flex-col justify-center items-center text-center space-y-8">
-                  <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block">
+                  <span className="text-[#C6FF00] text-[11px] font-black uppercase tracking-widest block">
                     PHASE 3: THE SHIFT
                   </span>
                   <motion.span 
@@ -1006,7 +1035,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.8 }}
-                      className="text-2xl font-[950] text-[#c8ff00]"
+                      className="text-2xl font-[950] text-[#C6FF00]"
                     >
                       That changes now.
                     </motion.h2>
@@ -1015,7 +1044,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(10)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   I'm ready &rarr;
                 </button>
@@ -1028,8 +1057,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex-1 flex flex-col justify-center space-y-6">
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center space-y-1">
                     <span className="text-white/40 text-xs font-bold block uppercase tracking-wider">Your Instant Link</span>
-                    <code className="text-[#c8ff00] font-mono text-md font-black block break-all">
-                      threadzw.vercel.app/shop/<span className="underline select-all">{generateSlug(shopName || 'yourshop')}</span>
+                    <code className="text-[#C6FF00] font-mono text-xs font-black block break-all">
+                      threadzw.vercel.app/shop/<span className="underline select-all">your-unique-store-id</span>
                     </code>
                   </div>
 
@@ -1045,7 +1074,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(11)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Continue &rarr;
                 </button>
@@ -1088,7 +1117,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(12)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Continue &rarr;
                 </button>
@@ -1110,9 +1139,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       return (
                         <div key={day} className="flex flex-col items-center flex-1 space-y-2 relative">
                           {idx === 2 && (
-                            <span className="absolute -top-7 text-[#c8ff00] animate-bounce"><Flame size={20} /></span>
+                            <span className="absolute -top-7 text-[#C6FF00] animate-bounce"><Flame size={20} /></span>
                           )}
-                          <div style={{ height: heights[idx] }} className="w-6 bg-[#c8ff00] rounded-sm" />
+                          <div style={{ height: heights[idx] }} className="w-6 bg-[#C6FF00] rounded-sm" />
                           <span className="font-mono text-[9px] text-white/40 font-bold">{day}</span>
                         </div>
                       );
@@ -1120,14 +1149,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   <div className="flex gap-2 justify-center">
-                    <span className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold flex items-center gap-1"><TrendingUp size={14} className="text-[#c8ff00]" /> +47% avg revenue</span>
-                    <span className="bg-white/5 border border-[#c8ff00]/20 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold flex items-center gap-1"><Trophy size={14} className="text-[#c8ff00]" /> Best seller tracked</span>
+                    <span className="bg-white/5 border border-white/10 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold flex items-center gap-1"><TrendingUp size={14} className="text-[#C6FF00]" /> +47% avg revenue</span>
+                    <span className="bg-white/5 border border-[#C6FF00]/20 rounded-full px-3 py-1.5 text-xs text-white/80 font-bold flex items-center gap-1"><Trophy size={14} className="text-[#C6FF00]" /> Best seller tracked</span>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setScreen(13)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Continue &rarr;
                 </button>
@@ -1270,7 +1299,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(14)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Build my shop &rarr;
                 </button>
@@ -1281,7 +1310,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 14 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="flex-1 flex flex-col justify-center items-center text-center space-y-8">
-                  <span className="text-[#c8ff00] text-[11px] font-black uppercase tracking-widest block">
+                  <span className="text-[#C6FF00] text-[11px] font-black uppercase tracking-widest block">
                     PHASE 4: BUILD YOUR SHOP
                   </span>
                   
@@ -1305,7 +1334,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(15)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Start &rarr;
                 </button>
@@ -1325,7 +1354,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     value={shopName}
                     onChange={(e) => setShopName(e.target.value)}
                     placeholder="e.g. Harare Vintage"
-                    className="w-full border-none border-b-2 border-white/15 focus:border-b-color-[#c8ff00] focus:border-b-2 focus:outline-none bg-transparent text-white font-[900] text-2xl py-3 placeholder:text-white/20 transition-all text-center"
+                    className="w-full border-none border-b-2 border-white/15 focus:border-b-color-[#C6FF00] focus:border-b-2 focus:outline-none bg-transparent text-white font-[900] text-2xl py-3 placeholder:text-white/20 transition-all text-center"
                     autoFocus
                   />
                 </div>
@@ -1334,7 +1363,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   disabled={!shopName.trim()}
                   onClick={() => setScreen(16)}
                   className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                    shopName.trim() ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
+                    shopName.trim() ? 'bg-[#C6FF00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
                   }`}
                 >
                   That's the name &rarr;
@@ -1375,7 +1404,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       }}
                       placeholder="e.g. Harare's finest collection of vintage items."
                       rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-[#c8ff00] focus:outline-none focus:ring-1 focus:ring-[#c8ff00] transition-colors resize-none mb-1.5"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors resize-none mb-1.5"
                     />
                     <span className="absolute bottom-3 right-3 text-[10px] font-bold text-white/30 font-mono">
                       {description.length}/120
@@ -1406,7 +1435,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(18)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Continue &rarr;
                 </button>
@@ -1436,7 +1465,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                           onClick={() => setPriceRange(price)}
                           className={`p-4 rounded-xl text-center border font-bold text-xs transition-all ${
                             isSelected 
-                              ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-white' 
+                              ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-white' 
                               : 'bg-white/5 border-white/10 text-white/70'
                           }`}
                         >
@@ -1450,7 +1479,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="space-y-3">
                   <button 
                     onClick={() => setScreen(19)}
-                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                    className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                   >
                     Continue &rarr;
                   </button>
@@ -1482,7 +1511,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       placeholder="Search Zim city..."
                       value={citySearch}
                       onChange={(e) => setCitySearch(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm focus:border-[#c8ff00] focus:outline-none focus:ring-1 focus:ring-[#c8ff00] transition-colors"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors"
                     />
                   </div>
 
@@ -1498,12 +1527,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                           }}
                           className={`w-full p-2.5 rounded-lg border text-left text-xs font-extrabold transition-all flex justify-between items-center ${
                             isSelected 
-                              ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-white' 
+                              ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-white' 
                               : 'bg-white/5 border-white/5 text-white/70 hover:bg-white/10'
                           }`}
                         >
                           <span>📍 {item}</span>
-                          {isSelected && <span className="text-[#c8ff00]">✓</span>}
+                          {isSelected && <span className="text-[#C6FF00]">✓</span>}
                         </button>
                       );
                     })}
@@ -1514,7 +1543,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   disabled={!city}
                   onClick={() => setScreen(20)}
                   className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                    city ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
+                    city ? 'bg-[#C6FF00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
                   }`}
                 >
                   Continue &rarr;
@@ -1530,7 +1559,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     Where do customers reach you?
                   </h2>
 
-                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 focus-within:border-[#c8ff00] transition-colors">
+                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 focus-within:border-[#C6FF00] transition-colors">
                     <span className="font-mono text-base font-black px-4 bg-white/5 text-white/45 flex items-center border-r border-white/5 select-none text-[15px]">
                       +263
                     </span>
@@ -1558,7 +1587,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   disabled={whatsapp.length < 8}
                   onClick={() => setScreen(21)}
                   className={`w-full h-13 font-extrabold text-[15px] rounded-[10px] transition-all flex items-center justify-center gap-1 cursor-pointer ${
-                    whatsapp.length >= 8 ? 'bg-[#c8ff00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
+                    whatsapp.length >= 8 ? 'bg-[#C6FF00] text-black' : 'bg-white/5 text-white/30 pointer-events-none'
                   }`}
                 >
                   Continue &rarr;
@@ -1574,7 +1603,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     Got an Instagram?
                   </h2>
 
-                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 focus-within:border-[#c8ff00] transition-colors">
+                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 focus-within:border-[#C6FF00] transition-colors">
                     <span className="font-mono text-base font-black px-4 bg-white/5 text-white/45 flex items-center border-r border-white/5 select-none text-[15px]">
                       @
                     </span>
@@ -1591,7 +1620,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="space-y-3">
                   <button 
                     onClick={() => setScreen(22)}
-                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                    className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                   >
                     Continue &rarr;
                   </button>
@@ -1629,12 +1658,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                   <button 
                     onClick={() => logoInputRef.current?.click()}
-                    className="w-40 h-40 rounded-full border-2 border-dashed border-white/20 hover:border-[#c8ff00]/40 bg-white/5 flex flex-col items-center justify-center overflow-hidden transition-colors cursor-pointer group relative"
+                    className="w-40 h-40 rounded-full border-2 border-dashed border-white/20 hover:border-[#C6FF00]/40 bg-white/5 flex flex-col items-center justify-center overflow-hidden transition-colors cursor-pointer group relative"
                   >
                     {logoPreview ? (
                       <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex flex-col items-center gap-1.5 text-white/45 group-hover:text-[#c8ff00] transition-colors">
+                      <div className="flex flex-col items-center gap-1.5 text-white/45 group-hover:text-[#C6FF00] transition-colors">
                         <Camera className="w-8 h-8" />
                         <span className="text-[10px] font-black uppercase">Tap to upload</span>
                       </div>
@@ -1645,7 +1674,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="space-y-3">
                   <button 
                     onClick={() => setScreen(23)}
-                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                    className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                   >
                     {logoPreview ? 'Next ➔' : 'Skip for now ➔'}
                   </button>
@@ -1674,12 +1703,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                   <button
                     onClick={() => bannerInputRef.current?.click()}
-                    className="w-full h-36 bg-white/5 border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden group hover:border-[#c8ff00]/40"
+                    className="w-full h-36 bg-white/5 border-2 border-dashed border-white/20 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden group hover:border-[#C6FF00]/40"
                   >
                     {bannerPreview ? (
                       <img src={bannerPreview} alt="Banner" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex flex-col items-center gap-2 text-white/40 group-hover:text-[#c8ff00] transition-colors">
+                      <div className="flex flex-col items-center gap-2 text-white/40 group-hover:text-[#C6FF00] transition-colors">
                         <ImageIcon className="w-8 h-8" />
                         <span className="text-[11px] font-black uppercase">🖼️ + Add Banner</span>
                         <span className="text-[9px] text-white/20">1200 &times; 400px recommended</span>
@@ -1704,7 +1733,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(24)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   {bannerPreview ? 'Next ➔' : 'Skip for now ➔'}
                 </button>
@@ -1752,7 +1781,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     setUsername(handleCandidate);
                     setScreen(25);
                   }}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                 >
                   Build My Shop 🚀
                 </button>
@@ -1764,7 +1793,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-2">
                 <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar pr-0.5">
                   <div className="flex flex-col items-center text-center space-y-2">
-                    <span className="inline-block bg-[#c8ff00] text-black text-[10px] tracking-wider uppercase font-black px-3 py-1 rounded-full px-4 font-bold scale-95 shadow-md">
+                    <span className="inline-block bg-[#C6FF00] text-black text-[10px] tracking-wider uppercase font-black px-3 py-1 rounded-full px-4 font-bold scale-95 shadow-md">
                       🎁 28 days free &bull; No payment needed
                     </span>
                     <h2 className="text-xl font-[900] tracking-tight leading-none text-white pt-2.5">
@@ -1783,7 +1812,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                           value={username}
                           onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                           placeholder="yourhandle"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm focus:border-[#C6FF00] focus:outline-none transition-colors"
                         />
                       </div>
                       {username.length >= 3 && (
@@ -1807,7 +1836,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Username or Email address"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-3 text-sm focus:border-[#C6FF00] focus:outline-none transition-colors"
                       />
                     </div>
 
@@ -1820,7 +1849,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Min 6 characters"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-10 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-10 py-3 text-sm focus:border-[#C6FF00] focus:outline-none transition-colors"
                         />
                         <button 
                           type="button"
@@ -1841,7 +1870,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Re-enter password"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-10 py-3 text-sm focus:border-[#c8ff00] focus:outline-none transition-colors"
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-3.5 pr-10 py-3 text-sm focus:border-[#C6FF00] focus:outline-none transition-colors"
                         />
                         <button 
                           type="button"
@@ -1854,7 +1883,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     </div>
 
                     {/* Terms Card */}
-                    <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/15 rounded-xl p-3.5 text-[11px] text-[#c8ff00] leading-snug font-bold">
+                    <div className="bg-[#C6FF00]/5 border border-[#C6FF00]/15 rounded-xl p-3.5 text-[11px] text-[#C6FF00] leading-snug font-bold">
                       By signing up you agree to our terms. Your account is free and active immediately.
                     </div>
                   </div>
@@ -1878,7 +1907,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       password.length >= 6 &&
                       password === confirmPassword &&
                       !signingUp
-                        ? 'bg-[#c8ff00] text-black font-extrabold'
+                        ? 'bg-[#C6FF00] text-black font-extrabold'
                         : 'bg-white/5 text-white/30 pointer-events-none'
                     }`}
                   >
@@ -1924,14 +1953,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <motion.div 
                       animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.45, 0.15] }}
                       transition={{ repeat: Infinity, duration: 2 }}
-                      className="absolute w-36 h-36 rounded-full bg-[#c8ff00] -left-6 -top-6"
+                      className="absolute w-36 h-36 rounded-full bg-[#C6FF00] -left-6 -top-6"
                     />
                     <motion.div 
                       animate={{ rotate: 360 }}
                       transition={{ repeat: Infinity, duration: 3.5, ease: "linear" }}
-                      className="absolute w-32 h-32 rounded-full border-2 border-dashed border-[#c8ff00] -left-4 -top-4"
+                      className="absolute w-32 h-32 rounded-full border-2 border-dashed border-[#C6FF00] -left-4 -top-4"
                     />
-                    <div className="relative w-24 h-24 bg-[#121212] border border-white/10 rounded-full flex items-center justify-center text-[#c8ff00] shadow-xl">
+                    <div className="relative w-24 h-24 bg-[#121212] border border-white/10 rounded-full flex items-center justify-center text-[#C6FF00] shadow-xl">
                       <Store className="w-12 h-12" />
                     </div>
                   </div>
@@ -1953,7 +1982,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                               animate={{ opacity: 1, x: 0 }}
                               className="flex items-center gap-3"
                             >
-                              <span className="text-[#c8ff00] font-black text-lg">✓</span>
+                              <span className="text-[#C6FF00] font-black text-lg">✓</span>
                               <span className="text-white font-extrabold text-[15px]">{item}</span>
                             </motion.div>
                           )}
@@ -1967,7 +1996,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 {/* bottom filling bar */}
                 <div className="w-full h-1 bg-white/5 relative mt-auto">
-                  <div style={{ width: `${loadProgress}%` }} className="h-full bg-[#c8ff00]" />
+                  <div style={{ width: `${loadProgress}%` }} className="h-full bg-[#C6FF00]" />
                 </div>
               </div>
             )}
@@ -1978,7 +2007,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex-1 flex flex-col justify-center space-y-5">
                   <div className="flex justify-center gap-1">
                     {[0, 1, 2, 3].map(dot => (
-                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 0 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 0 ? 'bg-[#C6FF00]' : 'bg-white/10'}`} />
                     ))}
                   </div>
 
@@ -1994,10 +2023,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                   {/* Everything included list card */}
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4.5 space-y-3 text-xs text-left shadow-lg">
-                    <span className="text-[#c8ff00] text-[9px] font-black uppercase tracking-wider block">EVERYTHING INCLUDED:</span>
+                    <span className="text-[#C6FF00] text-[9px] font-black uppercase tracking-wider block">EVERYTHING INCLUDED:</span>
                     
                     {[
-                      { icon: Store, t: 'Your own shop page', s: `Live at threadzw.com/shop/@${username || 'handle'}` },
+                      { icon: Store, t: 'Your own shop page', s: `Live at threadzw.vercel.app/shop/${tempUserId ? getDeterministicShopId(tempUserId) : 'demo'}` },
                       { icon: Package, t: 'Unlimited products', s: 'Upload as many as you need' },
                       { icon: MessageSquare, t: 'WhatsApp orders', s: 'Customers contact you directly' },
                       { icon: BarChart2, t: 'Analytics', s: 'See views and top products' }
@@ -2005,7 +2034,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       const IconComponent = row.icon;
                       return (
                         <div key={row.t} className="flex gap-3 items-start">
-                          <IconComponent size={16} className="text-[#c8ff00] shrink-0 mt-0.5" />
+                          <IconComponent size={16} className="text-[#C6FF00] shrink-0 mt-0.5" />
                           <div>
                             <h4 className="font-extrabold text-white leading-tight">{row.t}</h4>
                             <p className="text-white/45 text-[10px] mt-0.5 leading-tight">{row.s}</p>
@@ -2026,7 +2055,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(28)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] mt-4"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px] mt-4"
                 >
                   Get Started &rarr;
                 </button>
@@ -2039,7 +2068,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar">
                   <div className="flex justify-center gap-1">
                     {[0, 1, 2, 3].map(dot => (
-                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 1 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 1 ? 'bg-[#C6FF00]' : 'bg-white/10'}`} />
                     ))}
                   </div>
 
@@ -2049,7 +2078,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                     {/* Big Display price badge */}
                     <div className="mt-2 text-center select-none">
-                      <span className="text-6xl font-[950] tracking-tighter text-[#c8ff00] leading-none uppercase inline-block">
+                      <span className="text-6xl font-[950] tracking-tighter text-[#C6FF00] leading-none uppercase inline-block">
                         $7
                       </span>
                       <span className="text-lg font-black text-white/90">/month</span>
@@ -2062,11 +2091,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     {/* EcoCash 1 */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2.5">
                       <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
-                        <Smartphone size={16} className="text-[#c8ff00]" /> EcoCash App
+                        <Smartphone size={16} className="text-[#C6FF00]" /> EcoCash App
                       </h4>
                       <p className="text-white/50 text-[11px] leading-none">Open EcoCash &rarr; Send Money &rarr; Enter number &rarr; Send $7</p>
                       
-                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider font-sans">
+                      <div className="bg-[#C6FF00]/5 border border-[#C6FF00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#C6FF00] leading-none tracking-wider font-sans">
                         0789 113 734
                       </div>
                     </div>
@@ -2074,11 +2103,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     {/* EcoCash 2 */}
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 text-left space-y-2.5">
                       <h4 className="font-extrabold text-sm flex items-center gap-1.5 leading-none">
-                        <Smartphone size={16} className="text-[#c8ff00]" /> EcoCash Super App
+                        <Smartphone size={16} className="text-[#C6FF00]" /> EcoCash Super App
                       </h4>
                       <p className="text-white/50 text-[11px] leading-none">Open Super App &rarr; Send Money &rarr; Enter number &rarr; Send $7</p>
                       
-                      <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#c8ff00] leading-none tracking-wider font-sans">
+                      <div className="bg-[#C6FF00]/5 border border-[#C6FF00]/30 rounded-xl p-3 text-center my-1 select-all font-mono text-lg font-extrabold text-[#C6FF00] leading-none tracking-wider font-sans">
                         0789 113 734
                       </div>
                     </div>
@@ -2091,7 +2120,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(29)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] mt-3"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px] mt-3"
                 >
                   Got it &rarr;
                 </button>
@@ -2104,7 +2133,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex-1 flex flex-col justify-start space-y-4 pt-4 max-h-[500px] overflow-y-auto no-scrollbar">
                   <div className="flex justify-center gap-1">
                     {[0, 1, 2, 3].map(dot => (
-                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 2 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 2 ? 'bg-[#C6FF00]' : 'bg-white/10'}`} />
                     ))}
                   </div>
 
@@ -2124,7 +2153,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   {/* Step explanations */}
                   <div className="space-y-3 text-left">
                     <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs items-center">
-                      <div className="w-5 h-5 rounded-full bg-[#c8ff00] text-black text-[10px] font-black flex items-center justify-center shrink-0">1</div>
+                      <div className="w-5 h-5 rounded-full bg-[#C6FF00] text-black text-[10px] font-black flex items-center justify-center shrink-0">1</div>
                       <div>
                         <h4 className="font-extrabold leading-none">Pay via EcoCash</h4>
                         <p className="text-white/45 text-[10px] mt-0.5 leading-none">Send $7 to 0789 113 734</p>
@@ -2132,7 +2161,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     </div>
 
                     <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs items-center">
-                      <div className="w-5 h-5 rounded-full bg-[#c8ff00] text-black text-[10px] font-black flex items-center justify-center shrink-0">2</div>
+                      <div className="w-5 h-5 rounded-full bg-[#C6FF00] text-black text-[10px] font-black flex items-center justify-center shrink-0">2</div>
                       <div>
                         <h4 className="font-extrabold leading-none">We verify your payment</h4>
                         <p className="text-white/45 text-[10px] mt-0.5 leading-none">Usually within 2-4 hours during 8am-8pm ZIM time</p>
@@ -2140,7 +2169,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     </div>
 
                     <div className="flex gap-3 bg-white/5 border border-white/5 p-3 rounded-xl text-xs items-start">
-                      <div className="w-5 h-5 rounded-full bg-[#c8ff00] text-black text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">3</div>
+                      <div className="w-5 h-5 rounded-full bg-[#C6FF00] text-black text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">3</div>
                       <div className="flex-1">
                         <h4 className="font-extrabold leading-none">Code arrives on WhatsApp</h4>
                         <p className="text-white/45 text-[10px] mt-0.5 leading-none">A 6-character code like this:</p>
@@ -2149,7 +2178,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         <div className="bg-white/5 p-3 rounded-lg border border-white/5 mt-2.5 space-y-1 scale-95 origin-left">
                           <span className="text-[10px] font-black uppercase text-[#25D366]">THREADZW</span>
                           <span className="text-[9px] text-white/50 block leading-none">Your unlock code is:</span>
-                          <span className="font-mono text-base font-black text-[#c8ff00] leading-none tracking-widest block">7823KF</span>
+                          <span className="font-mono text-base font-black text-[#C6FF00] leading-none tracking-widest block">7823KF</span>
                         </div>
                       </div>
                     </div>
@@ -2158,7 +2187,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(30)}
-                  className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px] mt-3"
+                  className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px] mt-3"
                 >
                   Continue &rarr;
                 </button>
@@ -2171,7 +2200,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="flex-1 flex flex-col justify-center space-y-5">
                   <div className="flex justify-center gap-1">
                     {[0, 1, 2, 3].map(dot => (
-                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 3 ? 'bg-[#c8ff00]' : 'bg-white/10'}`} />
+                      <div key={dot} className={`w-2 h-2 rounded-full ${dot === 3 ? 'bg-[#C6FF00]' : 'bg-white/10'}`} />
                     ))}
                   </div>
 
@@ -2184,15 +2213,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   {/* Big countdown badge layout card */}
-                  <div className="bg-[#c8ff00]/5 border border-[#c8ff00]/20 rounded-2xl p-6 text-center space-y-3.5 shadow-xl max-w-xs mx-auto w-full">
-                    <span className="text-7xl font-[1000] text-[#c8ff00] leading-none tracking-tighter block font-mono select-none">
+                  <div className="bg-[#C6FF00]/5 border border-[#C6FF00]/20 rounded-2xl p-6 text-center space-y-3.5 shadow-xl max-w-xs mx-auto w-full">
+                    <span className="text-7xl font-[1000] text-[#C6FF00] leading-none tracking-tighter block font-mono select-none">
                       28
                     </span>
                     <span className="text-white font-[900] text-sm uppercase tracking-wider block">days remaining</span>
                     
                     {/* Tiny full loading progress block */}
                     <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden relative mt-1.5">
-                      <div className="absolute inset-y-0 left-0 bg-[#c8ff00] w-full" />
+                      <div className="absolute inset-y-0 left-0 bg-[#C6FF00] w-full" />
                     </div>
                   </div>
 
@@ -2204,7 +2233,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="shadow-2xl pt-2">
                   <button 
                     onClick={handleFinishPaywall}
-                    className="w-full h-13 bg-[#c8ff00] text-black font-extrabold text-[15px] rounded-[10px]"
+                    className="w-full h-13 bg-[#C6FF00] text-black font-extrabold text-[15px] rounded-[10px]"
                   >
                     Go to my dashboard &rarr;
                   </button>
@@ -2242,10 +2271,10 @@ const CategoryCard = React.memo<CategoryCardProps>(({
       onClick={() => onSelect(category.name)}
       style={{
         background: isSelected
-          ? 'rgba(200,255,0,0.08)'
+          ? 'rgba(198, 255, 0,0.08)'
           : 'rgba(255,255,255,0.04)',
         border: isSelected
-          ? '2px solid #c8ff00'
+          ? '2px solid #C6FF00'
           : '1.5px solid rgba(255,255,255,0.08)',
         borderRadius: 14,
         padding: '20px 12px',
@@ -2267,7 +2296,7 @@ const CategoryCard = React.memo<CategoryCardProps>(({
         borderRadius: '50%',
         overflow: 'hidden',
         border: isSelected
-          ? '2px solid #c8ff00'
+          ? '2px solid #C6FF00'
           : '2px solid rgba(255,255,255,0.1)',
         flexShrink: 0
       }}>
@@ -2290,7 +2319,7 @@ const CategoryCard = React.memo<CategoryCardProps>(({
             width: '100%',
             height: '100%',
             background: isSelected
-              ? 'rgba(200,255,0,0.15)'
+              ? 'rgba(198, 255, 0,0.15)'
               : 'rgba(255,255,255,0.06)',
             display: 'flex',
             alignItems: 'center',
@@ -2298,7 +2327,7 @@ const CategoryCard = React.memo<CategoryCardProps>(({
             fontSize: 20,
             fontWeight: 900,
             color: isSelected
-              ? '#c8ff00'
+              ? '#C6FF00'
               : 'rgba(255,255,255,0.3)'
           }}>
             {category.name
@@ -2313,7 +2342,7 @@ const CategoryCard = React.memo<CategoryCardProps>(({
         fontSize: 13,
         fontWeight: 800,
         color: isSelected
-          ? '#c8ff00'
+          ? '#C6FF00'
           : 'rgba(255,255,255,0.7)',
         textAlign: 'center',
         lineHeight: 1.2
@@ -2377,7 +2406,7 @@ const Screen16: React.FC<Screen16Props> = React.memo(({
         fontSize: 11,
         fontWeight: 700,
         letterSpacing: '2.5px',
-        color: '#c8ff00',
+        color: '#C6FF00',
         textTransform: 'uppercase',
         marginBottom: 16
       }}>
@@ -2431,7 +2460,7 @@ const Screen16: React.FC<Screen16Props> = React.memo(({
           width: '100%',
           padding: '16px',
           background: selectedCategory
-            ? '#c8ff00'
+            ? '#C6FF00'
             : 'rgba(255,255,255,0.06)',
           color: selectedCategory
             ? '#000000'

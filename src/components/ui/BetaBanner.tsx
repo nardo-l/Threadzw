@@ -16,7 +16,7 @@ export const BetaBanner: React.FC = () => (
       width: 6,
       height: 6,
       borderRadius: '50%',
-      background: '#c8ff00',
+      background: '#C6FF00',
       flexShrink: 0
     }} />
     <p style={{

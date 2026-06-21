@@ -476,7 +476,7 @@ export const AdminLeads: React.FC = () => {
         <div className="flex items-center gap-3 bg-white/5 p-1 rounded-2xl border border-white/10 w-fit">
           <StatMini label="New" count={stats.new} color="text-amber-500" />
           <div className="w-px h-8 bg-white/10" />
-          <StatMini label="Built" count={stats.built} color="text-green-500" />
+          <StatMini label="Built" count={stats.built} color="text-[#C6FF00]" />
           <div className="w-px h-8 bg-white/10" />
           <StatMini label="Total" count={stats.total} color="text-primary" />
         </div>
@@ -499,10 +499,10 @@ export const AdminLeads: React.FC = () => {
         </button>
         <button 
           onClick={() => setActiveTab('payments')}
-          className={`pb-4 px-2 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'payments' ? 'text-green-500 font-extrabold' : 'text-[#888]'}`}
+          className={`pb-4 px-2 text-sm font-bold flex items-center gap-2 transition-all relative ${activeTab === 'payments' ? 'text-[#C6FF00] font-extrabold' : 'text-[#888]'}`}
         >
-          <CreditCard size={18} className={activeTab === 'payments' ? 'text-green-500' : 'text-[#888]'} /> Payment Claims ({claims.filter(c => c.status === 'pending').length})
-          {activeTab === 'payments' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-500" />}
+          <CreditCard size={18} className={activeTab === 'payments' ? 'text-[#C6FF00]' : 'text-[#888]'} /> Payment Claims ({claims.filter(c => c.status === 'pending').length})
+          {activeTab === 'payments' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#C6FF00]" />}
         </button>
         <button 
           onClick={() => setActiveTab('branding')}
@@ -668,7 +668,7 @@ export const AdminLeads: React.FC = () => {
                               const prefilledMsg = `Hi ${shop.name}! Your ThreadZW shop trial has ended. Keep your shop live for $7/month — send $7 to EcoCash 0776 223 144 and tap 'I've Paid' in your dashboard. — ThreadZW 🇿🇼`;
                               window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(prefilledMsg)}`, '_blank');
                             }}
-                            className="w-full h-11 bg-[#c8ff00] text-black hover:bg-[#b0df00] rounded-xl text-xs uppercase tracking-wider font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#c8ff00]/10"
+                            className="w-full h-11 bg-[#C6FF00] text-black hover:bg-[#b5e600] rounded-xl text-xs uppercase tracking-wider font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#C6FF00]/10"
                           >
                             <span>WhatsApp Owner</span>
                           </button>
@@ -746,7 +746,7 @@ export const AdminLeads: React.FC = () => {
 
                       <button
                         onClick={() => handleUnlockShop(shop)}
-                        className="w-full h-11 bg-green-500 hover:bg-green-600 text-black rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-green-500/10"
+                        className="w-full h-11 bg-[#C6FF00] hover:bg-[#b5e600] text-black rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#C6FF00]/10"
                       >
                         <Unlock size={14} className="stroke-[2.5]" />
                         <span>Unlock Shop</span>
@@ -766,7 +766,7 @@ export const AdminLeads: React.FC = () => {
             className="flex-1 flex flex-col gap-6 min-h-0 overflow-y-auto pb-24 pr-2 custom-scrollbar"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-green-500 uppercase flex items-center gap-2">
+              <h2 className="text-lg font-bold text-[#C6FF00] uppercase flex items-center gap-2">
                 💵 Submitted Payment Claims ({claims.length})
               </h2>
               <button 
@@ -804,7 +804,7 @@ export const AdminLeads: React.FC = () => {
 
                         <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
                           claim.status === 'verified' || claim.status === 'approved'
-                            ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                            ? 'bg-[#C6FF00]/15 text-[#C6FF00] border-[#C6FF00]/25'
                             : claim.status === 'rejected'
                             ? 'bg-red-500/10 text-red-500 border-red-500/20'
                             : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
@@ -843,7 +843,7 @@ export const AdminLeads: React.FC = () => {
                           </button>
                           <button
                             onClick={() => handleApproveClaim(claim)}
-                            className="flex-[2] h-10 bg-green-500 hover:bg-green-600 text-black text-xs uppercase rounded-xl transition-all font-black"
+                            className="flex-[2] h-10 bg-[#C6FF00] hover:bg-[#b5e600] text-black text-xs uppercase rounded-xl transition-all font-black"
                           >
                             ✓ Verify & Approve
                           </button>
@@ -979,7 +979,7 @@ export const AdminLeads: React.FC = () => {
                   {selectedLead.status !== 'built' && (
                     <button 
                       onClick={() => updateStatus(selectedLead.id, 'built')}
-                      className="flex-1 py-4 bg-green-500 text-white rounded-xl font-bold text-xs uppercase"
+                      className="flex-1 py-4 bg-[#C6FF00] text-black rounded-xl font-bold text-xs uppercase"
                     >
                       Mark as Built
                     </button>
@@ -1036,7 +1036,7 @@ const StatusBadge: React.FC<{ status: ShopLead['status'] }> = ({ status }) => {
   const colors = {
     new: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
     contacted: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-    built: 'bg-green-500/10 text-green-500 border-green-500/20',
+    built: 'bg-[#C6FF00]/15 text-[#C6FF00] border-[#C6FF00]/25',
     discarded: 'bg-red-500/10 text-red-500 border-red-500/20',
   };
   return (

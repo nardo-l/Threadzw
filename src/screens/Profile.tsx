@@ -64,7 +64,7 @@ export const Profile: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070709] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#c8ff00] border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-[#C6FF00] border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -84,7 +84,7 @@ export const Profile: React.FC = () => {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-[#c8ff00] uppercase font-black">Merchant Security</span>
+          <span className="text-[10px] font-mono tracking-widest text-[#C6FF00] uppercase font-black">Merchant Security</span>
           <h1 className="text-xl font-black italic tracking-tighter uppercase">My Profile</h1>
         </div>
       </div>
@@ -93,11 +93,11 @@ export const Profile: React.FC = () => {
         
         {/* AVATAR CARD */}
         <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full overflow-hidden bg-zinc-800 border-2 border-[#c8ff00]/35 flex items-center justify-center shrink-0">
+          <div className="w-16 h-16 rounded-full overflow-hidden bg-zinc-800 border-2 border-[#C6FF00]/35 flex items-center justify-center shrink-0">
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} alt="Profile avatar" className="w-full h-full object-cover" />
             ) : (
-              <span className="text-xl font-black text-[#c8ff00]">{avatarInitial.toUpperCase()}</span>
+              <span className="text-xl font-black text-[#C6FF00]">{avatarInitial.toUpperCase()}</span>
             )}
           </div>
           <div className="min-w-0">
@@ -105,7 +105,7 @@ export const Profile: React.FC = () => {
               {profile?.display_name || profile?.username || 'ThreadZW Merchant'}
             </h3>
             <p className="text-xs text-zinc-500 truncate mt-0.5">{profile?.email || 'security@threadzw.store'}</p>
-            <span className="inline-block bg-[#c8ff00]/10 text-[#c8ff00] text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-[#c8ff00]/10 mt-2">
+            <span className="inline-block bg-[#C6FF00]/10 text-[#C6FF00] text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-[#C6FF00]/10 mt-2">
               Pro Member
             </span>
           </div>
@@ -118,7 +118,7 @@ export const Profile: React.FC = () => {
             
             <div className="p-4 flex justify-between items-center text-sm">
               <span className="text-zinc-500 font-bold">Shop Handle</span>
-              <span className="font-mono text-[#c8ff00] font-black">@{shop?.handle || 'unconfigured'}</span>
+              <span className="font-mono text-[#C6FF00] font-black">@{shop?.handle || 'unconfigured'}</span>
             </div>
 
             <div className="p-4 flex justify-between items-center text-sm">
@@ -141,8 +141,8 @@ export const Profile: React.FC = () => {
               <span className="text-zinc-500 font-bold">Storefront Link</span>
               {shop?.slug || shop?.handle ? (
                 <Link 
-                  to={getShopUrl(shop.slug || shop.handle)} 
-                  className="text-[#c8ff00] text-xs font-mono font-bold flex items-center gap-1 hover:underline"
+                  to={getShopUrl(shop.slug || shop.handle, shop.id)} 
+                  className="text-[#C6FF00] text-xs font-mono font-bold flex items-center gap-1 hover:underline"
                 >
                   <Globe size={13} />
                   /{shop.slug || shop.handle}
@@ -191,7 +191,7 @@ export const Profile: React.FC = () => {
             className="w-full bg-[#111115] hover:bg-[#16161c] border border-white/[0.05] p-4 rounded-xl flex items-center justify-between transition-colors text-left"
           >
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#c8ff00]/10 text-[#c8ff00] flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#C6FF00]/10 text-[#C6FF00] flex items-center justify-center">
                 <Settings size={15} />
               </div>
               <div>

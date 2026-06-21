@@ -299,8 +299,7 @@ export const ProductDetail: React.FC = () => {
             {/* View store brand */}
             <div 
               onClick={() => {
-                const activeSlug = (shop as any).slug || shop.handle;
-                const path = getShopUrl(activeSlug);
+                const path = getShopUrl((shop as any).slug || (shop as any).handle, shop.id);
                 console.log("[PRODUCT DETAIL ROUTING] Brand line click: navigating to store path:", path);
                 if (path) {
                   navigate(path);
@@ -403,8 +402,7 @@ export const ProductDetail: React.FC = () => {
           {/* Brand profile link block card */}
           <div 
             onClick={() => {
-              const activeSlug = (shop as any).slug || shop.handle;
-              const path = getShopUrl(activeSlug);
+              const path = getShopUrl((shop as any).slug || (shop as any).handle, shop.id);
               console.log("[PRODUCT DETAIL ROUTING] Brand card click: navigating to store path:", path);
               if (path) {
                 navigate(path);

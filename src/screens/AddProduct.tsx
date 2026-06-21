@@ -412,7 +412,7 @@ export const AddProduct: React.FC = () => {
       {/* 3px Neon Progress Bar at topmost */}
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-white/10 z-50">
         <div 
-          className="h-full bg-[#c8ff00] transition-all duration-300"
+          className="h-full bg-[#C6FF00] transition-all duration-300"
           style={{ width: `${(step / 4) * 100}%` }}
         />
       </div>
@@ -429,7 +429,7 @@ export const AddProduct: React.FC = () => {
               <ArrowLeft size={20} />
             </button>
           )}
-          <span className="text-[#c8ff00] text-[11px] font-bold tracking-[2px] uppercase font-mono">
+          <span className="text-[#C6FF00] text-[11px] font-bold tracking-[2px] uppercase font-mono">
             ADDING PRODUCT
           </span>
         </div>
@@ -493,12 +493,12 @@ export const AddProduct: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => handleRemovePhoto(index)}
-                                className="absolute top-1 right-1 w-6 h-6 rounded-[6px] bg-black/75 hover:bg-black text-white hover:text-[#c8ff00] transition-colors flex items-center justify-center text-[11px] font-bold z-10 cursor-pointer"
+                                className="absolute top-1 right-1 w-6 h-6 rounded-[6px] bg-black/75 hover:bg-black text-white hover:text-[#C6FF00] transition-colors flex items-center justify-center text-[11px] font-bold z-10 cursor-pointer"
                               >
                                 ×
                               </button>
                               {isCover && (
-                                <div className="absolute bottom-1 left-1.5 right-1.5 bg-black/80 backdrop-blur-xs py-0.5 rounded text-center text-[8px] uppercase tracking-wider text-[#c8ff00] font-black pointer-events-none">
+                                <div className="absolute bottom-1 left-1.5 right-1.5 bg-black/80 backdrop-blur-xs py-0.5 rounded text-center text-[8px] uppercase tracking-wider text-[#C6FF00] font-black pointer-events-none">
                                   Cover
                                 </div>
                               )}
@@ -508,7 +508,7 @@ export const AddProduct: React.FC = () => {
                               type="button"
                               onClick={triggerFilePicker}
                               disabled={uploading}
-                              className="w-full h-full bg-white/[0.04] border-[1.5px] border-dashed border-white/[0.15] hover:border-[#c8ff00]/40 rounded-xl flex items-center justify-center transition-all cursor-pointer hover:bg-white/[0.06] active:scale-[0.97]"
+                              className="w-full h-full bg-white/[0.04] border-[1.5px] border-dashed border-white/[0.15] hover:border-[#C6FF00]/40 rounded-xl flex items-center justify-center transition-all cursor-pointer hover:bg-white/[0.06] active:scale-[0.97]"
                             >
                               <Plus size={24} className="text-white/30" />
                             </button>
@@ -539,7 +539,7 @@ export const AddProduct: React.FC = () => {
                       type="button"
                       disabled={!isScreen1Valid || uploading}
                       onClick={goNext}
-                      className="w-full h-12 rounded-[10px] bg-[#c8ff00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                      className="w-full h-12 rounded-[10px] bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
                     >
                       {uploading ? (
                         <>
@@ -578,7 +578,7 @@ export const AddProduct: React.FC = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="e.g. Cargo Pants"
-                        className="w-full text-lg font-bold bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#c8ff00] rounded-[10px] px-4 py-3.5 text-white placeholder-white/25 outline-none focus:outline-none transition-all"
+                        className="w-full text-lg font-bold bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] px-4 py-3.5 text-white placeholder-white/25 outline-none focus:outline-none transition-all"
                       />
                     </div>
 
@@ -588,14 +588,14 @@ export const AddProduct: React.FC = () => {
                         Price
                       </label>
                       <div className="relative flex items-center">
-                        <span className="absolute left-4 font-black text-xl text-[#c8ff00] select-none">$</span>
+                        <span className="absolute left-4 font-black text-xl text-[#C6FF00] select-none">$</span>
                         <input 
                           type="number" 
                           inputMode="decimal"
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
                           placeholder="0"
-                          className="w-full text-xl font-black bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#c8ff00] rounded-[10px] pl-10 pr-4 py-3.5 text-[#c8ff00] placeholder-white/20 outline-none focus:outline-none transition-all"
+                          className="w-full text-xl font-black bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] pl-10 pr-4 py-3.5 text-[#C6FF00] placeholder-white/20 outline-none focus:outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -617,7 +617,7 @@ export const AddProduct: React.FC = () => {
                               onClick={() => setSelectedTag(tg)}
                               className={`flex-1 text-[13px] font-bold py-2 border rounded-[8px] text-center transition-all cursor-pointer ${
                                 isSelected 
-                                  ? 'bg-[#c8ff00]/10 border-[#c8ff00] text-[#c8ff00]' 
+                                  ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00]' 
                                   : 'bg-white/[0.05] border-white/10 text-white/50 hover:text-white'
                               }`}
                             >
@@ -635,7 +635,7 @@ export const AddProduct: React.FC = () => {
                     type="button"
                     disabled={!isScreen2Valid}
                     onClick={goNext}
-                    className="w-full h-12 rounded-[10px] bg-[#c8ff00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                    className="w-full h-12 rounded-[10px] bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
                   >
                     <span>Next</span>
                     <ChevronRight size={16} strokeWidth={3} />
@@ -661,7 +661,7 @@ export const AddProduct: React.FC = () => {
                         onClick={() => handleSizeCategoryChange(cat)}
                         className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all capitalize cursor-pointer ${
                           sizeCategory === cat 
-                            ? 'bg-[#c8ff00] text-black font-black' 
+                            ? 'bg-[#C6FF00] text-black font-black' 
                             : 'text-white/60 hover:text-white'
                         }`}
                       >
@@ -684,7 +684,7 @@ export const AddProduct: React.FC = () => {
                             min={0}
                             value={sizeStock['One Size']?.stock ?? 10}
                             onChange={(e) => updateSizeStock('One Size', parseInt(e.target.value) || 0)}
-                            className="w-20 h-9 rounded-lg bg-white/[0.06] border border-[#c8ff00]/30 text-white font-extrabold text-[15px] text-center focus:outline-none"
+                            className="w-20 h-9 rounded-lg bg-white/[0.06] border border-[#C6FF00]/30 text-white font-extrabold text-[15px] text-center focus:outline-none"
                           />
                         </div>
                       </div>
@@ -697,7 +697,7 @@ export const AddProduct: React.FC = () => {
                                 key={`size-card-${sz}`}
                                 className={`p-3 rounded-xl border flex flex-col items-center justify-between gap-2.5 relative transition-all min-h-[72px] ${
                                   value.active
-                                    ? 'bg-[#c8ff00]/8 border-[#c8ff00] text-[#c8ff00]'
+                                    ? 'bg-[#C6FF00]/8 border-[#C6FF00] text-[#C6FF00]'
                                     : 'bg-white/[0.04] border-white/[0.08] text-white/30'
                                 }`}
                               >
@@ -726,7 +726,7 @@ export const AddProduct: React.FC = () => {
                                     min={0}
                                     value={value.stock}
                                     onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
-                                    className="w-12 h-7 rounded-[6px] bg-white/[0.06] border border-[#c8ff00]/30 text-white font-extrabold text-[13px] text-center relative z-10 focus:outline-none"
+                                    className="w-12 h-7 rounded-[6px] bg-white/[0.06] border border-[#C6FF00]/30 text-white font-extrabold text-[13px] text-center relative z-10 focus:outline-none"
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 )}
@@ -742,7 +742,7 @@ export const AddProduct: React.FC = () => {
                             value={customSizeInput}
                             onChange={(e) => setCustomSizeInput(e.target.value)}
                             placeholder="Add custom size (e.g. US 12, EU 46)"
-                            className="flex-1 text-xs bg-[#c8ff00]/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-[#c8ff00] transition-colors"
+                            className="flex-1 text-xs bg-[#C6FF00]/5 border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-[#C6FF00] transition-colors"
                           />
                           <button
                             type="button"
@@ -760,7 +760,7 @@ export const AddProduct: React.FC = () => {
                   {/* Colors swatches */}
                   <div className="space-y-4 pt-1">
                       <div>
-                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#c8ff00] block mb-2">
+                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#C6FF00] block mb-2">
                           Colours (Select multiple or add custom)
                         </label>
                         <div className="flex flex-wrap gap-2.5 items-center bg-white/[0.03] border border-white/[0.06] p-3 rounded-xl">
@@ -780,7 +780,7 @@ export const AddProduct: React.FC = () => {
                                 }}
                                 className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all relative cursor-pointer border border-white/5 ${
                                   isSelected 
-                                    ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a] scale-110 bg-[#c8ff00]/10' 
+                                    ? 'ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a] scale-110 bg-[#C6FF00]/10' 
                                     : 'bg-white/[0.05] hover:bg-white/[0.1]'
                                 }`}
                                 title={swatchName}
@@ -814,7 +814,7 @@ export const AddProduct: React.FC = () => {
                             value={customColorText}
                             onChange={(e) => setCustomColorText(e.target.value)}
                             placeholder="e.g. Vintage Cream, Acid Teal"
-                            className="flex-1 text-[13px] bg-white/[0.05] border border-white/10 hover:border-white/20 focus:border-[#c8ff00] rounded-lg px-3 py-2 text-white placeholder-white/25 outline-none"
+                            className="flex-1 text-[13px] bg-white/[0.05] border border-white/10 hover:border-white/20 focus:border-[#C6FF00] rounded-lg px-3 py-2 text-white placeholder-white/25 outline-none"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
@@ -825,7 +825,7 @@ export const AddProduct: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleAddCustomColor}
-                            className="bg-[#c8ff00] hover:bg-[#bce000] text-black text-xs font-black px-4 py-2 rounded-lg transition-all cursor-pointer shrink-0"
+                            className="bg-[#C6FF00] hover:bg-[#b5e600] text-black text-xs font-black px-4 py-2 rounded-lg transition-all cursor-pointer shrink-0"
                           >
                             Add
                           </button>
@@ -835,12 +835,12 @@ export const AddProduct: React.FC = () => {
                       {/* Selected color list with remove options */}
                       {selectedColors.length > 0 && (
                         <div className="space-y-1.5">
-                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#c8ff00]/50 block">Active Palette:</span>
+                          <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#C6FF00]/50 block">Active Palette:</span>
                           <div className="flex flex-wrap gap-1.5">
                             {selectedColors.map((color) => (
                               <span 
                                 key={`selected-col-${color}`}
-                                className="inline-flex items-center gap-1 bg-[#c8ff00]/10 hover:bg-[#c8ff00]/25 text-[#c8ff00] border border-[#c8ff00]/25 font-mono text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-[6px] transition-colors"
+                                className="inline-flex items-center gap-1 bg-[#C6FF00]/10 hover:bg-[#C6FF00]/25 text-[#C6FF00] border border-[#C6FF00]/25 font-mono text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-[6px] transition-colors"
                               >
                                 <span>{color}</span>
                                 <button
@@ -867,7 +867,7 @@ export const AddProduct: React.FC = () => {
                         type="button"
                         onClick={() => setIsVisible(!isVisible)}
                         className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                          isVisible ? 'bg-[#c8ff00] border-[#c8ff00]' : 'bg-white/5 border-white/10'
+                          isVisible ? 'bg-[#C6FF00] border-[#C6FF00]' : 'bg-white/5 border-white/10'
                         }`}
                       >
                         <div 
@@ -883,7 +883,7 @@ export const AddProduct: React.FC = () => {
                     type="button"
                     disabled={!isScreen3Valid}
                     onClick={goNext}
-                    className="w-full h-12 rounded-[10px] bg-[#c8ff00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                    className="w-full h-12 rounded-[10px] bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
                   >
                     <span>Next</span>
                     <ChevronRight size={16} strokeWidth={3} />
@@ -911,7 +911,7 @@ export const AddProduct: React.FC = () => {
                       )}
                       
                       {selectedTag !== 'None' && (
-                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/85 border border-white/10 rounded text-[7px] font-black uppercase tracking-wider text-[#c8ff00]">
+                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/85 border border-white/10 rounded text-[7px] font-black uppercase tracking-wider text-[#C6FF00]">
                           {selectedTag}
                         </div>
                       )}
@@ -924,7 +924,7 @@ export const AddProduct: React.FC = () => {
                             {name || 'Product name'}
                           </h4>
                         </div>
-                        <p className="text-[#c8ff00] font-black text-[16px] leading-none">
+                        <p className="text-[#C6FF00] font-black text-[16px] leading-none">
                           ${parseFloat(price) ? parseFloat(price) : '0'}
                         </p>
                       </div>
@@ -959,7 +959,7 @@ export const AddProduct: React.FC = () => {
                       onChange={(e) => setDescription(e.target.value.substring(0, 300))}
                       rows={3}
                       placeholder="Describe the material, fit, or styling tips..."
-                      className="w-full text-sm bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#c8ff00] rounded-[10px] p-3.5 text-white placeholder-white/20 outline-none focus:outline-none transition-all leading-normal resize-none"
+                      className="w-full text-sm bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] p-3.5 text-white placeholder-white/20 outline-none focus:outline-none transition-all leading-normal resize-none"
                     />
                   </div>
 
@@ -973,7 +973,7 @@ export const AddProduct: React.FC = () => {
                       type="button"
                       onClick={() => setIsFeatured(!isFeatured)}
                       className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                        isFeatured ? 'bg-[#c8ff00] border-[#c8ff00]' : 'bg-white/5 border-white/10'
+                        isFeatured ? 'bg-[#C6FF00] border-[#C6FF00]' : 'bg-white/5 border-white/10'
                       }`}
                     >
                       <div 
@@ -989,7 +989,7 @@ export const AddProduct: React.FC = () => {
                     type="button"
                     disabled={publishing}
                     onClick={handlePublishProduct}
-                    className="w-full min-h-[52px] h-[52px] rounded-[10px] bg-[#c8ff00] text-black font-extrabold text-[16px] uppercase tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-[0_8px_24px_rgba(200,255,0,0.25)] pt-1"
+                    className="w-full min-h-[52px] h-[52px] rounded-[10px] bg-[#C6FF00] text-black font-extrabold text-[16px] uppercase tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-[0_8px_24px_rgba(198, 255, 0,0.25)] pt-1"
                   >
                     {publishing ? (
                       <>
@@ -1023,7 +1023,7 @@ export const AddProduct: React.FC = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: [0, 1.1, 1] }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="w-[100px] h-[100px] rounded-full border-2 border-[#c8ff00] bg-[#c8ff00]/10 flex items-center justify-center text-[#c8ff00]"
+                  className="w-[100px] h-[100px] rounded-full border-2 border-[#C6FF00] bg-[#C6FF00]/10 flex items-center justify-center text-[#C6FF00]"
                 >
                   <Check size={48} className="stroke-[3]" />
                 </motion.div>
@@ -1049,7 +1049,7 @@ export const AddProduct: React.FC = () => {
                     <h4 className="font-extrabold text-[15px] leading-tight line-clamp-1 text-white">
                       {name}
                     </h4>
-                    <p className="text-[#c8ff00] font-black text-[18px] leading-none">
+                    <p className="text-[#C6FF00] font-black text-[18px] leading-none">
                       ${price}
                     </p>
 
@@ -1063,7 +1063,7 @@ export const AddProduct: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="w-full h-12 rounded-[10px] bg-[#c8ff00] text-black font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center transition-all cursor-pointer active:scale-[0.98]"
+                  className="w-full h-12 rounded-[10px] bg-[#C6FF00] text-black font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center transition-all cursor-pointer active:scale-[0.98]"
                 >
                   Add another product
                 </button>
@@ -1107,7 +1107,7 @@ export const AddProduct: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowDiscardModal(false)}
-                className="flex-1 h-10 rounded-[10px] bg-[#c8ff00] text-black font-bold leading-none cursor-pointer transition-colors"
+                className="flex-1 h-10 rounded-[10px] bg-[#C6FF00] text-black font-bold leading-none cursor-pointer transition-colors"
               >
                 Keep editing
               </button>

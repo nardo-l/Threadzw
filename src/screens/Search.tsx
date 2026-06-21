@@ -103,7 +103,7 @@ export const Search: React.FC = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search products, orders, references..."
-              className="w-full h-11 bg-white/[0.03] border border-white/10 rounded-xl pl-10 pr-10 text-sm text-white focus:outline-none focus:border-[#c8ff00] focus:bg-white/[0.05] transition-all placeholder-zinc-500"
+              className="w-full h-11 bg-white/[0.03] border border-white/10 rounded-xl pl-10 pr-10 text-sm text-white focus:outline-none focus:border-[#C6FF00] focus:bg-white/[0.05] transition-all placeholder-zinc-500"
               autoFocus
             />
             {query && (
@@ -121,7 +121,7 @@ export const Search: React.FC = () => {
       <div className="px-5 mt-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-[#c8ff00]" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#C6FF00]" />
             <p className="text-zinc-500 text-xs font-mono font-bold uppercase tracking-wider mt-3">Indexing directory...</p>
           </div>
         ) : !query.trim() ? (
@@ -136,7 +136,7 @@ export const Search: React.FC = () => {
 
             <div className="space-y-2">
               <div className="bg-white/[0.01] border border-white/[0.03] rounded-xl p-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#c8ff00]/10 text-[#c8ff00] border border-[#c8ff00]/10 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-[#C6FF00]/10 text-[#C6FF00] border border-[#C6FF00]/10 flex items-center justify-center">
                   <Package size={15} />
                 </div>
                 <div>
@@ -162,7 +162,7 @@ export const Search: React.FC = () => {
             <AlertCircle size={24} className="text-zinc-500 mb-3" />
             <h3 className="font-extrabold text-sm text-white">No query matches</h3>
             <p className="text-xs text-zinc-500 mt-2 max-w-xs leading-relaxed">
-              We couldn't find any listings or order logs matching <span className="text-[#c8ff00] font-mono">"{query}"</span> in your store node.
+              We couldn't find any listings or order logs matching <span className="text-[#C6FF00] font-mono">"{query}"</span> in your store node.
             </p>
           </div>
         ) : (
@@ -171,7 +171,7 @@ export const Search: React.FC = () => {
             {/* MATCHING PRODUCTS */}
             {filteredProducts.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-xs font-black uppercase tracking-widest text-[#c8ff00] px-1 flex items-center gap-1.5">
+                <h3 className="text-xs font-black uppercase tracking-widest text-[#C6FF00] px-1 flex items-center gap-1.5">
                   <Package size={14} />
                   Products ({filteredProducts.length})
                 </h3>

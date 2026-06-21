@@ -167,7 +167,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
           ctx.fillRect(0, 0, 120, 120);
           
           // Border path
-          ctx.strokeStyle = 'rgba(200, 255, 0, 0.2)';
+          ctx.strokeStyle = 'rgba(198, 255, 0, 0.2)';
           ctx.lineWidth = 4;
           ctx.strokeRect(2, 2, 116, 116);
 
@@ -279,7 +279,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
         
         {/* TOP STATUS WATERMARK */}
         <div className="absolute top-4 left-4 flex items-center gap-1.5 opacity-40">
-          <div className="w-2 h-2 rounded-full bg-[#c8ff00] animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-[#C6FF00] animate-pulse" />
           <span className="text-[9px] font-mono tracking-wider font-bold text-white uppercase">Storefront Registry</span>
         </div>
 
@@ -309,7 +309,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
               <div 
                 key={`progress-segment-${idx}`}
                 className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-                  isCompleted ? 'bg-[#c8ff00]' : isActive ? 'bg-[#c8ff00]/60 animate-pulse' : 'bg-white/10'
+                  isCompleted ? 'bg-[#C6FF00]' : isActive ? 'bg-[#C6FF00]/60 animate-pulse' : 'bg-white/10'
                 }`}
               />
             );
@@ -318,7 +318,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
 
         {/* STEP TITLE HEADER */}
         <div className="px-6 pt-5 pb-3 border-b border-white/5 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#c8ff00]/10 border border-[#c8ff00]/20 flex items-center justify-center text-[#c8ff00]">
+          <div className="w-8 h-8 rounded-lg bg-[#C6FF00]/10 border border-[#C6FF00]/20 flex items-center justify-center text-[#C6FF00]">
             {steps[step - 1].icon}
           </div>
           <div>
@@ -347,20 +347,20 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="input_shop_name" className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold">Shop Brand Name</label>
+                  <label htmlFor="input_shop_name" className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold">Shop Brand Name</label>
                   <input 
                     id="input_shop_name"
                     type="text"
                     value={name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="e.g. Kure Streetwear"
-                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#c8ff00] transition-colors"
+                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#C6FF00] transition-colors"
                     maxLength={32}
                   />
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="input_shop_handle" className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold">Custom URL Handle</label>
+                  <label htmlFor="input_shop_handle" className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold">Custom URL Handle</label>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-mono select-none">/@</span>
                     <input 
@@ -369,13 +369,13 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                       value={handle}
                       onChange={(e) => setHandle(cleanHandle(e.target.value))}
                       placeholder="kure"
-                      className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 pl-9 text-white text-sm outline-none focus:border-[#c8ff00] transition-colors font-mono"
+                      className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 pl-9 text-white text-sm outline-none focus:border-[#C6FF00] transition-colors font-mono"
                       maxLength={24}
                     />
                   </div>
                   {handle && (
                     <span className="text-[10px] font-mono text-zinc-500">
-                      Your store link: <span className="text-[#c8ff00]">threadzw.com/shop/{handle}</span>
+                      Your store link: <span className="text-[#C6FF00]">threadzw.vercel.app/shop/{shop?.id || 'demo'}</span>
                     </span>
                   )}
                 </div>
@@ -396,14 +396,14 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="input_shop_whatsapp" className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold">WhatsApp Business Number</label>
+                  <label htmlFor="input_shop_whatsapp" className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold">WhatsApp Business Number</label>
                   <input 
                     id="input_shop_whatsapp"
                     type="tel"
                     value={whatsapp}
                     onChange={(e) => setWhatsapp(e.target.value)}
                     placeholder="e.g. +263776223144"
-                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#c8ff00] transition-colors font-mono"
+                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#C6FF00] transition-colors font-mono"
                   />
                   <div className="mt-3 p-3 bg-white/[0.02] border border-white/5 rounded-xl flex gap-2.5 items-start">
                     <span className="text-lg">💡</span>
@@ -429,12 +429,12 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="select_shop_city" className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold">Primary City/HQ</label>
+                  <label htmlFor="select_shop_city" className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold">Primary City/HQ</label>
                   <select
                     id="select_shop_city"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
-                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#c8ff00] transition-colors cursor-pointer"
+                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#C6FF00] transition-colors cursor-pointer"
                   >
                     {ZIMBABWE_TOWNS.map(town => (
                       <option key={`town-${town}`} value={town} className="bg-[#111]">{town}</option>
@@ -443,14 +443,14 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="input_address_detail" className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold">Store address / Booth (Optional)</label>
+                  <label htmlFor="input_address_detail" className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold">Store address / Booth (Optional)</label>
                   <input 
                     id="input_address_detail"
                     type="text"
                     value={addressLine}
                     onChange={(e) => setAddressLine(e.target.value)}
                     placeholder="e.g. Shop 22 Eastgate, or Online Only"
-                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#c8ff00] transition-colors"
+                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#C6FF00] transition-colors"
                   />
                 </div>
               </motion.div>
@@ -470,7 +470,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold block">Brand Category</span>
+                  <span className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold block">Brand Category</span>
                   <div className="grid grid-cols-2 gap-3 max-h-[220px] overflow-y-auto pr-1">
                     {globalCategoriesLoading ? (
                       <div className="col-span-2 py-4 text-center text-xs text-zinc-500">Loading classifications...</div>
@@ -485,7 +485,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                             onClick={() => setCategory(cat.name)}
                             className={`relative h-16 rounded-xl border overflow-hidden transition-all text-left group ${
                               isSelected 
-                                ? 'border-[#c8ff00] ring-1 ring-[#c8ff00]' 
+                                ? 'border-[#C6FF00] ring-1 ring-[#C6FF00]' 
                                 : 'border-white/10 hover:border-white/20'
                             }`}
                           >
@@ -499,7 +499,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                               />
                             )}
                             <div className="absolute inset-x-3 bottom-2.5 z-20">
-                              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${isSelected ? 'text-[#c8ff00]' : 'text-white'}`}>
+                              <span className={`text-[11px] font-extrabold uppercase tracking-wider ${isSelected ? 'text-[#C6FF00]' : 'text-white'}`}>
                                 {cat.name}
                               </span>
                             </div>
@@ -511,7 +511,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label htmlFor="textarea_shop_motto" className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold">Shop Tagline / Motto</label>
+                  <label htmlFor="textarea_shop_motto" className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold">Shop Tagline / Motto</label>
                   <input 
                     id="textarea_shop_motto"
                     type="text"
@@ -519,7 +519,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="e.g. Crafted for the rebels chasing dreams."
                     maxLength={100}
-                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#c8ff00] transition-colors"
+                    className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 text-white text-sm outline-none focus:border-[#C6FF00] transition-colors"
                   />
                 </div>
               </motion.div>
@@ -549,9 +549,9 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                     onClick={() => fileInputRef.current?.click()}
                     className={`border-2 border-dashed rounded-xl p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-colors ${
                       isDragging 
-                        ? 'border-[#c8ff00] bg-[#c8ff00]/5' 
+                        ? 'border-[#C6FF00] bg-[#C6FF00]/5' 
                         : logoPreview 
-                        ? 'border-white/25 hover:border-[#c8ff00]' 
+                        ? 'border-white/25 hover:border-[#C6FF00]' 
                         : 'border-white/10 hover:border-white/30'
                     }`}
                   >
@@ -578,7 +578,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
 
                   {/* PRESET EMOJI PICKER ALTERNATIVE */}
                   <div className="border border-white/5 bg-white/[0.01] rounded-xl p-3 flex flex-col justify-between">
-                    <span className="text-[8.5px] font-mono text-[#c8ff00] uppercase tracking-wider font-extrabold leading-tight">Or use beautiful Preset:</span>
+                    <span className="text-[8.5px] font-mono text-[#C6FF00] uppercase tracking-wider font-extrabold leading-tight">Or use beautiful Preset:</span>
                     <div className="grid grid-cols-5 gap-1.5 mt-1.5">
                       {PRESET_EMOJIS.map(em => (
                         <button
@@ -587,7 +587,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                           onClick={() => selectEmojiLogo(em)}
                           className={`w-7 h-7 rounded-md flex items-center justify-center text-sm transition-all border ${
                             selectedEmoji === em
-                              ? 'bg-[#c8ff00]/15 border-[#c8ff00] scale-110'
+                              ? 'bg-[#C6FF00]/15 border-[#C6FF00] scale-110'
                               : 'bg-[#181818] border-white/5 hover:border-white/20'
                           }`}
                         >
@@ -601,7 +601,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
 
                 {/* INSTAGRAM INTERACTIVE INPUT */}
                 <div className="flex flex-col gap-1.5 mt-2">
-                  <label htmlFor="input_shop_insta" className="text-[10px] font-mono text-[#c8ff00] uppercase tracking-widest font-bold">Instagram @Handle</label>
+                  <label htmlFor="input_shop_insta" className="text-[10px] font-mono text-[#C6FF00] uppercase tracking-widest font-bold">Instagram @Handle</label>
                   <div className="relative">
                     <Instagram size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" />
                     <input 
@@ -610,7 +610,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                       value={instagram}
                       onChange={(e) => setInstagram(e.target.value)}
                       placeholder="e.g. kure.zw"
-                      className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 pl-11 text-white text-sm outline-none focus:border-[#c8ff00] transition-colors font-mono"
+                      className="w-full bg-[#161616] border border-white/10 rounded-xl p-4 pl-11 text-white text-sm outline-none focus:border-[#C6FF00] transition-colors font-mono"
                     />
                   </div>
                 </div>
@@ -642,7 +642,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 type="button"
                 onClick={() => setStep(step + 1)}
                 disabled={!validateStep()}
-                className="h-12 px-6 bg-[#c8ff00] hover:bg-[#b0df00] disabled:bg-zinc-800 disabled:text-zinc-500 font-extrabold text-xs uppercase tracking-widest text-black rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+                className="h-12 px-6 bg-[#C6FF00] hover:bg-[#b5e600] disabled:bg-zinc-800 disabled:text-zinc-500 font-extrabold text-xs uppercase tracking-widest text-black rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
               >
                 Continue <ChevronRight size={14} />
               </button>
@@ -652,11 +652,11 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="h-12 px-6 bg-[#c8ff00] hover:bg-[#b0df00] disabled:bg-zinc-800 font-black text-xs uppercase tracking-widest text-black rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-[0_0_20px_rgba(200,255,0,0.15)]"
+                className="h-12 px-6 bg-[#C6FF00] hover:bg-[#b5e600] disabled:bg-zinc-800 font-black text-xs uppercase tracking-widest text-black rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-[0_0_20px_rgba(198,255,0,0.15)]"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 size={14} className="animate-spin" /> Launching...
+                     <Loader2 size={14} className="animate-spin" /> Launching...
                   </>
                 ) : (
                   <>

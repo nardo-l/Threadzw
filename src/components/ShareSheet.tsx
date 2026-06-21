@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Copy, Check, MessageCircle, Share2 } from 'lucide-react';
 import { Avatar } from './Avatar';
 import { toast } from 'sonner';
+import { getAppOrigin } from '../utils/shopUrl';
 
 interface ShareSheetProps {
   isOpen: boolean;
@@ -21,7 +22,8 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
   const [copied, setCopied] = useState(false);
 
   const getShopLink = (handle: string) => {
-    return 'https://threadzw.vercel.app/shop/@' + handle.toLowerCase();
+    const base = getAppOrigin();
+    return base + '/shop/@' + handle.toLowerCase();
   };
 
   const handleCopyLink = async () => {

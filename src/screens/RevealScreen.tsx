@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Check, Copy, Share2, ArrowRight, MessageSquare, ExternalLink, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
+import { getAppHost } from '../utils/shopUrl';
 
 interface RevealScreenProps {
   myShop: {
@@ -34,8 +35,8 @@ export const RevealScreen: React.FC<RevealScreenProps> = ({ myShop, setAppStage 
   const [copied, setCopied] = useState(false);
   const [particles, setParticles] = useState<ConfettiParticle[]>([]);
 
-  const handle = myShop?.handle || 'shop';
-  const shopUrl = `threadzw.vercel.app/shop/@${handle}`;
+  const shopId = myShop?.id || 'demo';
+  const shopUrl = `threadzw.vercel.app/shop/${shopId}`;
 
   // Generate 45 random particle pieces on mount
   useEffect(() => {

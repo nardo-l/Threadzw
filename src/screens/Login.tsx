@@ -179,7 +179,7 @@ export const Login: React.FC = () => {
             style={{
               marginTop: 12,
               padding: '15px',
-              background: '#c8ff00',
+              background: '#C6FF00',
               color: '#000000',
               border: 'none',
               borderRadius: 10,
@@ -204,7 +204,7 @@ export const Login: React.FC = () => {
             to="/signup" 
             style={{
               fontWeight: 800,
-              color: '#c8ff00',
+              color: '#C6FF00',
               textDecoration: 'none'
             }}
           >

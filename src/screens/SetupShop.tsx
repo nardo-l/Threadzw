@@ -74,16 +74,16 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 text-white font-sans selection:bg-[#c8ff00] selection:text-black">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 text-white font-sans selection:bg-[#C6FF00] selection:text-black">
       <div className="max-w-md w-full bg-[#121212] rounded-3xl border border-zinc-900 overflow-hidden shadow-2xl p-8 text-center space-y-6 relative">
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#c8ff00] to-transparent" />
+        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-[#C6FF00] to-transparent" />
         
-        <div className="w-16 h-16 bg-[#c8ff00]/10 border border-[#c8ff00]/20 rounded-2xl flex items-center justify-center mx-auto text-[#c8ff00]">
+        <div className="w-16 h-16 bg-[#C6FF00]/10 border border-[#C6FF00]/20 rounded-2xl flex items-center justify-center mx-auto text-[#C6FF00]">
           <Store size={32} />
         </div>
 
         <div className="space-y-2">
-          <div className="flex items-center justify-center gap-1.5 text-[#c8ff00] font-mono text-[10px] tracking-widest uppercase font-black">
+          <div className="flex items-center justify-center gap-1.5 text-[#C6FF00] font-mono text-[10px] tracking-widest uppercase font-black">
             <Sparkles size={12} />
             <span>Store Initialized</span>
           </div>
@@ -98,7 +98,7 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
         <button
           onClick={handleSetupStart}
           disabled={loading}
-          className="w-full h-14 bg-[#c8ff00] hover:bg-[#b0df00] disabled:bg-zinc-800 text-black font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-[0_4px_20px_rgba(200,255,0,0.15)] cursor-pointer"
+          className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5e600] disabled:bg-zinc-800 text-black font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 shadow-[0_4px_20px_rgba(198, 255, 0,0.15)] cursor-pointer"
         >
           {loading ? (
             <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
