@@ -296,6 +296,10 @@ export const StorefrontPage: React.FC = () => {
 
   // Persistent shop lookup
   const loadStorefront = useCallback(async () => {
+    // Reset any previously active store state immediately to avoid showing unrelated/cached shops
+    setShop(null);
+    setProducts([]);
+
     if (!pathShopId && !pathSlug && !cleanSlug) {
       setError('not_found');
       setLoading(false);
@@ -336,7 +340,8 @@ export const StorefrontPage: React.FC = () => {
         } catch (_) {}
       }
 
-      const rawId = pathShopId ? pathShopId.trim() : '';
+      // If id is not explicitly a separate product mapping, fallback to parsed slug or handle
+      const rawId = pathShopId ? pathShopId.trim() : (pathSlug || cleanSlug || '').trim();
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawId);
       const isMalformed = rawId && !isUUID && (rawId.includes('-') || rawId.length === 36 || /^[0-9a-f-]{30,40}$/i.test(rawId));
 
