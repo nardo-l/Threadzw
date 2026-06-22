@@ -28,7 +28,6 @@ import { Toaster } from 'sonner';
 import { PublicShopPage } from './screens/PublicShopPage';
 import { LandingPage } from './screens/LandingPage';
 import { AdminLeads } from './screens/AdminLeads';
-import { mockShop } from './data/mockData';
 import { SetupShop } from './screens/SetupShop';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';

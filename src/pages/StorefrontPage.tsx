@@ -17,7 +17,6 @@ import {
 } from '../components/ui/ShopImage';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'motion/react';
-import { mockProducts } from '../data/mockData';
 import { getAppOrigin } from '../utils/shopUrl';
 import { 
   Search, 
@@ -396,65 +395,16 @@ export const StorefrontPage: React.FC = () => {
         databaseQueryResult: shopData ? { id: shopData.id, name: shopData.name, slug: shopData.slug, handle: shopData.handle } : 'no_matching_store_found'
       });
 
-      // Session and Global Roll Fallbacks (Only if no specific slug was typed in, or if it's 'demo')
-      const isDemoSpecified = (slug || '').toLowerCase() === 'demo' || pathShopId === 'demo-shop' || (!slug && !pathShopId);
-      const isSpecifyingShop = !!pathShopId;
+      console.log("Stores returned:", shopData ? [shopData] : []);
+      console.log("Store count:", shopData ? 1 : 0);
 
-      if (!shopData && !isSpecifyingShop) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user?.id) {
-            const { data: ownShop } = await supabase
-              .from('shops')
-              .select('*')
-              .eq('owner_id', session.user.id)
-              .maybeSingle();
-            if (ownShop) {
-              shopData = ownShop;
-            }
-          }
-        } catch (_) {}
-      }
-
-      if (!shopData && !isSpecifyingShop) {
-        try {
-          const { data: anyShops } = await supabase.from('shops').select('*').limit(3);
-          if (anyShops && anyShops.length > 0) {
-            shopData = anyShops[0];
-          }
-        } catch (_) {}
-      }
-
-      // If they asked for a specific shop and we found absolutely nothing, show Shop Not Found
-      // 7. Only show "Shop Not Found" when no matching store record exists
-      if (!shopData && isSpecifyingShop && !isDemoSpecified) {
-        console.warn('[Storefront Diagnostics] No matching store record exists in database. Showing Store Not Found.');
+      // Verify store exists. If store does not exist, show "Store Not Found"
+      if (!shopData) {
+        console.warn('[Storefront Diagnostics] No matching shop record found in database. Showing Store Not Found.');
         setError('not_found');
         setLoading(false);
         setShop(null);
         return;
-      }
-
-      // Demo shop properties fallback
-      if (!shopData) {
-        shopData = {
-          id: 'demo-shop',
-          name: 'Nulla Clothing',
-          handle: 'demo',
-          slug: 'demo',
-          description: 'Built for the ones chasing more. The premium curated streetwear outfit.',
-          logo_url: 'https://images.unsplash.com/photo-15569055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
-          banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
-          city: 'Bulawayo',
-          suburb: 'Golden Heights',
-          whatsapp_number: '+263777123456',
-          opening_hours: 'Mon-Sat 9am - 6pm',
-          instagram: 'nullaclothing_zw',
-          shipping_policy: 'Same-day premium courier dispatch across Harare and city pickup hubs in Bulawayo.',
-          return_policy: 'Elaborate 3-day return/size-exchange guarantee on unworn apparel pieces with tags intact.',
-          terms_conditions: 'All garment releases are handcrafted drop-based editions under exclusive copyrights.',
-          privacy_policy: 'All buyer details including coordinates and WhatsApp handles remain proprietary and encrypted.'
-        };
       }
 
       setShop(shopData);
@@ -480,27 +430,6 @@ export const StorefrontPage: React.FC = () => {
         storeId: shopData.id,
         numberOfProductsFound: productList.length
       });
-
-      // Mock products fallback
-      if ((!productList || productList.length === 0) && (cleanSlug === 'demo' || slug === 'demo' || shopData.handle === 'demo' || shopData.id === 'demo-shop')) {
-        productList = mockProducts.map((p: any) => ({
-          ...p,
-          colours: p.colors || ['Acid Yellow', 'Crimson Black', 'Off White'],
-          sizes: p.sizes?.map((sz: string) => ({
-            size: sz,
-            quantity: 8
-          })) || [
-            { size: 'S', quantity: 4 },
-            { size: 'M', quantity: 9 },
-            { size: 'L', quantity: 15 },
-            { size: 'XL', quantity: 5 }
-          ],
-          total_stock: 33,
-          status: 'active',
-          is_published: true,
-          created_at: new Date().toISOString()
-        }));
-      }
 
       // Sort logic
       productList = [...productList].sort((a, b) => {
@@ -531,17 +460,6 @@ export const StorefrontPage: React.FC = () => {
       let matchedCategories = fetchedCategories.filter(cat => 
         cat.visible && activeCategoryNames.has(cat.name?.trim().toLowerCase())
       );
-
-      if (matchedCategories.length === 0) {
-        // Mock default categories
-        matchedCategories = [
-          { id: '1', name: 'T-Shirts', visible: true },
-          { id: '2', name: 'Hoodies', visible: true },
-          { id: '3', name: 'Sneakers', visible: true },
-          { id: '4', name: 'Shorts', visible: true },
-          { id: '5', name: 'Accessories', visible: true }
-        ];
-      }
 
       setCategories(matchedCategories);
     } catch (err) {
