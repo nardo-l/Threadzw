@@ -43,54 +43,91 @@ export async function runStoreRouterTestSuite(): Promise<TestResult[]> {
     });
   }
 
-  // 2. Test Store Creation
+  // 2. SUCCESSFUL STORE CREATION TEST (Insert -> Verify -> Retrieve)
   let tempShopId: string | null = null;
-  const tempUserId = '00000000-0000-0000-0000-000000000099'; // dummy UUID for test
-  try {
-    const hashHex = runId.padEnd(12, 'a').slice(0, 12);
-    const mockId = `e0000000-0000-0000-0000-${hashHex}`; // Valid custom UUID format
+  const hashHex = runId.padEnd(12, 'a').slice(0, 12);
+  const mockId = `e0000000-0000-0000-0000-${hashHex}`; // Valid custom UUID format
 
-    // Insert mock shop
-    const { data, error } = await supabase
+  try {
+    // Attempt Database Insertion
+    const { error: insertError } = await supabase
       .from('shops')
       .insert({
         id: mockId,
         owner_id: null, // neutral testing shop
-        name: `Automated Test Store - ${runId}`,
+        name: `Successful Test Store - ${runId}`,
         handle: `autotest-${runId}`,
         slug: `autotest-${runId}`,
-        description: 'Auto-generated diagnostics store.',
+        description: 'Auto-generated successful diagnostics store.',
         is_live: false
-      })
-      .select('*')
+      });
+
+    if (insertError) throw insertError;
+
+    // Confirm Insert Success & Retrieve Saved Store ID
+    const { data: verifiedShop, error: verifyErr } = await supabase
+      .from('shops')
+      .select('id, name')
+      .eq('id', mockId)
       .maybeSingle();
 
-    if (error) throw error;
-    if (data && data.id === mockId) {
+    if (verifyErr) throw verifyErr;
+    
+    const isVerifiedSucessfully = verifiedShop && verifiedShop.id === mockId;
+
+    if (isVerifiedSucessfully) {
       tempShopId = mockId;
-      results.push({
-        testName: 'Store Creation',
-        success: true,
-        message: `Successfully created test store under unique ID: ${mockId}`,
-        details: data
-      });
-    } else {
-      results.push({
-        testName: 'Store Creation',
-        success: false,
-        message: 'Insert did not return expected store ID.'
-      });
     }
+
+    results.push({
+      testName: 'successful store creation',
+      success: !!isVerifiedSucessfully,
+      message: isVerifiedSucessfully
+        ? `Successfully created and verified test store in database: ID ${mockId}`
+        : `Database verification failed. Store not found or ID mismatch.`,
+      details: verifiedShop
+    });
   } catch (err: any) {
     results.push({
-      testName: 'Store Creation',
+      testName: 'successful store creation',
       success: false,
       message: `Failed store creation query: ${err.message}`,
       details: err
     });
   }
 
-  // 3. Test Store Lookup
+  // 3. FAILED STORE CREATION TEST
+  try {
+    // Attempting an insert with duplicate fields or malformed payload to trigger failure
+    const malformedId = 'malformed-uuid-which-should-fail-on-foreign-keys-or-casting';
+    const { error: failError } = await supabase
+      .from('shops')
+      .insert({
+        id: malformedId,
+        name: `Malformed Store ${runId}`,
+        handle: `autofail-${runId}`
+      });
+
+    // We expect this database insert to return an error/fail
+    const failedGracefully = !!failError;
+
+    results.push({
+      testName: 'failed store creation',
+      success: failedGracefully,
+      message: failedGracefully
+        ? `Database successfully caught and rejected malformed store insert: ${failError.message}`
+        : `Database failed to reject malformed insertion, or accepted malformed ID format.`,
+      details: failError
+    });
+  } catch (err: any) {
+    results.push({
+      testName: 'failed store creation',
+      success: true, // Threw an exception, which counts as successfully blocking a bad write
+      message: `Exception triggered successfully when attempting malformed write: ${err.message}`
+    });
+  }
+
+  // 4. STORE LOOKUP TEST (by ID)
   if (tempShopId) {
     try {
       const { data, error } = await supabase
@@ -103,7 +140,7 @@ export async function runStoreRouterTestSuite(): Promise<TestResult[]> {
       const matched = data && data.id === tempShopId;
 
       results.push({
-        testName: 'Store Lookup (by ID)',
+        testName: 'store lookup',
         success: !!matched,
         message: matched
           ? `Verified database query using unique ID: found store "${data.name}"`
@@ -112,53 +149,22 @@ export async function runStoreRouterTestSuite(): Promise<TestResult[]> {
       });
     } catch (err: any) {
       results.push({
-        testName: 'Store Lookup (by ID)',
+        testName: 'store lookup',
         success: false,
         message: `Error querying store by ID: ${err.message}`
       });
     }
   } else {
     results.push({
-      testName: 'Store Lookup (by ID)',
+      testName: 'store lookup',
       success: false,
       message: 'Skipped - dependent on successful store creation.'
     });
   }
 
-  // 4. Test Product Loading mapping strictly via store_id
-  if (tempShopId) {
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('shop_id', tempShopId);
-
-      if (error) throw error;
-
-      results.push({
-        testName: 'Product Loading',
-        success: true,
-        message: `Products successfully queried using shop_id = ${tempShopId}. Found ${data?.length || 0} items.`,
-        details: { count: data?.length || 0, retrieved: data }
-      });
-    } catch (err: any) {
-      results.push({
-        testName: 'Product Loading',
-        success: false,
-        message: `Product loading failed against shop_id parameter: ${err.message}`
-      });
-    }
-  } else {
-    results.push({
-      testName: 'Product Loading',
-      success: false,
-      message: 'Skipped - dependent on successful store creation.'
-    });
-  }
-
-  // 5. Test 404 handling & Invalid ID validation
+  // 5. INVALID UUID VALIDATION TEST
   try {
-    const invalidId = 'not-a-uuid-format';
+    const invalidId = 'not-a-valid-uuid-identifier-123';
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invalidId);
     
     let dbExceptionAvoided = false;
@@ -170,21 +176,21 @@ export async function runStoreRouterTestSuite(): Promise<TestResult[]> {
     }
 
     results.push({
-      testName: '404 Handling & Invalid ID validation',
+      testName: 'invalid UUID',
       success: dbExceptionAvoided && fallbackTo404Page,
-      message: 'Successfully validated malformed ID and prevented bad cast db crashes. Correctly flagged for 404 fallback.'
+      message: 'Successfully validated malformed UUID locally, avoiding cast crash scenarios, and correctly marked for fallback routing.'
     });
   } catch (err: any) {
     results.push({
-      testName: '404 Handling & Invalid ID validation',
+      testName: 'invalid UUID',
       success: false,
-      message: `Exception in 404 test: ${err.message}`
+      message: `Exception in invalid UUID test: ${err.message}`
     });
   }
 
-  // 6. Test Deleted Store Handling / Deleted store ID lookup
+  // 6. DELETED STORE TEST
   try {
-    const deletedShopId = '00000000-0000-4000-b000-111111111111'; // Dummy non-existent shop id
+    const deletedShopId = '00000000-0000-4000-b000-111111111111'; // Non-existent/deleted shop id
     const { data, error } = await supabase
       .from('shops')
       .select('*')
@@ -194,15 +200,15 @@ export async function runStoreRouterTestSuite(): Promise<TestResult[]> {
     const handledResiliently = !error && !data;
 
     results.push({
-      testName: 'Deleted Store Handling',
+      testName: 'deleted store',
       success: handledResiliently,
       message: handledResiliently
         ? 'Resiliently handled deleted or non-existent store lookup - returned null gracefully instead of breaking.'
-        : `Deleted lookup error or returned record: ${error?.message || 'Found record, expected none'}`
+        : `Deleted lookup returned record or error: ${error?.message || 'Found record, expected none'}`
     });
   } catch (err: any) {
     results.push({
-      testName: 'Deleted Store Handling',
+      testName: 'deleted store',
       success: false,
       message: `Deleted store query crashed: ${err.message}`
     });

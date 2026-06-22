@@ -498,7 +498,42 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         is_live: true
       });
 
-      if (shopError) throw shopError;
+      if (shopError) {
+        console.error('[Store Creation Flow] Insertion Failed:', {
+          generatedUUID: shopId,
+          databaseInsertResult: 'FAILURE',
+          error: shopError
+        });
+        throw shopError;
+      }
+
+      // Verify that the insert operation succeeds in the database before generating a URL
+      const { data: verifiedShop, error: verifyErr } = await supabase
+        .from('shops')
+        .select('id, slug, handle')
+        .eq('id', shopId)
+        .maybeSingle();
+
+      if (verifyErr) {
+        console.error('[Store Creation Flow] Verification Query Error:', verifyErr);
+        throw new Error(`Verification query error: ${verifyErr.message}`);
+      }
+
+      if (!verifiedShop) {
+        console.error('[Store Creation Flow] Verification Failed: Store not in database!');
+        throw new Error('Database insertion verification failed. Store record was not successfully created.');
+      }
+
+      // Generate verified URL
+      const generatedUrl = getAbsoluteShopUrl(verifiedShop.slug || verifiedShop.handle, verifiedShop.id);
+
+      // Log exactly the required details
+      console.log('[Store Creation Flow] SUCCESS:', {
+        generatedUUID: shopId,
+        databaseInsertResult: 'SUCCESS',
+        insertedStoreId: verifiedShop.id,
+        generatedURL: generatedUrl
+      });
 
       // 4. Record local stage values
       localStorage.setItem('threadzw_logged_in', 'true');

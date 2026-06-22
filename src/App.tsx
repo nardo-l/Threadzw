@@ -32,14 +32,18 @@ import { mockShop } from './data/mockData';
 import { SetupShop } from './screens/SetupShop';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
+import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
 import { SignUp } from './screens/SignUp';
 
-type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup';
+type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory';
 
 const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
 
+  if (path === '/shop' || path === '/store') {
+    return { stage: 'shop-directory' };
+  }
   if (path === '/demo' || path === '/shop/demo' || path === '/store/demo') {
     return { stage: 'shop', handle: 'demo' };
   }
@@ -143,7 +147,7 @@ function AppContent() {
   // Handle public routes unconditionally to prevent any auth lag or state conflicts
   const isPublicShopPath = useMemo(() => {
     const segments = cleanPath.split('/').filter(Boolean);
-    if (cleanPath === '/demo' || cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/') || cleanPath.startsWith('/s/')) {
+    if (cleanPath === '/demo' || cleanPath === '/shop' || cleanPath === '/store' || cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/') || cleanPath.startsWith('/s/')) {
       return true;
     }
     if (segments.length > 0) {
@@ -245,10 +249,14 @@ function AppContent() {
     );
   }
 
-  if (isPublicShopPath || appStage === 'shop') {
+  if (isPublicShopPath || appStage === 'shop' || appStage === 'shop-directory') {
     return (
       <Routes>
         <Route path="/demo" element={<StorefrontPage />} />
+        
+        {/* Marketplace Directory Routes */}
+        <Route path="/shop" element={<ShopDirectoryPage />} />
+        <Route path="/store" element={<Navigate to="/shop" replace />} />
         
         {/* Support formatting in /s/:slug */}
         <Route path="/s/:slug" element={<StorefrontPage />} />
