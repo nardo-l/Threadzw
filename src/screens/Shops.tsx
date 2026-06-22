@@ -161,7 +161,7 @@ const ShopCard: React.FC<{ shop: any, onClick: () => void }> = ({ shop, onClick 
       className="rounded-card p-4 flex items-center gap-4 group cursor-pointer transition-all border bg-[#111] border-[#222]"
     >
       <Avatar 
-        url={shop.avatar_url} 
+        url={shop.logo_url || shop.avatar_url} 
         size={56}
         className="border border-[#333]"
       />
@@ -175,7 +175,7 @@ const ShopCard: React.FC<{ shop: any, onClick: () => void }> = ({ shop, onClick 
         </div>
         <div className="flex items-center gap-1 text-[#555]">
           <MapPin size={10} />
-          <span className="text-[10px] font-mono">{shop.area}</span>
+          <span className="text-[10px] font-mono">{shop.area || shop.location}</span>
         </div>
         <div className="flex gap-2 mt-1">
           {shop.categories?.map((cat: string) => (

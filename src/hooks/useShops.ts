@@ -1,36 +1,64 @@
-import { useState, useEffect } from 'react';
-import { mockShop } from '../data/mockData';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
 
 export const useShops = (searchQuery = '', filters: any = {}) => {
   const [shops, setShops] = useState<any[]>([]);
   const [newShops, setNewShops] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const mapped = {
-      id: mockShop.id,
-      name: mockShop.name,
-      handle: 'kure',
-      categories: ['Streetwear', 'Tops', 'Bottoms'],
-      description: mockShop.tagline || mockShop.about,
-      location: mockShop.location,
-      whatsapp: mockShop.whatsapp_number,
-      whatsapp_number: mockShop.whatsapp_number,
-      instagram: mockShop.instagram,
-      is_online_only: false,
-      logo_url: mockShop.logo_url,
-      banner_url: mockShop.banner_url,
-      is_verified: true,
-      is_live: true,
-      subscription_status: mockShop.subscription_status,
-      trial_ends_at: mockShop.trial_end,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setShops([mapped]);
-    setNewShops([mapped]);
+  const fetchShops = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: queryErr } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('is_live', true)
+        .order('created_at', { ascending: false });
+
+      if (queryErr) throw queryErr;
+
+      const rawShops = data || [];
+      
+      // Filter out demo/mock shops
+      const liveShops = rawShops.filter(s => {
+        const idLower = (s.id || '').toLowerCase();
+        const handleLower = (s.handle || '').toLowerCase();
+        const nameLower = (s.name || '').toLowerCase();
+        
+        return idLower !== 'demo-shop' && 
+               idLower !== 'shop-001' &&
+               handleLower !== 'demo' && 
+               !nameLower.includes('demo');
+      });
+
+      // Search Query filter
+      const filtered = liveShops.filter(shop => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase();
+        return (shop.name || '').toLowerCase().includes(q) ||
+               (shop.description || '').toLowerCase().includes(q) ||
+               (shop.location || '').toLowerCase().includes(q) ||
+               (shop.handle || '').toLowerCase().includes(q) ||
+               (shop.slug || '').toLowerCase().includes(q);
+      });
+
+      setShops(filtered);
+
+      // New shops (e.g. up to 3 most recently created ones)
+      setNewShops(liveShops.slice(0, 3));
+    } catch (err: any) {
+      console.error('[useShops] Error fetching live shops:', err);
+      setError(err?.message || 'Failed to fetch shops');
+    } finally {
+      setLoading(false);
+    }
   }, [searchQuery]);
 
-  return { shops, newShops, loading, error, refetch: async () => {} };
+  useEffect(() => {
+    fetchShops();
+  }, [fetchShops]);
+
+  return { shops, newShops, loading, error, refetch: fetchShops };
 };

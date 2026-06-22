@@ -291,6 +291,35 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     refreshInventory();
   }, [user, refreshInventory]);
 
+  // Load registered, live shops from Supabase database to populate the global buyer lists
+  useEffect(() => {
+    const fetchAllLiveShops = async () => {
+      try {
+        const { data, error: shopsErr } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('is_live', true);
+
+        if (!shopsErr && data) {
+          // Filter out dummy/mock shops if any
+          const realShops = data.filter(s => {
+            const idLower = (s.id || '').toLowerCase();
+            const handleLower = (s.handle || '').toLowerCase();
+            const nameLower = (s.name || '').toLowerCase();
+            return idLower !== 'demo-shop' && 
+                   idLower !== 'shop-001' && 
+                   handleLower !== 'demo' && 
+                   !nameLower.includes('demo');
+          });
+          setShops(realShops);
+        }
+      } catch (err) {
+        console.error("Failed to load live shops in InventoryContext:", err);
+      }
+    };
+    fetchAllLiveShops();
+  }, [user]);
+
   const addProduct = async (productData: any) => {
     const newProduct: Product = {
       id: `prod-${Date.now()}`,

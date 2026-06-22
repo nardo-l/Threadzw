@@ -19,10 +19,15 @@ export const ShopsView: React.FC = () => {
   const categories = ["All", ...SHOP_CATEGORIES.map(c => c.label)];
 
   const filteredShops = shops.filter((shop: any) => {
-    const matchesFilter = filter === 'All' || shop.category === filter;
+    const shopCategory = shop.category || (shop.categories && shop.categories[0]) || '';
+    const matchesFilter = filter === 'All' || shopCategory === filter;
+    
+    const shopArea = shop.area || shop.location || '';
     const matchesSearch = shop.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (shop.area || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTown = !selectedTown || selectedTown === 'Zimbabwe' || shop.area === selectedTown;
+                          shopArea.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesTown = !selectedTown || selectedTown === 'Zimbabwe' || shopArea === selectedTown;
+    
     return matchesFilter && matchesSearch && matchesTown;
   });
 
@@ -137,7 +142,7 @@ export const ShopsView: React.FC = () => {
                   </div>
                 )}
               </div>
-              <span className="text-[11px] mt-0.5 text-white/40">{shop.category}</span>
+              <span className="text-[11px] mt-0.5 text-white/40">{shop.category || (shop.categories && shop.categories[0]) || 'Streetwear'}</span>
               <button 
                 onClick={(e) => { e.stopPropagation(); toggleFollow(shop.id); }}
                 className={`mt-3 w-full h-8 rounded-full border transition-all text-[12px] font-bold flex items-center justify-center gap-1 ${following.includes(shop.id) ? 'bg-[#C6FF00] border-[#C6FF00] text-white shadow-md' : 'border-[#C6FF00] text-[#C6FF00]'}`}
@@ -233,10 +238,10 @@ export const ShopsView: React.FC = () => {
                      {following.includes(shop.id) ? 'Following ✓' : 'Follow'}
                   </button>
                 </div>
-                <div className="text-[12px] text-white/40">{shop.category}</div>
+                <div className="text-[12px] text-white/40">{shop.category || (shop.categories && shop.categories[0]) || 'Streetwear'}</div>
                 <div className="flex items-center gap-3 mt-1.5 overflow-hidden">
                    <span className="text-[11px] flex items-center gap-1 shrink-0 text-white/40">
-                      📦 {shop.product_count} products
+                      📦 {shop.product_count || 0} products
                    </span>
                    <span className="text-[11px] flex items-center gap-1 shrink-0 text-white/40">
                       👥 {shop.follower_count || 0}
@@ -244,7 +249,7 @@ export const ShopsView: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5 mt-1.5 text-white/20">
                   <MapPin size={11} />
-                  <p className="text-[11px] truncate">{(shop as any).area}</p>
+                  <p className="text-[11px] truncate">{shop.area || shop.location}</p>
                 </div>
               </div>
             </div>
