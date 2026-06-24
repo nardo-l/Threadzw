@@ -127,32 +127,35 @@ export const ShopDirectoryPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (queryError) {
+        console.error('[ShopDirectory Diagnostic] Query failed. Potential RLS/Permission issue:', queryError);
         throw queryError;
       }
 
       const rawShops = data || [];
-      console.log("Raw stores returned:", rawShops);
+      console.log("[ShopDirectory Diagnostic] Raw stores returned from DB:", rawShops.length, rawShops);
       
       // Filter out mock/demo/fallback shops and non-existing/test accounts for real list
+      // We only exclude actual non-UUID template mock logs (e.g. 'demo-shop' or 'shop-001') 
+      // this ensures all newly created real user shops are preserved and loaded immediately!
       const returnedShops = rawShops.filter(s => {
         const idLower = (s.id || '').toLowerCase();
         const handleLower = (s.handle || '').toLowerCase();
         const slugLower = (s.slug || '').toLowerCase();
-        const nameLower = (s.name || '').toLowerCase();
         
-        return idLower !== 'demo-shop' && 
-               idLower !== 'shop-001' &&
-               handleLower !== 'demo' && 
-               handleLower !== 'kure' &&
-               slugLower !== 'demo' && 
-               slugLower !== 'kure' &&
-               !nameLower.includes('demo') &&
-               nameLower !== 'nulla clothing' &&
-               nameLower !== 'kure streetwear';
+        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idLower);
+        
+        // Report missing slug/handles for diagnostic purposes
+        if (!slugLower && isUUID) {
+          console.warn(`[ShopDirectory Diagnostic] Shop missing slug: id=${idLower} name=${s.name}`);
+        }
+        if (!handleLower && isUUID) {
+          console.warn(`[ShopDirectory Diagnostic] Shop missing handle: id=${idLower} name=${s.name}`);
+        }
+
+        return isUUID && idLower !== 'demo-shop' && idLower !== 'shop-001' && handleLower !== 'demo';
       });
 
-      console.log("Real stores filtered:", returnedShops);
-      console.log('[ShopDirectory] Successfully loaded published shops:', returnedShops.length);
+      console.log("[ShopDirectory Diagnostic] Real database stores after filtering out mock templates:", returnedShops.length, returnedShops);
       setShops(returnedShops);
     } catch (err: any) {
       console.error('[ShopDirectory] Failed loading directory stores:', err);
@@ -173,7 +176,7 @@ export const ShopDirectoryPage: React.FC = () => {
       shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (shop.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (shop.location || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.handle.toLowerCase().includes(searchQuery.toLowerCase());
+      (shop.handle || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     // 2. Category Pill filter
     let matchesCategory = true;
@@ -369,10 +372,10 @@ export const ShopDirectoryPage: React.FC = () => {
                     ? shop.categories[0] 
                     : (shop.description || '').toLowerCase().includes('thrift') ? 'Thrift' : 'Streetwear';
 
-                  return (
+                   return (
                     <div 
                       key={shop.id}
-                      onClick={() => navigate(`/shop/${shop.id}`)}
+                      onClick={() => navigate(`/shop/${shop.slug || shop.id}`)}
                       className="group block space-y-4 cursor-pointer active:scale-[0.99] transition-all duration-300"
                     >
                       {/* Cover Image Banner (16:9 Aspect Ratio) */}

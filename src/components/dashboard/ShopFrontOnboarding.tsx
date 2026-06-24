@@ -217,7 +217,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
         const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
         const { data, error } = await supabase
           .from('shops')
-          .insert([
+          .upsert(
             {
               ...updateData,
               owner_id: userId,
@@ -226,8 +226,9 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
               subscription_status: 'trial',
               manual_lock: false,
               created_at: new Date().toISOString()
-            }
-          ])
+            },
+            { onConflict: 'owner_id' }
+          )
           .select()
           .maybeSingle();
 

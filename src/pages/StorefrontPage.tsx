@@ -66,7 +66,7 @@ const getCategoryCover = (catName: string, customUrl?: string | null): string =>
     const resolved = resolveImageUrl(customUrl);
     if (resolved) return resolved;
   }
-  const nameLower = catName.toLowerCase();
+  const nameLower = (catName || '').toLowerCase();
   for (const [key, val] of Object.entries(CATEGORY_FALLBACKS)) {
     if (nameLower.includes(key) || key.includes(nameLower)) {
       return val;
@@ -452,19 +452,48 @@ export const StorefrontPage: React.FC = () => {
       // Categories
       let fetchedCategories: any[] = [];
       try {
-        const { data: catData } = await supabase
+        const { data: catData, error: catError } = await supabase
           .from('global_categories')
           .select('*')
           .eq('visible', true)
           .order('sort_order', { ascending: true });
-        if (catData) fetchedCategories = catData;
+        if (!catError && catData && catData.length > 0) {
+          fetchedCategories = catData;
+        }
       } catch (_) {}
 
-      // Filter category names mapping with local active products
+      // Fallback categories list if global_categories table is missing
+      const fallbackGlobalCats = [
+        { name: 'Streetwear', visible: true, cover_image_url: 'https://images.unsplash.com/photo-1578932750294-f5075e85f44a?w=400&q=80' },
+        { name: 'Thrift', visible: true, cover_image_url: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400&q=80' },
+        { name: 'Luxury', visible: true, cover_image_url: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=400&q=80' },
+        { name: 'Sportswear', visible: true, cover_image_url: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=80' },
+        { name: 'Vintage', visible: true, cover_image_url: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=400&q=80' },
+        { name: 'Accessories', visible: true, cover_image_url: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' }
+      ];
+
       const activeCategoryNames = new Set(productList.map(p => p.category?.trim().toLowerCase()).filter(Boolean));
-      let matchedCategories = fetchedCategories.filter(cat => 
-        cat.visible && activeCategoryNames.has(cat.name?.trim().toLowerCase())
+      
+      // If fetchedCategories is empty, let's use our fallbackGlobalCats to ensure we can map active ones
+      const referenceCats = fetchedCategories.length > 0 ? fetchedCategories : fallbackGlobalCats;
+
+      let matchedCategories = referenceCats.filter(cat => 
+        cat && cat.visible && cat.name && activeCategoryNames.has(cat.name.trim().toLowerCase())
       );
+
+      // If still nothing matched, let's dynamically list every unique product category found
+      if (matchedCategories.length === 0 && activeCategoryNames.size > 0) {
+        matchedCategories = Array.from(activeCategoryNames).map((catName, idx) => {
+          // Capitalize first letter beautifully
+          const formattedName = catName.charAt(0).toUpperCase() + catName.slice(1);
+          return {
+            id: `dyn-cat-${idx}`,
+            name: formattedName,
+            visible: true,
+            cover_image_url: null
+          };
+        });
+      }
 
       setCategories(matchedCategories);
     } catch (err) {

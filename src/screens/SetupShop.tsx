@@ -46,7 +46,7 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
 
           const { data } = await supabase
             .from('shops')
-            .insert([newShop])
+            .upsert(newShop, { onConflict: 'owner_id' })
             .select()
             .maybeSingle();
 

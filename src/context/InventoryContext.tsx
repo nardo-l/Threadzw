@@ -226,8 +226,8 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, []);
 
-  const [shops, setShops] = useState<Shop[]>([initialShop]);
-  const [userShop, setUserShop] = useState<Shop | null>(initialShop);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [userShop, setUserShop] = useState<Shop | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [sellerFlowState, setSellerFlowState] = useState<InventoryContextType['sellerFlowState']>(() => {
@@ -235,16 +235,16 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   });
 
   const [userData, setUserData] = useState<UserData>({
-    name: 'Nardo',
-    hasShop: true,
-    isShopLive: true,
-    shopId: 'shop-001',
-    shopName: 'KURE STREETWEAR',
-    shopHandle: 'kure',
-    shopLogo: mockShop.logo_url,
-    shopArea: 'Avondale',
-    shopWhatsApp: mockShop.whatsapp_number,
-    shopIsVerified: true,
+    name: 'Seller',
+    hasShop: false,
+    isShopLive: false,
+    shopId: null,
+    shopName: '',
+    shopHandle: '',
+    shopLogo: null,
+    shopArea: 'Harare',
+    shopWhatsApp: '',
+    shopIsVerified: false,
   });
 
   const [shopFormData, setShopFormData] = useState(() => {
@@ -261,27 +261,55 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   });
 
-  const refreshInventory = useCallback(async () => {
-    if (!user) return;
+   const refreshInventory = useCallback(async () => {
+    if (!user) {
+      setUserShop(null);
+      return;
+    }
     try {
+      console.log('[InventoryContext Diagnostic] Querying shop for user ID:', user.id);
       const { data, error } = await supabase
         .from('shops')
         .select('*')
         .eq('owner_id', user.id)
         .maybeSingle();
 
-      if (!error && data) {
+      if (error) {
+        console.error('[InventoryContext Diagnostic] Error while fetching user shop:', error);
+        throw error;
+      }
+
+      if (data) {
+        console.log('[InventoryContext Diagnostic] Shop entry found in database:', data);
         setUserShop(data);
         setUserData(prev => ({
           ...prev,
+          hasShop: true,
+          isShopLive: data.is_live,
           shopId: data.id,
           shopName: data.name,
           shopHandle: data.handle,
-          shopLogo: data.logo_url || data.avatar_url || null,
+          shopLogo: data.logo_url || null,
           shopWhatsApp: data.whatsapp,
+          shopArea: data.location || 'Harare',
+          shopIsVerified: data.is_verified || false
+        }));
+      } else {
+        console.log('[InventoryContext Diagnostic] No shop entry found in database for user:', user.id);
+        setUserShop(null);
+        setUserData(prev => ({
+          ...prev,
+          hasShop: false,
+          isShopLive: false,
+          shopId: null,
+          shopName: '',
+          shopHandle: '',
+          shopLogo: null,
+          shopWhatsApp: '',
+          shopIsVerified: false
         }));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Failed to refresh shop in InventoryContext:", err);
     }
   }, [user]);
@@ -301,15 +329,12 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
           .eq('is_live', true);
 
         if (!shopsErr && data) {
-          // Filter out dummy/mock shops if any
+          // Filter out dummy/mock shops if any of non-UUID format
           const realShops = data.filter(s => {
             const idLower = (s.id || '').toLowerCase();
             const handleLower = (s.handle || '').toLowerCase();
-            const nameLower = (s.name || '').toLowerCase();
-            return idLower !== 'demo-shop' && 
-                   idLower !== 'shop-001' && 
-                   handleLower !== 'demo' && 
-                   !nameLower.includes('demo');
+            const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idLower);
+            return isUUID && idLower !== 'demo-shop' && idLower !== 'shop-001' && handleLower !== 'demo';
           });
           setShops(realShops);
         }
