@@ -15,7 +15,7 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react';
-import { supabase, getDeterministicShopId } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useInventory } from '../context/InventoryContext';
 import { useToast } from '../context/ToastContext';
@@ -83,7 +83,7 @@ export const MyProducts: React.FC = () => {
       }
 
       if (!shopData) {
-        shopData = { id: getDeterministicShopId(user.id) };
+        shopData = { id: user.id };
       }
 
       // 2. Fetch products by shop_id instead of owner_id

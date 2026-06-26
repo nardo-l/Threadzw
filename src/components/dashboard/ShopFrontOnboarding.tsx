@@ -138,7 +138,8 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
       if (logoFile && userId) {
         const bucket = 'shop-avatars';
         const ext = logoFile.name.split('.').pop();
-        const filePath = `${shop?.id || userId}/logo_${Date.now()}.${ext}`;
+        const fallbackShopId = userId;
+        const filePath = `${shop?.id || fallbackShopId}/logo_${Date.now()}.${ext}`;
 
         try {
           const { error: uploadError } = await supabase.storage
@@ -214,26 +215,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
         if (error) throw error;
         updatedShop = data;
       } else {
-        const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
-        const { data, error } = await supabase
-          .from('shops')
-          .upsert(
-            {
-              ...updateData,
-              owner_id: userId,
-              trial_started_at: new Date().toISOString(),
-              trial_ends_at: trialEnds.toISOString(),
-              subscription_status: 'trial',
-              manual_lock: false,
-              created_at: new Date().toISOString()
-            },
-            { onConflict: 'owner_id' }
-          )
-          .select()
-          .maybeSingle();
-
-        if (error) throw error;
-        updatedShop = data;
+        throw new Error("Cannot complete shop onboarding: No existing shop record found to update.");
       }
 
       // Update profile onboarding status
@@ -254,6 +236,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
       // Update local storage shop details cache
       if (userId && updatedShop) {
         localStorage.setItem(`shop_${userId}`, JSON.stringify(updatedShop));
+        localStorage.setItem('threadzw_shop', JSON.stringify(updatedShop));
       }
 
       // Success Callback!

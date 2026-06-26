@@ -7,15 +7,14 @@ import {
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useInventory } from '../context/InventoryContext';
-import { MOCK_SHOPS } from '../data/mockData';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export const Followers: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { followers } = useInventory();
+  const { followers, shops } = useInventory();
   
-  const shop = MOCK_SHOPS.find(s => s.id === id);
+  const shop = shops.find(s => s.id === id);
   const shopFollowers = followers[id || ''] || [];
 
   if (!shop) return null;

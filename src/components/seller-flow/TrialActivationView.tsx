@@ -38,12 +38,21 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
     setActivating(true);
 
     try {
-      // 1. Create or update the shop
+      // 1. Update existing shop (OnboardingFlow is the sole creator)
       const cleanHandle = shopFormData.handle.toLowerCase();
+      const { data: existing } = await supabase
+        .from('shops')
+        .select('id')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+
+      if (!existing) {
+        throw new Error("No existing shop found to activate. Please complete the official onboarding first.");
+      }
+
       const { data: newShop, error } = await supabase
         .from('shops')
-        .upsert({
-          owner_id: user.id,
+        .update({
           name: shopFormData.name,
           handle: cleanHandle,
           slug: cleanHandle,
@@ -54,13 +63,24 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
           is_live: true,
           subscription_status: 'trial',
           trial_ends_at: trialEnd.toISOString(),
-          created_at: new Date().toISOString(),
           plan: 'shop'
-        }, { onConflict: 'owner_id' })
+        })
+        .eq('id', existing.id)
         .select()
         .single();
 
       if (error) throw error;
+
+      if (newShop) {
+        // Log details for tasks 1 & 3
+        console.log("Auth User ID:\n" + user.id);
+        console.log("Store ID:\n" + newShop.id);
+        console.log("Generated URL:\n" + `/shop/${newShop.id}`);
+
+        console.log("AUTH USER:", user.id);
+        console.log("STORE ID:", newShop.id);
+        console.log("GENERATED URL:", `/shop/${newShop.id}`);
+      }
 
       // 2. Upload Logo
       const { avatarUrl } = await uploadShopImages(newShop.id);

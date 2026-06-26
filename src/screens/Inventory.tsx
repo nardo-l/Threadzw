@@ -10,7 +10,7 @@ import {
   ChevronDown, ArrowUpRight, AlertCircle, ShoppingBag, Loader2,
   Bell
 } from 'lucide-react';
-import { supabase, getDeterministicShopId } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { seedShopProductsIfEmpty } from '../utils/seedData';
@@ -72,7 +72,7 @@ export const Inventory: React.FC = () => {
           } catch (_) {}
         }
         if (!shopData) {
-          shopData = { id: getDeterministicShopId(session.user.id), name: 'My Shop', slug: 'demo', handle: 'demo' };
+          shopData = { id: session.user.id, name: 'My Shop', slug: 'demo', handle: 'demo' };
         }
       }
 

@@ -341,7 +341,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         file,
         bucket,
         folder,
-        userId: user.id
+        userId: shop.id
       });
 
       const updatePayload = type === 'logo' ? { logo_url: publicUrl } : { banner_url: publicUrl };
@@ -404,7 +404,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           file: prodImageFile,
           bucket: 'product-images',
           folder: 'product',
-          userId: user.id
+          userId: shop.id
         });
       }
 

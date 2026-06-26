@@ -132,31 +132,8 @@ export const ShopDirectoryPage: React.FC = () => {
       }
 
       const rawShops = data || [];
-      console.log("[ShopDirectory Diagnostic] Raw stores returned from DB:", rawShops.length, rawShops);
-      
-      // Filter out mock/demo/fallback shops and non-existing/test accounts for real list
-      // We only exclude actual non-UUID template mock logs (e.g. 'demo-shop' or 'shop-001') 
-      // this ensures all newly created real user shops are preserved and loaded immediately!
-      const returnedShops = rawShops.filter(s => {
-        const idLower = (s.id || '').toLowerCase();
-        const handleLower = (s.handle || '').toLowerCase();
-        const slugLower = (s.slug || '').toLowerCase();
-        
-        const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idLower);
-        
-        // Report missing slug/handles for diagnostic purposes
-        if (!slugLower && isUUID) {
-          console.warn(`[ShopDirectory Diagnostic] Shop missing slug: id=${idLower} name=${s.name}`);
-        }
-        if (!handleLower && isUUID) {
-          console.warn(`[ShopDirectory Diagnostic] Shop missing handle: id=${idLower} name=${s.name}`);
-        }
-
-        return isUUID && idLower !== 'demo-shop' && idLower !== 'shop-001' && handleLower !== 'demo';
-      });
-
-      console.log("[ShopDirectory Diagnostic] Real database stores after filtering out mock templates:", returnedShops.length, returnedShops);
-      setShops(returnedShops);
+      console.log("[ShopDirectory Diagnostic] Real database stores loaded:", rawShops.length, rawShops);
+      setShops(rawShops);
     } catch (err: any) {
       console.error('[ShopDirectory] Failed loading directory stores:', err);
       setError(err?.message || 'Failed to retrieve directory. Please try again.');

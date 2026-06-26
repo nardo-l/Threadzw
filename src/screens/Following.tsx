@@ -9,15 +9,15 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useInventory } from '../context/InventoryContext';
-import { MOCK_SHOPS } from '../data/mockData';
 import { getShopUrl } from '../utils/shopUrl';
+import { ShopLogo } from '../components/ui/ShopImage';
 
 export const Following: React.FC = () => {
   const navigate = useNavigate();
-  const { following, toggleFollow } = useInventory();
+  const { following, toggleFollow, shops } = useInventory();
   const [shopToUnfollow, setShopToUnfollow] = useState<string | null>(null);
 
-  const followedShops = MOCK_SHOPS.filter(shop => following.includes(shop.id));
+  const followedShops = shops.filter(shop => following.includes(shop.id));
 
   const handleUnfollow = (shopId: string) => {
     toggleFollow(shopId);
@@ -85,23 +85,14 @@ export const Following: React.FC = () => {
             }}
           >
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-elevated flex items-center justify-center text-3xl border border-white/10 relative overflow-hidden">
-                {shop.avatar}
-                {/* New Drop Indicator (Mock logic: if s1 or s5) */}
-                {(shop.id === 's1' || shop.id === 's5') && (
-                  <div className="absolute inset-0 border-2 border-primary rounded-2xl animate-pulse" />
-                )}
+              <div className="w-16 h-16 rounded-2xl bg-elevated flex items-center justify-center border border-white/10 relative overflow-hidden">
+                <ShopLogo shop={shop} className="w-full h-full object-cover" />
               </div>
-              {(shop.id === 's1' || shop.id === 's5') && (
-                <span className="absolute -top-1 -right-1 px-2 py-0.5 bg-primary text-[8px] font-mono font-bold text-white rounded-pill uppercase tracking-tighter shadow-lg">
-                  New Drop
-                </span>
-              )}
             </div>
             <div className="flex-1 flex flex-col gap-0.5">
               <h3 className="text-lg font-syne font-bold text-white leading-tight">{shop.name}</h3>
               <div className="flex flex-wrap gap-1.5 mt-0.5">
-                {shop.categories.map(cat => (
+                {(shop.categories || []).map(cat => (
                   <span key={cat} className="text-[8px] font-mono text-muted uppercase tracking-widest">{cat}</span>
                 ))}
               </div>
@@ -124,7 +115,7 @@ export const Following: React.FC = () => {
       <AnimatePresence>
         {shopToUnfollow && (
           <UnfollowSheet 
-            shop={MOCK_SHOPS.find(s => s.id === shopToUnfollow)!} 
+            shop={shops.find(s => s.id === shopToUnfollow)!} 
             onClose={() => setShopToUnfollow(null)}
             onUnfollow={() => handleUnfollow(shopToUnfollow)}
           />
@@ -153,11 +144,11 @@ const UnfollowSheet: React.FC<{ shop: any; onClose: () => void; onUnfollow: () =
       <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-2" />
       
       <div className="flex flex-col items-center gap-4 text-center">
-        <div className="w-20 h-20 rounded-3xl bg-card flex items-center justify-center text-4xl border border-white/10">
-          {shop.avatar}
+        <div className="w-20 h-20 rounded-3xl bg-card flex items-center justify-center border border-white/10 overflow-hidden">
+          <ShopLogo shop={shop} className="w-full h-full object-cover" />
         </div>
         <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-syne font-bold text-white">Unfollow {shop.name}?</h2>
+          <h2 className="text-2xl font-syne font-bold text-white">Unfollow {shop?.name}?</h2>
           <p className="text-sm font-sans text-muted max-w-[280px]">
             You'll stop seeing their new drops first in your feed
           </p>

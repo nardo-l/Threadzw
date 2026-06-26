@@ -355,7 +355,7 @@ export const AdminLeads: React.FC = () => {
 
       // Update local storage representation for any user simulation compatibility
       try {
-        const mockShop = {
+        const syncedShop = {
           ...targetShop,
           subscription_status: 'active',
           trial_ends_at: endRenewal,
@@ -365,7 +365,7 @@ export const AdminLeads: React.FC = () => {
           manual_lock: false,
           payment_overdue_flagged: false
         };
-        localStorage.setItem(`shop_${claim.shop_id}`, JSON.stringify(mockShop));
+        localStorage.setItem(`shop_${claim.shop_id}`, JSON.stringify(syncedShop));
         
         // Update claim status locally
         const localClaimsStr = localStorage.getItem(`claims_${claim.shop_id}`);

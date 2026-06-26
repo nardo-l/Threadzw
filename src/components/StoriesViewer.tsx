@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Bookmark, ArrowRight, Pause, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useInventory } from '../context/InventoryContext';
-import { MOCK_SHOPS, MOCK_PRODUCTS } from '../data/mockData';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 

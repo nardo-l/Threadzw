@@ -11,52 +11,22 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
 
   const handleSetupStart = async () => {
     setLoading(true);
-    // If they click to set up, auto-create a baseline skeleton shop first so they aren't stuck and can configure
+    // Verify if they have an existing shop. If not, redirect to official onboarding creation flow.
     if (user?.id) {
       try {
-        const trialEnds = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30-day trial
         const { data: existingShop } = await supabase
           .from('shops')
-          .select('id')
+          .select('id, name, handle')
           .eq('owner_id', user.id)
           .maybeSingle();
 
         if (!existingShop) {
-          const defaultName = localStorage.getItem('threadzw_owner_name') 
-            ? `${localStorage.getItem('threadzw_owner_name')}'s Shop` 
-            : 'My Brand';
-          const defaultHandle = `shop-${user.id.substring(0, 8)}`;
-          
-          const newShop = {
-            owner_id: user.id,
-            name: defaultName,
-            handle: defaultHandle,
-            slug: defaultHandle,
-            whatsapp: '0776223144',
-            location: 'Harare',
-            categories: ['Streetwear'],
-            description: 'Welcome to our clothing store!',
-            trial_started_at: new Date().toISOString(),
-            trial_ends_at: trialEnds.toISOString(),
-            subscription_status: 'trial',
-            manual_lock: false,
-            is_live: true,
-            created_at: new Date().toISOString()
-          };
-
-          const { data } = await supabase
-            .from('shops')
-            .upsert(newShop, { onConflict: 'owner_id' })
-            .select()
-            .maybeSingle();
-
-          if (data) {
-            localStorage.setItem(`shop_${user.id}`, JSON.stringify(data));
-            localStorage.setItem('threadzw_shop', JSON.stringify(data));
-          }
+          console.warn('[SetupShop] No existing shop found for user. Redirecting to official /onboarding flow.');
+          navigate('/onboarding');
+          return;
         }
       } catch (err) {
-        console.error('Error auto-creating default shop:', err);
+        console.error('Error verifying existing shop:', err);
       }
     }
 

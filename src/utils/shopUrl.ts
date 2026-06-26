@@ -15,22 +15,18 @@ export const getAppOrigin = (): string => {
 };
 
 export const getShopUrl = (slug: string | null | undefined, id?: string | null | undefined): string => {
-  if (id) {
-    return `/shop/${id.trim()}`;
+  if (!id || id === 'demo' || id === 'demo-shop' || id === 'demo-owner') {
+    throw new Error("Cannot generate shop URL: shop.id is missing or invalid");
   }
-  if (!slug) {
-    return '/shop/demo';
-  }
-  const clean = slug
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9_-]/g, '');
-  return `/shop/${clean}`;
+  console.log("SHOP ID:", id);
+  return `/shop/${id.trim()}`;
 };
 
 export const getAbsoluteShopUrl = (slug: string | null | undefined, id?: string | null | undefined): string => {
-  const storeId = id ? id.trim() : (slug || 'demo').trim();
-  return `https://threadzw.vercel.app/shop/${storeId}`;
+  if (!id || id === 'demo' || id === 'demo-shop' || id === 'demo-owner') {
+    throw new Error("Cannot generate shop URL: shop.id is missing or invalid");
+  }
+  console.log("SHOP ID:", id);
+  return `https://threadzw.vercel.app/shop/${id.trim()}`;
 };
 

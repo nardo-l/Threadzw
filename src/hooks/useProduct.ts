@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { mockProducts, mockShop } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 
 export const useProduct = (productId: string | undefined) => {
   const [product, setProduct] = useState<any>(null);
@@ -7,52 +7,39 @@ export const useProduct = (productId: string | undefined) => {
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchProduct = () => {
+  const fetchProduct = async () => {
     if (!productId) return;
-    const found = mockProducts.find(p => p.id === productId);
-    if (found) {
-      const sizesArray = Object.entries(found.stock || {}).map(([size, quantity]) => ({
-        size,
-        quantity: quantity as number
-      }));
-      const mappedShop = {
-        id: mockShop.id,
-        name: mockShop.name,
-        handle: 'kure',
-        avatar_url: mockShop.logo_url,
-        logo_url: mockShop.logo_url,
-        whatsapp_number: mockShop.whatsapp_number,
-        location: mockShop.location
-      };
-      
-      const mapped = {
-        ...found,
-        sizes: sizesArray,
-        shop: mappedShop,
-        shop_id: mockShop.id,
-        like_count: 54,
-        save_count: 28,
-        view_count: 140
-      };
-      setProduct(mapped);
+    setLoading(true);
+    try {
+      const { data: prodData, error: prodErr } = await supabase
+        .from('products')
+        .select('*, shop:shops(*)')
+        .eq('id', productId)
+        .maybeSingle();
 
-      const related = mockProducts
-        .filter(p => p.id !== productId)
-        .slice(0, 4)
-        .map(p => {
-          const sz = Object.entries(p.stock || {}).map(([size, quantity]) => ({
-            size,
-            quantity: quantity as number
-          }));
-          return {
-            ...p,
-            sizes: sz,
-            shop_id: mockShop.id
-          };
-        });
-      setRelatedProducts(related);
+      if (prodErr) throw prodErr;
+
+      if (prodData) {
+        setProduct(prodData);
+
+        const { data: relData, error: relErr } = await supabase
+          .from('products')
+          .select('*')
+          .eq('shop_id', prodData.shop_id)
+          .neq('id', productId)
+          .limit(4);
+
+        if (!relErr && relData) {
+          setRelatedProducts(relData);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error fetching product in useProduct hook:', err);
+      setError(err.message || 'Failed to fetch product');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,7 +52,7 @@ export const useProduct = (productId: string | undefined) => {
     setIsLiked(newLiked);
     setProduct((p: any) => {
       if (!p) return p;
-      return { ...p, like_count: p.like_count + (newLiked ? 1 : -1) };
+      return { ...p, like_count: (p.like_count || 0) + (newLiked ? 1 : -1) };
     });
   };
 

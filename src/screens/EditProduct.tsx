@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, ArrowLeft, Plus, Trash2, Camera, Sparkles, Check, ChevronRight, Loader2, ChevronDown, Search
 } from 'lucide-react';
-import { supabase, getDeterministicShopId } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { uploadImage } from '../utils/uploadImage';
 import { getShopUrl } from '../utils/shopUrl';
@@ -119,7 +119,7 @@ export const EditProduct: React.FC = () => {
         if (!shop) {
           // Robust local fallback shop
           shop = {
-            id: getDeterministicShopId(session.user.id),
+            id: session.user.id,
             handle: 'kure_streetwear'
           };
         }

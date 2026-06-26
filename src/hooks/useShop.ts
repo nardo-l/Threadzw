@@ -32,6 +32,16 @@ export const useShop = () => {
       } else {
         setHasShop(true);
         setShop(data);
+        
+        // Sync local storage cache with the real database record to make sure IDs match perfectly
+        try {
+          if (data.id) {
+            localStorage.setItem(`shop_${user.id}`, JSON.stringify(data));
+            localStorage.setItem('threadzw_shop', JSON.stringify(data));
+          }
+        } catch (cacheErr) {
+          console.warn('Error syncing fetched shop to cache:', cacheErr);
+        }
       }
     } catch (err) {
       console.error('Error fetching shop:', err);

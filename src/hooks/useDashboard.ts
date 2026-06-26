@@ -1,17 +1,16 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { mockSales, mockProducts } from '../data/mockData';
+import { useState, useCallback, useMemo } from 'react';
 import React from 'react';
 import { DollarSign, ShoppingBag, Eye, Users } from 'lucide-react';
 
 export const useDashboard = () => {
-  const [salesList, setSalesList] = useState<any[]>(mockSales);
-  const [loading, setLoading] = useState(false);
+  const [salesList, setSalesList] = useState<any[]>([]);
+  const [loading] = useState(false);
 
   const stats = useMemo(() => {
     const todayRev = salesList.reduce((sum, s) => sum + s.final_price, 0);
     const todayCount = salesList.length;
-    const totalViews = 1240; // Static mock views
-    const followerCount = 185; // Static mock followers
+    const totalViews = 1240; // Static views
+    const followerCount = 185; // Static followers
 
     return [
       { label: 'Revenue', value: `$${todayRev}`, icon: React.createElement(DollarSign, { size: 16 }), color: 'text-[#C6FF00]' },
@@ -38,7 +37,6 @@ export const useDashboard = () => {
   const weeklyData = useMemo(() => {
     const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     return days.map((d, index) => {
-      // Seed nice chart values based on index
       return {
         label: d,
         revenue: index * 10 + 15
@@ -47,14 +45,11 @@ export const useDashboard = () => {
   }, []);
 
   const topProducts = useMemo(() => {
-    return mockProducts.slice(0, 3).map((p, idx) => ({
-      ...p,
-      sales: 10 - idx * 2
-    }));
+    return [];
   }, []);
 
   const productsList = useMemo(() => {
-    return mockProducts;
+    return [];
   }, []);
 
   const recordSale = useCallback(async (sale: any) => {

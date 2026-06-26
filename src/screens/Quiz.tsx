@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { QUIZ_QUESTIONS, PERSONALITY_RESULTS, ANSWER_MAP } from '../data/mockData';
+import { QUIZ_QUESTIONS, PERSONALITY_RESULTS, ANSWER_MAP } from '../data/quizData';
 import { toast } from 'sonner';
 
 export const Quiz: React.FC = () => {

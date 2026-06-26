@@ -53,6 +53,16 @@ export const resolveImageUrl = (url: string | null | undefined): string | null =
     return null;
   }
 
+  // If URL starts with http:// or https://, return unchanged
+  if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://')) {
+    return finalUrl;
+  }
+
+  // If URL starts with /, ./, ../, return unchanged
+  if (finalUrl.startsWith('/') || finalUrl.startsWith('./') || finalUrl.startsWith('../')) {
+    return finalUrl;
+  }
+
   const baseStorage = getBaseStorageUrl();
   const activeBaseUrl = SUPABASE_URL ? SUPABASE_URL.trim().replace(/\/$/, '') : "https://dxfnoswvuhqvhyofcain.supabase.co";
 
@@ -115,18 +125,12 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  // Stop loading and show beautiful fallback skeleton if an image takes more than 3 seconds
+  // Rely on the browser's native onLoad and onError events to handle loading states rather than an aggressive 3s timeout
   useEffect(() => {
-    if (src && !loaded && !failed) {
-      const timer = setTimeout(() => {
-        if (!loaded) {
-          console.warn(`[IMAGE TIMEOUT] Image took > 3s, falling back to skeleton for: ${src}`);
-          setFailed(true);
-        }
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [src, loaded, failed]);
+    // Reset state if source changes
+    setLoaded(false);
+    setFailed(false);
+  }, [src]);
 
   // If no source is given, or if resolving failed or timed out, render the beautiful skeleton directly
   if (!src || failed) {
@@ -276,6 +280,10 @@ export const ShopLogo: React.FC<ShopLogoProps> = ({
   const srcWithBust = (logoUrl && !logoUrl.startsWith('blob:') && !logoUrl.startsWith('data:') && !logoUrl.includes('unsplash.com'))
     ? `${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue(shop?.updated_at || shop?.created_at)}`
     : logoUrl;
+
+  console.log("LOGO URL:", shop?.logo_url);
+  console.log("LOGO URL FROM DB:", shop?.logo_url);
+  console.log("IMAGE SRC:", srcWithBust);
 
   return (
     <ImageWithSkeleton

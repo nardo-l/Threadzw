@@ -184,6 +184,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       }
 
       // Success, move to Success Account Creation screen
+      localStorage.setItem('supabase_logged_in_user_id', activeUserId);
+      localStorage.setItem('threadzw_owner_email', email.trim().toLowerCase());
       localStorage.setItem('threadzw_logged_in', 'true');
       setScreen(20);
     } catch (err: any) {
@@ -212,26 +214,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         onboarding_complete: true
       });
 
-      // 2. Upload logo to shop-avatars bucket if selected
-      let finalLogoUrl = null;
-      if (logoFile) {
-        try {
-          const ext = logoFile.name.split('.').pop();
-          const filePath = `${userId}/logo_${Date.now()}.${ext}`;
-          const { error: uploadErr } = await supabase.storage
-            .from('shop-avatars')
-            .upload(filePath, logoFile, { upsert: true });
-          
-          if (!uploadErr) {
-            const { data: logoPub } = supabase.storage.from('shop-avatars').getPublicUrl(filePath);
-            finalLogoUrl = logoPub.publicUrl;
-          }
-        } catch (logoErr) {
-          console.error('Logo upload error:', logoErr);
-        }
-      }
-
-      // 3. Create shop record
+      // 2. Create shop record first to get the database store ID (realShopId)
       const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
       const generatedSlug = await generateUniqueSlug(shopName || 'My Shop');
 
@@ -244,7 +227,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         location: 'Harare',
         whatsapp: whatsapp || '0776223144',
         description: description || 'Premium clothing boutique',
-        logo_url: finalLogoUrl,
         plan: 'shop',
         subscription_status: 'trial',
         trial_started_at: new Date().toISOString(),
@@ -265,22 +247,54 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       const generatedUrl = `/shop/${realShopId}`;
       const urlId = realShopId;
 
-      // 7. Add debugging logs
+      // Forensic logging
+      console.log("URL SHOP ID:", realShopId);
+      console.log("DB SHOP ID:", shopRecord.id);
+      console.log("OWNER ID:", shopRecord.owner_id);
+
+      // Debugging logs
+      console.log("Auth User ID:\n" + userId);
+      console.log("Store ID:\n" + realShopId);
+      console.log("Generated URL:\n" + generatedUrl);
       console.log('Generated URL ID:', urlId);
       console.log('Database Store ID:', realShopId);
       console.log('Match Result:', urlId === realShopId ? 'MATCHED' : 'MISMATCH');
 
-      // 8. Create validation
       if (urlId !== realShopId) {
         throw new Error(`Validation failed: URL ID (${urlId}) does not match database store ID (${realShopId})!`);
       }
 
-      // 4. Upload first product image if selected
+      // 3. Upload logo to shop-avatars bucket if selected, using realShopId as folder
+      let finalLogoUrl = null;
+      if (logoFile) {
+        try {
+          const ext = logoFile.name.split('.').pop();
+          const filePath = `${realShopId}/logo_${Date.now()}.${ext}`;
+          const { error: uploadErr } = await supabase.storage
+            .from('shop-avatars')
+            .upload(filePath, logoFile, { upsert: true });
+          
+          if (!uploadErr) {
+            const { data: logoPub } = supabase.storage.from('shop-avatars').getPublicUrl(filePath);
+            finalLogoUrl = logoPub.publicUrl;
+            
+            // Update shop record with the uploaded logo URL
+            await supabase
+              .from('shops')
+              .update({ logo_url: finalLogoUrl })
+              .eq('id', realShopId);
+          }
+        } catch (logoErr) {
+          console.error('Logo upload error:', logoErr);
+        }
+      }
+
+      // 4. Upload first product image if selected, using realShopId as folder
       let finalProductImageUrl = 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400&q=80';
       if (productImageFile) {
         try {
           const ext = productImageFile.name.split('.').pop();
-          const filePath = `${userId}/product_${Date.now()}.${ext}`;
+          const filePath = `${realShopId}/product_${Date.now()}.${ext}`;
           const { error: uploadErr } = await supabase.storage
             .from('product-images')
             .upload(filePath, productImageFile, { upsert: true });
@@ -320,6 +334,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       setFinalShopId(realShopId);
       setFinalShopSlug(generatedSlug);
       setFinalShopUrl(generatedUrl);
+
+      // Sync local storage caches with the real database record to make sure IDs match perfectly
+      try {
+        localStorage.setItem(`shop_${userId}`, JSON.stringify(shopRecord));
+        localStorage.setItem('threadzw_shop', JSON.stringify(shopRecord));
+      } catch (cacheErr) {
+        console.warn('Error saving shop to localStorage:', cacheErr);
+      }
 
       // Complete validation and login state
       localStorage.setItem('threadzw_onboarding_complete', 'true');
@@ -379,10 +401,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       ];
 
   return (
-    <div id="threadzw-onboarding-container" className="fixed inset-0 bg-[#0a0a0a] text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
+    <div id="threadzw-onboarding-container" className="fixed inset-0 bg-[#000000] text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
       
       {/* Dynamic Top Progress Bar */}
-      <div className="w-full h-1 bg-white/5 relative z-50">
+      <div className="w-full h-1 bg-[#e5e7eb] relative z-50">
         <div 
           style={{ width: `${progressPercent}%` }} 
           className="h-full bg-[#C6FF00] transition-all duration-300 ease-out" 
@@ -391,24 +413,21 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
       {/* Header Bar */}
       {screen > 1 && screen !== 26 && screen !== 27 && (
-        <div className="h-14 px-4 flex items-center justify-between shrink-0 z-50 border-b border-white/5 bg-[#0a0a0a]/90 backdrop-blur-md">
+        <div className="h-14 px-4 flex items-center justify-between shrink-0 z-50 border-b border-[rgba(255,255,255,0.08)] bg-[#111111]/90 backdrop-blur-md">
           <button 
             onClick={handleBack}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#111111] border border-[rgba(255,255,255,0.08)] text-white hover:bg-[#000000] active:scale-95 transition-all cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-white/50 font-bold font-mono">Screen {screen}/27</span>
+            <span className="text-[11px] text-[#6b7280] font-bold font-mono">Screen {screen}/27</span>
           </div>
 
-          <img 
-            src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
-            alt="ThreadZW" 
-            referrerPolicy="no-referrer"
-            className="h-5 w-auto object-contain" 
-          />
+          <span className="text-sm font-black tracking-tight text-white">
+            THREADZW<span className="text-[#C6FF00]">.</span>
+          </span>
         </div>
       )}
 
@@ -431,39 +450,37 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 1 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center pt-6">
-                  <img 
-                    src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
-                    alt="ThreadZW Wordmark" 
-                    className="h-8 mx-auto mb-10 object-contain" 
-                  />
-                  <h1 className="text-3xl font-[1000] tracking-tight text-white leading-none mb-6">
+                  <span className="text-xl font-black tracking-tight text-white block mb-6">
+                    THREADZW<span className="text-[#C6FF00]">.</span>
+                  </span>
+                  <h1 className="text-3xl font-bold tracking-tight text-white leading-tight mb-6">
                     Still selling clothes through <span className="text-[#25D366]">WhatsApp</span> screenshots?
                   </h1>
                 </div>
 
                 <div className="my-8">
-                  <div className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-2xl relative overflow-hidden max-w-xs mx-auto">
-                    <div className="absolute top-2 right-3 flex items-center gap-1.5">
+                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 shadow-lg relative overflow-hidden max-w-xs mx-auto">
+                    <div className="absolute top-2.5 right-3 flex items-center gap-1.5">
                       <div className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse" />
                       <span className="text-[9px] font-bold text-[#25D366] font-mono">1 NEW ENQUIRY</span>
                     </div>
                     <div className="flex items-start gap-3 mt-2 text-left">
                       <div className="w-10 h-10 rounded-full bg-[#25D366]/10 flex items-center justify-center text-[#25D366] shrink-0 font-bold text-sm">💬</div>
                       <div>
-                        <h4 className="font-extrabold text-white text-xs leading-none mb-1">Customer inquiry</h4>
-                        <p className="text-white/70 text-xs italic leading-tight">"Is this available? Send more pictures please..."</p>
+                        <h4 className="font-extrabold text-white text-xs leading-none mb-1">Customer Inquiry</h4>
+                        <p className="text-[#9ca3af] text-xs italic leading-tight">"Is this available? Send more pictures please..."</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <p className="text-center text-white/45 text-xs font-bold leading-relaxed">
+                  <p className="text-center text-[#6b7280] text-xs font-semibold leading-relaxed">
                     The endless back-and-forth screenshots are costing you time and sales. Let's fix it.
                   </p>
                   <button 
                     onClick={() => setScreen(2)}
-                    className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
+                    className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#C6FF00]/15"
                   >
                     <span>Next</span>
                     <ArrowRight className="w-5 h-5 stroke-[2.5]" />
@@ -476,7 +493,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 2 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-4 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-4 text-center">
                     Customers keep asking questions you've already answered?
                   </h1>
                 </div>
@@ -492,7 +509,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: item.delay }}
-                      className="bg-white/5 border border-white/5 rounded-xl p-4.5 text-left text-sm font-black text-white/80 flex items-center gap-3.5"
+                      className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-4.5 text-left text-sm font-semibold text-white flex items-center gap-3.5 shadow-subtle"
                     >
                       <span className="text-[#EF4444] text-lg font-mono">❓</span>
                       <span>"{item.q}"</span>
@@ -502,7 +519,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(3)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
                   <span>Yes, always ➔</span>
                 </button>
@@ -512,28 +529,28 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {/* Screen 3: Repeating Questions representation */}
             {screen === 3 && (
               <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center">
-                  <h1 className="text-3xl font-[1000] tracking-tight leading-none text-white mb-2">
+                <div className="text-center space-y-1">
+                  <h1 className="text-3xl font-black tracking-tight leading-none text-white mb-2">
                     "How much?"
                   </h1>
-                  <h1 className="text-3.5xl font-[1000] tracking-tight leading-none text-white/50 mb-2">
+                  <h1 className="text-3xl font-bold tracking-tight leading-none text-[#9ca3af] mb-2">
                     "Do you have size M?"
                   </h1>
-                  <h1 className="text-2.5xl font-[1000] tracking-tight leading-none text-white/30">
+                  <h1 className="text-2xl font-medium tracking-tight leading-none text-[#9ca3af]">
                     "What's your location?"
                   </h1>
                 </div>
 
-                <div className="my-6 bg-red-500/5 border border-red-500/10 rounded-2xl p-5 text-center max-w-xs mx-auto">
+                <div className="my-6 bg-red-500/5 border border-red-500/10 rounded-[28px] p-5 text-center max-w-xs mx-auto">
                   <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-                  <p className="text-white/80 text-xs font-bold leading-relaxed">
+                  <p className="text-white text-xs font-semibold leading-relaxed">
                     Answering the exact same details 20 times a day isn't running a clothing business. It's an unpaid customer support role.
                   </p>
                 </div>
 
                 <button 
                   onClick={() => setScreen(4)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue &rarr;</span>
                 </button>
@@ -544,21 +561,21 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 4 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
                     You post products on TikTok...
                   </h1>
-                  <p className="text-center text-white/45 text-sm font-bold">But customers have nowhere to browse.</p>
+                  <p className="text-center text-[#9ca3af] text-sm font-semibold">But customers have nowhere to browse.</p>
                 </div>
 
-                <div className="my-6 relative bg-white/5 border border-white/10 rounded-2xl p-5 max-w-xs mx-auto h-40 flex flex-col justify-center items-center overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 to-pink-500/10 blur-xl" />
-                  <Smartphone className="w-12 h-12 text-white/40 mb-2 relative z-10" />
-                  <span className="text-[11px] font-black uppercase text-red-400 relative z-10 tracking-widest">🚫 NO WEBSITE LINK</span>
+                <div className="my-6 relative bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 max-w-xs mx-auto h-40 flex flex-col justify-center items-center overflow-hidden shadow-subtle">
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-indigo-500/5 blur-xl" />
+                  <Smartphone className="w-12 h-12 text-[#6b7280] mb-2 relative z-10" />
+                  <span className="text-[11px] font-black uppercase text-red-500 relative z-10 tracking-widest">🚫 NO WEBSITE LINK</span>
                 </div>
 
                 <button 
                   onClick={() => setScreen(5)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>That's true ➔</span>
                 </button>
@@ -569,24 +586,24 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 5 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center">
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-4">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-4">
                     Most Zimbabwean clothing brands lose sales...
                   </h1>
                 </div>
 
-                <div className="my-6 bg-[#C6FF00]/5 border border-[#C6FF00]/20 rounded-2xl p-6 text-center max-w-sm mx-auto space-y-4">
+                <div className="my-6 bg-[#C6FF00]/10 border border-[rgba(255,255,255,0.08)] rounded-[28px] p-6 text-center max-w-sm mx-auto space-y-4 shadow-subtle">
                   <TrendingUp className="w-12 h-12 text-[#C6FF00] mx-auto" />
-                  <p className="text-white text-base leading-snug font-black">
+                  <p className="text-white text-base leading-snug font-bold">
                     ...because customers cannot browse full collections easily and get prices immediately.
                   </p>
-                  <p className="text-white/40 text-[11px] font-bold">
+                  <p className="text-[#6b7280] text-[11px] font-semibold">
                     Buyers expect instant catalogs. If they have to DM for a price, 67% will leave.
                   </p>
                 </div>
 
                 <button 
                   onClick={() => setScreen(6)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue ➔</span>
                 </button>
@@ -597,36 +614,36 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 6 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
                     Messy chat screenshots.
                   </h1>
-                  <p className="text-center text-white/40 text-xs font-bold">How orders get lost in the noise.</p>
+                  <p className="text-center text-[#6b7280] text-xs font-semibold">How orders get lost in the noise.</p>
                 </div>
 
-                <div className="my-4 bg-zinc-950 border border-white/5 rounded-2xl p-4 space-y-2.5 max-w-xs mx-auto text-xs font-sans text-left">
+                <div className="my-4 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 space-y-2.5 max-w-xs mx-auto text-xs font-sans text-left shadow-subtle">
                   <div className="flex justify-start">
-                    <div className="bg-zinc-900 border border-white/5 text-white/80 p-2.5 rounded-2xl rounded-tl-none max-w-[80%]">
+                    <div className="bg-[#f3f4f6] text-white p-2.5 rounded-[28px] rounded-tl-none max-w-[80%] border border-[rgba(255,255,255,0.08)]">
                       Is this hoodie still available?
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <div className="bg-[#25D366]/25 border border-[#25D366]/10 text-white p-2.5 rounded-2xl rounded-tr-none max-w-[80%]">
+                    <div className="bg-[#e8fbf0] text-[#0f5132] p-2.5 rounded-[28px] rounded-tr-none max-w-[80%] border border-[#d1e7dd]">
                       Yes! Available in Size L & XL. 35 USD.
                     </div>
                   </div>
                   <div className="flex justify-start">
-                    <div className="bg-zinc-900 border border-white/5 text-white/80 p-2.5 rounded-2xl rounded-tl-none max-w-[80%]">
+                    <div className="bg-[#f3f4f6] text-white p-2.5 rounded-[28px] rounded-tl-none max-w-[80%] border border-[rgba(255,255,255,0.08)]">
                       Can you deliver to Avondale?
                     </div>
                   </div>
-                  <div className="text-center text-[10px] text-white/30 font-bold my-1">
+                  <div className="text-center text-[10px] text-[#9ca3af] font-semibold my-1">
                     3 hours later... (no reply)
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setScreen(7)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>I've had this happen ➔</span>
                 </button>
@@ -637,23 +654,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 7 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center">
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2">
                     A customer left.
                   </h1>
-                  <p className="text-white/40 text-xs font-bold">They didn't have time to wait for a reply.</p>
+                  <p className="text-[#6b7280] text-xs font-bold">They didn't have time to wait for a reply.</p>
                 </div>
 
-                <div className="my-6 bg-red-500/5 border border-red-500/10 rounded-2xl p-6 text-center max-w-xs mx-auto space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-red-500/15 flex items-center justify-center text-red-500 mx-auto font-black text-lg">✗</div>
+                <div className="my-6 bg-red-500/5 border border-red-500/10 rounded-[28px] p-6 text-center max-w-xs mx-auto space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mx-auto font-black text-lg">✗</div>
                   <h4 className="font-extrabold text-white text-sm">Sale Abandoned</h4>
-                  <p className="text-white/60 text-xs font-medium leading-relaxed">
+                  <p className="text-[#9ca3af] text-xs font-medium leading-relaxed">
                     Zimbabwean shoppers buy on impulse. If you don't answer in 5 minutes, they look elsewhere.
                   </p>
                 </div>
 
                 <button 
                   onClick={() => setScreen(8)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>How do we fix this? ➔</span>
                 </button>
@@ -664,23 +681,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 8 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center pt-8">
-                  <h1 className="text-3xl font-[1000] tracking-tight leading-none text-white mb-4">
+                  <h1 className="text-3xl font-bold tracking-tight leading-snug text-white mb-4">
                     Your products deserve a real storefront.
                   </h1>
-                  <p className="text-white/40 text-sm font-medium px-4">
+                  <p className="text-[#9ca3af] text-sm font-medium px-4">
                     Give your clothing brand a premium home. Show prices, stock, and collect inquiries instantly.
                   </p>
                 </div>
 
                 <div className="my-8 flex justify-center">
-                  <div className="w-24 h-24 bg-[#C6FF00]/10 border-2 border-dashed border-[#C6FF00]/30 rounded-3xl flex items-center justify-center text-[#C6FF00]">
+                  <div className="w-24 h-24 bg-[#C6FF00]/10 border-2 border-dashed border-[#C6FF00]/30 rounded-3xl flex items-center justify-center text-[#C6FF00] shadow-subtle">
                     <Store className="w-12 h-12" />
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setScreen(9)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15 animate-bounce"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
                 >
                   <span>Show me how →</span>
                 </button>
@@ -694,18 +711,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 9 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center">
-                  <h1 className="text-2.5xl font-[950] tracking-tight leading-none text-[#C6FF00] mb-2 uppercase tracking-wide">
+                  <span className="text-xs font-black uppercase tracking-wider text-[#C6FF00] mb-2 block">
                     The ThreadZW Solution
-                  </h1>
-                  <h1 className="text-3xl font-[1000] tracking-tight leading-none text-white mb-3">
+                  </span>
+                  <h1 className="text-3xl font-bold tracking-tight leading-none text-white mb-3">
                     Imagine sending one link instead.
                   </h1>
                 </div>
 
                 <div className="my-6">
-                  <div className="bg-zinc-950 border border-white/5 rounded-2xl p-5 text-left font-sans text-xs space-y-2 max-w-xs mx-auto">
+                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 text-left font-sans text-xs space-y-2 max-w-xs mx-auto shadow-subtle">
                     <span className="text-[10px] font-black uppercase text-[#25D366] block">AUTO REPLY</span>
-                    <p className="text-white/80 leading-relaxed italic">
+                    <p className="text-[#9ca3af] leading-relaxed italic">
                       "Hey! Thanks for inquiring. Check out our full new collection, real-time sizes, and instant pricing here: <span className="text-[#C6FF00] font-black underline">threadzw.co/kure</span> 🚀"
                     </p>
                   </div>
@@ -713,7 +730,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(10)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>That's beautiful ➔</span>
                 </button>
@@ -724,30 +741,30 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 10 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center">
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2">
                     A beautiful storefront mockup.
                   </h1>
-                  <p className="text-white/45 text-xs font-bold">Your own custom branded digital boutique.</p>
+                  <p className="text-[#6b7280] text-xs font-bold">Your own custom branded digital boutique.</p>
                 </div>
 
-                <div className="my-4 border border-white/10 rounded-2xl bg-zinc-950 p-4.5 text-left space-y-3.5 max-w-xs mx-auto scale-95 shadow-2xl relative">
+                <div className="my-4 border border-[rgba(255,255,255,0.08)] rounded-[28px] bg-[#111111] p-4.5 text-left space-y-3.5 max-w-xs mx-auto scale-95 shadow-lg relative">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#C6FF00] text-black font-black flex items-center justify-center text-xs">
+                    <div className="w-10 h-10 rounded-full bg-[#C6FF00]/10 text-[#C6FF00] font-black flex items-center justify-center text-xs border border-[rgba(255,255,255,0.08)]">
                       KR
                     </div>
                     <div>
                       <h4 className="font-extrabold text-white text-xs leading-none">KURE STREETWEAR</h4>
-                      <p className="text-white/50 text-[10px] mt-0.5 leading-none">Harare, ZW</p>
+                      <p className="text-[#6b7280] text-[10px] mt-0.5 leading-none">Harare, ZW</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-white/5 border border-white/5 rounded-xl p-2 text-center">
-                      <div className="h-16 bg-white/5 rounded-lg mb-1.5" />
+                    <div className="bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-2 text-center">
+                      <div className="h-16 bg-zinc-200 rounded-lg mb-1.5" />
                       <p className="font-extrabold text-white text-[10px] truncate">Graphic Tee</p>
                       <p className="text-[#C6FF00] font-mono text-[10px] font-black mt-0.5">$15 USD</p>
                     </div>
-                    <div className="bg-white/5 border border-white/5 rounded-xl p-2 text-center">
-                      <div className="h-16 bg-white/5 rounded-lg mb-1.5" />
+                    <div className="bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-2 text-center">
+                      <div className="h-16 bg-zinc-200 rounded-lg mb-1.5" />
                       <p className="font-extrabold text-white text-[10px] truncate">Cargo Pants</p>
                       <p className="text-[#C6FF00] font-mono text-[10px] font-black mt-0.5">$35 USD</p>
                     </div>
@@ -756,7 +773,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(11)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue ➔</span>
                 </button>
@@ -767,19 +784,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 11 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
                     Customers browse products themselves.
                   </h1>
-                  <p className="text-center text-white/45 text-xs font-bold">They filter by size, categories, or collections instantly.</p>
+                  <p className="text-center text-[#6b7280] text-xs font-bold">They filter by size, categories, or collections instantly.</p>
                 </div>
 
                 <div className="my-6 space-y-2 max-w-xs mx-auto w-full">
                   <div className="flex gap-2 justify-center">
-                    <span className="bg-[#C6FF00] text-black text-[10px] font-black px-3 py-1.5 rounded-full">All Items</span>
-                    <span className="bg-white/5 border border-white/5 text-white/60 text-[10px] font-black px-3 py-1.5 rounded-full">Hoodies</span>
-                    <span className="bg-white/5 border border-white/5 text-white/60 text-[10px] font-black px-3 py-1.5 rounded-full">Tees</span>
+                    <span className="bg-[#C6FF00] text-black text-[10px] font-bold px-3 py-1.5 rounded-full">All Items</span>
+                    <span className="bg-[#111111] border border-[rgba(255,255,255,0.08)] text-[#9ca3af] text-[10px] font-bold px-3 py-1.5 rounded-full">Hoodies</span>
+                    <span className="bg-[#111111] border border-[rgba(255,255,255,0.08)] text-[#9ca3af] text-[10px] font-bold px-3 py-1.5 rounded-full">Tees</span>
                   </div>
-                  <div className="bg-white/5 border border-white/5 rounded-xl p-3.5 flex justify-between items-center text-xs font-bold text-white/70">
+                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-3.5 flex justify-between items-center text-xs font-bold text-[#9ca3af] shadow-subtle">
                     <span>Filter: Size M</span>
                     <span className="text-[#C6FF00]">3 found</span>
                   </div>
@@ -787,7 +804,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(12)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Nice ➔</span>
                 </button>
@@ -798,29 +815,29 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 12 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
                     Professional brand profile.
                   </h1>
-                  <p className="text-center text-white/45 text-xs font-bold">Build instant buyer trust in Zimbabwe.</p>
+                  <p className="text-center text-[#6b7280] text-xs font-bold">Build instant buyer trust in Zimbabwe.</p>
                 </div>
 
-                <div className="my-6 bg-white/5 border border-white/10 rounded-2xl p-5 space-y-3.5 max-w-xs mx-auto text-left relative overflow-hidden">
-                  <div className="absolute top-4 right-4 flex items-center gap-1 bg-[#C6FF00]/15 text-[#C6FF00] px-2 py-0.5 rounded text-[9px] font-black uppercase">
+                <div className="my-6 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 space-y-3.5 max-w-xs mx-auto text-left relative overflow-hidden shadow-subtle">
+                  <div className="absolute top-4 right-4 flex items-center gap-1 bg-[#C6FF00]/10 text-[#C6FF00] px-2 py-0.5 rounded text-[9px] font-black uppercase border border-[#C6FF00]/10">
                     <Check className="w-3 h-3 stroke-[3]" /> VERIFIED
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-zinc-800 border border-white/10 flex items-center justify-center text-[#C6FF00] font-black text-sm">
+                  <div className="w-12 h-12 rounded-full bg-zinc-100 border border-[rgba(255,255,255,0.08)] flex items-center justify-center text-[#C6FF00] font-black text-sm shadow-inner">
                     KURE
                   </div>
                   <div>
                     <h4 className="font-extrabold text-white text-sm">Kure Streetwear</h4>
                     <p className="text-[#C6FF00] text-[10px] font-bold mt-0.5">@kure &bull; Harare, Zim</p>
-                    <p className="text-white/50 text-[10px] mt-1.5 leading-snug font-medium">Curated high-quality vintage streetwear drops every Friday at 12 PM.</p>
+                    <p className="text-[#9ca3af] text-[10px] mt-1.5 leading-snug font-medium">Curated high-quality vintage streetwear drops every Friday at 12 PM.</p>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setScreen(13)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue ➔</span>
                 </button>
@@ -831,14 +848,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 13 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
                     Product pages.
                   </h1>
-                  <p className="text-center text-white/45 text-xs font-bold">Show details, multiple pictures, and sizing scales.</p>
+                  <p className="text-center text-[#6b7280] text-xs font-bold">Show details, multiple pictures, and sizing scales.</p>
                 </div>
 
-                <div className="my-4 bg-white/5 border border-white/5 rounded-2xl p-4.5 max-w-xs mx-auto text-left space-y-3">
-                  <div className="h-28 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center text-white/20">
+                <div className="my-4 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4.5 max-w-xs mx-auto text-left space-y-3 shadow-subtle">
+                  <div className="h-28 bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] flex items-center justify-center text-[#6b7280]/20">
                     <ImageIcon className="w-8 h-8" />
                   </div>
                   <div className="flex justify-between items-center">
@@ -847,7 +864,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
                   <div className="flex gap-1.5">
                     {['S', 'M', 'L', 'XL'].map(s => (
-                      <span key={s} className={`text-[10px] font-black px-2.5 py-1 rounded border ${s === 'M' ? 'border-[#C6FF00] text-[#C6FF00] bg-[#C6FF00]/5' : 'border-white/10 text-white/40'}`}>
+                      <span key={s} className={`text-[10px] font-bold px-2.5 py-1 rounded border ${s === 'M' ? 'border-[#C6FF00] text-[#C6FF00] bg-[#C6FF00]/10' : 'border-[rgba(255,255,255,0.08)] text-[#6b7280]'}`}>
                         {s}
                       </span>
                     ))}
@@ -856,7 +873,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(14)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue ➔</span>
                 </button>
@@ -867,26 +884,26 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 14 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
-                    WhatsApp inquiry button.
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
+                    WhatsApp Inquiry Button.
                   </h1>
-                  <p className="text-center text-white/45 text-xs font-bold">Instantly collects pre-filled orders right to your chat.</p>
+                  <p className="text-center text-[#6b7280] text-xs font-bold">Instantly collects pre-filled orders right to your chat.</p>
                 </div>
 
                 <div className="my-6 space-y-3 max-w-xs mx-auto w-full">
-                  <div className="bg-[#25D366] text-white p-4.5 rounded-xl flex items-center justify-center gap-2 font-black text-sm uppercase shadow-lg shadow-[#25D366]/10 animate-pulse">
+                  <div className="bg-[#25D366] text-white p-4.5 rounded-[24px] flex items-center justify-center gap-2 font-bold text-sm uppercase shadow-md shadow-[#25D366]/10 animate-pulse">
                     <WhatsAppIcon size={18} />
                     <span>Inquire via WhatsApp</span>
                   </div>
-                  <div className="bg-zinc-950 border border-white/5 rounded-xl p-3 text-center text-[10px] text-white/50 font-bold leading-normal">
+                  <div className="bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-3 text-center text-[10px] text-[#9ca3af] font-semibold leading-normal">
                     Pre-fills in user chat:<br/>
-                    <span className="text-[#C6FF00]">"Hi! I want to order 'Vintage Tee' (Size M, $15) from your ThreadZW store!"</span>
+                    <span className="text-[#C6FF00] font-bold">"Hi! I want to order 'Vintage Tee' (Size M, $15) from your ThreadZW store!"</span>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setScreen(15)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>That's perfect ➔</span>
                 </button>
@@ -897,14 +914,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 15 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
                     Share on TikTok.
                   </h1>
-                  <p className="text-center text-white/45 text-xs font-bold">Put your store link directly in your video descriptions or bio.</p>
+                  <p className="text-center text-[#6b7280] text-xs font-bold">Put your store link directly in your video descriptions or bio.</p>
                 </div>
 
-                <div className="my-6 bg-zinc-950 border border-white/5 rounded-2xl p-4.5 max-w-xs mx-auto text-left flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold shrink-0">🎵</div>
+                <div className="my-6 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4.5 max-w-xs mx-auto text-left flex items-center gap-3 shadow-subtle">
+                  <div className="w-10 h-10 rounded-full bg-[#0a0a0a] flex items-center justify-center text-white font-bold shrink-0 shadow-sm">🎵</div>
                   <div className="text-xs">
                     <h5 className="font-extrabold text-white">TikTok Bio Link</h5>
                     <p className="text-[#C6FF00] mt-0.5 font-bold font-mono">threadzw.co/kure</p>
@@ -913,7 +930,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(16)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue ➔</span>
                 </button>
@@ -924,14 +941,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 16 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div>
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2 text-center">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
                     Share on Instagram.
                   </h1>
-                  <p className="text-center text-white/45 text-xs font-bold">Add the storefront link in your bio or share to stories.</p>
+                  <p className="text-center text-[#6b7280] text-xs font-bold">Add the storefront link in your bio or share to stories.</p>
                 </div>
 
-                <div className="my-6 bg-zinc-950 border border-white/5 rounded-2xl p-4.5 max-w-xs mx-auto text-left flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white font-bold shrink-0">📸</div>
+                <div className="my-6 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4.5 max-w-xs mx-auto text-left flex items-center gap-3 shadow-subtle">
+                  <div className="w-10 h-10 rounded-full bg-[#0a0a0a] flex items-center justify-center text-white font-bold shrink-0 shadow-sm">📸</div>
                   <div className="text-xs">
                     <h5 className="font-extrabold text-white">Instagram Profile</h5>
                     <p className="text-[#C6FF00] mt-0.5 font-bold font-mono">🔗 threadzw.co/kure</p>
@@ -940,7 +957,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(17)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue ➔</span>
                 </button>
@@ -951,22 +968,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 17 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center">
-                  <h1 className="text-2xl font-[950] tracking-tight text-white leading-tight mb-2">
+                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2">
                     Looks premium on every phone.
                   </h1>
-                  <p className="text-white/45 text-xs font-bold">Optimized for lightning-fast speeds in Zimbabwe.</p>
+                  <p className="text-[#6b7280] text-xs font-bold">Optimized for lightning-fast speeds in Zimbabwe.</p>
                 </div>
 
-                <div className="my-6 bg-[#C6FF00]/5 border border-[#C6FF00]/15 rounded-2xl p-5 text-center max-w-xs mx-auto">
-                  <Smartphone className="w-12 h-12 text-[#C6FF00] mx-auto mb-3" />
-                  <p className="text-white text-xs font-black leading-snug">
+                <div className="my-6 bg-[#C6FF00]/10 border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 text-center max-w-xs mx-auto shadow-subtle">
+                  <Smartphone className="w-12 h-12 text-[#C6FF00] mx-auto mb-3 animate-pulse" />
+                  <p className="text-white text-xs font-semibold leading-snug">
                     Designed to use minimal mobile data. Works incredibly fast on Econet and NetOne.
                   </p>
                 </div>
 
                 <button 
                   onClick={() => setScreen(18)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <span>Continue ➔</span>
                 </button>
@@ -977,23 +994,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 18 && (
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="text-center pt-8">
-                  <h1 className="text-3.5xl font-[1000] tracking-tight leading-none text-white mb-4">
+                  <h1 className="text-3.5xl font-bold tracking-tight leading-snug text-white mb-4">
                     Your online shop. Ready in minutes.
                   </h1>
-                  <p className="text-white/45 text-sm font-medium px-4">
+                  <p className="text-[#9ca3af] text-sm font-medium px-4">
                     Launch your clothing brand storefront today. Zero code needed. Built for Zimbabwe.
                   </p>
                 </div>
 
                 <div className="my-8 flex justify-center">
-                  <div className="w-24 h-24 bg-[#C6FF00]/10 border border-[#C6FF00]/20 rounded-full flex items-center justify-center text-[#C6FF00] animate-pulse">
+                  <div className="w-24 h-24 bg-[#C6FF00]/10 border border-[rgba(255,255,255,0.08)] rounded-full flex items-center justify-center text-[#C6FF00] animate-pulse">
                     <Sparkles className="w-12 h-12" />
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setScreen(19)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
                 >
                   <span>Create My Shop →</span>
                 </button>
@@ -1008,38 +1025,38 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-6">
                 <div className="space-y-4">
                   <div className="text-center mb-6">
-                    <h2 className="text-2.5xl font-[950] tracking-tight leading-none text-white">
+                    <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white">
                       Create Your Account
                     </h2>
-                    <p className="text-white/40 text-xs font-bold mt-1">Get active instantly &bull; Free trial</p>
+                    <p className="text-[#6b7280] text-xs font-semibold mt-1.5">Get active instantly &bull; Free trial</p>
                   </div>
 
                   <div className="space-y-4 text-left">
                     <div>
-                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-black block mb-1.5">Email address</label>
+                      <label className="text-[#9ca3af] text-[10px] tracking-wider uppercase font-extrabold block mb-1.5">Email address</label>
                       <input 
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="e.g. kurebrand@gmail.com"
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors"
+                        className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-4 py-3.5 text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors text-white font-medium"
                       />
                     </div>
 
                     <div>
-                      <label className="text-white/50 text-[10px] tracking-wider uppercase font-black block mb-1.5">Password</label>
+                      <label className="text-[#9ca3af] text-[10px] tracking-wider uppercase font-extrabold block mb-1.5">Password</label>
                       <div className="relative">
                         <input 
                           type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder="Min. 6 characters"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-11 py-3.5 text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors"
+                          className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] pl-4 pr-11 py-3.5 text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors text-white font-medium"
                         />
                         <button 
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-white"
                         >
                           {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
                         </button>
@@ -1051,15 +1068,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <button 
                   disabled={!email.trim() || password.length < 6 || signingUp}
                   onClick={handleSignUpSubmit}
-                  className={`w-full h-14 font-black text-base rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
                     email.trim() && password.length >= 6 && !signingUp
                       ? 'bg-[#C6FF00] text-black shadow-[#C6FF00]/10'
-                      : 'bg-white/5 text-white/30 pointer-events-none'
+                      : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
                   }`}
                 >
                   {signingUp ? (
                     <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Creating Account...</span>
                     </div>
                   ) : (
@@ -1073,20 +1090,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 20 && (
               <div className="flex-1 flex flex-col justify-between py-6 text-center">
                 <div className="pt-10 space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-[#C6FF00]/10 border border-[#C6FF00]/20 flex items-center justify-center text-[#C6FF00] mx-auto animate-bounce">
+                  <div className="w-20 h-20 rounded-full bg-green-50 border border-green-100 flex items-center justify-center text-green-500 mx-auto animate-bounce">
                     <CheckCircle2 className="w-10 h-10 stroke-[2]" />
                   </div>
-                  <h1 className="text-3xl font-[1000] tracking-tight leading-none text-white">
+                  <h1 className="text-3xl font-bold tracking-tight leading-none text-white">
                     Success!
                   </h1>
-                  <p className="text-white/45 text-sm font-bold px-6 leading-relaxed">
+                  <p className="text-[#9ca3af] text-sm font-semibold px-6 leading-relaxed">
                     Account created successfully. Let's customize your live brand storefront.
                   </p>
                 </div>
 
                 <button 
                   onClick={() => setScreen(21)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
                 >
                   <span>Let's build your shop →</span>
                 </button>
@@ -1101,10 +1118,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-6 text-left">
                 <div className="space-y-4 pt-4">
                   <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 1 OF 5</span>
-                  <h2 className="text-2.5xl font-[950] tracking-tight leading-none text-white mb-2">
+                  <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
                     What is your Shop Name?
                   </h2>
-                  <p className="text-white/40 text-xs font-bold leading-relaxed">Choose a clean brand name (e.g. Kure, Threadz, HeavyWeight).</p>
+                  <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Choose a clean brand name (e.g. Kure, Threadz, HeavyWeight).</p>
                   
                   <input 
                     type="text"
@@ -1112,15 +1129,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     onChange={(e) => setShopName(e.target.value)}
                     placeholder="e.g. Kure Streetwear"
                     maxLength={30}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-base font-bold focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors"
+                    className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-4 py-3.5 text-base font-bold text-white focus:border-[#C6FF00] focus:outline-none transition-colors"
                   />
                 </div>
 
                 <button 
                   disabled={!shopName.trim()}
                   onClick={() => setScreen(22)}
-                  className={`w-full h-14 font-black text-base rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    shopName.trim() ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'bg-white/5 text-white/30 pointer-events-none'
+                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    shopName.trim() ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
                   }`}
                 >
                   <span>Next Step ➔</span>
@@ -1134,10 +1151,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <div className="space-y-5 pt-4 flex flex-col items-center text-center">
                   <div className="w-full">
                     <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block mb-1">STEP 2 OF 5</span>
-                    <h2 className="text-2.5xl font-[950] tracking-tight leading-none text-white mb-2">
+                    <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
                       Upload Logo
                     </h2>
-                    <p className="text-white/40 text-xs font-bold leading-relaxed">Add your brand's avatar or profile icon.</p>
+                    <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Add your brand's avatar or profile icon.</p>
                   </div>
 
                   <input 
@@ -1150,12 +1167,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                   <button 
                     onClick={() => logoInputRef.current?.click()}
-                    className="w-32 h-32 rounded-full border-2 border-dashed border-white/10 hover:border-[#C6FF00]/40 bg-white/5 flex flex-col items-center justify-center overflow-hidden transition-colors cursor-pointer group relative shadow-inner"
+                    className="w-32 h-32 rounded-full border-2 border-dashed border-[rgba(255,255,255,0.08)] hover:border-[#C6FF00]/40 bg-[#111111] flex flex-col items-center justify-center overflow-hidden transition-colors cursor-pointer group relative shadow-subtle"
                   >
                     {logoPreview ? (
                       <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover animate-fade-in" />
                     ) : (
-                      <div className="flex flex-col items-center gap-1.5 text-white/30 group-hover:text-[#C6FF00] transition-colors">
+                      <div className="flex flex-col items-center gap-1.5 text-[#6b7280]/60 group-hover:text-[#C6FF00] transition-colors">
                         <Camera className="w-8 h-8" />
                         <span className="text-[9px] font-black uppercase">Click to Select</span>
                       </div>
@@ -1165,7 +1182,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(23)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
                 >
                   <span>{logoPreview ? 'Next Step ➔' : 'Skip & Continue ➔'}</span>
                 </button>
@@ -1177,10 +1194,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-6 text-left">
                 <div className="space-y-4 pt-4">
                   <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 3 OF 5</span>
-                  <h2 className="text-2.5xl font-[950] tracking-tight leading-none text-white mb-2">
+                  <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
                     Write Description
                   </h2>
-                  <p className="text-white/40 text-xs font-bold leading-relaxed">Tell customers what makes your shop premium.</p>
+                  <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Tell customers what makes your shop premium.</p>
 
                   <div className="relative">
                     <textarea 
@@ -1192,16 +1209,16 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       }}
                       placeholder="e.g. Harare's premium clothing store. Weekly drops of curated vintage and streetwear fits."
                       rows={3}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors resize-none mb-1.5 font-medium"
+                      className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] p-4 text-white text-sm focus:border-[#C6FF00] focus:outline-none transition-colors resize-none mb-1.5 font-medium"
                     />
-                    <span className="absolute bottom-3.5 right-3 text-[10px] font-bold text-white/30 font-mono">
+                    <span className="absolute bottom-3.5 right-3 text-[10px] font-bold text-[#6b7280]/60 font-mono">
                       {description.length}/120
                     </span>
                   </div>
 
                   {/* Suggestion Chips */}
                   <div className="space-y-1.5 pt-1">
-                    <span className="text-white/30 text-[9px] font-black uppercase tracking-wider block">TAP TO AUTO FILL</span>
+                    <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-wider block">TAP TO AUTO FILL</span>
                     <div className="flex flex-wrap gap-2">
                       {[
                         "Premium streetwear & vintage drops.",
@@ -1212,7 +1229,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         <button
                           key={chip}
                           onClick={() => setDescription(chip)}
-                          className="bg-white/5 hover:bg-white/10 p-2 py-1.5 rounded-lg text-xs text-white/70 border border-white/5 transition-colors cursor-pointer font-bold"
+                          className="bg-[#111111] hover:bg-[#C6FF00]/10 p-2 py-1.5 rounded-lg text-xs text-[#9ca3af] border border-[rgba(255,255,255,0.08)] hover:border-[#C6FF00] transition-all cursor-pointer font-bold shadow-subtle"
                         >
                           {chip}
                         </button>
@@ -1223,7 +1240,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
                 <button 
                   onClick={() => setScreen(24)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-black text-base rounded-xl hover:opacity-90 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
                 >
                   <span>Next Step ➔</span>
                 </button>
@@ -1235,13 +1252,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-6 text-left">
                 <div className="space-y-4 pt-4">
                   <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 4 OF 5</span>
-                  <h2 className="text-2.5xl font-[950] tracking-tight leading-none text-white mb-2">
+                  <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
                     WhatsApp Number
                   </h2>
-                  <p className="text-white/40 text-xs font-bold leading-relaxed">Where should buyers send their instant order inquiries?</p>
+                  <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Where should buyers send their instant order inquiries?</p>
 
-                  <div className="flex rounded-xl overflow-hidden border border-white/10 bg-white/5 focus-within:border-[#C6FF00] transition-colors">
-                    <span className="font-mono text-base font-black px-4 bg-white/5 text-white/45 flex items-center border-r border-white/5 select-none text-[15px]">
+                  <div className="flex rounded-[24px] overflow-hidden border-2 border-[rgba(255,255,255,0.08)] bg-[#111111] focus-within:border-[#C6FF00] transition-colors">
+                    <span className="font-mono text-base font-black px-4 bg-[#0a0a0a] text-[#6b7280] flex items-center border-r border-[rgba(255,255,255,0.08)] select-none text-[15px]">
                       +263
                     </span>
                     <input 
@@ -1254,7 +1271,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </div>
 
                   {whatsapp.length >= 8 && (
-                    <div className="bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] p-3 rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase animate-fade-in">
+                    <div className="bg-[#e8fbf0] border border-[#d1e7dd] text-[#0f5132] p-3 rounded-[24px] flex items-center justify-center gap-2 font-bold text-xs uppercase animate-fade-in shadow-subtle">
                       <WhatsAppIcon size={14} /> 
                       <span>Inquiries directed to: +263 {whatsapp}</span>
                     </div>
@@ -1264,8 +1281,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <button 
                   disabled={whatsapp.length < 8}
                   onClick={() => setScreen(25)}
-                  className={`w-full h-14 font-black text-base rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    whatsapp.length >= 8 ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'bg-white/5 text-white/30 pointer-events-none'
+                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                    whatsapp.length >= 8 ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
                   }`}
                 >
                   <span>Next Step ➔</span>
@@ -1278,10 +1295,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex-1 flex flex-col justify-between py-2 text-left">
                 <div className="space-y-3 pt-3 overflow-y-auto no-scrollbar max-h-[460px]">
                   <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 5 OF 5</span>
-                  <h2 className="text-2xl font-[950] tracking-tight leading-none text-white">
+                  <h2 className="text-2xl font-bold tracking-tight leading-none text-white">
                     Upload First Product
                   </h2>
-                  <p className="text-white/40 text-xs font-bold leading-none mb-2">Launch your shop with an active item ready to sell.</p>
+                  <p className="text-[#9ca3af] text-xs font-semibold leading-none mb-2">Launch your shop with an active item ready to sell.</p>
 
                   <div className="space-y-2.5 text-xs">
                     {/* Image picker */}
@@ -1296,12 +1313,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <button
                       type="button"
                       onClick={() => productImgInputRef.current?.click()}
-                      className="w-full h-24 bg-white/5 border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden group hover:border-[#C6FF00]/30"
+                      className="w-full h-24 bg-[#111111] border-2 border-dashed border-[rgba(255,255,255,0.08)] rounded-[24px] flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden group hover:border-[#C6FF00]/30 shadow-subtle"
                     >
                       {productImagePreview ? (
                         <img src={productImagePreview} alt="Product Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="flex flex-col items-center gap-1.5 text-white/30 group-hover:text-[#C6FF00] transition-colors">
+                        <div className="flex flex-col items-center gap-1.5 text-[#6b7280]/60 group-hover:text-[#C6FF00] transition-colors">
                           <ImageIcon className="w-6 h-6" />
                           <span className="text-[9px] font-black uppercase">Upload Product Photo</span>
                         </div>
@@ -1311,32 +1328,32 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <div className="grid grid-cols-2 gap-2">
                       {/* Name */}
                       <div>
-                        <label className="text-white/45 text-[9px] font-black uppercase tracking-wider block mb-1">Product Name</label>
+                        <label className="text-[#9ca3af] text-[9px] font-extrabold uppercase tracking-wider block mb-1">Product Name</label>
                         <input 
                           type="text"
                           value={productName}
                           onChange={(e) => setProductName(e.target.value)}
                           placeholder="e.g. Heavyweight Tee"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs font-bold focus:border-[#C6FF00] focus:outline-none"
+                          className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-3 py-2.5 text-xs font-semibold focus:border-[#C6FF00] focus:outline-none text-white"
                         />
                       </div>
 
                       {/* Price */}
                       <div>
-                        <label className="text-white/45 text-[9px] font-black uppercase tracking-wider block mb-1">Price (USD)</label>
+                        <label className="text-[#9ca3af] text-[9px] font-extrabold uppercase tracking-wider block mb-1">Price (USD)</label>
                         <input 
                           type="number"
                           value={productPrice}
                           onChange={(e) => setProductPrice(e.target.value)}
                           placeholder="e.g. 15"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs font-bold font-mono focus:border-[#C6FF00] focus:outline-none"
+                          className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-3 py-2.5 text-xs font-semibold font-mono focus:border-[#C6FF00] focus:outline-none text-white"
                         />
                       </div>
                     </div>
 
                     {/* Category Selection */}
                     <div>
-                      <label className="text-white/45 text-[9px] font-black uppercase tracking-wider block mb-1.5">Category</label>
+                      <label className="text-[#9ca3af] text-[9px] font-extrabold uppercase tracking-wider block mb-1.5">Category</label>
                       <div className="grid grid-cols-3 gap-1.5">
                         {displayCategories.map(cat => {
                           const isSelected = productCategory === cat.name;
@@ -1345,10 +1362,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                               type="button"
                               key={cat.id || cat.name}
                               onClick={() => setProductCategory(cat.name)}
-                              className={`py-1.5 px-2 rounded-lg text-[10px] font-black text-center border transition-colors cursor-pointer truncate ${
+                              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold text-center border transition-colors cursor-pointer truncate ${
                                 isSelected 
-                                  ? 'bg-[#C6FF00]/15 border-[#C6FF00] text-[#C6FF00]' 
-                                  : 'bg-white/5 border-white/5 text-white/60 hover:bg-white/10'
+                                  ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00]' 
+                                  : 'bg-[#111111] border-[rgba(255,255,255,0.08)] text-[#9ca3af] hover:bg-[#000000]'
                               }`}
                             >
                               {cat.name}
@@ -1363,10 +1380,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <button 
                   disabled={!productName.trim() || !productPrice.trim() || !productCategory || !productImagePreview}
                   onClick={() => setScreen(26)}
-                  className={`w-full h-14 font-black text-base rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg mt-2 ${
+                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg mt-2 ${
                     productName.trim() && productPrice.trim() && productCategory && productImagePreview
                       ? 'bg-[#C6FF00] text-black shadow-[#C6FF00]/10'
-                      : 'bg-white/5 text-white/30 pointer-events-none'
+                      : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
                   }`}
                 >
                   <span>Launch Live Store 🚀</span>
@@ -1374,15 +1391,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               </div>
             )}
 
-            {/* Screen 26: 4-5 Sec countdown build animation screen */}
+            {/* Screen 26: Building shop countdown */}
             {screen === 26 && (
-              <div className="flex-1 flex flex-col justify-between fixed inset-0 bg-[#0a0a0a] z-50 text-center select-none overflow-hidden pb-8 pt-8 px-6 font-sans">
+              <div className="flex-1 flex flex-col justify-between fixed inset-0 bg-[#000000] z-50 text-center select-none overflow-hidden pb-8 pt-8 px-6 font-sans">
                 <div className="flex justify-center pt-8">
-                  <img 
-                    src="https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png" 
-                    alt="ThreadZW Logo" 
-                    className="h-8 w-auto object-contain" 
-                  />
+                  <span className="text-xl font-extrabold tracking-tight text-white">
+                    THREADZW<span className="text-[#C6FF00]">.</span>
+                  </span>
                 </div>
 
                 <div className="flex-1 flex flex-col items-center justify-center space-y-12 shrink-0">
@@ -1397,7 +1412,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       transition={{ repeat: Infinity, duration: 3.5, ease: "linear" }}
                       className="absolute w-32 h-32 rounded-full border-2 border-dashed border-[#C6FF00] -left-4 -top-4"
                     />
-                    <div className="relative w-24 h-24 bg-[#121212] border border-white/10 rounded-full flex items-center justify-center text-[#C6FF00] shadow-xl">
+                    <div className="relative w-24 h-24 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-full flex items-center justify-center text-[#C6FF00] shadow-xl">
                       <Store className="w-11 h-11" />
                     </div>
                   </div>
@@ -1427,10 +1442,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     })}
                   </div>
 
-                  <p className="text-white/45 text-xs font-bold leading-none">Assembling your digital boutique...</p>
+                  <p className="text-[#6b7280] text-xs font-semibold leading-none">Assembling your digital boutique...</p>
                 </div>
 
-                <div className="w-full h-1 bg-white/5 relative mt-auto">
+                <div className="w-full h-1 bg-[#e5e7eb] relative mt-auto">
                   <div style={{ width: `${loadProgress}%` }} className="h-full bg-[#C6FF00] transition-all" />
                 </div>
               </div>
@@ -1440,22 +1455,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             {screen === 27 && (
               <div className="flex-1 flex flex-col justify-between py-6 text-center">
                 <div className="pt-6 space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-[#C6FF00]/15 border border-[#C6FF00]/25 flex items-center justify-center text-[#C6FF00] mx-auto animate-bounce">
+                  <div className="w-20 h-20 rounded-full bg-[#C6FF00]/10 border border-[#C6FF00]/20 flex items-center justify-center text-[#C6FF00] mx-auto animate-bounce">
                     <CheckCircle2 className="w-12 h-12 stroke-[1.5]" />
                   </div>
                   
                   <div>
-                    <h1 className="text-3xl font-[1000] tracking-tight leading-none text-white">
+                    <h1 className="text-3xl font-bold tracking-tight leading-none text-white">
                       🎉 Your shop is live!
                     </h1>
-                    <p className="text-white/45 text-xs font-bold mt-1.5">You are officially ready for digital business</p>
+                    <p className="text-[#6b7280] text-xs font-semibold mt-1.5">You are officially ready for digital business</p>
                   </div>
 
                   {/* URL display card */}
-                  <div className="bg-zinc-950 border border-white/10 rounded-2xl p-4 max-w-sm mx-auto space-y-2">
-                    <span className="text-white/30 text-[9px] font-black uppercase tracking-wider block">YOUR STORE LINK</span>
-                    <div className="flex items-center gap-2 bg-white/5 rounded-xl px-3.5 py-3 border border-white/5 select-all">
-                      <span className="text-[#C6FF00] font-mono text-xs font-black truncate flex-1 text-left">
+                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4 max-w-sm mx-auto space-y-2 shadow-subtle">
+                    <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-wider block">YOUR STORE LINK</span>
+                    <div className="flex items-center gap-2 bg-[#C6FF00]/10 rounded-[24px] px-3.5 py-3 border border-[#C6FF00]/10 select-all">
+                      <span className="text-[#C6FF00] font-mono text-xs font-bold truncate flex-1 text-left">
                         {finalShopUrl || `https://threadzw.co/shop/${finalShopId}`}
                       </span>
                     </div>
@@ -1468,7 +1483,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     href={`/shop/${finalShopId}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="w-full h-13 bg-[#C6FF00] text-black font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
+                    className="w-full h-13 bg-[#C6FF00] text-black font-bold text-sm uppercase rounded-[24px] flex items-center justify-center gap-2 cursor-pointer shadow-md hover:opacity-95 transition-all"
                   >
                     <ExternalLink className="w-4.5 h-4.5" />
                     <span>View Shop</span>
@@ -1488,7 +1503,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         toast.success('Store link copied to clipboard!');
                       }
                     }}
-                    className="w-full h-13 bg-white/5 border border-white/10 text-white font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:bg-white/10 transition-colors"
+                    className="w-full h-13 bg-[#111111] border border-[rgba(255,255,255,0.08)] text-white font-bold text-sm uppercase rounded-[24px] flex items-center justify-center gap-2 cursor-pointer hover:bg-[#000000] transition-all"
                   >
                     <Share2 className="w-4.5 h-4.5" />
                     <span>Share Shop</span>
@@ -1499,7 +1514,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       toast.success("Welcome to your Merchant Workspace!");
                       setAppStage('dashboard');
                     }}
-                    className="w-full h-13 bg-zinc-900 border border-white/5 text-white/80 font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors"
+                    className="w-full h-13 bg-[#0a0a0a] border border-[rgba(255,255,255,0.08)] text-[#9ca3af] font-bold text-sm uppercase rounded-[24px] flex items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-all"
                   >
                     <PlusCircle className="w-4.5 h-4.5" />
                     <span>Add More Products</span>

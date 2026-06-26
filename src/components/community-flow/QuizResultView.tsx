@@ -5,7 +5,7 @@ import { Share2, RotateCcw, X, Heart, Star, Sparkles, Loader2 } from 'lucide-rea
 import { useInventory } from '../../context/InventoryContext';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { PERSONALITY_RESULTS } from '../../data/mockData';
+import { PERSONALITY_RESULTS } from '../../data/quizData';
 import { toast } from 'sonner';
 
 export const QuizResultView: React.FC = () => {

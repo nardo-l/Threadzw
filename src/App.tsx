@@ -34,6 +34,8 @@ import { StorefrontPage } from './pages/StorefrontPage';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
 import { SignUp } from './screens/SignUp';
+import { MaintenanceOverlay } from './components/MaintenanceOverlay';
+
 
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory';
 
@@ -372,6 +374,7 @@ function App() {
             <InventoryProvider>
               <ShopProvider>
                 <AppContent />
+                <MaintenanceOverlay />
                 <ToastContainer />
                 <Toaster position="top-center" theme="dark" expand={false} richColors />
               </ShopProvider>

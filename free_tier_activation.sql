@@ -89,69 +89,6 @@ BEGIN
     display_name = COALESCE(NULLIF(public.profiles.display_name, ''), excluded.display_name),
     handle = COALESCE(NULLIF(public.profiles.handle, ''), excluded.handle);
 
-  -- Determine the deterministic stable shop ID (first character of user uuid replaced with 'e')
-  v_shop_id := ('e' || SUBSTRING(new.id::text FROM 2))::uuid;
-  v_trial_ends := now() + INTERVAL '28 days';
-
-  -- B) Create or update corresponding business shop without relying on unique constraint validation for ON CONFLICT (owner_id)
-  IF EXISTS (SELECT 1 FROM public.shops WHERE owner_id = new.id) THEN
-    UPDATE public.shops SET
-      handle = COALESCE(NULLIF(public.shops.handle, ''), v_clean_handle),
-      slug = COALESCE(NULLIF(public.shops.slug, ''), v_clean_handle),
-      name = COALESCE(NULLIF(public.shops.name, ''), v_display_name),
-      subscription_status = 'active',
-      plan = 'free',
-      updated_at = now()
-    WHERE owner_id = new.id;
-  ELSIF EXISTS (SELECT 1 FROM public.shops WHERE id = v_shop_id) THEN
-    UPDATE public.shops SET
-      owner_id = new.id,
-      handle = COALESCE(NULLIF(public.shops.handle, ''), v_clean_handle),
-      slug = COALESCE(NULLIF(public.shops.slug, ''), v_clean_handle),
-      name = COALESCE(NULLIF(public.shops.name, ''), v_display_name),
-      subscription_status = 'active',
-      plan = 'free',
-      updated_at = now()
-    WHERE id = v_shop_id;
-  ELSE
-    INSERT INTO public.shops (
-      id,
-      owner_id,
-      name,
-      handle,
-      slug,
-      description,
-      categories,
-      location,
-      whatsapp,
-      is_live,
-      subscription_status,
-      plan,
-      trial_started_at,
-      trial_ends_at,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      v_shop_id,
-      new.id,
-      v_display_name,
-      v_clean_handle,
-      v_clean_handle,
-      'Zim clothing store',
-      ARRAY['Clothing']::text[],
-      'Harare',
-      '0776223144',
-      true,
-      'active',
-      'free',
-      now(),
-      v_trial_ends,
-      now(),
-      now()
-    );
-  END IF;
-
   RETURN new;
 END;
 $function$;

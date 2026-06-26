@@ -1,4 +1,4 @@
-import { getDeterministicShopId } from '../lib/supabase';
+
 
 export interface SeedProduct {
   name: string;
@@ -82,123 +82,117 @@ export const SEED_PRODUCTS_METADATA: SeedProduct[] = [
 ];
 
 export async function seedShopProductsIfEmpty(supabase: any, shopId: string, userId: string): Promise<any[]> {
-  try {
-    // 1. Check if products exist in Supabase for this shop
-    const { data: dbProducts, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('shop_id', shopId);
+  // 1. Check if products exist in Supabase for this shop
+  const { data: dbProducts, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('shop_id', shopId);
 
-    if (!error && dbProducts && dbProducts.length > 0) {
-      // Products already exist in Supabase, sync/update localStorage and return them
-      localStorage.setItem(`products_${shopId}`, JSON.stringify(dbProducts));
-      return dbProducts;
-    }
-
-    // 2. Otherwise seed them!
-    const insertedProducts: any[] = [];
-    for (let i = 0; i < SEED_PRODUCTS_METADATA.length; i++) {
-      const meta = SEED_PRODUCTS_METADATA[i];
-      const prodRecord = {
-        id: `seed-prod-${i}-${shopId}`,
-        shop_id: shopId,
-        owner_id: userId,
-        name: meta.name,
-        price: meta.price,
-        description: meta.description,
-        images: meta.images,
-        sizes: [
-          { size: 'S', quantity: Math.round(meta.total_stock * 0.3) },
-          { size: 'M', quantity: Math.round(meta.total_stock * 0.4) },
-          { size: 'L', quantity: Math.round(meta.total_stock * 0.3) }
-        ],
-        category: meta.category,
-        total_stock: meta.total_stock,
-        is_published: meta.status !== 'paused',
-        is_featured: meta.is_featured,
-        status: meta.status,
-        created_at: new Date(Date.now() - (i * 12 + 6) * 60 * 60 * 100).toISOString()
-      };
-
-      try {
-        const { data } = await supabase
-          .from('products')
-          .insert(prodRecord)
-          .select();
-        
-        if (data && data[0]) {
-          insertedProducts.push(data[0]);
-        } else {
-          insertedProducts.push(prodRecord);
-        }
-      } catch (insertErr) {
-        console.warn("Could not insert seeded product inside Supabase, fallback to mockup:", insertErr);
-        insertedProducts.push(prodRecord);
-      }
-    }
-
-    // Save seeded products into the local storage for immediate sync with offline client
-    localStorage.setItem(`products_${shopId}`, JSON.stringify(insertedProducts));
-    
-    // Also seed a default set of persistent orders matching screenshot 2
-    const seededOrders = [
-      {
-        id: 'order-1024',
-        shop_id: shopId,
-        owner_id: userId,
-        product_name: 'Capri Track Pants',
-        size: 'L',
-        quantity: 1,
-        sale_price: 45.00,
-        channel: 'whatsapp',
-        order_reference: '#1024',
-        total_price: 45.00,
-        status: 'completed', // Delivered
-        customer_name: 'Tawanda M.',
-        customer_whatsapp: '263776223144',
-        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 'order-1023',
-        shop_id: shopId,
-        owner_id: userId,
-        product_name: 'Shadow Hoodie',
-        size: 'M',
-        quantity: 1,
-        sale_price: 25.00,
-        channel: 'whatsapp',
-        order_reference: '#1023',
-        total_price: 25.00,
-        status: 'processing', // Processing
-        customer_name: 'Rutendo K.',
-        customer_whatsapp: '263771234567',
-        created_at: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: 'order-1022',
-        shop_id: shopId,
-        owner_id: userId,
-        product_name: 'Nulla Tee',
-        size: 'S',
-        quantity: 1,
-        sale_price: 75.00,
-        channel: 'in_store',
-        order_reference: '#1022',
-        total_price: 75.00,
-        status: 'pending', // Shipped
-        customer_name: 'Brian C.',
-        customer_whatsapp: '263779876543',
-        created_at: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString()
-      }
-    ];
-    localStorage.setItem(`orders_${shopId}`, JSON.stringify(seededOrders));
-    try {
-      await supabase.from('orders').insert(seededOrders);
-    } catch (_) {}
-
-    return insertedProducts;
-  } catch (err) {
-    console.warn("Seeding execution caught error:", err);
-    return [];
+  if (error) {
+    console.error("Error checking products from database:", error);
+    throw error;
   }
+
+  if (dbProducts && dbProducts.length > 0) {
+    return dbProducts;
+  }
+
+  // 2. Otherwise seed them!
+  const insertedProducts: any[] = [];
+  for (let i = 0; i < SEED_PRODUCTS_METADATA.length; i++) {
+    const meta = SEED_PRODUCTS_METADATA[i];
+    const prodRecord = {
+      shop_id: shopId,
+      owner_id: userId,
+      name: meta.name,
+      price: meta.price,
+      description: meta.description,
+      images: meta.images,
+      sizes: [
+        { size: 'S', quantity: Math.round(meta.total_stock * 0.3) },
+        { size: 'M', quantity: Math.round(meta.total_stock * 0.4) },
+        { size: 'L', quantity: Math.round(meta.total_stock * 0.3) }
+      ],
+      category: meta.category,
+      total_stock: meta.total_stock,
+      is_published: meta.status !== 'paused',
+      is_featured: meta.is_featured,
+      status: meta.status,
+      created_at: new Date(Date.now() - (i * 12 + 6) * 60 * 60 * 100).toISOString()
+    };
+
+    const { data, error: insertErr } = await supabase
+      .from('products')
+      .insert(prodRecord)
+      .select();
+    
+    if (insertErr) {
+      console.error("Could not insert seeded product inside Supabase:", insertErr);
+      throw insertErr;
+    }
+
+    if (data && data[0]) {
+      insertedProducts.push(data[0]);
+    }
+  }
+
+  // Also seed a default set of persistent orders matching screenshot 2
+  const seededOrders = [
+    {
+      shop_id: shopId,
+      owner_id: userId,
+      product_name: 'Capri Track Pants',
+      size: 'L',
+      quantity: 1,
+      sale_price: 45.00,
+      channel: 'whatsapp',
+      order_reference: '#1024',
+      total_price: 45.00,
+      status: 'completed', // Delivered
+      customer_name: 'Tawanda M.',
+      customer_whatsapp: '263776223144',
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      shop_id: shopId,
+      owner_id: userId,
+      product_name: 'Shadow Hoodie',
+      size: 'M',
+      quantity: 1,
+      sale_price: 25.00,
+      channel: 'whatsapp',
+      order_reference: '#1023',
+      total_price: 25.00,
+      status: 'processing', // Processing
+      customer_name: 'Rutendo K.',
+      customer_whatsapp: '263771234567',
+      created_at: new Date(Date.now() - 14 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      shop_id: shopId,
+      owner_id: userId,
+      product_name: 'Nulla Tee',
+      size: 'S',
+      quantity: 1,
+      sale_price: 75.00,
+      channel: 'in_store',
+      order_reference: '#1022',
+      total_price: 75.00,
+      status: 'pending', // Shipped
+      customer_name: 'Brian C.',
+      customer_whatsapp: '263779876543',
+      created_at: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+
+  try {
+    const { error: orderErr } = await supabase.from('orders').insert(seededOrders);
+    if (orderErr) {
+      console.error("Could not insert seeded orders inside Supabase:", orderErr);
+    }
+  } catch (err) {
+    console.error("Exception when inserting seeded orders:", err);
+  }
+
+  return insertedProducts;
 }

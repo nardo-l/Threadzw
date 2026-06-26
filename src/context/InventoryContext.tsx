@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import { useAuth } from './AuthContext';
-import { mockShop, mockProducts } from '../data/mockData';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 
@@ -171,60 +170,7 @@ const InventoryContext = createContext<InventoryContextType | undefined>(undefin
 export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   
-  // Transform mock products to match context Product interface
-  const initialProducts: Product[] = useMemo(() => {
-    return mockProducts.map((p) => {
-      const sizesArray = Object.entries(p.stock || {}).map(([size, quantity]) => ({
-        size,
-        quantity: quantity as number,
-      }));
-      const totalStock = sizesArray.reduce((sum, item) => sum + item.quantity, 0);
-      return {
-        id: p.id,
-        shop_id: 'shop-001',
-        owner_id: 'user-001',
-        name: p.name,
-        description: p.description,
-        price: p.price,
-        images: p.images,
-        sizes: sizesArray,
-        total_stock: totalStock,
-        category: p.category,
-        is_published: p.visible,
-        view_count: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-    });
-  }, []);
-
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-
-  // Transform mock shop to match context Shop interface
-  const initialShop: Shop = useMemo(() => {
-    return {
-      id: mockShop.id,
-      name: mockShop.name,
-      owner_id: 'user-001',
-      handle: 'kure',
-      categories: ['Streetwear', 'Tops', 'Bottoms'],
-      description: mockShop.tagline || mockShop.about,
-      location: mockShop.location,
-      whatsapp: mockShop.whatsapp_number,
-      instagram: mockShop.instagram,
-      is_online_only: false,
-      logo_url: mockShop.logo_url,
-      banner_url: mockShop.banner_url,
-      is_verified: true,
-      is_live: true,
-      subscription_status: 'trial',
-      trial_ends_at: mockShop.trial_end,
-      trial_start: mockShop.trial_start || new Date().toISOString(),
-      trial_end: mockShop.trial_end,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-  }, []);
+  const [products, setProducts] = useState<Product[]>([]);
 
   const [shops, setShops] = useState<Shop[]>([]);
   const [userShop, setUserShop] = useState<Shop | null>(null);

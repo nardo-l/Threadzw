@@ -12,7 +12,6 @@ import {
   Plus, Minus, Star, Menu, MessageSquare, ChevronDown
 } from 'lucide-react';
 import { 
-  DEFAULT_MOCK_PRODUCTS, 
   DEFAULT_MOCK_CATEGORIES, 
   MOCK_REVIEWS_PRESETS, 
   getZimbabweDirections, 
@@ -245,8 +244,8 @@ export const PublicShopPage: React.FC<{ handle?: string }> = ({ handle }) => {
         sizes: Array.isArray(p.sizes) ? p.sizes.map((s: any) => typeof s === 'object' ? s.size : s) : []
       }));
 
-      // Use presets if empty
-      setProducts(mapped.length > 0 ? mapped : DEFAULT_MOCK_PRODUCTS);
+      // Use empty list if empty, do not use presets
+      setProducts(mapped);
 
     } catch (err) {
       console.error(err);

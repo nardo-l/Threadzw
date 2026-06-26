@@ -7,7 +7,7 @@ import React, {
   useRef
 } from 'react';
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, SUPABASE_URL } from '../lib/supabase';
 import { 
   ShopLogo, 
   ProductImage,
@@ -294,6 +294,11 @@ export const StorefrontPage: React.FC = () => {
     }
   }, [routeProductId, routeCategoryId, openOverlay]);
 
+  // Log product count
+  useEffect(() => {
+    console.log("PRODUCT COUNT:", products?.length);
+  }, [products]);
+
   // Persistent shop lookup
   const loadStorefront = useCallback(async () => {
     // Reset any previously active store state immediately to avoid showing unrelated/cached shops
@@ -312,6 +317,8 @@ export const StorefrontPage: React.FC = () => {
 
       let shopData = null;
       let uuidProduct = null;
+      let data: any = null;
+      let error: any = null;
 
       // Check if direct product routing UUID is provided
       const checkProductId = routeProductId || searchParams.get('id');
@@ -354,12 +361,27 @@ export const StorefrontPage: React.FC = () => {
       if (!shopData && rawId) {
         if (isUUID) {
           try {
-            const { data, error: queryErr } = await supabase
+            const { data: queryData, error: queryErr } = await supabase
               .from('shops')
               .select('*')
               .eq('id', rawId)
               .maybeSingle();
             
+            data = queryData;
+            error = queryErr;
+            
+            console.log("URL SHOP ID:", rawId);
+            if (data) {
+              console.log("DB SHOP ID:", data.id);
+              console.log("OWNER ID:", data.owner_id);
+            }
+
+            console.log("PARAM ID:", rawId);
+            console.log("QUERY TABLE:", "shops");
+            console.log("QUERY RESULT:", data);
+            console.log("QUERY ERROR:", queryErr);
+            console.log("SUPABASE URL:", SUPABASE_URL);
+
             if (queryErr) {
               console.error('[Storefront Diagnostics] Error querying store by ID:', queryErr);
             }
@@ -403,6 +425,13 @@ export const StorefrontPage: React.FC = () => {
       console.log("Stores returned:", shopData ? [shopData] : []);
       console.log("Store count:", shopData ? 1 : 0);
 
+      // STEP 5 Diagnostics
+      console.log("ROUTE PARAM:", rawId);
+      console.log("IS UUID:", isUUID);
+      console.log("SHOP QUERY RESULT:", data);
+      console.log("SHOP QUERY ERROR:", error);
+      console.log("CURRENT SUPABASE URL:", import.meta.env.VITE_SUPABASE_URL);
+
       // Verify store exists. If store does not exist, show "Store Not Found"
       if (!shopData) {
         console.warn('[Storefront Diagnostics] No matching shop record found in database. Showing Store Not Found.');
@@ -412,7 +441,22 @@ export const StorefrontPage: React.FC = () => {
         return;
       }
 
+      console.log("REQUESTED SHOP ID:", slug);
+      console.log("DATABASE SHOP ID:", shopData.id);
+
+      if (slug && shopData && slug !== shopData.id && slug !== shopData.slug && slug !== shopData.handle) {
+        const errorMsg = `Requested shop ID '${slug}' does not match database shop ID '${shopData.id}', slug '${shopData.slug}', or handle '${shopData.handle}'`;
+        console.error(errorMsg);
+        setError(errorMsg);
+        setLoading(false);
+        throw new Error(errorMsg);
+      }
+
       setShop(shopData);
+      console.log("SHOP ID:", shopData?.id);
+      console.log("SHOP SLUG:", shopData?.slug);
+      console.log("SHOP HANDLE:", shopData?.handle);
+      console.log("LOGO URL:", shopData?.logo_url);
 
       // Load products belonging to shop
       let productList: any[] = [];
@@ -421,6 +465,8 @@ export const StorefrontPage: React.FC = () => {
           .from('products')
           .select('*')
           .eq('shop_id', shopData.id);
+        
+        console.log("PRODUCTS FROM DB:", productsData);
         
         if (prodErr) {
           console.error('[Storefront Diagnostics] Error loading products for store:', prodErr);
@@ -731,7 +777,7 @@ export const StorefrontPage: React.FC = () => {
             {displayedProducts.length === 0 ? (
               <div className="py-12 text-center text-zinc-500 space-y-2">
                 <ShoppingBag className="w-10 h-10 text-zinc-700 mx-auto" />
-                <p className="text-xs uppercase tracking-widest font-mono">No garment pieces found</p>
+                <p className="text-xs uppercase tracking-widest font-mono">Products coming soon</p>
                 {searchQuery && <p className="text-[10px] text-zinc-650">Try clearing custom search queries.</p>}
               </div>
             ) : (

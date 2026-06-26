@@ -42,25 +42,6 @@ export function getDeterministicUserId(email: string): string {
   const hex = Math.abs(hash).toString(16).padEnd(12, 'f').slice(0, 12);
   return `00000000-0000-4000-a000-${hex}`;
 }
-
-export function getDeterministicShopId(userId: string): string {
-  if (!userId || userId === 'local-session-id' || userId === MOCK_USER_ID) {
-    return '55555555-5555-5555-5555-555555555555';
-  }
-  // If userId matches valid UUID pattern, replace first character with 'e' for deterministic shop entity id
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
-    return 'e' + userId.slice(1);
-  }
-  // If it already has the nested local placeholder, fetch core ID
-  if (userId.startsWith('local-shop-')) {
-    const rawId = userId.substring(11);
-    return getDeterministicShopId(rawId);
-  }
-  // Safe padding/mapping to standard UUID format
-  const clean = userId.replace(/[^0-9a-f]/gi, '');
-  return 'e0000000-0000-0000-0000-' + clean.padStart(12, '0').slice(-12);
-}
-
 // Safely proxy getSession with rapid timeout control and offline resiliency
 const authListeners = new Set<(event: string, session: any) => void>();
 
@@ -438,42 +419,15 @@ function getFallbackForRelation(
   filterSlug?: string, 
   filterShopId?: string
 ) {
-  const activeUserId = filterOwnerId || getLoggedUserId();
-  
-  const demoShopRecord = {
-    id: 'demo-shop',
-    owner_id: 'demo-owner',
-    name: 'Kure Streetwear',
-    handle: 'demo',
-    slug: 'demo',
-    whatsapp: '263776223144',
-    whatsapp_number: '263776223144',
-    is_live: true,
-    subscription_status: 'active',
-    trial_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10).toISOString(),
-    description: 'Zim clothing store - built for the ones chasing more.',
-    categories: ['Clothing', 'Streetwear'],
-    location: 'Harare',
-    instagram: 'kure.zw',
-    logo_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
-    banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
-    manual_lock: false,
-    payment_overdue_flagged: false,
-    created_at: new Date().toISOString()
-  };
-
-  if (activeUserId === 'demo-owner' || activeUserId === 'demo-shop') {
-    return isSingle ? demoShopRecord : [demoShopRecord];
-  }
-  
   if (relation === 'shops') {
+    const activeUserId = filterOwnerId || getLoggedUserId();
     let parsed: any = null;
     const allLocalShops: any[] = [];
     try {
       const cached = localStorage.getItem(`shop_${activeUserId}`) || localStorage.getItem('threadzw_shop');
       if (cached) {
         parsed = JSON.parse(cached);
-        parsed.id = parsed.id || getDeterministicShopId(parsed.owner_id || activeUserId);
+        parsed.id = parsed.id || parsed.owner_id || activeUserId;
         allLocalShops.push(parsed);
       }
       
@@ -485,7 +439,7 @@ function getFallbackForRelation(
             try {
               const shopObj = JSON.parse(contents);
               if (shopObj && (shopObj.handle || shopObj.slug)) {
-                shopObj.id = shopObj.id || getDeterministicShopId(shopObj.owner_id || key.substring(5));
+                shopObj.id = shopObj.id || shopObj.owner_id || key.substring(5);
                 allLocalShops.push(shopObj);
               }
             } catch (_) {}
@@ -495,72 +449,42 @@ function getFallbackForRelation(
     } catch (e) {
       console.warn("Error reading cached shop list:", e);
     }
-    
-    const defaultShop = {
-      id: getDeterministicShopId(activeUserId),
-      owner_id: activeUserId,
-      name: localStorage.getItem('threadzw_owner_name') ? `${localStorage.getItem('threadzw_owner_name')}'s Shop` : 'My Brand',
-      handle: 'my_brand',
-      description: 'Handcrafted styles, curated just for you.',
-      categories: ['Clothing'],
-      location: 'Harare (Online)',
-      whatsapp: '0776223144',
-      instagram: 'mybrand.zw',
-      is_live: true,
-      subscription_status: 'trial',
-      trial_started_at: new Date().toISOString(),
-      trial_ends_at: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString(),
-      trial_start: new Date().toISOString(),
-      trial_end: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString()
-    };
-    
+
     if (filterHandle) {
       const fh = filterHandle.toLowerCase().trim();
-      if (fh === 'demo') {
-        return isSingle ? demoShopRecord : [demoShopRecord];
-      }
       const matched = allLocalShops.find(s => s && s.handle && s.handle.toLowerCase().trim() === fh);
       if (matched) {
         return isSingle ? matched : [matched];
-      }
-      if (defaultShop.handle.toLowerCase().trim() === fh) {
-        return isSingle ? defaultShop : [defaultShop];
       }
       return isSingle ? null : [];
     }
 
     if (filterSlug) {
       const fs = filterSlug.toLowerCase().trim();
-      if (fs === 'demo') {
-        return isSingle ? demoShopRecord : [demoShopRecord];
-      }
       const matched = allLocalShops.find(s => (s && s.slug && s.slug.toLowerCase().trim() === fs) || (s && s.handle && s.handle.toLowerCase().trim() === fs));
       if (matched) {
         return isSingle ? matched : [matched];
-      }
-      if (defaultShop.handle.toLowerCase().trim() === fs) {
-        return isSingle ? defaultShop : [defaultShop];
       }
       return isSingle ? null : [];
     }
 
     if (filterShopId) {
       const fsd = filterShopId;
-      if (fsd === 'demo-shop') {
-        return isSingle ? demoShopRecord : [demoShopRecord];
-      }
       if (parsed && parsed.id === fsd) {
         return isSingle ? parsed : [parsed];
       }
-      if (defaultShop.id === fsd) {
-        return isSingle ? defaultShop : [defaultShop];
+      const matched = allLocalShops.find(s => s && s.id === fsd);
+      if (matched) {
+        return isSingle ? matched : [matched];
       }
       return isSingle ? null : [];
     }
     
-    const currentShop = parsed || defaultShop;
-    return isSingle ? currentShop : [currentShop, demoShopRecord];
+    const currentShop = parsed;
+    return isSingle ? currentShop : (currentShop ? [currentShop] : []);
   }
+  
+  const activeUserId = filterOwnerId || getLoggedUserId();
   
   if (relation === 'profiles') {
     let parsed: any = null;
@@ -600,68 +524,7 @@ function getFallbackForRelation(
   }
 
   if (relation === 'products') {
-    try {
-      const targetShopId = filterShopId || activeUserId;
-      if (targetShopId) {
-        const cached = localStorage.getItem(`products_${targetShopId}`) ||
-                       localStorage.getItem(`products_${getDeterministicShopId(targetShopId)}`) ||
-                       localStorage.getItem(`products_local-shop-${targetShopId}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed)) {
-            return parsed.filter((p: any) => !p.shop_id || p.shop_id === targetShopId);
-          }
-        }
-
-        // Direct scan for this specific shop limit
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('products_')) {
-            const contents = localStorage.getItem(key);
-            if (contents) {
-              try {
-                const list = JSON.parse(contents);
-                if (Array.isArray(list)) {
-                  const filtered = list.filter((p: any) => p.shop_id === targetShopId);
-                  if (filtered.length > 0) {
-                    return filtered;
-                  }
-                }
-              } catch (_) {}
-            }
-          }
-        }
-        
-        // Return empty or empty array to avoid leaking products of other shops
-        return [];
-      } else {
-        // Active/Feed products search across all compiled products
-        let combined: any[] = [];
-        const seenIds = new Set();
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('products_')) {
-            const contents = localStorage.getItem(key);
-            if (contents) {
-              try {
-                const list = JSON.parse(contents);
-                if (Array.isArray(list)) {
-                  list.forEach((p: any) => {
-                    if (p && p.id && !seenIds.has(p.id)) {
-                      seenIds.add(p.id);
-                      combined.push(p);
-                    }
-                  });
-                }
-              } catch (_) {}
-            }
-          }
-        }
-        return combined;
-      }
-    } catch (e) {
-      console.warn("Error reading cached products:", e);
-    }
+    // Under FIX 1, we must render only database products and remove any product-loading fallback
     return isSingle ? null : [];
   }
 
@@ -825,48 +688,6 @@ supabase.from = function(relation: string) {
                   }
                 }
 
-                if (val && val.data && rel === 'shops') {
-                  const demoShopRecord = {
-                    id: 'demo-shop',
-                    owner_id: 'demo-owner',
-                    name: 'Kure Streetwear',
-                    handle: 'demo',
-                    slug: 'demo',
-                    whatsapp: '263776223144',
-                    whatsapp_number: '263776223144',
-                    is_live: true,
-                    subscription_status: 'active',
-                    trial_ends_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365 * 10).toISOString(),
-                    description: 'Zim clothing store - built for the ones chasing more.',
-                    categories: ['Clothing', 'Streetwear'],
-                    location: 'Harare',
-                    instagram: 'kure.zw',
-                    logo_url: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=150&q=80',
-                    banner_url: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
-                    manual_lock: false,
-                    payment_overdue_flagged: false,
-                    created_at: new Date().toISOString()
-                  };
-
-                  if (Array.isArray(val.data)) {
-                    const hasDemo = val.data.some((s: any) => s && (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo'));
-                    if (!hasDemo) {
-                      val.data = [...val.data, demoShopRecord];
-                    } else {
-                      val.data = val.data.map((s: any) => {
-                        if (s && (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo')) {
-                          return { ...s, ...demoShopRecord };
-                        }
-                        return s;
-                      });
-                    }
-                  } else if (val.data) {
-                    const s = val.data;
-                    if (s && (s.id === 'demo-shop' || s.handle === 'demo' || s.slug === 'demo')) {
-                      val.data = { ...s, ...demoShopRecord };
-                    }
-                  }
-                }
                 return val;
               },
               (err) => {
@@ -944,7 +765,7 @@ supabase.from = function(relation: string) {
                 const ownerId = shopObj.owner_id || getLoggedUserId();
                 try {
                   const existing = localStorage.getItem(`shop_${ownerId}`);
-                  const baseId = shopObj.id || (existing ? JSON.parse(existing).id : null) || getDeterministicShopId(ownerId);
+                  const baseId = shopObj.id || (existing ? JSON.parse(existing).id : null) || ownerId;
                   const merged = existing ? { id: baseId, ...JSON.parse(existing), ...shopObj } : { id: baseId, ...shopObj };
                   localStorage.setItem(`shop_${ownerId}`, JSON.stringify(merged));
                   localStorage.setItem('threadzw_shop', JSON.stringify(merged));
@@ -965,27 +786,7 @@ supabase.from = function(relation: string) {
                   console.warn("Error caching profile mutation:", e);
                 }
               } else if (rel === 'products') {
-                try {
-                  const prodObj = Array.isArray(payload) ? payload[0] : payload;
-                  const shopId = prodObj.shop_id || getDeterministicShopId(getLoggedUserId());
-                  const cachedStr = localStorage.getItem(`products_${shopId}`);
-                  let list = cachedStr ? JSON.parse(cachedStr) : [];
-                  if (prop === 'insert') {
-                    list.unshift(prodObj);
-                  } else if (prop === 'update') {
-                    list = list.map((p: any) => p.id === prodObj.id ? { ...p, ...prodObj } : p);
-                  } else if (prop === 'upsert') {
-                    const idx = list.findIndex((p: any) => p.id === prodObj.id);
-                    if (idx > -1) {
-                      list[idx] = { ...list[idx], ...prodObj };
-                    } else {
-                      list.unshift(prodObj);
-                    }
-                  }
-                  localStorage.setItem(`products_${shopId}`, JSON.stringify(list));
-                } catch (e) {
-                  console.warn("Error caching product mutation:", e);
-                }
+                // Products local cache disabled under FIX 1
               } else if (rel === 'categories') {
                 try {
                   const catObj = Array.isArray(payload) ? payload[0] : payload;

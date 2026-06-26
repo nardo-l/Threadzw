@@ -1061,52 +1061,6 @@ begin
     display_name = coalesce(nullif(public.profiles.display_name, ''), excluded.display_name),
     handle = coalesce(nullif(public.profiles.handle, ''), excluded.handle);
 
-  -- Determine the deterministic stable shop ID (first character of user uuid replaced with 'e')
-  v_shop_id := ('e' || substring(new.id::text from 2))::uuid;
-  v_trial_ends := now() + interval '28 days';
-
-  -- 2) Create or update corresponding business shop
-  insert into public.shops (
-    id,
-    owner_id,
-    name,
-    handle,
-    slug,
-    description,
-    categories,
-    location,
-    whatsapp,
-    is_live,
-    subscription_status,
-    plan,
-    trial_started_at,
-    trial_ends_at,
-    created_at,
-    updated_at
-  )
-  values (
-    v_shop_id,
-    new.id,
-    v_display_name,
-    v_clean_handle,
-    v_clean_handle,
-    'Zim clothing store',
-    array['Clothing']::text[],
-    'Harare',
-    '0776223144',
-    true,
-    'active',
-    'free',
-    now(),
-    v_trial_ends,
-    now(),
-    now()
-  )
-  on conflict (owner_id) do update set
-    handle = coalesce(nullif(public.shops.handle, ''), excluded.handle),
-    slug = coalesce(nullif(public.shops.slug, ''), excluded.slug),
-    name = coalesce(nullif(public.shops.name, ''), excluded.name);
-
   return new;
 end;
 $function$;

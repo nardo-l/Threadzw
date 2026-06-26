@@ -31,6 +31,10 @@ export const Login: React.FC = () => {
       if (error) throw error;
 
       toast.success('Signed in successfully');
+      if (data?.user?.id) {
+        localStorage.setItem('supabase_logged_in_user_id', data.user.id);
+        localStorage.setItem('threadzw_owner_email', email.trim().toLowerCase());
+      }
       localStorage.setItem('threadzw_logged_in', 'true');
       navigate('/dashboard');
     } catch (err: any) {
