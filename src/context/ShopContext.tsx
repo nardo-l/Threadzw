@@ -6,6 +6,7 @@ interface ShopContextType {
   loading: boolean;
   hasShop: boolean;
   refreshShop: () => Promise<void>;
+  authLoading?: boolean;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);

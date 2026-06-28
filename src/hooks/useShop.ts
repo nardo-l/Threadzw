@@ -3,12 +3,16 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 export const useShop = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [shop, setShop] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasShop, setHasShop] = useState(false);
 
   useEffect(() => {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
     if (!user) {
       setShop(null);
       setHasShop(false);
@@ -16,7 +20,7 @@ export const useShop = () => {
       return;
     }
     fetchShop();
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchShop = async () => {
     try {
@@ -54,5 +58,5 @@ export const useShop = () => {
 
   const refreshShop = () => fetchShop();
 
-  return { shop, loading, hasShop, refreshShop };
+  return { shop, loading, hasShop, refreshShop, authLoading };
 };

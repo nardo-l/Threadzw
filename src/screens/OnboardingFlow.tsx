@@ -63,6 +63,84 @@ export const generateUniqueSlug = async (shopName: string): Promise<string> => {
   return `${baseSlug}${Math.floor(1000 + Math.random() * 9000)}`;
 };
 
+const categoryRecommendations: Record<string, { emoji: string; heading: string; text: string }[]> = {
+  Sneakers: [
+    {
+      emoji: "👟",
+      heading: "🔥 Premium Sneaker Collections",
+      text: "Shop exclusive sneakers, limited releases and stylish streetwear."
+    },
+    {
+      emoji: "🔥",
+      heading: "Drip & Sole Harare 👟🇿🇼",
+      text: "Zimbabwe's premier sneaker plug. Authentic kicks and rare colorways sourced globally."
+    },
+    {
+      emoji: "⚡",
+      heading: "Sneaker Drop ZW 👟💎",
+      text: "High-quality sneaker drops, direct-to-your-door shipping, and 24/7 WhatsApp customer care."
+    }
+  ],
+  Thrift: [
+    {
+      emoji: "🧥",
+      heading: "Curated Thrift Finds",
+      text: "Unique vintage and thrift collections sourced for fashion lovers."
+    },
+    {
+      emoji: "💎",
+      heading: "Vintage Treasures ZW 🧥✨",
+      text: "One-of-a-kind thrift fits, curated leather jackets, retro denim, and classic style in Harare."
+    },
+    {
+      emoji: "♻️",
+      heading: "Eco-Conscious Thrift 🧥🌿",
+      text: "Affordable premium secondhand style. Bringing you sustainable curated fashion."
+    }
+  ],
+  Electronics: [
+    {
+      emoji: "📱",
+      heading: "📱 Trusted Electronics Store",
+      text: "Affordable gadgets and accessories from trusted suppliers."
+    },
+    {
+      emoji: "⚡",
+      heading: "NextGen Tech ZW 📱🔋",
+      text: "Original apple/android devices, premium phone cases, charger cables and fast Harare courier."
+    },
+    {
+      emoji: "🎧",
+      heading: "Gadget Hub Harare 🎧📡",
+      text: "Premium audio gear, smart watches, power banks, and certified electronic accessories."
+    }
+  ],
+  Fashion: [
+    {
+      emoji: "👕",
+      heading: "👕 Modern Fashion Collections",
+      text: "Trendy clothing and accessories for every style."
+    },
+    {
+      emoji: "👗",
+      heading: "Zim Designer Closet 👕👑",
+      text: "Premium tailored clothing, trendy accessories, and high-street fashion curated for you."
+    },
+    {
+      emoji: "⚜️",
+      heading: "Classy Fits Harare 👗💎",
+      text: "Premium apparel, custom styling tips, and top-tier streetwear selections."
+    }
+  ]
+};
+
+const recommendations = [
+  ...categoryRecommendations.Sneakers,
+  ...categoryRecommendations.Thrift,
+  ...categoryRecommendations.Electronics,
+  ...categoryRecommendations.Fashion
+];
+
 interface OnboardingFlowProps {
   setAppStage: (stage: 'landing' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product') => void;
   setPaywallScreen?: (screen: number) => void;
@@ -86,6 +164,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<'Sneakers' | 'Thrift' | 'Electronics' | 'Fashion'>('Sneakers');
+  const [activeRecommendationIndex, setActiveRecommendationIndex] = useState(0);
+  const [isDraggingRecommendation, setIsDraggingRecommendation] = useState(false);
+  const [textareaKey, setTextareaKey] = useState(0);
+
+  // Recommendation Carousel Auto-scroll effect
+  useEffect(() => {
+    if (isDraggingRecommendation || screen !== 23) return;
+    const interval = setInterval(() => {
+      setActiveRecommendationIndex((prev) => (prev + 1) % recommendations.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [isDraggingRecommendation, screen]);
 
   // First product states
   const [productName, setProductName] = useState('');
@@ -105,6 +196,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const productImgInputRef = useRef<HTMLInputElement>(null);
+  const shopRecordRef = useRef<any>(null);
 
   // Back button control
   const handleBack = () => {
@@ -189,7 +281,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       localStorage.setItem('threadzw_logged_in', 'true');
       setScreen(20);
     } catch (err: any) {
+      console.error("SHOP CREATION FAILED");
       console.error(err);
+      console.error(JSON.stringify(err, null, 2));
       toast.error(mapError(err));
     } finally {
       setSigningUp(false);
@@ -218,6 +312,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
       const generatedSlug = await generateUniqueSlug(shopName || 'My Shop');
 
+      const user = sessionData?.session?.user;
       const storeData = {
         owner_id: userId,
         name: shopName || 'My Shop',
@@ -225,7 +320,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         slug: generatedSlug,
         categories: [productCategory || 'Clothing'],
         location: 'Harare',
-        whatsapp: whatsapp || '0776223144',
+        whatsapp_number: whatsapp || '0776223144',
         description: description || 'Premium clothing boutique',
         plan: 'shop',
         subscription_status: 'trial',
@@ -234,14 +329,31 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         is_live: true
       };
 
-      const { data: shopRecord, error: shopError } = await supabase
+      console.log("========== SHOP CREATION START ==========");
+      console.log("AUTH USER:", user);
+      console.log("AUTH USER ID:", user?.id);
+      console.log("STORE DATA:", storeData);
+      console.log("========================================");
+
+      const { data, error } = await supabase
         .from('shops')
         .upsert(storeData, { onConflict: 'owner_id' })
         .select()
         .single();
 
-      if (shopError) throw shopError;
+      console.log("SHOP UPSERT DATA:", data);
+      console.log("SHOP UPSERT ERROR:", error);
+
+      const shopRecord = data;
+      const insertError = error;
+
+      if (insertError) {
+        console.error("SHOP INSERT FAILED:", insertError);
+        throw insertError;
+      }
       if (!shopRecord) throw new Error('Database did not return the inserted shop record.');
+
+      shopRecordRef.current = shopRecord;
 
       const realShopId = shopRecord.id;
       const generatedUrl = `/shop/${realShopId}`;
@@ -310,6 +422,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
       // 5. Create product record
       if (productName.trim()) {
+        const shopId = realShopId;
+        console.log("PRODUCT SHOP ID:", shopId);
+        console.log("PRODUCT OWNER ID:", user?.id);
+
+        if (!realShopId || String(realShopId).startsWith('local-shop-') || realShopId === '55555555-5555-5555-5555-555555555555') {
+          throw new Error("Cannot create product: No active, valid shop found for your profile.");
+        }
+
         const { error: prodError } = await supabase.from('products').insert({
           shop_id: realShopId,
           owner_id: userId,
@@ -349,8 +469,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
 
     } catch (err: any) {
-      console.error('Failed to assemble live shop:', err);
-      toast.error('Could not live-publish shop configuration. Proceeding as sandbox mode.');
+      console.error("SHOP CREATION FAILED");
+      console.error(err);
+      console.error(JSON.stringify(err, null, 2));
+      toast.error(err?.message || 'Failed to create shop');
+      throw err;
     }
   };
 
@@ -374,7 +497,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         setTimeout(() => setVisibleChecks(v => [...v, 2]), 2400),
         setTimeout(() => setVisibleChecks(v => [...v, 3]), 3200),
         setTimeout(() => {
-          setScreen(27); // To final live success screen!
+          console.log("shopRecordRef:", shopRecordRef.current);
+          console.log("finalShopId:", finalShopId);
+          console.log("realShopId:", shopRecordRef.current?.id);
+
+          if (shopRecordRef.current?.id) {
+            setScreen(27); // To final live success screen!
+          } else {
+            toast.error('Shop creation failed');
+          }
         }, 4200)
       ];
 
@@ -400,14 +531,63 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         { id: '6', name: 'Accessories' }
       ];
 
+  // Dynamic onboarding progress tracker
+  const getProgressDetails = (s: number) => {
+    if (s < 19) {
+      const percentage = Math.round((s / 18) * 100);
+      const blocks = Math.round(percentage / 10);
+      const ascii = '█'.repeat(blocks) + '░'.repeat(10 - blocks);
+      return {
+        label: `Intro ${s}/18`,
+        bar: `${ascii} ${percentage}%`,
+        percent: percentage
+      };
+    }
+    
+    // Interactive setup screens mapping to Steps 1 to 5
+    let stepText = "Step 1 of 5";
+    let percent = 20;
+    if (s === 19 || s === 20) {
+      stepText = "Step 1 of 5";
+      percent = 20;
+    } else if (s === 21) {
+      stepText = "Step 2 of 5";
+      percent = 40;
+    } else if (s === 22) {
+      stepText = "Step 2 of 5";
+      percent = 50;
+    } else if (s === 23) {
+      stepText = "Step 3 of 5";
+      percent = 60;
+    } else if (s === 24) {
+      stepText = "Step 4 of 5";
+      percent = 80;
+    } else if (s === 25) {
+      stepText = "Step 5 of 5";
+      percent = 100;
+    } else {
+      stepText = "Step 5 of 5";
+      percent = 100;
+    }
+    const blocks = Math.round(percent / 10);
+    const ascii = '█'.repeat(blocks) + '░'.repeat(10 - blocks);
+    return {
+      label: stepText,
+      bar: `${ascii} ${percent}%`,
+      percent
+    };
+  };
+
+  const { label: stepLabel, bar: asciiBar, percent: stepPercent } = getProgressDetails(screen);
+
   return (
     <div id="threadzw-onboarding-container" className="fixed inset-0 bg-[#000000] text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
       
       {/* Dynamic Top Progress Bar */}
-      <div className="w-full h-1 bg-[#e5e7eb] relative z-50">
+      <div className="w-full h-1 bg-[#111111] relative z-50">
         <div 
-          style={{ width: `${progressPercent}%` }} 
-          className="h-full bg-[#C6FF00] transition-all duration-300 ease-out" 
+          style={{ width: `${stepPercent}%` }} 
+          className="h-full bg-[#C6FF00] transition-all duration-500 ease-out shadow-sm shadow-[#C6FF00]/50" 
         />
       </div>
 
@@ -421,8 +601,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             <ArrowLeft className="w-5 h-5" />
           </button>
           
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-[#6b7280] font-bold font-mono">Screen {screen}/27</span>
+          <div className="flex flex-col items-center justify-center leading-none text-center">
+            <span className="text-[10px] text-zinc-400 font-extrabold uppercase tracking-wider font-mono">{stepLabel}</span>
+            <span className="text-[10px] text-[#C6FF00] font-black font-mono tracking-widest mt-0.5">{asciiBar}</span>
           </div>
 
           <span className="text-sm font-black tracking-tight text-white">
@@ -1199,7 +1380,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   </h2>
                   <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Tell customers what makes your shop premium.</p>
 
-                  <div className="relative">
+                  <motion.div
+                    key={textareaKey}
+                    initial={{ opacity: 0.85, y: 3, scale: 0.995 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="relative"
+                  >
                     <textarea 
                       value={description}
                       onChange={(e) => {
@@ -1214,33 +1401,136 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <span className="absolute bottom-3.5 right-3 text-[10px] font-bold text-[#6b7280]/60 font-mono">
                       {description.length}/120
                     </span>
-                  </div>
+                  </motion.div>
 
-                  {/* Suggestion Chips */}
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-wider block">TAP TO AUTO FILL</span>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        "Premium streetwear & vintage drops.",
-                        "Harare's finest curation of sneakers.",
-                        "Exclusive hand-picked thrift items.",
-                        "High-end custom streetwear apparel."
-                      ].map(chip => (
-                        <button
-                          key={chip}
-                          onClick={() => setDescription(chip)}
-                          className="bg-[#111111] hover:bg-[#C6FF00]/10 p-2 py-1.5 rounded-lg text-xs text-[#9ca3af] border border-[rgba(255,255,255,0.08)] hover:border-[#C6FF00] transition-all cursor-pointer font-bold shadow-subtle"
-                        >
-                          {chip}
-                        </button>
-                      ))}
+                  {/* Scrolling Recommendations Carousel */}
+                  <div className="space-y-3 pt-1">
+                    <style>{`
+                      @keyframes onboardingMarquee {
+                        0% { transform: translate3d(0, 0, 0); }
+                        100% { transform: translate3d(-33.333%, 0, 0); }
+                      }
+                      .onboarding-marquee-track {
+                        display: flex;
+                        width: max-content;
+                        animation: onboardingMarquee 16s linear infinite;
+                      }
+                      .onboarding-marquee-track:hover {
+                        animation-play-state: paused;
+                      }
+                    `}</style>
+
+                    <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-wider block">TAP CARD TO AUTO-FILL BY CATEGORY</span>
+                    
+                    {/* Category Tabs Selector */}
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 select-none">
+                      {(['Sneakers', 'Thrift', 'Electronics', 'Fashion'] as const).map((tab) => {
+                        const isActive = selectedCategoryTab === tab;
+                        const label = tab === 'Sneakers' ? '👟 Sneakers' : tab === 'Thrift' ? '🧥 Thrift' : tab === 'Electronics' ? '📱 Tech' : '👕 Fashion';
+                        return (
+                          <button
+                            key={tab}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategoryTab(tab);
+                              const firstRec = categoryRecommendations[tab]?.[0];
+                              if (firstRec) {
+                                setDescription(firstRec.text);
+                                setTextareaKey(prev => prev + 1);
+                              }
+                            }}
+                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer border ${
+                              isActive 
+                                ? 'bg-[#C6FF00] text-black border-[#C6FF00]' 
+                                : 'bg-[#111111] text-zinc-400 border-zinc-800 hover:text-white'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="relative w-full overflow-hidden py-1">
+                      {/* Left and right fade gradients */}
+                      <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#000000] to-transparent z-10 pointer-events-none" />
+                      <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#000000] to-transparent z-10 pointer-events-none" />
+
+                      <div className="w-full overflow-hidden">
+                        <div className="onboarding-marquee-track gap-3.5">
+                          {(() => {
+                            const currentRecs = categoryRecommendations[selectedCategoryTab] || categoryRecommendations.Sneakers;
+                            // Triplicated set to guarantee perfect continuous loop translation
+                            const triplicatedRecs = [...currentRecs, ...currentRecs, ...currentRecs];
+                            return triplicatedRecs.map((rec, idx) => {
+                              const isSelected = description === rec.text;
+                              return (
+                                <div 
+                                  key={`${rec.heading}-${idx}`} 
+                                  className="shrink-0"
+                                >
+                                  <div 
+                                    onClick={() => {
+                                      setDescription(rec.text);
+                                      setTextareaKey(prev => prev + 1);
+                                    }}
+                                    className={`w-[200px] h-[135px] bg-[#111111] hover:bg-[#151515] rounded-[20px] p-4 flex flex-col justify-between text-left transition-all duration-300 cursor-pointer select-none relative shadow-xl border-2 ${
+                                      isSelected ? 'border-[#C6FF00]' : 'border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.2)]'
+                                    }`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-xl">
+                                        {rec.emoji}
+                                      </span>
+                                      {isSelected && (
+                                        <span className="w-2 h-2 rounded-full bg-[#C6FF00]" />
+                                      )}
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      <h4 className="text-[#C6FF00] font-black text-[10px] uppercase tracking-wider leading-snug line-clamp-1">
+                                        {rec.heading}
+                                      </h4>
+                                      <p className="text-white text-[10px] leading-relaxed font-semibold line-clamp-2">
+                                        {rec.text}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      </div>
+
+                      {/* Elegant ━━━ ━ ━ ━ Line pagination indicators */}
+                      <div className="flex justify-center gap-1.5 mt-3 select-none">
+                        {(() => {
+                          const currentRecs = categoryRecommendations[selectedCategoryTab] || categoryRecommendations.Sneakers;
+                          return currentRecs.map((rec, idx) => {
+                            const isSelected = description === rec.text;
+                            return (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  setDescription(rec.text);
+                                  setTextareaKey(prev => prev + 1);
+                                }}
+                                className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
+                                  isSelected ? 'w-8 bg-[#C6FF00]' : 'w-2 bg-zinc-800'
+                                }`}
+                                aria-label={`Select recommendation ${idx + 1}`}
+                              />
+                            );
+                          });
+                        })()}
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setScreen(24)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
+                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10 mt-4"
                 >
                   <span>Next Step ➔</span>
                 </button>

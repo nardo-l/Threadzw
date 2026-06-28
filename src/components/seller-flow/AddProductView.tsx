@@ -157,6 +157,13 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
       }
 
       // 2. Insert into products
+      console.log("PRODUCT SHOP ID:", myShop?.id);
+      console.log("PRODUCT OWNER ID:", user?.id);
+
+      if (!myShop?.id || String(myShop.id).startsWith('local-shop-') || myShop.id === '55555555-5555-5555-5555-555555555555') {
+        throw new Error("Cannot create product: No active, valid shop found for your profile.");
+      }
+
       const { error, data } = await supabase.from('products').insert({
         shop_id: myShop.id,
         owner_id: user.id,

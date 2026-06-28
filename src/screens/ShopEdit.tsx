@@ -138,6 +138,8 @@ export const ShopEdit = () => {
   const [isLive, setIsLive] = useState(true);
   const [productCount, setProductCount] = useState(0);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [advancedExpanded, setAdvancedExpanded] = useState(false);
+  const [contactExpanded, setContactExpanded] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showCustomOverlayToast, setShowCustomOverlayToast] = useState(false);
@@ -249,19 +251,23 @@ export const ShopEdit = () => {
       } catch (pErr) {
         console.warn('Failed querying products inside ShopEdit:', pErr);
       }
-      setSuburb(data.suburb || '');
-      setCity(data.city || '');
-      setGoogleMapsUrl(data.google_maps_url || '');
-      setPickupAvailable(data.pickup_available || false);
-      setPickupLabel(data.pickup_label || '');
+      setSuburb(config.suburb || data.suburb || '');
+      setCity(config.city || data.city || '');
+      setGoogleMapsUrl(config.google_maps_url || data.google_maps_url || '');
+      setPickupAvailable(config.pickup_available !== undefined ? config.pickup_available : (data.pickup_available || false));
+      setPickupLabel(config.pickup_label || data.pickup_label || '');
       setArea(data.location || '');
-      setLandmark(data.landmark || '');
-      setDirections(data.directions || '');
-      setOnlineOnly(data.online_only || false);
-      setDeliveryInfo(data.delivery_info || '');
+      setLandmark(config.landmark || data.landmark || '');
+      setDirections(config.directions || data.directions || '');
+      setOnlineOnly(config.online_only !== undefined ? config.online_only : (data.online_only || false));
+      setDeliveryInfo(config.delivery_info || data.delivery_info || '');
       setWhatsapp(data.whatsapp ? data.whatsapp.replace('+263', '') : '');
-      setInstagram(data.instagram || '');
-      if (data.trading_hours) setTradingHours(data.trading_hours);
+      setInstagram(config.instagram || data.instagram || '');
+      if (config.trading_hours) {
+        setTradingHours(config.trading_hours);
+      } else if (data.trading_hours) {
+        setTradingHours(data.trading_hours);
+      }
       setBannerUrl(data.banner_url || null);
       setBannerPreview(data.banner_url || null);
       setAvatarUrl(data.logo_url || data.avatar_url || null);
@@ -514,8 +520,15 @@ export const ShopEdit = () => {
       showToast(firstErrorVal, 'error');
       setSaveError(firstErrorVal);
       const firstErrorKey = Object.keys(errors)[0];
-      const element = document.getElementById(`field-${firstErrorKey}`);
-      if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      if (firstErrorKey === 'area' || firstErrorKey === 'landmark' || firstErrorKey === 'directions') {
+        setContactExpanded(true);
+      }
+      
+      setTimeout(() => {
+        const element = document.getElementById(`field-${firstErrorKey}`);
+        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
       return;
     }
 
@@ -571,7 +584,18 @@ export const ShopEdit = () => {
           primary: brandColorPrimary,
           secondary: brandColorSecondary,
           accent: brandColorAccent,
-        }
+        },
+        suburb: suburb.trim() || undefined,
+        city: city.trim() || undefined,
+        google_maps_url: googleMapsUrl.trim() || undefined,
+        pickup_available: pickupAvailable,
+        pickup_label: pickupLabel.trim() || undefined,
+        landmark: landmark.trim() || undefined,
+        directions: directions.trim() || undefined,
+        online_only: onlineOnly,
+        delivery_info: onlineOnly ? deliveryInfo.trim() : undefined,
+        instagram_url: instagram.trim() ? `https://instagram.com/${instagram.trim().replace(/^@/, '')}` : undefined,
+        trading_hours: tradingHours,
       };
 
       const serializedDescription = serializeShopConfig(description, configObj);
@@ -581,23 +605,12 @@ export const ShopEdit = () => {
         name: shopName.trim(),
         handle: handle.trim().toLowerCase(),
         slug: slugify(handle),
-        tagline: tagline.trim() || null,
         description: serializedDescription,
         categories,
-        suburb: suburb.trim() || null,
-        city: city.trim() || null,
-        google_maps_url: googleMapsUrl.trim() || null,
-        pickup_available: pickupAvailable,
-        pickup_label: pickupLabel.trim() || null,
         location: onlineOnly ? null : area,
-        landmark: onlineOnly ? null : landmark.trim(),
-        directions: onlineOnly ? null : directions.trim(),
-        online_only: onlineOnly,
-        delivery_info: onlineOnly ? deliveryInfo.trim() : null,
         whatsapp: `+263${cleanWhatsapp}`,
+        whatsapp_number: `+263${cleanWhatsapp}`,
         instagram: instagram.trim() || null,
-        instagram_url: instagram.trim() ? `https://instagram.com/${instagram.trim().replace(/^@/, '')}` : null,
-        trading_hours: tradingHours,
         banner_url: cleanBanner,
         logo_url: cleanAvatar,
         updated_at: new Date().toISOString()
@@ -609,7 +622,7 @@ export const ShopEdit = () => {
         }
       });
 
-      console.log('[EDIT_SHOP_PAGE] Sending database update:', updateData);
+      console.log('[EDIT_SHOP_PAGE] Final database update payload:', updateData);
 
       // Update shop in database
       const { data, error: updateError } = await supabase
@@ -618,6 +631,8 @@ export const ShopEdit = () => {
         .eq('id', activeShopId)
         .select()
         .single();
+
+      console.log('[EDIT_SHOP_PAGE] Exact Supabase response:', { data, error: updateError });
 
       if (updateError) {
         console.error('[EDIT_SHOP_PAGE] Supabase error response:', updateError);
@@ -789,7 +804,7 @@ export const ShopEdit = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-36">
       {/* Custom Overlay Toast */}
       {showCustomOverlayToast && (
         <div id="custom-overlay-toast" className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce cursor-pointer flex items-center justify-center w-[calc(100%-32px)] max-w-[398px]">
@@ -817,151 +832,145 @@ export const ShopEdit = () => {
         
         <h1 className="font-pacifico text-xl text-white">Edit Shop</h1>
         
-        <button 
-          onClick={handleSave}
-          disabled={saving || (!hasChanges && handle === originalHandle)}
-          className={`font-mono text-sm font-bold transition-colors ${
-            saving || (!hasChanges && handle === originalHandle) 
-              ? 'text-muted cursor-not-allowed' 
-              : 'text-primary'
-          }`}
-        >
-          {saving ? <Loader2 size={18} className="animate-spin" /> : 'Save'}
-        </button>
+        <div className="w-10 h-10" /> {/* Balance placeholder */}
       </div>
 
       <div className="pt-20 px-4 space-y-10">
-        {/* Section 1: Shop Photos */}
-        <section className="space-y-4">
-          <h2 className="font-syne font-bold text-lg text-white">Shop Photos</h2>
-          
-          <div className="relative">
-            {/* Banner Upload */}
-            <div 
-              onClick={() => {
-                if (!uploadingBanner) bannerInputRef.current?.click();
-              }}
-              className="w-full h-[140px] rounded-16 overflow-hidden bg-elevated border-2 border-dashed border-border hover:border-primary/50 transition-all cursor-pointer group relative flex flex-col items-center justify-center"
-            >
-              {(bannerPreview || bannerUrl) ? (
-                <>
-                  <ShopBanner 
-                    url={bannerPreview || bannerUrl} 
-                    alt="Banner" 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                    <Camera size={24} className="text-white mb-1" />
-                    <span className="font-mono text-[10px] text-white uppercase tracking-wider">Change Banner</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                    <Camera size={24} className="text-primary" />
-                  </div>
-                  <span className="font-mono text-xs text-muted">Upload Banner</span>
-                  <span className="font-mono text-[8px] text-muted/60 mt-1 uppercase tracking-tighter">Appears at the top of your shop profile</span>
-                </>
-              )}
-              
-              {uploadingBanner && (
-                <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                  <Loader2 size={24} className="text-primary animate-spin" />
-                  <span className="ml-2 font-mono text-xs text-white">Uploading...</span>
-                </div>
-              )}
-            </div>
+        {/* ========================================================
+            PART 1: BASIC SETTINGS
+           ======================================================== */}
+        <section className="space-y-6">
+          <div className="space-y-1 border-b border-border/40 pb-2">
+            <h2 className="font-syne font-bold text-lg text-white">Basic Settings</h2>
+            <p className="font-sans text-xs text-muted">Core information about your brand & store</p>
+          </div>
 
-            <div className="flex justify-end mt-2">
-              <button
-                type="button"
-                disabled={uploadingBanner}
-                onClick={() => bannerInputRef.current?.click()}
-                className="px-4 py-2 bg-elevated border border-border text-xs rounded-lg font-mono text-white flex items-center gap-2 hover:bg-white/5 disabled:opacity-50 transition-all font-bold"
-              >
-                {uploadingBanner ? (
-                  <>
-                    <Loader2 size={14} className="animate-spin text-primary" />
-                    <span>Uploading...</span>
-                  </>
-                ) : (bannerPreview || bannerUrl) ? (
-                  'Change Banner'
-                ) : (
-                  'Upload Banner'
-                )}
-              </button>
-            </div>
-
-            {/* Avatar Upload */}
-            <div className="absolute -bottom-16 left-4 flex flex-col items-center">
+          {/* Shop Photos */}
+          <div className="space-y-4">
+            <label className="font-mono text-xs text-muted uppercase tracking-wider block">Shop Photos</label>
+            <div className="relative">
+              {/* Banner Upload */}
               <div 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!uploadingAvatar) avatarInputRef.current?.click();
+                onClick={() => {
+                  if (!uploadingBanner) bannerInputRef.current?.click();
                 }}
-                className="w-20 h-20 rounded-full bg-elevated border-2 border-primary overflow-hidden cursor-pointer group relative flex items-center justify-center shadow-xl mb-1"
+                className="w-full h-[140px] rounded-16 overflow-hidden bg-elevated border-2 border-dashed border-border hover:border-primary/50 transition-all cursor-pointer group relative flex flex-col items-center justify-center"
               >
-                {(avatarPreview || avatarUrl) ? (
+                {(bannerPreview || bannerUrl) ? (
                   <>
-                    <ShopLogo 
-                      url={avatarPreview || avatarUrl} 
-                      name={shopName}
-                      alt="Logo" 
+                    <ShopBanner 
+                      url={bannerPreview || bannerUrl} 
+                      alt="Banner" 
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Camera size={20} className="text-white" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+                      <Camera size={24} className="text-white mb-1" />
+                      <span className="font-mono text-[10px] text-white uppercase tracking-wider">Change Banner</span>
                     </div>
                   </>
                 ) : (
-                  <Camera size={24} className="text-primary" />
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <Camera size={24} className="text-primary" />
+                    </div>
+                    <span className="font-mono text-xs text-muted">Upload Banner</span>
+                    <span className="font-mono text-[8px] text-muted/60 mt-1 uppercase tracking-tighter">Appears at the top of your shop profile</span>
+                  </>
                 )}
                 
-                {uploadingAvatar && (
+                {uploadingBanner && (
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                    <Loader2 size={20} className="text-primary animate-spin" />
+                    <Loader2 size={24} className="text-primary animate-spin" />
+                    <span className="ml-2 font-mono text-xs text-white">Uploading...</span>
                   </div>
                 )}
               </div>
-              <button 
-                type="button"
-                disabled={uploadingAvatar}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  avatarInputRef.current?.click();
-                }}
-                className="font-mono text-[10px] text-primary uppercase tracking-wider block w-full text-center hover:underline disabled:opacity-50 font-bold"
-              >
-                {uploadingAvatar ? 'Uploading...' : (avatarPreview || avatarUrl) ? 'Change Logo' : 'Upload Logo'}
-              </button>
+
+              <div className="flex justify-end mt-2">
+                <button
+                  type="button"
+                  disabled={uploadingBanner}
+                  onClick={() => bannerInputRef.current?.click()}
+                  className="px-4 py-2 bg-elevated border border-border text-xs rounded-lg font-mono text-white flex items-center gap-2 hover:bg-white/5 disabled:opacity-50 transition-all font-bold"
+                >
+                  {uploadingBanner ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin text-primary" />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (bannerPreview || bannerUrl) ? (
+                    'Change Banner'
+                  ) : (
+                    'Upload Banner'
+                  )}
+                </button>
+              </div>
+
+              {/* Avatar Upload */}
+              <div className="absolute -bottom-16 left-4 flex flex-col items-center">
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!uploadingAvatar) avatarInputRef.current?.click();
+                  }}
+                  className="w-20 h-20 rounded-full bg-elevated border-2 border-primary overflow-hidden cursor-pointer group relative flex items-center justify-center shadow-xl mb-1"
+                >
+                  {(avatarPreview || avatarUrl) ? (
+                    <>
+                      <ShopLogo 
+                        url={avatarPreview || avatarUrl} 
+                        name={shopName}
+                        alt="Logo" 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera size={20} className="text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <Camera size={24} className="text-primary" />
+                  )}
+                  
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
+                      <Loader2 size={20} className="text-primary animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <button 
+                  type="button"
+                  disabled={uploadingAvatar}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    avatarInputRef.current?.click();
+                  }}
+                  className="font-mono text-[10px] text-primary uppercase tracking-wider block w-full text-center hover:underline disabled:opacity-50 font-bold"
+                >
+                  {uploadingAvatar ? 'Uploading...' : (avatarPreview || avatarUrl) ? 'Change Logo' : 'Upload Logo'}
+                </button>
+              </div>
             </div>
+            
+            <p className="font-mono text-[10px] text-muted pt-14">
+              Changes will be saved when you tap Save Changes
+            </p>
+
+            <input 
+              type="file" 
+              ref={bannerInputRef} 
+              onChange={handleBannerSelect} 
+              className="hidden" 
+              accept="image/jpeg,image/png,image/webp" 
+            />
+            <input 
+              type="file" 
+              ref={avatarInputRef} 
+              onChange={handleAvatarSelect} 
+              className="hidden" 
+              accept="image/jpeg,image/png,image/webp" 
+            />
           </div>
-          
-          <p className="font-mono text-[10px] text-muted pt-14">
-            Changes will be saved when you tap Save
-          </p>
 
-          <input 
-            type="file" 
-            ref={bannerInputRef} 
-            onChange={handleBannerSelect} 
-            className="hidden" 
-            accept="image/jpeg,image/png,image/webp" 
-          />
-          <input 
-            type="file" 
-            ref={avatarInputRef} 
-            onChange={handleAvatarSelect} 
-            className="hidden" 
-            accept="image/jpeg,image/png,image/webp" 
-          />
-        </section>
-
-        {/* Section 2: Shop Identity */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <h2 className="font-syne font-bold text-lg text-white">Shop Identity</h2>
-          
           {/* Shop Name */}
           <div id="field-shopName" className="space-y-2">
             <div className="flex justify-between items-end">
@@ -986,7 +995,7 @@ export const ShopEdit = () => {
             {validationErrors.shopName && <FieldError message={validationErrors.shopName} />}
           </div>
 
-          {/* Shop Handle */}
+          {/* Shop Link */}
           <div id="field-handle" className="space-y-2">
             <label className="font-mono text-xs text-muted uppercase tracking-wider">
               Shop Link <span className="text-primary">*</span>
@@ -1031,33 +1040,11 @@ export const ShopEdit = () => {
               )}
             </div>
 
-            {/* Live Preview Card */}
             <div className="bg-elevated/50 border border-primary/20 rounded-12 p-3 mt-2">
               <span className="font-mono text-[10px] text-muted uppercase tracking-tighter block mb-1">Your shop link:</span>
               <span className="font-mono text-sm text-primary font-bold">thread.zw/{handle || 'handle'}</span>
             </div>
             {validationErrors.handle && <FieldError message={validationErrors.handle} />}
-          </div>
-
-          {/* Tagline */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-end">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                Tagline
-              </label>
-              <span className="font-mono text-[10px] text-muted">{tagline.length}/300</span>
-            </div>
-            <input 
-              value={tagline}
-              onChange={e => {
-                if (e.target.value.length <= 300) {
-                  setTagline(e.target.value);
-                  markChanged();
-                }
-              }}
-              placeholder="e.g. The underdog clothing brand"
-              className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-            />
           </div>
 
           {/* Description */}
@@ -1079,280 +1066,7 @@ export const ShopEdit = () => {
               className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
             />
           </div>
-        </section>
 
-        {/* Section 3: Categories */}
-        <section id="field-categories" className="space-y-4 pt-6 border-t border-border">
-          <div className="space-y-1">
-            <h2 className="font-syne font-bold text-lg text-white">Categories</h2>
-            <p className="font-sans text-xs text-muted">Select everything that applies to your shop</p>
-          </div>
-
-          <div className={`flex flex-wrap gap-2 transition-all ${validationErrors.categories ? 'animate-shake' : ''}`}>
-            {CATEGORY_OPTIONS.map((cat, index) => {
-              const isSelected = categories.includes(cat);
-              return (
-                <button
-                  key={`${cat || 'cat'}-${index}`}
-                  onClick={() => toggleCategory(cat)}
-                  className={`px-4 py-2 rounded-pill font-sans text-sm transition-all border ${
-                    isSelected 
-                      ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
-                      : 'bg-elevated border-border text-muted hover:border-primary/50'
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
-          {validationErrors.categories && <FieldError message={validationErrors.categories} />}
-        </section>
-
-        {/* Section 4: Location */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <h2 className="font-syne font-bold text-lg text-white">Location</h2>
-          
-          {/* Online Only Toggle */}
-          <div className="flex items-center justify-between bg-elevated p-4 rounded-12">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Globe size={20} className="text-primary" />
-              </div>
-              <span className="font-sans text-white">My shop is online only</span>
-            </div>
-            <button 
-              onClick={() => {
-                setOnlineOnly(!onlineOnly);
-                markChanged();
-              }}
-              className={`w-12 h-6 rounded-pill relative transition-colors ${onlineOnly ? 'bg-primary' : 'bg-muted/30'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${onlineOnly ? 'left-7' : 'left-1'}`} />
-            </button>
-          </div>
-
-          {!onlineOnly ? (
-            <div className="space-y-6 animate-wipe overflow-hidden">
-              {/* Area Dropdown */}
-              <div id="field-area" className="space-y-2">
-                <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                  Area <span className="text-primary">*</span>
-                </label>
-                <button 
-                  onClick={() => setShowAreaSheet(true)}
-                  className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans flex items-center justify-between transition-all ${
-                    validationErrors.area ? 'border-red' : 'border-transparent focus:border-primary'
-                  }`}
-                >
-                  <span className={area ? 'text-white' : 'text-muted'}>
-                    {area || 'Select your area'}
-                  </span>
-                  <ChevronDown size={20} className="text-muted" />
-                </button>
-                {validationErrors.area && <FieldError message={validationErrors.area} />}
-              </div>
-
-              {/* Suburb & City Row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Suburb</label>
-                  <input 
-                    value={suburb}
-                    onChange={e => {
-                      setSuburb(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="e.g. Avondale"
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">City</label>
-                  <input 
-                    value={city}
-                    onChange={e => {
-                      setCity(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="e.g. Harare"
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
-                  />
-                </div>
-              </div>
-
-              {/* Google Maps URL Link */}
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-muted uppercase tracking-wider">Google Maps Link</label>
-                <input 
-                  value={googleMapsUrl}
-                  onChange={e => {
-                    setGoogleMapsUrl(e.target.value);
-                    markChanged();
-                  }}
-                  placeholder="e.g. https://maps.google.com/?q=..."
-                  className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
-                />
-              </div>
-
-              {/* Landmark */}
-              <div id="field-landmark" className="space-y-2">
-                <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                  Landmark / Address <span className="text-primary">*</span>
-                </label>
-                <input 
-                  value={landmark}
-                  onChange={e => {
-                    setLandmark(e.target.value);
-                    markChanged();
-                  }}
-                  placeholder="e.g. Eastlea Shopping Centre, Shop 14"
-                  className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none transition-all ${
-                    validationErrors.landmark ? 'border-red' : 'border-transparent focus:border-primary'
-                  }`}
-                />
-                {validationErrors.landmark && <FieldError message={validationErrors.landmark} />}
-              </div>
-
-              {/* Directions */}
-              <div id="field-directions" className="space-y-2">
-                <div className="flex justify-between items-end">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                    How to Get There <span className="text-primary">*</span>
-                  </label>
-                  <span className="font-mono text-[10px] text-muted">{directions.length}/500</span>
-                </div>
-                <textarea 
-                  value={directions}
-                  onChange={e => {
-                    if (e.target.value.length <= 500) {
-                      setDirections(e.target.value);
-                      markChanged();
-                    }
-                  }}
-                  rows={5}
-                  placeholder="Step-by-step directions from a nearby landmark..."
-                  className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all ${
-                    validationErrors.directions ? 'border-red' : 'border-transparent focus:border-primary'
-                  }`}
-                />
-                <p className="font-mono text-[10px] text-muted/60 uppercase tracking-tighter">This is what buyers see instead of Google Maps</p>
-                {validationErrors.directions && <FieldError message={validationErrors.directions} />}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2 animate-wipe overflow-hidden">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">Delivery Information</label>
-              <textarea 
-                value={deliveryInfo}
-                onChange={e => {
-                  setDeliveryInfo(e.target.value);
-                  markChanged();
-                }}
-                rows={3}
-                placeholder="Describe how you deliver -- courier, pickup point, areas covered..."
-                className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
-              />
-            </div>
-          )}
-        </section>
-
-        {/* Section 4B: Pickup Settings */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <div className="flex justify-between items-center">
-            <h2 className="font-syne font-bold text-lg text-white">Pickup Settings</h2>
-          </div>
-
-          <div className="flex items-center justify-between bg-elevated p-4 rounded-12">
-            <div className="flex flex-col">
-              <span className="font-sans text-white font-medium">In-person Pickup Available</span>
-              <span className="font-mono text-[10px] text-muted uppercase mt-0.5">Allow buyers to pick up items directly</span>
-            </div>
-            <button 
-              onClick={() => {
-                setPickupAvailable(!pickupAvailable);
-                markChanged();
-              }}
-              className={`w-12 h-6 rounded-pill relative transition-colors ${pickupAvailable ? 'bg-primary' : 'bg-muted/30'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${pickupAvailable ? 'left-7' : 'left-1'}`} />
-            </button>
-          </div>
-
-          {pickupAvailable && (
-            <div className="space-y-2 animate-wipe overflow-hidden">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">Pickup Notice / Label</label>
-              <input 
-                value={pickupLabel}
-                onChange={e => {
-                  setPickupLabel(e.target.value);
-                  markChanged();
-                }}
-                placeholder="e.g. Pickup available within 2 hours"
-                className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-              />
-            </div>
-          )}
-        </section>
-
-        {/* Section 5: Trading Hours */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <div className="flex justify-between items-center">
-            <h2 className="font-syne font-bold text-lg text-white">Trading Hours</h2>
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Clock size={20} className="text-primary" />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {tradingHours.map((hour, index) => (
-              <div key={`${hour.day || 'hour'}-${index}`} className="flex items-center justify-between">
-                <span className="font-sans text-white w-12">{hour.day}</span>
-                
-                <div className="flex-1 flex items-center justify-end gap-3">
-                  {hour.isOpen ? (
-                    <div className="flex items-center gap-2 animate-wipe">
-                      <input 
-                        type="time"
-                        value={hour.openTime}
-                        onChange={e => updateTradingHour(index, { openTime: e.target.value })}
-                        className="bg-elevated border-2 border-transparent focus:border-primary rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
-                      />
-                      <span className="text-muted">—</span>
-                      <input 
-                        type="time"
-                        value={hour.closeTime}
-                        onChange={e => updateTradingHour(index, { closeTime: e.target.value })}
-                        className="bg-elevated border-2 border-transparent focus:border-primary rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
-                      />
-                    </div>
-                  ) : (
-                    <span className="font-mono text-xs text-muted uppercase tracking-wider">Closed</span>
-                  )}
-
-                  <button 
-                    onClick={() => updateTradingHour(index, { isOpen: !hour.isOpen })}
-                    className={`w-10 h-5 rounded-pill relative transition-colors ${hour.isOpen ? 'bg-primary' : 'bg-muted/30'}`}
-                  >
-                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${hour.isOpen ? 'left-5.5' : 'left-0.5'}`} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button 
-            onClick={applyToAllWeekdays}
-            className="font-mono text-xs text-primary uppercase tracking-wider hover:underline"
-          >
-            Apply to all weekdays
-          </button>
-        </section>
-
-        {/* Section 6: Contact */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <h2 className="font-syne font-bold text-lg text-white">Contact</h2>
-          
           {/* WhatsApp */}
           <div id="field-whatsapp" className="space-y-2">
             <label className="font-mono text-xs text-muted uppercase tracking-wider">
@@ -1391,373 +1105,647 @@ export const ShopEdit = () => {
             {validationErrors.whatsapp && <FieldError message={validationErrors.whatsapp} />}
           </div>
 
-          {/* Instagram */}
-          <div className="space-y-2">
-            <label className="font-mono text-xs text-muted uppercase tracking-wider">Instagram Handle</label>
-            <div className="flex items-center bg-elevated border-2 border-transparent focus-within:border-primary rounded-12 overflow-hidden transition-all">
-              <span className="pl-4 font-mono text-muted text-sm">@</span>
-              <input 
-                value={instagram}
-                onChange={e => {
-                  setInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''));
-                  markChanged();
-                }}
-                placeholder="yourshopname"
-                className="flex-1 bg-transparent p-4 pl-1 text-white font-sans focus:outline-none"
-              />
+          {/* Categories */}
+          <div id="field-categories" className="space-y-4">
+            <div className="space-y-1">
+              <label className="font-mono text-xs text-muted uppercase tracking-wider">Categories</label>
+              <p className="font-sans text-xs text-muted">Select everything that applies to your shop</p>
             </div>
+
+            <div className={`flex flex-wrap gap-2 transition-all ${validationErrors.categories ? 'animate-shake' : ''}`}>
+              {CATEGORY_OPTIONS.map((cat, index) => {
+                const isSelected = categories.includes(cat);
+                return (
+                  <button
+                    key={`${cat || 'cat'}-${index}`}
+                    type="button"
+                    onClick={() => toggleCategory(cat)}
+                    className={`px-4 py-2 rounded-pill font-sans text-sm transition-all border ${
+                      isSelected 
+                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
+                        : 'bg-elevated border-border text-muted hover:border-primary/50'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            </div>
+            {validationErrors.categories && <FieldError message={validationErrors.categories} />}
           </div>
         </section>
 
-        {/* Section 7: PREMIUM STOREFRONT STYLE & CUSTOMIZATION */}
+        {/* ========================================================
+            PART 2: CONTACT & LOCATION (COLLAPSIBLE ACCORDION)
+           ======================================================== */}
         <section className="space-y-6 pt-6 border-t border-border">
-          <div className="flex justify-between items-center">
-            <h2 className="font-syne font-bold text-lg text-white">Storefront Customization</h2>
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Sparkles size={20} className="text-primary" />
-            </div>
-          </div>
-
-          <div className="bg-elevated/40 border border-border/40 rounded-16 p-4 space-y-5">
-            {/* Theme Selection */}
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
-                <Palette size={14} className="text-primary" /> Theme Selection
-              </label>
-              <p className="text-xs text-muted">Each theme automatically redesigns typography, spacing, and layouts to vibe perfectly.</p>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                {(['streetwear', 'luxury', 'minimalist', 'vintage', 'sportswear'] as const).map((theme) => (
-                  <button
-                    key={theme}
-                    type="button"
-                    onClick={() => {
-                      setThemeSelection(theme);
-                      markChanged();
-                    }}
-                    className={`p-3 rounded-12 border-2 text-xs font-syne font-bold capitalize transition-all ${
-                      themeSelection === theme 
-                        ? 'border-primary bg-primary/10 text-white shadow-md' 
-                        : 'border-transparent bg-elevated text-muted hover:text-white hover:bg-elevated-hover'
-                    }`}
-                  >
-                    {theme === 'luxury' ? 'Luxury Fashion' : theme}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Layout Style */}
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
-                <Layout size={14} className="text-primary" /> Homepage Layout Style
-              </label>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                {[
-                  { id: 'fashion-editorial', label: 'Premium Editorial' },
-                  { id: 'bento-grid', label: 'Bento Grid Style' },
-                  { id: 'default', label: 'Classic Grid' }
-                ].map((layout) => (
-                  <button
-                    key={layout.id}
-                    type="button"
-                    onClick={() => {
-                      setLayoutStyle(layout.id);
-                      markChanged();
-                    }}
-                    className={`p-2.5 rounded-12 border-2 text-xs font-syne font-bold transition-all ${
-                      layoutStyle === layout.id 
-                        ? 'border-primary bg-primary/10 text-white shadow-md' 
-                        : 'border-transparent bg-elevated text-muted hover:text-white hover:bg-elevated-hover'
-                    }`}
-                  >
-                    {layout.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Tagline */}
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-2 text-white">
-                Store Tagline
-              </label>
-              <input
-                value={tagline}
-                onChange={e => {
-                  setTagline(e.target.value);
-                  markChanged();
-                }}
-                placeholder="Built for the ones chasing more"
-                className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white text-sm focus:outline-none"
-              />
-            </div>
-
-            {/* Store Story */}
-            <div className="space-y-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-2 text-white">
-                <BookOpen size={14} /> Brand Story / Mission
-              </label>
-              <textarea
-                value={storeStory}
-                onChange={e => {
-                  setStoreStory(e.target.value);
-                  markChanged();
-                }}
-                placeholder="In 2026, we launched Kure to connect high-concept silhouettes with local Harare design structures. Every piece crafted is a monument to modern progression..."
-                rows={4}
-                className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white text-sm focus:outline-none resize-none"
-              />
-            </div>
-
-            {/* Colors Override */}
-            <div className="space-y-3 pt-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
-                <Palette size={14} /> Brand Colors Override (Optional)
-              </label>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Specify hex overrides or leave blank to let our AI auto-extract colors from your store logo.
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="space-y-1">
-                  <span className="font-mono text-[9px] text-muted uppercase font-semibold">Primary</span>
-                  <div className="flex gap-1.5 items-center">
-                    <input
-                      type="color"
-                      value={brandColorPrimary || '#000000'}
-                      onChange={e => {
-                        setBrandColorPrimary(e.target.value);
-                        markChanged();
-                      }}
-                      className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Auto"
-                      value={brandColorPrimary}
-                      onChange={e => {
-                        setBrandColorPrimary(e.target.value);
-                        markChanged();
-                      }}
-                      className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="font-mono text-[9px] text-muted uppercase font-semibold">Secondary</span>
-                  <div className="flex gap-1.5 items-center">
-                    <input
-                      type="color"
-                      value={brandColorSecondary || '#ffffff'}
-                      onChange={e => {
-                        setBrandColorSecondary(e.target.value);
-                        markChanged();
-                      }}
-                      className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Auto"
-                      value={brandColorSecondary}
-                      onChange={e => {
-                        setBrandColorSecondary(e.target.value);
-                        markChanged();
-                      }}
-                      className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <span className="font-mono text-[9px] text-muted uppercase font-semibold">Accent</span>
-                  <div className="flex gap-1.5 items-center">
-                    <input
-                      type="color"
-                      value={brandColorAccent || '#C6FF00'}
-                      onChange={e => {
-                        setBrandColorAccent(e.target.value);
-                        markChanged();
-                      }}
-                      className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Auto"
-                      value={brandColorAccent}
-                      onChange={e => {
-                        setBrandColorAccent(e.target.value);
-                        markChanged();
-                      }}
-                      className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Social Links Expand */}
-            <div className="space-y-3 pt-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider text-white">Social Platforms</label>
-              
-              {/* TikTok */}
-              <div className="space-y-1">
-                <span className="font-mono text-[10px] text-muted">TikTok Handle</span>
-                <div className="flex items-center bg-elevated rounded-12 p-3 text-sm">
-                  <span className="text-muted mr-1">@</span>
-                  <input
-                    value={tiktok}
-                    onChange={e => {
-                      setTiktok(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''));
-                      markChanged();
-                    }}
-                    placeholder="kure_clothing"
-                    className="flex-1 bg-transparent text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Facebook */}
-              <div className="space-y-1">
-                <span className="font-mono text-[10px] text-muted">Facebook Profile URL</span>
-                <div className="flex items-center bg-elevated rounded-12 p-3 text-sm">
-                  <Facebook size={14} className="text-muted mr-2" />
-                  <input
-                    value={facebook}
-                    onChange={e => {
-                      setFacebook(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="https://facebook.com/kureclothing"
-                    className="flex-1 bg-transparent text-white focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Product Tagging Selection Lists */}
-            <div className="space-y-3 pt-2">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1 text-white">
-                <Heart size={14} className="text-red-500" /> Products Selection
-              </label>
-              <p className="text-[11px] text-muted leading-relaxed">
-                Toggles which of your items will render under the premium "Featured Collection" and "Best Seller" storefront grids.
-              </p>
-
-              {shopProducts.length === 0 ? (
-                <div className="p-4 bg-elevated/45 text-center rounded-12">
-                  <p className="text-xs text-muted font-mono uppercase">No products listed yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 border border-border/20 rounded-12 p-2 bg-elevated/30">
-                  {shopProducts.map((p, index) => {
-                    const isFeat = featuredProducts.includes(p.id);
-                    const isBest = bestSellerProducts.includes(p.id);
-                    const imgUrl = Array.isArray(p.images) && p.images[0] ? p.images[0] : 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=80&q=80';
-                    
-                    return (
-                      <div key={`${p.id || 'product'}-${index}`} className="flex items-center justify-between p-2 rounded-8 bg-elevated/80 border border-border/10">
-                        <div className="flex items-center gap-2">
-                          <ProductImage url={imgUrl} className="w-8 h-8 rounded object-cover" />
-                          <div className="leading-tight">
-                            <p className="text-xs text-white font-medium truncate max-w-[120px]">{p.name}</p>
-                            <p className="text-[10px] text-primary font-mono">${p.price}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2">
-                          {/* Featured Button */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isFeat) {
-                                setFeaturedProducts(featuredProducts.filter(id => id !== p.id));
-                              } else {
-                                setFeaturedProducts([...featuredProducts, p.id]);
-                              }
-                              markChanged();
-                            }}
-                            className={`px-2 py-1 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors ${
-                              isFeat 
-                                ? 'bg-primary text-black border-primary' 
-                                : 'bg-transparent text-muted border-muted/30 hover:border-muted'
-                            }`}
-                          >
-                            Featured
-                          </button>
-
-                          {/* Best Seller Button */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isBest) {
-                                setBestSellerProducts(bestSellerProducts.filter(id => id !== p.id));
-                              } else {
-                                setBestSellerProducts([...bestSellerProducts, p.id]);
-                              }
-                              markChanged();
-                            }}
-                            className={`px-2 py-1 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors ${
-                              isBest 
-                                ? 'bg-green-500/10 text-green-500 border-green-500/30' 
-                                : 'bg-transparent text-muted border-muted/30 hover:border-muted'
-                            }`}
-                          >
-                            Best Seller
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Bottom Save Changes Section */}
-        <section className="pt-6 space-y-3">
-          <button
+          <button 
             type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full py-4 text-sm tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
-            style={{
-              background: saveSuccess
-                ? '#10b981'
-                : saving
-                  ? '#1f2937'
-                  : '#C6FF00',
-              color: saveSuccess || saving
-                ? '#ffffff'
-                : '#000000',
-              border: 'none',
-              borderRadius: '14px',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              fontWeight: 800,
-              fontFamily: 'sans-serif'
-            }}
+            onClick={() => setContactExpanded(!contactExpanded)}
+            className="w-full flex items-center justify-between py-2 text-left group"
           >
-            {saving ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Saving...
-              </>
-            ) : saveSuccess ? (
-              <>
-                <Check size={16} />
-                Saved!
-              </>
-            ) : (
-              'Save Changes'
-            )}
+            <div className="space-y-1">
+              <h2 className="font-syne font-bold text-lg text-white group-hover:text-primary transition-colors flex items-center gap-2">
+                Contact & Location
+                <MapPin size={16} className="text-primary" />
+              </h2>
+              <p className="font-sans text-xs text-muted">Manage storefront access and secondary connections</p>
+            </div>
+            <div className="p-2 bg-elevated rounded-full text-muted group-hover:text-white transition-colors">
+              <ChevronDown 
+                size={20} 
+                className={`transform transition-transform duration-300 ${contactExpanded ? 'rotate-180' : ''}`} 
+              />
+            </div>
           </button>
 
-          {saveError && (
-            <p className="text-xs text-red-500 text-center font-mono mt-1">
-              {saveError}
-            </p>
+          {contactExpanded && (
+            <div className="space-y-6 pt-4 animate-wipe">
+              {/* Online Only Toggle */}
+              <div className="flex items-center justify-between bg-elevated p-4 rounded-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Globe size={20} className="text-primary" />
+                  </div>
+                  <span className="font-sans text-white">My shop is online only</span>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setOnlineOnly(!onlineOnly);
+                    markChanged();
+                  }}
+                  className={`w-12 h-6 rounded-pill relative transition-colors ${onlineOnly ? 'bg-primary' : 'bg-muted/30'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${onlineOnly ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+
+              {!onlineOnly ? (
+                <div className="space-y-6 animate-wipe overflow-hidden">
+                  {/* Area Dropdown */}
+                  <div id="field-area" className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider">
+                      Area <span className="text-primary">*</span>
+                    </label>
+                    <button 
+                      type="button"
+                      onClick={() => setShowAreaSheet(true)}
+                      className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans flex items-center justify-between transition-all ${
+                        validationErrors.area ? 'border-red' : 'border-transparent focus:border-primary'
+                      }`}
+                    >
+                      <span className={area ? 'text-white' : 'text-muted'}>
+                        {area || 'Select your area'}
+                      </span>
+                      <ChevronDown size={20} className="text-muted" />
+                    </button>
+                    {validationErrors.area && <FieldError message={validationErrors.area} />}
+                  </div>
+
+                  {/* Suburb & City Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Suburb</label>
+                      <input 
+                        value={suburb}
+                        onChange={e => {
+                          setSuburb(e.target.value);
+                          markChanged();
+                        }}
+                        placeholder="e.g. Avondale"
+                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-mono text-xs text-muted uppercase tracking-wider">City</label>
+                      <input 
+                        value={city}
+                        onChange={e => {
+                          setCity(e.target.value);
+                          markChanged();
+                        }}
+                        placeholder="e.g. Harare"
+                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Google Maps URL Link */}
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider">Google Maps Link</label>
+                    <input 
+                      value={googleMapsUrl}
+                      onChange={e => {
+                        setGoogleMapsUrl(e.target.value);
+                        markChanged();
+                      }}
+                      placeholder="e.g. https://maps.google.com/?q=..."
+                      className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                    />
+                  </div>
+
+                  {/* Landmark */}
+                  <div id="field-landmark" className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider">
+                      Landmark / Address <span className="text-primary">*</span>
+                    </label>
+                    <input 
+                      value={landmark}
+                      onChange={e => {
+                        setLandmark(e.target.value);
+                        markChanged();
+                      }}
+                      placeholder="e.g. Eastlea Shopping Centre, Shop 14"
+                      className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none transition-all ${
+                        validationErrors.landmark ? 'border-red' : 'border-transparent focus:border-primary'
+                      }`}
+                    />
+                    {validationErrors.landmark && <FieldError message={validationErrors.landmark} />}
+                  </div>
+
+                  {/* Directions */}
+                  <div id="field-directions" className="space-y-2">
+                    <div className="flex justify-between items-end">
+                      <label className="font-mono text-xs text-muted uppercase tracking-wider">
+                        How to Get There <span className="text-primary">*</span>
+                      </label>
+                      <span className="font-mono text-[10px] text-muted">{directions.length}/500</span>
+                    </div>
+                    <textarea 
+                      value={directions}
+                      onChange={e => {
+                        if (e.target.value.length <= 500) {
+                          setDirections(e.target.value);
+                          markChanged();
+                        }
+                      }}
+                      rows={5}
+                      placeholder="Step-by-step directions from a nearby landmark..."
+                      className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all ${
+                        validationErrors.directions ? 'border-red' : 'border-transparent focus:border-primary'
+                      }`}
+                    />
+                    <p className="font-mono text-[10px] text-muted/60 uppercase tracking-tighter">This is what buyers see instead of Google Maps</p>
+                    {validationErrors.directions && <FieldError message={validationErrors.directions} />}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2 animate-wipe overflow-hidden">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Delivery Information</label>
+                  <textarea 
+                    value={deliveryInfo}
+                    onChange={e => {
+                      setDeliveryInfo(e.target.value);
+                      markChanged();
+                    }}
+                    rows={3}
+                    placeholder="Describe how you deliver -- courier, pickup point, areas covered..."
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
+                  />
+                </div>
+              )}
+
+              {/* Instagram Handle */}
+              <div className="space-y-2">
+                <label className="font-mono text-xs text-muted uppercase tracking-wider">Instagram Handle</label>
+                <div className="flex items-center bg-elevated border-2 border-transparent focus-within:border-primary rounded-12 overflow-hidden transition-all">
+                  <span className="pl-4 font-mono text-muted text-sm">@</span>
+                  <input 
+                    value={instagram}
+                    onChange={e => {
+                      setInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''));
+                      markChanged();
+                    }}
+                    placeholder="yourshopname"
+                    className="flex-1 bg-transparent p-4 pl-1 text-white font-sans focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
           )}
         </section>
+
+        {/* ========================================================
+            PART 3: ADVANCED SETTINGS (COLLAPSIBLE ACCORDION)
+           ======================================================== */}
+        <section className="space-y-6 pt-6 border-t border-border">
+          <button 
+            type="button"
+            onClick={() => setAdvancedExpanded(!advancedExpanded)}
+            className="w-full flex items-center justify-between py-2 text-left group"
+          >
+            <div className="space-y-1">
+              <h2 className="font-syne font-bold text-lg text-white group-hover:text-primary transition-colors flex items-center gap-2">
+                Advanced Settings
+                <Sparkles size={16} className="text-primary" />
+              </h2>
+              <p className="font-sans text-xs text-muted">Trading hours, pickup setup, theme, brand story, and collections</p>
+            </div>
+            <div className="p-2 bg-elevated rounded-full text-muted group-hover:text-white transition-colors">
+              <ChevronDown 
+                size={20} 
+                className={`transform transition-transform duration-300 ${advancedExpanded ? 'rotate-180' : ''}`} 
+              />
+            </div>
+          </button>
+
+          {advancedExpanded && (
+            <div className="space-y-8 pt-4 animate-wipe">
+              {/* Pickup Configuration */}
+              <div className="space-y-4">
+                <h3 className="font-syne font-bold text-md text-white border-b border-border/20 pb-1">Pickup Setup</h3>
+                <div className="flex items-center justify-between bg-elevated p-4 rounded-12">
+                  <div className="flex flex-col">
+                    <span className="font-sans text-white font-medium">In-person Pickup Available</span>
+                    <span className="font-mono text-[10px] text-muted uppercase mt-0.5">Allow buyers to pick up items directly</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setPickupAvailable(!pickupAvailable);
+                      markChanged();
+                    }}
+                    className={`w-12 h-6 rounded-pill relative transition-colors ${pickupAvailable ? 'bg-primary' : 'bg-muted/30'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${pickupAvailable ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                {pickupAvailable && (
+                  <div className="space-y-2 animate-wipe overflow-hidden">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider">Pickup Notice / Label</label>
+                    <input 
+                      value={pickupLabel}
+                      onChange={e => {
+                        setPickupLabel(e.target.value);
+                        markChanged();
+                      }}
+                      placeholder="e.g. Pickup available within 2 hours"
+                      className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Trading Hours */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b border-border/20 pb-1">
+                  <h3 className="font-syne font-bold text-md text-white">Trading Hours</h3>
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Clock size={16} className="text-primary" />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {tradingHours.map((hour, index) => (
+                    <div key={`${hour.day || 'hour'}-${index}`} className="flex items-center justify-between">
+                      <span className="font-sans text-white w-12 text-sm">{hour.day}</span>
+                      
+                      <div className="flex-1 flex items-center justify-end gap-3">
+                        {hour.isOpen ? (
+                          <div className="flex items-center gap-2 animate-wipe">
+                            <input 
+                              type="time"
+                              value={hour.openTime}
+                              onChange={e => updateTradingHour(index, { openTime: e.target.value })}
+                              className="bg-elevated border-2 border-transparent focus:border-primary rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                            />
+                            <span className="text-muted">—</span>
+                            <input 
+                              type="time"
+                              value={hour.closeTime}
+                              onChange={e => updateTradingHour(index, { closeTime: e.target.value })}
+                              className="bg-elevated border-2 border-transparent focus:border-primary rounded-lg px-2 py-1 text-xs text-white focus:outline-none"
+                            />
+                          </div>
+                        ) : (
+                          <span className="font-mono text-xs text-muted uppercase tracking-wider">Closed</span>
+                        )}
+
+                        <button 
+                          type="button"
+                          onClick={() => updateTradingHour(index, { isOpen: !hour.isOpen })}
+                          className={`w-10 h-5 rounded-pill relative transition-colors ${hour.isOpen ? 'bg-primary' : 'bg-muted/30'}`}
+                        >
+                          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${hour.isOpen ? 'left-5.5' : 'left-0.5'}`} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button 
+                  type="button"
+                  onClick={applyToAllWeekdays}
+                  className="font-mono text-xs text-primary uppercase tracking-wider hover:underline"
+                >
+                  Apply to all weekdays
+                </button>
+              </div>
+
+              {/* Theme Customization */}
+              <div className="space-y-4">
+                <h3 className="font-syne font-bold text-md text-white border-b border-border/20 pb-1">Boutique Themes</h3>
+                <div className="bg-elevated/40 border border-border/40 rounded-16 p-4 space-y-5">
+                  {/* Theme Selection */}
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
+                      <Palette size={14} className="text-primary" /> Theme Selection
+                    </label>
+                    <p className="text-xs text-muted">Each theme automatically redesigns typography, spacing, and layouts to vibe perfectly.</p>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {(['streetwear', 'luxury', 'minimalist', 'vintage', 'sportswear'] as const).map((theme) => (
+                        <button
+                          key={theme}
+                          type="button"
+                          onClick={() => {
+                            setThemeSelection(theme);
+                            markChanged();
+                          }}
+                          className={`p-3 rounded-12 border-2 text-xs font-syne font-bold capitalize transition-all ${
+                            themeSelection === theme 
+                              ? 'border-primary bg-primary/10 text-white shadow-md' 
+                              : 'border-transparent bg-elevated text-muted hover:text-white hover:bg-elevated-hover'
+                          }`}
+                        >
+                          {theme === 'luxury' ? 'Luxury Fashion' : theme}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Layout Style */}
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
+                      <Layout size={14} className="text-primary" /> Homepage Layout Style
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {[
+                        { id: 'fashion-editorial', label: 'Premium Editorial' },
+                        { id: 'bento-grid', label: 'Bento Grid Style' },
+                        { id: 'default', label: 'Classic Grid' }
+                      ].map((layout) => (
+                        <button
+                          key={layout.id}
+                          type="button"
+                          onClick={() => {
+                            setLayoutStyle(layout.id);
+                            markChanged();
+                          }}
+                          className={`p-2.5 rounded-12 border-2 text-xs font-syne font-bold transition-all ${
+                            layoutStyle === layout.id 
+                              ? 'border-primary bg-primary/10 text-white shadow-md' 
+                              : 'border-transparent bg-elevated text-muted hover:text-white hover:bg-elevated-hover'
+                          }`}
+                        >
+                          {layout.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tagline */}
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-2 text-white">
+                      Store Tagline
+                    </label>
+                    <input
+                      value={tagline}
+                      onChange={e => {
+                        setTagline(e.target.value);
+                        markChanged();
+                      }}
+                      placeholder="Built for the ones chasing more"
+                      className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white text-sm focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Store Story */}
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-2 text-white">
+                      <BookOpen size={14} className="text-primary" /> Brand Story / Mission
+                    </label>
+                    <textarea
+                      value={storeStory}
+                      onChange={e => {
+                        setStoreStory(e.target.value);
+                        markChanged();
+                      }}
+                      placeholder="In 2026, we launched Kure to connect high-concept silhouettes with local Harare design structures..."
+                      rows={4}
+                      className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-3 text-white text-sm focus:outline-none resize-none"
+                    />
+                  </div>
+
+                  {/* Colors Override */}
+                  <div className="space-y-3 pt-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider flex items-center gap-1.5 text-white">
+                      <Palette size={14} /> Brand Colors Override (Optional)
+                    </label>
+                    <p className="text-[11px] text-muted leading-relaxed">
+                      Specify hex overrides or leave blank to let our AI auto-extract colors from your store logo.
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <span className="font-mono text-[9px] text-muted uppercase font-semibold">Primary</span>
+                        <div className="flex gap-1.5 items-center">
+                          <input
+                            type="color"
+                            value={brandColorPrimary || '#000000'}
+                            onChange={e => {
+                              setBrandColorPrimary(e.target.value);
+                              markChanged();
+                            }}
+                            className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Auto"
+                            value={brandColorPrimary}
+                            onChange={e => {
+                              setBrandColorPrimary(e.target.value);
+                              markChanged();
+                            }}
+                            className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="font-mono text-[9px] text-muted uppercase font-semibold">Secondary</span>
+                        <div className="flex gap-1.5 items-center">
+                          <input
+                            type="color"
+                            value={brandColorSecondary || '#ffffff'}
+                            onChange={e => {
+                              setBrandColorSecondary(e.target.value);
+                              markChanged();
+                            }}
+                            className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Auto"
+                            value={brandColorSecondary}
+                            onChange={e => {
+                              setBrandColorSecondary(e.target.value);
+                              markChanged();
+                            }}
+                            className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="font-mono text-[9px] text-muted uppercase font-semibold">Accent</span>
+                        <div className="flex gap-1.5 items-center">
+                          <input
+                            type="color"
+                            value={brandColorAccent || '#C6FF00'}
+                            onChange={e => {
+                              setBrandColorAccent(e.target.value);
+                              markChanged();
+                            }}
+                            className="w-8 h-8 rounded border border-border cursor-pointer bg-transparent"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Auto"
+                            value={brandColorAccent}
+                            onChange={e => {
+                              setBrandColorAccent(e.target.value);
+                              markChanged();
+                            }}
+                            className="font-mono text-[9px] w-full bg-elevated text-white p-1 rounded uppercase min-w-0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Social links tiktok and facebook */}
+                  <div className="space-y-3 pt-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider text-white">Secondary Social Platforms</label>
+                    <div className="space-y-1">
+                      <span className="font-mono text-[10px] text-muted">TikTok Handle</span>
+                      <div className="flex items-center bg-elevated rounded-12 p-3 text-sm">
+                        <span className="text-muted mr-1">@</span>
+                        <input
+                          value={tiktok}
+                          onChange={e => {
+                            setTiktok(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''));
+                            markChanged();
+                          }}
+                          placeholder="kure_clothing"
+                          className="flex-1 bg-transparent text-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="font-mono text-[10px] text-muted">Facebook Profile URL</span>
+                      <div className="flex items-center bg-elevated rounded-12 p-3 text-sm">
+                        <Facebook size={14} className="text-muted mr-2" />
+                        <input
+                          value={facebook}
+                          onChange={e => {
+                            setFacebook(e.target.value);
+                            markChanged();
+                          }}
+                          placeholder="https://facebook.com/kureclothing"
+                          className="flex-1 bg-transparent text-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Collections selection */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center border-b border-border/20 pb-1">
+                  <h3 className="font-syne font-bold text-md text-white">Collections Configuration</h3>
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Heart size={16} className="text-red-500" />
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted leading-relaxed">
+                  Toggles which of your items will render under the premium "Featured Collection" and "Best Seller" storefront grids.
+                </p>
+
+                {shopProducts.length === 0 ? (
+                  <div className="p-4 bg-elevated/45 text-center rounded-12">
+                    <p className="text-xs text-muted font-mono uppercase">No products listed yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 border border-border/20 rounded-12 p-2 bg-elevated/30">
+                    {shopProducts.map((p, index) => {
+                      const isFeat = featuredProducts.includes(p.id);
+                      const isBest = bestSellerProducts.includes(p.id);
+                      const imgUrl = Array.isArray(p.images) && p.images[0] ? p.images[0] : 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=80&q=80';
+                      
+                      return (
+                        <div key={`${p.id || 'product'}-${index}`} className="flex items-center justify-between p-2 rounded-8 bg-elevated/80 border border-border/10">
+                          <div className="flex items-center gap-2">
+                            <ProductImage url={imgUrl} className="w-8 h-8 rounded object-cover" />
+                            <div className="leading-tight">
+                              <p className="text-xs text-white font-medium truncate max-w-[120px]">{p.name}</p>
+                              <p className="text-[10px] text-primary font-mono">${p.price}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isFeat) {
+                                  setFeaturedProducts(featuredProducts.filter(id => id !== p.id));
+                                } else {
+                                  setFeaturedProducts([...featuredProducts, p.id]);
+                                }
+                                markChanged();
+                              }}
+                              className={`px-2 py-1 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors ${
+                                isFeat 
+                                  ? 'bg-primary text-black border-primary' 
+                                  : 'bg-transparent text-muted border-muted/30 hover:border-muted'
+                              }`}
+                            >
+                              Featured
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isBest) {
+                                  setBestSellerProducts(bestSellerProducts.filter(id => id !== p.id));
+                                } else {
+                                  setBestSellerProducts([...bestSellerProducts, p.id]);
+                                }
+                                markChanged();
+                              }}
+                              className={`px-2 py-1 rounded text-[9px] font-mono uppercase tracking-wider border transition-colors ${
+                                isBest 
+                                  ? 'bg-green-500/10 text-green-500 border-green-500/30' 
+                                  : 'bg-transparent text-muted border-muted/30 hover:border-muted'
+                              }`}
+                            >
+                              Best Seller
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Spacing spacer instead of static save button */}
+        <div className="pt-4" />
 
         {/* Danger Zone */}
         <section className="pt-10 border-t border-border">
@@ -1975,6 +1963,51 @@ export const ShopEdit = () => {
           </div>
         </div>
       )}
+
+      {/* Floating always-visible Save Changes Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-40 max-w-[430px] mx-auto flex flex-col gap-1.5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="w-full py-4 text-xs tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
+          style={{
+            background: saveSuccess
+              ? '#10b981'
+              : saving
+                ? '#1f2937'
+                : '#C6FF00',
+            color: saveSuccess || saving
+              ? '#ffffff'
+              : '#000000',
+            border: 'none',
+            borderRadius: '14px',
+            cursor: saving ? 'not-allowed' : 'pointer',
+            fontWeight: 800,
+            fontFamily: 'sans-serif'
+          }}
+        >
+          {saving ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Saving...
+            </>
+          ) : saveSuccess ? (
+            <>
+              <Check size={16} />
+              Saved!
+            </>
+          ) : (
+            'Save Changes'
+          )}
+        </button>
+
+        {saveError && (
+          <p className="text-[10px] text-red text-center font-mono uppercase tracking-tight">
+            {saveError}
+          </p>
+        )}
+      </div>
     </div>
   );
 };

@@ -22,6 +22,17 @@ export interface StorefrontConfig {
   };
   layout_style?: string; // 'default' | 'fashion-editorial' | 'bento-grid'
   theme_selection?: 'streetwear' | 'luxury' | 'minimalist' | 'vintage' | 'sportswear';
+  suburb?: string;
+  city?: string;
+  google_maps_url?: string;
+  pickup_available?: boolean;
+  pickup_label?: string;
+  landmark?: string;
+  directions?: string;
+  online_only?: boolean;
+  delivery_info?: string;
+  instagram_url?: string;
+  trading_hours?: any[];
 }
 
 const CONFIG_DELIMITER = '\n\n---STOREFRONT_CONFIG---\n';

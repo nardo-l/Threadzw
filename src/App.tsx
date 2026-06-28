@@ -25,7 +25,6 @@ import { ToastContainer } from './components/ToastContainer';
 import { FollowProvider } from './context/FollowContext';
 import { InventoryProvider } from './context/InventoryContext';
 import { Toaster } from 'sonner';
-import { PublicShopPage } from './screens/PublicShopPage';
 import { LandingPage } from './screens/LandingPage';
 import { AdminLeads } from './screens/AdminLeads';
 import { SetupShop } from './screens/SetupShop';
@@ -138,7 +137,10 @@ function AppContent() {
     // Synced path push
     if (stage === 'landing') navigate('/');
     else if (stage === 'building') navigate('/building');
-    else if (stage === 'dashboard') navigate('/dashboard');
+    else if (stage === 'dashboard') {
+      refreshShop();
+      navigate('/dashboard');
+    }
     else if (stage === 'admin') navigate('/admin');
     else if (stage === 'setup') navigate('/setup');
   };

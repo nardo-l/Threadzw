@@ -69,7 +69,16 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { shop, refreshShop, loading: shopLoading } = useShopContext();
+  const { shop, refreshShop, loading: shopLoading, authLoading } = useShopContext();
+
+  const [minLoadingFinished, setMinLoadingFinished] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMinLoadingFinished(true);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProds, setLoadingProds] = useState(true);
@@ -434,6 +443,13 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         if (error) throw error;
         toast.success('Product details updated!');
       } else {
+        console.log("PRODUCT SHOP ID:", shop?.id);
+        console.log("PRODUCT OWNER ID:", user?.id);
+
+        if (!shop?.id || String(shop.id).startsWith('local-shop-') || shop.id === '55555555-5555-5555-5555-555555555555') {
+          throw new Error("Cannot create product: No active, valid shop found for your profile.");
+        }
+
         const { error } = await supabase
           .from('products')
           .insert([productPayload]);
@@ -546,12 +562,55 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
   const defaultAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
 
-  if (shopLoading) {
+  if (shopLoading || authLoading || !minLoadingFinished) {
     return (
-      <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center text-zinc-900 font-sans">
-        <div className="text-center space-y-4">
-          <Loader2 className="animate-spin text-[#C6FF00] mx-auto" size={40} />
-          <p className="text-xs text-zinc-400 font-medium tracking-wider uppercase">Loading Secure Workspace...</p>
+      <div className="min-h-screen bg-[#F9FAFB] text-zinc-800 font-sans pb-28 max-w-[430px] mx-auto relative border-x border-zinc-100">
+        {/* Skeleton Top Bar */}
+        <div className="h-16 border-b border-zinc-100 bg-white px-5 flex items-center justify-between sticky top-0 z-40">
+          <div className="w-24 h-5 bg-zinc-200 rounded animate-pulse" />
+          <div className="w-8 h-8 bg-zinc-200 rounded-full animate-pulse" />
+        </div>
+
+        {/* Skeleton Banner */}
+        <div className="w-full h-44 bg-zinc-200 relative animate-pulse">
+          {/* Skeleton Logo */}
+          <div className="absolute -bottom-8 left-5 w-20 h-20 bg-zinc-300 rounded-full border-4 border-[#F9FAFB] animate-pulse" />
+        </div>
+
+        {/* Skeleton Shop Info */}
+        <div className="px-5 pt-12 space-y-2">
+          <div className="w-40 h-6 bg-zinc-200 rounded animate-pulse" />
+          <div className="w-56 h-3.5 bg-zinc-200 rounded animate-pulse" />
+          <div className="w-32 h-3.5 bg-zinc-200 rounded animate-pulse" />
+        </div>
+
+        {/* Skeleton Analytics Cards */}
+        <div className="grid grid-cols-2 gap-3.5 px-5 pt-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={`sk-card-${i}`} className="bg-white border border-zinc-100 p-4 rounded-2xl space-y-2 animate-pulse">
+              <div className="w-12 h-3 bg-zinc-200 rounded" />
+              <div className="w-16 h-6 bg-zinc-200 rounded" />
+            </div>
+          ))}
+        </div>
+
+        {/* Skeleton Products List Header */}
+        <div className="px-5 pt-8 pb-3 flex justify-between items-center">
+          <div className="w-28 h-5 bg-zinc-200 rounded animate-pulse" />
+          <div className="w-16 h-8 bg-zinc-100 rounded-full animate-pulse" />
+        </div>
+
+        {/* Skeleton Product Cards */}
+        <div className="grid grid-cols-2 gap-3.5 px-5">
+          {[1, 2].map((i) => (
+            <div key={`sk-prod-${i}`} className="bg-white border border-zinc-100 rounded-2xl p-3.5 space-y-3 shadow-xs">
+              <div className="aspect-square w-full bg-zinc-200 rounded-xl animate-pulse" />
+              <div className="space-y-1.5 animate-pulse">
+                <div className="w-3/4 h-3.5 bg-zinc-200 rounded" />
+                <div className="w-1/3 h-4 bg-zinc-200 rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

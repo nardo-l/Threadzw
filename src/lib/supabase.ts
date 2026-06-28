@@ -661,6 +661,10 @@ supabase.from = function(relation: string) {
                 }
 
                 if (val && val.error) {
+                  if (rel === 'shops' || rel === 'products' || rel === 'profiles') {
+                    console.error("DATABASE ERROR:", val.error);
+                    return val;
+                  }
                   console.warn(`Database query returned error on ${rel}:`, val.error);
                   const fb = getFallbackForRelation(
                     rel, 
@@ -675,6 +679,9 @@ supabase.from = function(relation: string) {
 
                 // Fall back if database query successfully executed but returned no matching row
                 if (val && !val.error && (!val.data || (Array.isArray(val.data) && val.data.length === 0))) {
+                  if (rel === 'shops' || rel === 'products' || rel === 'profiles') {
+                    return val;
+                  }
                   const fb = getFallbackForRelation(
                     rel, 
                     state.isSingle, 
@@ -691,6 +698,10 @@ supabase.from = function(relation: string) {
                 return val;
               },
               (err) => {
+                if (rel === 'shops' || rel === 'products' || rel === 'profiles') {
+                  console.error("DATABASE ERROR:", err);
+                  return { data: null, error: err };
+                }
                 console.warn(`Database query failed/timeout on ${rel}:`, err);
                 const fb = getFallbackForRelation(
                   rel, 
