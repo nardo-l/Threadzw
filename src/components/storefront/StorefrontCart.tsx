@@ -1,11 +1,12 @@
 // src/components/storefront/StorefrontCart.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Truck, Store } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
 import { CartItem } from './types';
 
 interface StorefrontCartProps {
+  shop?: any;
   cart: CartItem[];
   onUpdateQuantity: (itemId: string, delta: number) => void;
   onRemoveItem: (itemId: string) => void;
@@ -15,6 +16,7 @@ interface StorefrontCartProps {
 }
 
 export const StorefrontCart: React.FC<StorefrontCartProps> = ({
+  shop,
   cart,
   onUpdateQuantity,
   onRemoveItem,
@@ -38,70 +40,70 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
   const total = subtotal + deliveryFee;
 
   return (
-    <div className="space-y-6 px-5 pb-16 select-none text-left">
+    <div className="space-y-6 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       <div className="space-y-1.5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#C6FF00] font-mono font-black">Shopping Bag</span>
-        <h2 className="font-syne text-2xl font-black uppercase tracking-tight text-white">Your Cart</h2>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Shopping Bag</span>
+        <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Your Cart</h2>
       </div>
 
       {cart.length === 0 ? (
-        <div className="py-20 text-center text-neutral-500 space-y-4">
-          <ShoppingBag className="w-16 h-16 mx-auto text-neutral-800 animate-bounce" />
-          <p className="text-xs font-mono uppercase tracking-widest">Your shopping bag is empty</p>
+        <div className="py-24 text-center text-zinc-400 space-y-4">
+          <ShoppingBag className="w-12 h-12 mx-auto text-zinc-200 animate-bounce" />
+          <p className="text-xs font-semibold text-zinc-500 font-sans">Your shopping bag is empty</p>
           <button
             onClick={() => onNavigateToPage('shop')}
-            className="px-6 py-3 bg-[#C6FF00] text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:opacity-90 transition-all cursor-pointer"
+            className="px-6 py-2.5 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 transition-colors cursor-pointer shadow-xs font-sans"
           >
             Browse Collections
           </button>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 font-sans">
           {/* Cart items list */}
           <div className="space-y-3">
             {cart.map((item, idx) => (
               <div
                 key={`cart-row-${item.id || idx}`}
-                className="flex gap-4 bg-neutral-900/40 border border-neutral-800/60 rounded-2xl p-3 items-center hover:border-neutral-800 transition-colors"
+                className="flex gap-4 bg-white border border-zinc-150 rounded-2xl p-3 items-center hover:border-zinc-200 transition-colors shadow-xs"
               >
                 {/* Image */}
-                <div className="w-16 h-20 bg-neutral-950 rounded-xl overflow-hidden shrink-0">
-                  <ProductImage product={item.product} index={0} className="w-full h-full object-cover" />
+                <div className="w-16 h-20 bg-zinc-50 rounded-xl overflow-hidden shrink-0">
+                  <ProductImage product={item.product} shop={shop} index={0} className="w-full h-full object-cover" />
                 </div>
 
                 {/* Metadata */}
-                <div className="flex-grow space-y-0.5 min-w-0">
-                  <h4 className="text-xs font-bold uppercase truncate text-neutral-100">{item.product.name}</h4>
-                  <p className="text-[9.5px] uppercase font-mono text-neutral-500 tracking-wider">
+                <div className="flex-grow space-y-0.5 min-w-0 text-left">
+                  <h4 className="text-xs font-bold text-zinc-800 truncate font-sans">{item.product.name}</h4>
+                  <p className="text-[10px] text-zinc-400 font-sans">
                     Size: {item.size} {item.color ? `| Color: ${item.color}` : ''}
                   </p>
-                  <span className="text-xs font-black text-[#C6FF00] font-mono block">${item.product.price}</span>
+                  <span className="text-xs font-bold text-zinc-950 block font-sans">${item.product.price}</span>
                 </div>
 
                 {/* Actions */}
                 <div className="flex flex-col items-end gap-3 shrink-0">
                   <button
                     onClick={() => onRemoveItem(item.id)}
-                    className="p-1 text-neutral-500 hover:text-red-500 transition-colors cursor-pointer"
+                    className="p-1 text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
                     title="Remove item"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
 
                   {/* Quantity control */}
-                  <div className="flex items-center gap-1.5 bg-neutral-950 border border-neutral-800 rounded-lg px-2 py-1">
+                  <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-250/60 rounded-lg px-2 py-0.5">
                     <button
                       onClick={() => onUpdateQuantity(item.id, -1)}
-                      className="text-neutral-400 hover:text-white cursor-pointer"
+                      className="text-zinc-500 hover:text-green-600 cursor-pointer p-0.5"
                     >
-                      <Minus className="w-3 h-3" />
+                      <Minus className="w-2.5 h-2.5" />
                     </button>
-                    <span className="text-xs font-mono font-extrabold w-4 text-center text-white">{item.quantity}</span>
+                    <span className="text-xs font-bold w-4 text-center text-zinc-800">{item.quantity}</span>
                     <button
                       onClick={() => onUpdateQuantity(item.id, 1)}
-                      className="text-neutral-400 hover:text-white cursor-pointer"
+                      className="text-zinc-500 hover:text-green-600 cursor-pointer p-0.5"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-2.5 h-2.5" />
                     </button>
                   </div>
                 </div>
@@ -110,27 +112,27 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
           </div>
 
           {/* ----------------- DELIVERY METHOD ----------------- */}
-          <div className="bg-neutral-900/40 border border-neutral-800/60 rounded-2xl p-4 space-y-3">
-            <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500 font-bold block">Delivery Option</span>
+          <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-3">
+            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block">Delivery Option</span>
             
-            <div className="space-y-2">
+            <div className="space-y-2 text-left">
               {/* Pickup Option */}
               <div
                 onClick={() => onChangeShippingMethod('pickup')}
                 className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
                   shippingMethod === 'pickup'
-                    ? 'bg-[#C6FF00]/5 border-[#C6FF00] text-[#C6FF00]'
-                    : 'bg-neutral-950 border-neutral-850 hover:border-neutral-700 text-neutral-300'
+                    ? 'bg-green-500/5 border-green-500 text-green-700'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <Store className="w-4 h-4 shrink-0" />
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider block">Boutique Pickup</span>
-                    <span className="text-[9px] text-neutral-500 font-mono">Collect in Bulawayo showroom</span>
+                    <span className="text-[11px] font-bold block font-sans">Boutique Pickup</span>
+                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Collect in Bulawayo/Harare showroom</span>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold uppercase">Free</span>
+                <span className="text-xs font-bold uppercase font-sans">Free</span>
               </div>
 
               {/* Harare Delivery */}
@@ -138,18 +140,18 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
                 onClick={() => onChangeShippingMethod('harare')}
                 className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
                   shippingMethod === 'harare'
-                    ? 'bg-[#C6FF00]/5 border-[#C6FF00] text-[#C6FF00]'
-                    : 'bg-neutral-950 border-neutral-850 hover:border-neutral-700 text-neutral-300'
+                    ? 'bg-green-500/5 border-green-500 text-green-700'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <Truck className="w-4 h-4 shrink-0" />
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider block">Harare Courier Delivery</span>
-                    <span className="text-[9px] text-neutral-500 font-mono">Delivered to your Harare coordinates</span>
+                    <span className="text-[11px] font-bold block font-sans">Harare Courier Delivery</span>
+                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Delivered to your Harare coordinates</span>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold">$5.00</span>
+                <span className="text-xs font-bold font-sans">$5.00</span>
               </div>
 
               {/* Nationwide Courier */}
@@ -157,44 +159,44 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
                 onClick={() => onChangeShippingMethod('nationwide')}
                 className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
                   shippingMethod === 'nationwide'
-                    ? 'bg-[#C6FF00]/5 border-[#C6FF00] text-[#C6FF00]'
-                    : 'bg-neutral-950 border-neutral-850 hover:border-neutral-700 text-neutral-300'
+                    ? 'bg-green-500/5 border-green-500 text-green-700'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <Truck className="w-4 h-4 shrink-0" />
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider block">Zimbabwe Nationwide Courier</span>
-                    <span className="text-[9px] text-neutral-500 font-mono">Certified courier shipping across Zimbabwe</span>
+                    <span className="text-[11px] font-bold block font-sans">Nationwide Courier</span>
+                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Certified shipping across Zimbabwe</span>
                   </div>
                 </div>
-                <span className="text-xs font-mono font-bold">$7.00</span>
+                <span className="text-xs font-bold font-sans">$7.00</span>
               </div>
             </div>
           </div>
 
           {/* ----------------- PRICE CALCULATION SUMMARY ----------------- */}
-          <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-[24px] p-5 space-y-3.5">
-            <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-500 font-bold block">Summary Breakdown</span>
+          <div className="bg-zinc-50 border border-zinc-150 rounded-[20px] p-5 space-y-4">
+            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block">Summary Breakdown</span>
             
             <div className="space-y-2 text-xs font-medium">
-              <div className="flex justify-between text-neutral-400">
+              <div className="flex justify-between text-zinc-500 font-sans">
                 <span>Subtotal</span>
-                <span className="font-mono text-neutral-200">${subtotal} USD</span>
+                <span className="font-bold text-zinc-800">${subtotal} USD</span>
               </div>
-              <div className="flex justify-between text-neutral-400">
+              <div className="flex justify-between text-zinc-500 font-sans">
                 <span>Delivery</span>
-                <span className="font-mono text-neutral-200">${deliveryFee === 0 ? '0.00' : `${deliveryFee}.00`} USD</span>
+                <span className="font-bold text-zinc-800">${deliveryFee === 0 ? '0.00' : `${deliveryFee}.00`} USD</span>
               </div>
-              <div className="border-t border-neutral-800 pt-2.5 flex justify-between items-end text-sm font-semibold">
-                <span className="text-white uppercase tracking-wider font-extrabold text-xs">Total</span>
-                <span className="text-xl font-black text-[#C6FF00] font-mono">${total} USD</span>
+              <div className="border-t border-zinc-200 pt-3 flex justify-between items-end text-sm">
+                <span className="text-zinc-900 font-bold text-xs uppercase tracking-wider font-sans">Total</span>
+                <span className="text-lg font-bold text-zinc-900 font-sans">${total} USD</span>
               </div>
             </div>
 
             <button
               onClick={() => onNavigateToPage('checkout')}
-              className="w-full py-4 mt-2 bg-[#C6FF00] text-black font-black text-xs uppercase tracking-[2px] rounded-xl hover:opacity-90 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#C6FF00]/10 font-sans"
+              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs font-sans"
             >
               Proceed to checkout <ArrowRight className="w-4 h-4" />
             </button>

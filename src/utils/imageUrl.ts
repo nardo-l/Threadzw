@@ -32,7 +32,9 @@ export const getImageUrl = (
   if (finalPath.startsWith('http')) return finalPath;
   
   // Path with bucket prefix
-  if (finalPath.startsWith('shop-images/')) {
+  const buckets = ['shop-images', 'product-images', 'shop-banners', 'shop-avatars'];
+  const hasBucketPrefix = buckets.some(b => finalPath.startsWith(`${b}/`));
+  if (hasBucketPrefix) {
     return `${STORAGE_BASE}/${finalPath}`;
   }
   

@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontOrderSuccess.tsx
 import React from 'react';
 import { motion } from 'motion/react';
-import { CheckCircle, ShoppingBag, MessageCircle, Copy, ArrowRight, Clipboard } from 'lucide-react';
+import { CheckCircle, MessageCircle, Copy, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface StorefrontOrderSuccessProps {
@@ -15,10 +15,9 @@ export const StorefrontOrderSuccess: React.FC<StorefrontOrderSuccessProps> = ({
   lastOrder,
   onNavigateToPage
 }) => {
-  // If lastOrder is empty for some reason, provide general defaults
   const orderRef = lastOrder?.orderReference || '#TZW-7241';
   const customerName = lastOrder?.customerName || 'Boutique Enthusiast';
-  const deliveryAddress = lastOrder?.deliveryAddress || 'Showroom Pickup (Bulawayo)';
+  const deliveryAddress = lastOrder?.deliveryAddress || 'Showroom Pickup';
   const totalPrice = lastOrder?.totalPrice || 0;
   const items = lastOrder?.items || [];
 
@@ -29,86 +28,86 @@ export const StorefrontOrderSuccess: React.FC<StorefrontOrderSuccessProps> = ({
 
   const handleContactSeller = () => {
     const phone = (shop.whatsapp_number || shop.whatsapp || '263771234567').replace(/\D/g, '');
-    const text = `Hi ${shop.name}, I'm contacting you regarding order *${orderRef}* placed on your storefront. Please update me on the logistics process!`;
+    const text = `Hi ${shop.name}, I am contacting you regarding my order *${orderRef}* placed on your storefront. Please update me on the logistics process!`;
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
 
   return (
-    <div className="space-y-6 px-5 pb-16 select-none text-center">
+    <div className="space-y-6 px-5 pb-24 select-none text-center bg-white min-h-screen pt-4 font-sans">
       {/* ----------------- SUCCESS CELEBRATION CARD ----------------- */}
       <div className="pt-8 pb-4 flex flex-col items-center space-y-4">
         <motion.div
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 15 }}
-          className="w-16 h-16 rounded-full bg-[#C6FF00]/10 border border-[#C6FF00]/35 flex items-center justify-center text-[#C6FF00]"
+          className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center text-green-600"
         >
           <CheckCircle className="w-8 h-8 stroke-[2]" />
         </motion.div>
 
         <div className="space-y-1">
-          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#C6FF00] font-mono">Boutique Purchase</span>
-          <h2 className="font-syne text-2xl font-black uppercase tracking-tight text-white leading-none">Order Confirmed!</h2>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Boutique Purchase</span>
+          <h2 className="text-xl font-bold tracking-tight text-zinc-900 leading-none font-sans">Order Confirmed!</h2>
         </div>
 
-        <p className="text-xs text-neutral-400 max-w-xs leading-relaxed">
-          Your tailored order coordinates have been compiled successfully. We have registered your details in our logistics database.
+        <p className="text-xs text-zinc-500 max-w-xs leading-relaxed font-sans font-medium">
+          Your order has been compiled successfully. We have registered your details in our logistics database.
         </p>
       </div>
 
       {/* ----------------- ORDER CODE CARD ----------------- */}
-      <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-4.5 space-y-2.5 text-center">
-        <span className="text-[9px] uppercase font-mono tracking-widest text-neutral-500 font-bold block">Logistics Code Reference</span>
+      <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-5 space-y-2 text-center shadow-xs">
+        <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block">Logistics Code Reference</span>
         
         <div className="flex items-center justify-center gap-2">
-          <span className="font-mono text-xl font-black text-[#C6FF00] tracking-wider">{orderRef}</span>
+          <span className="font-mono text-xl font-bold text-zinc-900 tracking-wider">{orderRef}</span>
           <button
             onClick={handleCopyCode}
-            className="p-1.5 hover:bg-neutral-800 rounded-md text-neutral-400 hover:text-white cursor-pointer"
+            className="p-1.5 hover:bg-zinc-200/50 rounded-md text-zinc-500 hover:text-zinc-900 cursor-pointer transition-colors"
             title="Copy Order Code"
           >
             <Copy className="w-4 h-4" />
           </button>
         </div>
 
-        <p className="text-[9.5px] text-neutral-500 leading-normal">
+        <p className="text-[11px] text-zinc-500 leading-normal font-sans font-medium">
           Keep this code safe. Use this to monitor delivery updates on our Track Order screen.
         </p>
       </div>
 
       {/* ----------------- SUMMARY BREAKDOWN ----------------- */}
-      <div className="bg-neutral-900/30 border border-neutral-800/80 rounded-[20px] p-5 text-left space-y-4">
-        <span className="text-[10px] uppercase font-mono tracking-widest text-neutral-550 font-bold block">Delivery & Details</span>
+      <div className="bg-zinc-50/50 border border-zinc-150 rounded-2xl p-5 text-left space-y-4">
+        <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block">Delivery & Details</span>
 
-        <div className="space-y-3.5 text-xs text-neutral-300">
+        <div className="space-y-3.5 text-xs text-zinc-600">
           <div>
-            <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-500 block">Recipient</span>
-            <span className="font-bold text-neutral-100">{customerName}</span>
+            <span className="text-[9px] uppercase tracking-wider text-zinc-400 block font-bold">Recipient</span>
+            <span className="font-bold text-zinc-800 font-sans">{customerName}</span>
           </div>
 
           <div>
-            <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-500 block">Physical Coordinates</span>
-            <span className="font-bold text-neutral-100 leading-relaxed">{deliveryAddress}</span>
+            <span className="text-[9px] uppercase tracking-wider text-zinc-400 block font-bold">Physical Coordinates</span>
+            <span className="font-semibold text-zinc-800 leading-relaxed font-sans">{deliveryAddress}</span>
           </div>
 
           {items.length > 0 && (
             <div>
-              <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-500 block mb-1">Items Compiled</span>
-              <div className="space-y-1.5 font-mono text-[10px]">
+              <span className="text-[9px] uppercase tracking-wider text-zinc-400 block mb-1.5 font-bold">Items Compiled</span>
+              <div className="space-y-1.5 font-sans text-xs">
                 {items.map((i: any, idx: number) => (
-                  <div key={idx} className="flex justify-between border-b border-neutral-900/80 pb-1 text-neutral-400">
+                  <div key={idx} className="flex justify-between border-b border-zinc-100 pb-1 text-zinc-500">
                     <span>{i.name} (x{i.quantity}) {i.size ? `[Size ${i.size}]` : ''}</span>
-                    <span className="text-neutral-300">${i.price * i.quantity} USD</span>
+                    <span className="text-zinc-800 font-bold">${i.price * i.quantity} USD</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="border-t border-neutral-850 pt-3 flex justify-between items-baseline">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Total Charged</span>
-            <span className="text-base font-black text-[#C6FF00] font-mono">${totalPrice} USD</span>
+          <div className="border-t border-zinc-150 pt-3 flex justify-between items-baseline">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Total Charged</span>
+            <span className="text-base font-bold text-zinc-900 font-sans">${totalPrice} USD</span>
           </div>
         </div>
       </div>
@@ -117,14 +116,14 @@ export const StorefrontOrderSuccess: React.FC<StorefrontOrderSuccessProps> = ({
       <div className="space-y-2.5 pt-2">
         <button
           onClick={handleContactSeller}
-          className="w-full py-4 bg-neutral-900 border border-neutral-800 text-white font-extrabold text-xs uppercase tracking-[2px] rounded-xl hover:border-neutral-700 flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors border border-zinc-200"
         >
-          <MessageCircle className="w-4 h-4 text-emerald-400 fill-current" /> Contact Seller Agent
+          <MessageCircle className="w-4 h-4 text-green-600 fill-green-100" /> Contact Seller Agent
         </button>
 
         <button
           onClick={() => onNavigateToPage('home')}
-          className="w-full py-4 bg-[#C6FF00] text-black font-black text-xs uppercase tracking-[2px] rounded-xl hover:opacity-90 flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#C6FF00]/5"
+          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
         >
           Continue Shopping <ArrowRight className="w-4 h-4" />
         </button>

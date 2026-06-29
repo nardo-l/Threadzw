@@ -110,26 +110,25 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       </div>
 
       {/* ----------------- 2. SHOP HIGHLIGHT CARDS (DYNAMIC DIRECTIVES) ----------------- */}
-      <div id="home-highlight-cards" className="px-5 space-y-4">
-        <div className="space-y-1">
+      <div id="home-highlight-cards" className="space-y-3">
+        <div className="px-5 space-y-0.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Featured Info</span>
           <h3 className="text-base font-bold text-zinc-900">Why Shop With Us</h3>
         </div>
 
-        <div className="space-y-3.5">
+        {/* Swipeable Horizontal Scroll Container */}
+        <div className="flex gap-4 overflow-x-auto pb-4 pt-1 scrollbar-none snap-x snap-mandatory px-5">
           {highlightCards.map((card, idx) => (
             <motion.div
               key={`card-${idx}`}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05, duration: 0.3 }}
-              className={`p-4.5 rounded-2xl border ${card.bg} flex flex-col gap-1.5 shadow-xs hover:scale-[1.01] transition-transform`}
+              className={`snap-center shrink-0 w-[240px] p-5 rounded-2xl border ${card.bg} flex flex-col gap-2 shadow-md hover:scale-[1.01] transition-all relative select-none`}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-xl leading-none">{card.icon}</span>
-                <h4 className="font-bold text-xs tracking-tight text-zinc-900">{card.title}</h4>
-              </div>
-              <p className="text-[11px] leading-relaxed opacity-95 text-zinc-800 first-letter:text-lg first-letter:font-bold first-letter:mr-0.5 first-letter:float-left">
+              <span className="text-3xl filter drop-shadow-xs mb-1 block">{card.icon}</span>
+              <h4 className="font-bold text-sm tracking-tight text-zinc-900">{card.title}</h4>
+              <p className="text-[11px] leading-relaxed text-zinc-600 font-sans">
                 {card.desc}
               </p>
             </motion.div>
@@ -181,7 +180,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                   </button>
 
                   <div className="aspect-[4/5] rounded-xl overflow-hidden bg-zinc-50 relative">
-                    <ProductImage product={p} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <ProductImage product={p} shop={shop} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     {p.compare_at_price && p.compare_at_price > p.price && (
                       <span className="absolute bottom-2 left-2 bg-red-500 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-md">
                         SALE

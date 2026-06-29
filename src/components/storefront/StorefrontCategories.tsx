@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontCategories.tsx
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Filter, Shirt, HardHat, Sparkles, Smartphone, Eye, Gem, ShoppingBag } from 'lucide-react';
+import { ChevronRight, Shirt, HardHat, Sparkles, Smartphone, Eye, Gem, ShoppingBag } from 'lucide-react';
 
 interface StorefrontCategoriesProps {
   products: any[];
@@ -68,18 +68,15 @@ export const StorefrontCategories: React.FC<StorefrontCategoriesProps> = ({
     return counts;
   }, [products]);
 
-  // Click handler to open and filter in shop
   const handleSelectCategory = (catName: string) => {
-    // Map selecting to actual product category filtering
-    // In our shop, we filter products by subcategory directly, so we pass down the category query
     onNavigateToPage('shop', { category: catName });
   };
 
   return (
-    <div className="space-y-6 px-5 pb-16 select-none text-left">
+    <div className="space-y-6 px-5 pb-20 select-none text-left bg-white min-h-screen pt-4">
       <div className="space-y-1.5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#C6FF00] font-mono">Curated Drops</span>
-        <h2 className="font-syne text-2xl font-black uppercase tracking-tight text-white">Categories</h2>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Curated Drops</span>
+        <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Categories</h2>
       </div>
 
       <div className="space-y-3.5">
@@ -92,35 +89,35 @@ export const StorefrontCategories: React.FC<StorefrontCategoriesProps> = ({
               whileTap={{ scale: 0.98 }}
               key={`category-row-${cat.name}-${idx}`}
               onClick={() => handleSelectCategory(cat.name)}
-              className="relative h-28 rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800/80 hover:border-[#C6FF00]/30 cursor-pointer transition-all flex items-center group shadow-md"
+              className="relative h-24 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-150 cursor-pointer transition-all flex items-center group shadow-xs"
             >
               {/* Background cover */}
               <div className="absolute inset-0 z-0">
                 <img 
                   src={cat.banner} 
                   alt={cat.name} 
-                  className="w-full h-full object-cover filter brightness-[0.35] grayscale group-hover:scale-105 group-hover:brightness-[0.4] transition-all duration-700" 
+                  className="w-full h-full object-cover filter brightness-[0.45] grayscale group-hover:scale-103 group-hover:brightness-[0.4] transition-all duration-500" 
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
               </div>
 
               {/* Content overlay */}
               <div className="absolute inset-0 flex items-center justify-between p-5 z-10">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-black/60 border border-white/5 flex items-center justify-center text-[#C6FF00]">
+                  <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-xs border border-white/20 flex items-center justify-center text-white">
                     <IconComp className="w-5 h-5" />
                   </div>
                   <div className="space-y-0.5">
-                    <h3 className="font-syne text-sm font-black uppercase tracking-wider text-white leading-tight">
+                    <h3 className="text-sm font-bold tracking-wide text-white font-sans">
                       {cat.name}
                     </h3>
-                    <p className="text-[10px] uppercase font-mono font-bold text-neutral-400 tracking-widest">
+                    <p className="text-[10px] font-bold text-zinc-300 font-sans">
                       {count} items listed
                     </p>
                   </div>
                 </div>
 
-                <div className="w-8 h-8 rounded-full bg-black/40 border border-white/5 flex items-center justify-center text-neutral-400 group-hover:text-[#C6FF00] group-hover:border-[#C6FF00]/20 transition-all">
+                <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-xs border border-white/15 flex items-center justify-center text-white group-hover:bg-green-600 group-hover:border-green-600 transition-colors">
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </div>

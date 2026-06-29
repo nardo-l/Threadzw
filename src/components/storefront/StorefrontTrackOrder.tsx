@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontTrackOrder.tsx
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { Search, Loader2, HelpCircle, Package, MapPin, Truck, CheckCircle2, MessageCircle } from 'lucide-react';
+import { Search, Loader2, HelpCircle, Package, MapPin, Truck, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 
@@ -21,13 +21,12 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
   const [loading, setLoading] = useState(false);
   const [orderResults, setOrderResults] = useState<any[] | null>(null);
 
-  // Status mapping
-  // Status: 'pending', 'confirmed', 'shipped', 'delivered'
+  // Status mapping: 'pending', 'confirmed', 'shipped', 'delivered'
   const milestones = [
-    { value: 'pending', label: 'Order Pending', desc: 'Awaiting showroom agent confirmation.', icon: Package },
-    { value: 'confirmed', label: 'Confirmed', desc: 'Boutique agents have validated and packed your drops.', icon: MapPin },
-    { value: 'shipped', label: 'Shipped / Dispatched', desc: 'Apparel package dispatched with certified courier logistics.', icon: Truck },
-    { value: 'delivered', label: 'Delivered', desc: 'Successfully collected or dropped at physical coordinates.', icon: CheckCircle2 }
+    { value: 'pending', label: 'Order Pending', desc: 'Awaiting shop agent confirmation.', icon: Package },
+    { value: 'confirmed', label: 'Confirmed', desc: 'Boutique agents have validated and packed your items.', icon: MapPin },
+    { value: 'shipped', label: 'Shipped / Dispatched', desc: 'Package dispatched with courier logistics.', icon: Truck },
+    { value: 'delivered', label: 'Delivered', desc: 'Successfully collected or dropped at delivery coordinates.', icon: CheckCircle2 }
   ];
 
   const handleTrack = async (e: React.FormEvent) => {
@@ -51,7 +50,6 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
       // If phone is provided, let's filter by phone too
       const cleanPhone = phone.replace(/\D/g, '');
       if (cleanPhone) {
-        // Query matching with WhatsApp phone numbers
         query = query.like('customer_whatsapp', `%${cleanPhone}%`);
       }
 
@@ -60,11 +58,11 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
       if (error) throw error;
 
       if (!data || data.length === 0) {
-        toast.error('No matching boutique orders found. Check your reference code.');
+        toast.error('No matching orders found. Check your reference code.');
         setOrderResults([]);
       } else {
         setOrderResults(data);
-        toast.success('Boutique order status synchronized!');
+        toast.success('Order status updated!');
       }
 
     } catch (err) {
@@ -78,7 +76,6 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
   // Compute Active Step index
   const activeStepIdx = useMemo(() => {
     if (!orderResults || orderResults.length === 0) return -1;
-    // Get status of the first item
     const status = orderResults[0].status || 'pending';
     
     if (status === 'pending') return 0;
@@ -90,55 +87,55 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
 
   const handleContactHelp = () => {
     const wa = (shop.whatsapp || shop.whatsapp_number || '+263771234567').replace(/\D/g, '');
-    const textMsg = `Hi ${shop.name}, I need assistance tracking my order details. Reference code: ${orderRef || 'Not Specified'}`;
+    const textMsg = `Hi ${shop.name}, I need assistance tracking my order. Reference code: ${orderRef || 'Not Specified'}`;
     const url = `https://wa.me/${wa}?text=${encodeURIComponent(textMsg)}`;
     window.open(url, '_blank');
   };
 
   return (
-    <div className="space-y-6 px-5 pb-16 select-none text-left">
+    <div className="space-y-6 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       <div className="space-y-1.5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#C6FF00] font-mono">Boutique Logistics</span>
-        <h2 className="font-syne text-2xl font-black uppercase tracking-tight text-white">Track Order</h2>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Track Shipments</span>
+        <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Track Order</h2>
       </div>
 
       {/* ----------------- TRACK SEARCH FORM ----------------- */}
-      <form onSubmit={handleTrack} className="bg-neutral-900/40 border border-neutral-800/60 rounded-[24px] p-5 space-y-4 shadow-md">
+      <form onSubmit={handleTrack} className="bg-zinc-50 border border-zinc-150 rounded-[20px] p-5 space-y-4 shadow-xs">
         <div className="space-y-1">
-          <label className="text-[9px] uppercase font-mono font-bold tracking-widest text-neutral-400">Order Reference Number</label>
+          <label className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold block">Order Reference Number</label>
           <input
             type="text"
             required
             value={orderRef}
             onChange={(e) => setOrderRef(e.target.value)}
             placeholder="e.g. #CAP-1829"
-            className="w-full text-xs font-bold uppercase font-mono bg-neutral-950 border border-neutral-850 rounded-xl focus:border-[#C6FF00] outline-none"
+            className="w-full text-xs font-bold uppercase font-mono bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none p-3 text-zinc-800"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="text-[9px] uppercase font-mono font-bold tracking-widest text-neutral-400">WhatsApp Phone (Optional)</label>
+          <label className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold block">WhatsApp Phone (Optional)</label>
           <input
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="e.g. +263772123456"
-            className="w-full text-xs bg-neutral-950 border border-neutral-850 rounded-xl focus:border-[#C6FF00] outline-none"
+            className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none p-3 text-zinc-800"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 bg-[#C6FF00] text-black font-black text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#C6FF00]/5 hover:opacity-95"
+          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs disabled:opacity-50"
         >
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Retrieving Coordinates...
+              <Loader2 className="w-4 h-4 animate-spin" /> Synchronizing...
             </>
           ) : (
             <>
-              <Search className="w-4 h-4" /> Sync Logistics Status
+              <Search className="w-4 h-4" /> Sync Status
             </>
           )}
         </button>
@@ -147,27 +144,27 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
       {/* ----------------- STEPS TRACKER DISPLAY ----------------- */}
       {orderResults && orderResults.length > 0 && (
         <div className="space-y-6 pt-4">
-          <div className="border-b border-neutral-900 pb-3">
-            <span className="text-[9px] uppercase font-mono tracking-wider text-neutral-500 font-bold block">Current Coordinates</span>
+          <div className="border-b border-zinc-100 pb-3">
+            <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold block">Order Reference</span>
             <div className="flex justify-between items-baseline mt-1">
-              <span className="font-mono text-sm font-black text-white">{orderResults[0].order_reference}</span>
-              <span className="text-[10px] text-neutral-400">Total Charged: <strong className="text-[#C6FF00] font-mono">${orderResults.reduce((acc, o) => acc + Number(o.total_price || 0), 0)} USD</strong></span>
+              <span className="font-mono text-sm font-bold text-zinc-900">{orderResults[0].order_reference}</span>
+              <span className="text-[11px] text-zinc-500 font-medium">Total: <strong className="text-zinc-900 font-bold font-mono">${orderResults.reduce((acc, o) => acc + Number(o.total_price || 0), 0)} USD</strong></span>
             </div>
             {orderResults[0].note && (
-              <p className="text-[10px] text-neutral-500 font-medium leading-relaxed mt-2 italic bg-neutral-900/30 p-2.5 rounded-lg border border-neutral-850">
-                {orderResults[0].note}
+              <p className="text-[11px] text-zinc-600 leading-relaxed mt-2.5 italic bg-zinc-50 p-3 rounded-xl border border-zinc-150">
+                "{orderResults[0].note}"
               </p>
             )}
           </div>
 
-          {/* MILISTONE STEPPER */}
+          {/* MILESTONE STEPPER */}
           <div className="relative pl-8 space-y-8 pb-4">
             {/* Vertical connector line */}
-            <div className="absolute left-[13px] top-3 bottom-3 w-[2px] bg-neutral-850" />
+            <div className="absolute left-[13px] top-3 bottom-3 w-[2px] bg-zinc-100" />
 
             {/* Glowing filled bar indicator */}
             <div 
-              className="absolute left-[13px] top-3 w-[2px] bg-[#C6FF00] transition-all duration-1000" 
+              className="absolute left-[13px] top-3 w-[2px] bg-green-500 transition-all duration-1000" 
               style={{ height: `${(activeStepIdx / 3) * 100}%`, maxHeight: '100%' }}
             />
 
@@ -180,23 +177,23 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
                 <div key={idx} className="relative flex gap-4 text-left">
                   {/* Circle dot marker */}
                   <div 
-                    className={`absolute -left-[27px] w-7 h-7 rounded-full border flex items-center justify-center transition-all duration-500 ${
+                    className={`absolute -left-[27px] w-7 h-7 rounded-full border flex items-center justify-center transition-all duration-300 ${
                       isPast 
-                        ? 'bg-[#000] border-[#C6FF00] text-[#C6FF00] shadow-lg shadow-[#C6FF00]/10' 
-                        : 'bg-[#111] border-neutral-800 text-neutral-600'
+                        ? 'bg-green-600 border-green-600 text-white shadow-md shadow-green-100' 
+                        : 'bg-white border-zinc-200 text-zinc-400'
                     }`}
                   >
-                    <IconComp className={`w-3.5 h-3.5 ${isCurrent ? 'animate-pulse text-[#C6FF00]' : ''}`} />
+                    <IconComp className={`w-3.5 h-3.5 ${isCurrent ? 'animate-pulse' : ''}`} />
                   </div>
 
                   <div className="space-y-0.5">
-                    <h4 className={`text-xs uppercase font-extrabold tracking-wider ${
-                      isPast ? 'text-white' : 'text-neutral-500'
+                    <h4 className={`text-xs font-bold ${
+                      isPast ? 'text-zinc-900' : 'text-zinc-400'
                     }`}>
                       {step.label}
                     </h4>
-                    <p className={`text-[10.5px] leading-relaxed ${
-                      isCurrent ? 'text-neutral-300' : 'text-neutral-500'
+                    <p className={`text-[11px] leading-relaxed ${
+                      isCurrent ? 'text-zinc-700 font-medium' : 'text-zinc-400'
                     }`}>
                       {step.desc}
                     </p>
@@ -209,18 +206,18 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
           {/* Need help footer button */}
           <button
             onClick={handleContactHelp}
-            className="w-full py-3.5 bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-extrabold uppercase tracking-widest rounded-xl hover:border-neutral-700 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 text-zinc-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
           >
-            <HelpCircle className="w-4 h-4 text-[#C6FF00]" /> Need Logistics Assistance?
+            Need Assistance?
           </button>
         </div>
       )}
 
       {/* Blank Empty Search results */}
       {orderResults === null && (
-        <div className="py-12 text-center text-neutral-600 space-y-3.5">
-          <HelpCircle className="w-12 h-12 mx-auto text-neutral-800 opacity-80" />
-          <p className="text-xs font-mono uppercase tracking-widest">Awaiting Logistics Reference input</p>
+        <div className="py-20 text-center text-zinc-300 space-y-3.5">
+          <HelpCircle className="w-12 h-12 mx-auto text-zinc-200" />
+          <p className="text-xs font-semibold tracking-wide text-zinc-400">Awaiting tracking reference input</p>
         </div>
       )}
     </div>

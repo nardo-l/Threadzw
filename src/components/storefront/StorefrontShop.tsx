@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontShop.tsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, SlidersHorizontal, Check, ArrowUpDown, Grid, ShoppingBag } from 'lucide-react';
+import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
 
 interface StorefrontShopProps {
@@ -27,7 +27,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   
   // Infinite Scroll States
-  const [visibleCount, setVisibleCount] = useState(6);
+  const [visibleCount, setVisibleCount] = useState(8);
   const [loadingMore, setLoadingMore] = useState(false);
 
   // Sync with initial props
@@ -41,10 +41,10 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
 
   // List of Sort Options
   const sortOptions = [
-    { value: 'newest', label: 'Newest drops' },
-    { value: 'price-asc', label: 'Price: Low → High' },
-    { value: 'price-desc', label: 'Price: High → Low' },
-    { value: 'best-selling', label: 'Best Selling' }
+    { value: 'newest', label: 'Newest Releases' },
+    { value: 'price-asc', label: 'Price: Low to High' },
+    { value: 'price-desc', label: 'Price: High to Low' },
+    { value: 'best-selling', label: 'Popularity' }
   ];
 
   // Process & Filter Products
@@ -91,57 +91,61 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
     if (visibleCount >= filteredProducts.length) return;
     setLoadingMore(true);
     setTimeout(() => {
-      setVisibleCount(prev => prev + 6);
+      setVisibleCount(prev => prev + 8);
       setLoadingMore(false);
-    }, 800);
+    }, 600);
   };
 
   const hasMore = visibleCount < filteredProducts.length;
 
   return (
-    <div className="space-y-6 px-5 pb-16 select-none text-left">
+    <div className="space-y-6 px-4 pb-20 select-none text-left bg-white min-h-screen">
       {/* ----------------- SHOP HEADER & SEARCH ----------------- */}
-      <div className="space-y-2">
-        <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#C6FF00] font-mono">Boutique Collection</span>
-        <h2 className="font-syne text-2xl font-black uppercase tracking-tight text-white">Shop Drops</h2>
+      <div className="space-y-1.5 pt-4">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">
+          Boutique Catalog
+        </span>
+        <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">
+          Shop Products
+        </h2>
       </div>
 
       {/* Modern Live Search Bar */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            setVisibleCount(6); // reset infinite scroll when searching
+            setVisibleCount(8); // reset when searching
           }}
-          placeholder="Search items, hoodies, collections..."
-          className="w-full text-xs font-bold uppercase font-mono bg-neutral-900 border border-neutral-800 focus:border-[#C6FF00] outline-none rounded-full pl-11 pr-5 py-3.5 text-white placeholder-neutral-500 transition-colors"
+          placeholder="Search items, categories, descriptions..."
+          className="w-full text-xs font-medium bg-zinc-50 border border-zinc-200/60 focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none rounded-xl pl-10 pr-8 py-2.5 text-zinc-900 placeholder-zinc-400 transition-colors font-sans"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-white"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-400 hover:text-zinc-600"
           >
             ✕
           </button>
         )}
       </div>
 
-      {/* ----------------- FILTERS & SORT ROW ----------------- */}
-      <div className="flex items-center justify-between gap-4 border-b border-neutral-900 pb-3">
+      {/* ----------------- STICKY FILTERS & SORT ROW ----------------- */}
+      <div className="sticky top-[52px] z-20 bg-white/95 backdrop-blur-md py-2.5 border-b border-zinc-100 flex items-center justify-between gap-3 overflow-x-auto scrollbar-none">
         {/* Category horizontal filters */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none flex-grow">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none flex-grow">
           <button
             onClick={() => {
               setSelectedCategory('all');
-              setVisibleCount(6);
+              setVisibleCount(8);
             }}
-            className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all shrink-0 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 cursor-pointer ${
               selectedCategory === 'all'
-                ? 'bg-[#C6FF00] text-black border-[#C6FF00]'
-                : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-700'
+                ? 'bg-green-600 text-white border-green-600 shadow-xs'
+                : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
             }`}
           >
             All
@@ -151,12 +155,12 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
               key={`cat-filter-${cat.id || i}`}
               onClick={() => {
                 setSelectedCategory(cat.name);
-                setVisibleCount(6);
+                setVisibleCount(8);
               }}
-              className={`px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border transition-all shrink-0 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 cursor-pointer ${
                 selectedCategory.toLowerCase() === cat.name.toLowerCase()
-                  ? 'bg-[#C6FF00] text-black border-[#C6FF00]'
-                  : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:border-neutral-700'
+                  ? 'bg-green-600 text-white border-green-600 shadow-xs'
+                  : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
               }`}
             >
               {cat.name}
@@ -165,10 +169,10 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
         </div>
 
         {/* Sort Trigger */}
-        <div className="relative shrink-0">
+        <div className="relative shrink-0 pr-1">
           <button
             onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className="px-3.5 py-1.5 rounded-full bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-1.5 rounded-full bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
           >
             <ArrowUpDown className="w-3.5 h-3.5" />
             Sort
@@ -182,21 +186,21 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl overflow-hidden z-50 p-1"
+                  transition={{ duration: 0.12 }}
+                  className="absolute right-0 mt-1.5 w-44 bg-white border border-zinc-200 rounded-xl shadow-lg overflow-hidden z-50 p-1"
                 >
                   {sortOptions.map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => {
                         setSortBy(opt.value);
-                        setVisibleCount(6);
+                        setVisibleCount(8);
                         setShowSortDropdown(false);
                       }}
-                      className="w-full text-left px-4 py-2.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider text-neutral-300 hover:bg-neutral-800 hover:text-white flex items-center justify-between"
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-green-600 flex items-center justify-between transition-colors"
                     >
                       {opt.label}
-                      {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-[#C6FF00]" />}
+                      {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-green-600" />}
                     </button>
                   ))}
                 </motion.div>
@@ -208,65 +212,93 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
 
       {/* ----------------- PRODUCTS GRID ----------------- */}
       {filteredProducts.length === 0 ? (
-        <div className="py-20 text-center text-neutral-500 space-y-3">
-          <ShoppingBag className="w-12 h-12 mx-auto text-neutral-800 animate-pulse" />
-          <p className="text-xs font-mono uppercase tracking-widest">No garments match selection</p>
+        <div className="py-20 text-center text-zinc-400 space-y-3">
+          <ShoppingBag className="w-10 h-10 mx-auto text-zinc-300 animate-pulse" />
+          <p className="text-xs font-medium">No active apparel matches your selection.</p>
         </div>
       ) : (
-        <div className="space-y-8">
-          <div className="grid grid-cols-2 gap-4">
-            {filteredProducts.slice(0, visibleCount).map((p, idx) => (
-              <motion.div
-                layout
-                whileTap={{ scale: 0.98 }}
-                key={`shop-item-${p.id || idx}`}
-                onClick={() => onNavigateToPage('product', { productId: p.id })}
-                className="group cursor-pointer flex flex-col justify-between bg-neutral-900/30 border border-neutral-800/50 hover:border-[#C6FF00]/30 rounded-2xl overflow-hidden transition-all duration-300"
-              >
-                <div className="aspect-[3/4] bg-neutral-950 w-full overflow-hidden relative">
-                  <ProductImage product={p} index={0} className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500" />
-                  
-                  {p.original_price && p.original_price > p.price && (
-                    <div className="absolute top-3 left-3 bg-red-600 text-white text-[8px] font-extrabold uppercase px-2 py-0.5 rounded-md tracking-wider">
-                      -{Math.round(((p.original_price - p.price) / p.original_price) * 100)}%
-                    </div>
-                  )}
-                  
-                  {(p.status === 'sold_out' || p.total_stock <= 0) && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-red-500 font-mono border border-red-500/30 px-2 py-1 bg-black/40 rounded">
-                        SOLD OUT
-                      </span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="p-3.5 space-y-1 text-left border-t border-neutral-900">
-                  <span className="text-[9px] uppercase font-mono tracking-widest text-[#C6FF00] block">{p.category}</span>
-                  <h4 className="text-xs font-bold uppercase truncate text-neutral-200 group-hover:text-white transition-colors">{p.name}</h4>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-black text-white font-mono">${p.price}</span>
-                    {p.original_price && p.original_price > p.price && (
-                      <span className="text-[10px] text-neutral-600 line-through font-mono">${p.original_price}</span>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-3.5">
+            {filteredProducts.slice(0, visibleCount).map((p, idx) => {
+              const hasDiscount = (p.compare_at_price || p.original_price) > p.price;
+              const originalPriceVal = p.compare_at_price || p.original_price;
+              const isSoldOut = p.status === 'sold_out' || p.total_stock <= 0;
+              
+              return (
+                <motion.div
+                  layout
+                  whileTap={{ scale: 0.98 }}
+                  key={`shop-item-${p.id || idx}`}
+                  onClick={() => onNavigateToPage('product', { productId: p.id })}
+                  className="group cursor-pointer flex flex-col bg-white border border-zinc-150/80 rounded-2xl p-1.5 shadow-2xs hover:shadow-xs transition-all duration-250 relative"
+                >
+                  <div className="aspect-[4/5] bg-zinc-50 w-full rounded-xl overflow-hidden relative">
+                    <ProductImage product={p} shop={shop} index={0} className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500" />
+                    
+                    {hasDiscount && (
+                      <div className="absolute top-2 left-2 bg-red-500 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-md shadow-sm">
+                        -{Math.round(((originalPriceVal - p.price) / originalPriceVal) * 100)}%
+                      </div>
+                    )}
+                    
+                    {isSoldOut && (
+                      <div className="absolute inset-0 bg-white/75 backdrop-blur-xs flex items-center justify-center">
+                        <span className="text-[9px] font-bold tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md shadow-2xs">
+                          SOLD OUT
+                        </span>
+                      </div>
                     )}
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                  
+                  <div className="p-1.5 flex flex-col flex-1 justify-between text-left select-none">
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">
+                        {p.category || 'Apparel'}
+                      </span>
+                      <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-hover:text-green-600 transition-colors">
+                        {p.name}
+                      </h4>
+                    </div>
+
+                    <div className="mt-2.5">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-sm font-bold text-zinc-900">${p.price}</span>
+                        {hasDiscount && (
+                          <span className="text-[10px] text-zinc-400 line-through">${originalPriceVal}</span>
+                        )}
+                      </div>
+
+                      {/* Instagram-inspired Direct WhatsApp Order CTA */}
+                      <a
+                        href={`https://wa.me/${(shop.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(
+                          `Hi ${shop.name}, I want to order "${p.name}" ($${p.price}) directly from your catalog!`
+                        )}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="mt-2 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-colors duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-current" /> Order WA
+                      </a>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
 
           {/* ----------------- INFINITE SCROLL / LOAD MORE ----------------- */}
           {hasMore && (
-            <div className="flex flex-col items-center justify-center pt-2">
+            <div className="flex flex-col items-center justify-center pt-4">
               {loadingMore ? (
-                <div className="flex items-center gap-2 text-[10px] uppercase font-mono text-[#C6FF00] tracking-widest animate-pulse">
-                  <div className="w-3.5 h-3.5 border-2 border-neutral-800 border-t-[#C6FF00] rounded-full animate-spin" />
-                  Loading More Releases...
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-green-600 tracking-wide animate-pulse">
+                  <div className="w-3.5 h-3.5 border-2 border-zinc-200 border-t-green-600 rounded-full animate-spin" />
+                  Loading Drops...
                 </div>
               ) : (
                 <button
                   onClick={handleLoadMore}
-                  className="px-6 py-3 bg-neutral-900 border border-neutral-800 text-[10px] font-extrabold uppercase tracking-widest rounded-xl text-neutral-300 hover:text-white hover:border-neutral-700 transition-all cursor-pointer"
+                  className="px-6 py-2.5 bg-zinc-50 border border-zinc-200 text-zinc-700 text-xs font-semibold rounded-xl hover:bg-zinc-100 transition-all cursor-pointer"
                 >
                   Load More Products
                 </button>

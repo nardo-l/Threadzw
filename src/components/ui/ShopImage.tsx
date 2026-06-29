@@ -1,5 +1,5 @@
 // src/components/ui/ShopImage.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SUPABASE_URL } from '../../lib/supabase';
 import { ImageIcon } from 'lucide-react';
 
@@ -42,7 +42,7 @@ const getBaseStorageUrl = (): string => {
   return `${val}/storage/v1/object/public`;
 };
 
-export const resolveImageUrl = (url: string | null | undefined): string | null => {
+export const resolveImageUrl = (url: string | null | undefined, type?: 'logo' | 'banner' | 'product'): string | null => {
   if (!url || url.trim() === '') return null;
   
   let finalUrl = url.trim();
@@ -53,8 +53,15 @@ export const resolveImageUrl = (url: string | null | undefined): string | null =
     return null;
   }
 
-  // If URL starts with http:// or https://, return unchanged
+  // If URL starts with http:// or https://, check if it's already a full Supabase storage URL or a normal URL
   if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://')) {
+    const activeBaseUrl = SUPABASE_URL ? SUPABASE_URL.trim().replace(/\/$/, '') : "https://dxfnoswvuhqvhyofcain.supabase.co";
+    if (finalUrl.includes('.supabase.co/')) {
+      const match = finalUrl.match(/https?:\/\/[a-z0-9-]+\.supabase\.co/i);
+      if (match && match[0].toLowerCase() !== activeBaseUrl.toLowerCase()) {
+        finalUrl = finalUrl.replace(match[0], activeBaseUrl);
+      }
+    }
     return finalUrl;
   }
 
@@ -64,90 +71,120 @@ export const resolveImageUrl = (url: string | null | undefined): string | null =
   }
 
   const baseStorage = getBaseStorageUrl();
-  const activeBaseUrl = SUPABASE_URL ? SUPABASE_URL.trim().replace(/\/$/, '') : "https://dxfnoswvuhqvhyofcain.supabase.co";
 
-  // Rewrite any legacy or mismatched .supabase.co subdomains to use the active project URL
-  if (finalUrl.includes('.supabase.co/')) {
-    const match = finalUrl.match(/https?:\/\/[a-z0-9-]+\.supabase\.co/i);
-    if (match && match[0].toLowerCase() !== activeBaseUrl.toLowerCase()) {
-      console.log(`[IMAGE PIPELINE] Rewriting host ${match[0]} to active host ${activeBaseUrl}`);
-      finalUrl = finalUrl.replace(match[0], activeBaseUrl);
+  // Strip any existing bucket prefix to avoid double prefix or incorrect bucket mapping
+  const buckets = ['shop-images', 'product-images', 'shop-banners', 'shop-avatars', 'avatars'];
+  let cleanPath = finalUrl;
+  for (const b of buckets) {
+    if (finalUrl.startsWith(`${b}/`)) {
+      cleanPath = finalUrl.substring(b.length + 1);
+      break;
     }
   }
 
-  if (finalUrl.startsWith('http') || finalUrl.startsWith('blob:') || finalUrl.startsWith('data:')) {
-    return finalUrl;
-  }
-  if (finalUrl.startsWith('//')) {
-    return `https:${finalUrl}`;
+  // Now resolve strictly based on type
+  let targetBucket = 'shop-images';
+  if (type === 'product') {
+    targetBucket = 'product-images';
+  } else if (type === 'logo' || type === 'banner') {
+    targetBucket = 'shop-images';
+  } else {
+    // Fallback if no type is provided (should generally be avoided as explicit type parameters are passed)
+    if (finalUrl.includes('avatar') || finalUrl.includes('logo')) {
+      targetBucket = 'shop-images';
+    } else if (finalUrl.includes('banner')) {
+      targetBucket = 'shop-images';
+    } else if (finalUrl.includes('/') || finalUrl.includes('product') || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(finalUrl)) {
+      targetBucket = 'product-images';
+    }
   }
 
-  // Dynamic bucket matching for relative references
-  let bucket = 'shop-images';
-  if (finalUrl.includes('avatar') || finalUrl.includes('logo')) {
-    bucket = 'shop-avatars';
-  } else if (finalUrl.includes('banner')) {
-    bucket = 'shop-banners';
-  } else if (finalUrl.includes('/') || finalUrl.includes('product') || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(finalUrl)) {
-    bucket = 'product-images';
-  }
-
-  const resolved = `${baseStorage}/${bucket}/${finalUrl}`;
-  return resolved;
+  return `${baseStorage}/${targetBucket}/${cleanPath}`;
 };
 
-export const getGlobalImageUrl = (url: string | null | undefined, type: 'logo' | 'banner' | 'product'): string => {
-  const resolved = resolveImageUrl(url);
-  if (resolved) return resolved;
-
-  if (type === 'logo') return 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&q=80'; // abstract placeholder
-  if (type === 'banner') return 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80'; // clean storefront
-  return 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&q=80'; // apparel rack
+// Returns a premium typographic background style based deterministically on a name (pastel gradient)
+const getDeterministicColor = (text: string) => {
+  if (!text) return 'from-zinc-50 to-zinc-100 text-zinc-700 border-zinc-200/60';
+  const char = text.trim().charAt(0).toUpperCase();
+  const code = char.charCodeAt(0);
+  const palettes = [
+    'from-rose-50 to-rose-100/70 text-rose-700 border-rose-200/50',
+    'from-amber-50 to-amber-100/70 text-amber-800 border-amber-200/50',
+    'from-emerald-50 to-emerald-100/70 text-emerald-800 border-emerald-200/50',
+    'from-sky-50 to-sky-100/70 text-sky-800 border-sky-200/50',
+    'from-violet-50 to-violet-100/70 text-violet-800 border-violet-200/50',
+  ];
+  return palettes[code % palettes.length];
 };
 
 interface ImageWithSkeletonProps {
+  srcs?: (string | null | undefined)[]; // Try loading these sources in sequence
   src: string | null;
   alt: string;
   className?: string;
   style?: React.CSSProperties;
   skeletonType: 'logo' | 'banner' | 'product';
   logoSize?: number;
+  fallbackText?: string;
 }
 
 export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
+  srcs,
   src,
   alt,
   className = '',
   style: extraStyle = {},
   skeletonType,
-  logoSize = 48
+  logoSize = 48,
+  fallbackText = ''
 }) => {
+  const [currentSrcIdx, setCurrentSrcIdx] = useState(0);
   const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [failedAll, setFailedAll] = useState(false);
 
-  // Rely on the browser's native onLoad and onError events to handle loading states rather than an aggressive 3s timeout
+  // Normalize all candidate sources into a clean array of non-empty strings
+  const candidateSrcs = useMemo(() => {
+    const list: string[] = [];
+    if (srcs) {
+      srcs.forEach(s => {
+        if (s && s.trim() && !list.includes(s.trim())) {
+          list.push(s.trim());
+        }
+      });
+    }
+    if (src && src.trim() && !list.includes(src.trim())) {
+      list.push(src.trim());
+    }
+    return list;
+  }, [srcs, src]);
+
   useEffect(() => {
-    // Reset state if source changes
+    setCurrentSrcIdx(0);
     setLoaded(false);
-    setFailed(false);
-  }, [src]);
+    setFailedAll(candidateSrcs.length === 0);
+  }, [candidateSrcs]);
 
-  // If no source is given, or if resolving failed or timed out, render the beautiful skeleton directly
-  if (!src || failed) {
+  const activeSrc = candidateSrcs[currentSrcIdx] || null;
+
+  // If all candidate URLs failed to load (or none were provided), render our premium typographic fallback placeholder
+  if (failedAll || !activeSrc) {
+    const letter = fallbackText ? fallbackText.trim().charAt(0).toUpperCase() : 'T';
+    const colorClass = getDeterministicColor(fallbackText || alt || 'T');
+
     if (skeletonType === 'logo') {
+      const numericSize = typeof logoSize === 'number' ? logoSize : 48;
       return (
         <div 
-          className={`animate-pulse bg-zinc-100 border border-zinc-200/50 flex items-center justify-center relative overflow-hidden ${className}`}
+          className={`flex items-center justify-center font-black border font-sans select-none shadow-3xs bg-gradient-to-br ${colorClass} ${className}`}
           style={{
             width: extraStyle.width || logoSize,
             height: extraStyle.height || logoSize,
-            borderRadius: extraStyle.borderRadius || (typeof logoSize === 'number' ? logoSize * 0.22 : '22%'),
+            borderRadius: extraStyle.borderRadius || `${numericSize * 0.22}px`,
+            fontSize: `${Math.max(12, numericSize * 0.38)}px`,
             ...extraStyle
           }}
         >
-          <div className="w-[85%] h-[85%] rounded-full bg-zinc-50 flex items-center justify-center border border-zinc-200/40">
-            <span className="text-[10px] font-bold tracking-wider text-zinc-400 font-sans">TZW</span>
-          </div>
+          {letter}
         </div>
       );
     }
@@ -155,44 +192,46 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
     if (skeletonType === 'banner') {
       return (
         <div 
-          className={`animate-pulse bg-zinc-100 border border-zinc-200/50 flex flex-col justify-center items-center relative overflow-hidden ${className}`}
+          className={`relative border flex flex-col justify-center items-center overflow-hidden font-sans select-none bg-gradient-to-br ${colorClass} ${className}`}
           style={{
             width: extraStyle.width || '100%',
             height: extraStyle.height || 180,
             ...extraStyle
           }}
         >
-          <div className="flex flex-col items-center gap-1.5 text-zinc-400">
-            <ImageIcon size={22} className="text-zinc-300" />
-            <span className="text-[9px] font-semibold tracking-widest font-sans">STORE BANNER</span>
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-4xl font-black tracking-widest">{letter}</span>
+            <span className="text-[9px] font-bold tracking-[0.25em] uppercase opacity-70">
+              {fallbackText || alt || 'Boutique Banner'}
+            </span>
           </div>
-          {/* Subtle grid lines inside modern banner skeleton */}
-          <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4 opacity-5 pointer-events-none">
-            <div className="border border-dashed border-zinc-400 rounded-lg"></div>
-            <div className="border border-dashed border-zinc-400 rounded-lg"></div>
-            <div className="border border-dashed border-zinc-400 rounded-lg"></div>
+          {/* Subtle grid lines inside modern banner placeholder */}
+          <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4 opacity-[0.03] pointer-events-none">
+            <div className="border border-dashed border-zinc-900 rounded-lg"></div>
+            <div className="border border-dashed border-zinc-900 rounded-lg"></div>
+            <div className="border border-dashed border-zinc-900 rounded-lg"></div>
           </div>
         </div>
       );
     }
 
-    // Default: product image skeleton
+    // Product Placeholder (Typographic letter)
     return (
       <div 
-        className={`animate-pulse bg-zinc-100 border border-zinc-200/50 flex flex-col justify-center items-center relative overflow-hidden ${className}`}
+        className={`relative border flex flex-col justify-center items-center overflow-hidden font-sans select-none bg-gradient-to-br ${colorClass} ${className}`}
         style={{
           width: extraStyle.width || '100%',
           height: extraStyle.height || '100%',
           ...extraStyle
         }}
       >
-        <div className="flex flex-col items-center gap-1.5 text-zinc-400">
-          <ImageIcon size={18} className="text-zinc-300" />
-          <span className="text-[8px] font-semibold tracking-wider font-sans">CATALOG IMAGE</span>
-        </div>
-        <div className="absolute bottom-2 left-2 right-2 flex flex-col gap-1 pointer-events-none opacity-20">
-          <div className="h-1.5 w-2/3 bg-zinc-300 rounded"></div>
-          <div className="h-1 w-1/3 bg-zinc-300 rounded"></div>
+        <span className="text-6xl font-black tracking-tight">{letter}</span>
+        <span className="text-[10px] font-bold tracking-[0.15em] uppercase opacity-70 mt-2.5 truncate max-w-[80%] text-center">
+          {fallbackText || alt || 'Garment'}
+        </span>
+        <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-1 pointer-events-none opacity-20">
+          <div className="h-1.5 w-2/3 bg-current rounded-full opacity-40"></div>
+          <div className="h-1 w-1/3 bg-current rounded-full opacity-30"></div>
         </div>
       </div>
     );
@@ -207,14 +246,14 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
         borderRadius: extraStyle.borderRadius || extraStyle.borderTopLeftRadius
       }}
     >
-      {/* Background Skeleton visible while actively buffering */}
+      {/* Background Loader visible while actively loading */}
       {!loaded && (
         <div 
-          className="absolute inset-0 animate-pulse bg-zinc-100 flex items-center justify-center z-10"
+          className="absolute inset-0 animate-pulse bg-zinc-50 flex items-center justify-center z-10"
           style={{ borderRadius: extraStyle.borderRadius }}
         >
           {skeletonType === 'logo' ? (
-            <div className="w-[85%] h-[85%] rounded-full bg-zinc-50 border border-zinc-200/20"></div>
+            <div className="w-[85%] h-[85%] rounded-full bg-zinc-100/40 border border-zinc-200/10"></div>
           ) : (
             <ImageIcon size={18} className="text-zinc-300 animate-pulse" />
           )}
@@ -222,10 +261,20 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
       )}
 
       <img
-        src={src}
+        src={activeSrc}
         alt={alt}
-        onLoad={() => setLoaded(true)}
-        onError={() => setFailed(true)}
+        onLoad={() => {
+          setLoaded(true);
+          setFailedAll(false);
+        }}
+        onError={() => {
+          // Try next source in candidate list
+          if (currentSrcIdx < candidateSrcs.length - 1) {
+            setCurrentSrcIdx(prev => prev + 1);
+          } else {
+            setFailedAll(true);
+          }
+        }}
         className={`${className} ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'} transition-all duration-300`}
         style={{
           ...extraStyle,
@@ -233,6 +282,7 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
           height: '100%',
         }}
         referrerPolicy="no-referrer"
+        loading="lazy"
       />
     </div>
   );
@@ -274,20 +324,30 @@ export const ShopLogo: React.FC<ShopLogoProps> = ({
   alt
 }) => {
   const rawUrl = url || shop?.logo_url || shop?.avatar_url;
-  const logoUrl = resolveImageUrl(rawUrl) || getGlobalImageUrl(rawUrl, 'logo');
+  const logoUrl = resolveImageUrl(rawUrl, 'logo');
   const numericSize = typeof size === 'number' ? size : parseInt(size as string) || 48;
 
-  const srcWithBust = (logoUrl && !logoUrl.startsWith('blob:') && !logoUrl.startsWith('data:') && !logoUrl.includes('unsplash.com'))
-    ? `${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue(shop?.updated_at || shop?.created_at)}`
-    : logoUrl;
+  const candidateSrcs = useMemo(() => {
+    const list: string[] = [];
+    const buster = getSafeBusterValue(shop?.updated_at || shop?.created_at);
+    if (logoUrl) {
+      list.push(`${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${buster}`);
+      list.push(logoUrl);
+    }
+    // Static fallback of last resort
+    list.push('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&q=80');
+    return list;
+  }, [logoUrl, shop]);
 
   return (
     <ImageWithSkeleton
-      src={srcWithBust}
+      srcs={candidateSrcs}
+      src={candidateSrcs[0]}
       alt={alt || name || shop?.name || 'Shop logo'}
       className={className}
       skeletonType="logo"
       logoSize={numericSize}
+      fallbackText={name || shop?.name || alt || 'S'}
       style={{
         width: size,
         height: size,
@@ -318,18 +378,32 @@ export const ShopBanner: React.FC<ShopBannerProps> = ({
   alt
 }) => {
   const rawUrl = url || shop?.banner_url;
-  const bannerUrl = resolveImageUrl(rawUrl) || getGlobalImageUrl(rawUrl, 'banner');
-  
-  const srcWithBust = (bannerUrl && !bannerUrl.startsWith('blob:') && !bannerUrl.startsWith('data:') && !bannerUrl.includes('unsplash.com'))
-    ? `${bannerUrl}${bannerUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue(shop?.updated_at || shop?.created_at)}`
-    : bannerUrl;
+  const bannerUrl = resolveImageUrl(rawUrl, 'banner');
+  const logoUrl = resolveImageUrl(shop?.logo_url || shop?.avatar_url, 'logo');
+
+  const candidateSrcs = useMemo(() => {
+    const list: string[] = [];
+    const buster = getSafeBusterValue(shop?.updated_at || shop?.created_at);
+    if (bannerUrl) {
+      list.push(`${bannerUrl}${bannerUrl.includes('?') ? '&' : '?'}t=${buster}`);
+      list.push(bannerUrl);
+    }
+    if (logoUrl) {
+      list.push(`${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${buster}`);
+      list.push(logoUrl);
+    }
+    list.push('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80');
+    return list;
+  }, [bannerUrl, logoUrl, shop]);
 
   return (
     <ImageWithSkeleton
-      src={srcWithBust}
+      srcs={candidateSrcs}
+      src={candidateSrcs[0]}
       alt={alt || `${shop?.name || ''} banner`}
       className={className}
       skeletonType="banner"
+      fallbackText={shop?.name || 'B'}
       style={{
         width: '100%',
         height,
@@ -343,6 +417,7 @@ export const ShopBanner: React.FC<ShopBannerProps> = ({
 
 interface ProductImageProps {
   product?: any;
+  shop?: any;
   url?: string | null;
   index?: number;
   width?: number | string;
@@ -354,6 +429,7 @@ interface ProductImageProps {
 
 export const ProductImage: React.FC<ProductImageProps> = ({
   product,
+  shop,
   url,
   index = 0,
   width = '100%',
@@ -362,25 +438,66 @@ export const ProductImage: React.FC<ProductImageProps> = ({
   style: extraStyle = {},
   alt
 }) => {
-  const images = Array.isArray(product?.images)
-    ? product.images
-    : product?.images
-      ? [product.images]
-      : [];
+  const images = useMemo(() => {
+    if (Array.isArray(product?.images)) return product.images;
+    if (product?.images) return [product.images];
+    return [];
+  }, [product]);
 
   const rawUrl = url || images[index] || images[0];
-  const imageUrl = resolveImageUrl(rawUrl) || getGlobalImageUrl(rawUrl, 'product');
+  const imageUrl = resolveImageUrl(rawUrl, 'product');
+  const logoUrl = resolveImageUrl(shop?.logo_url || shop?.avatar_url, 'logo');
 
-  const srcWithBust = (imageUrl && !imageUrl.startsWith('blob:') && !imageUrl.startsWith('data:') && !imageUrl.includes('unsplash.com'))
-    ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue(product?.updated_at || product?.created_at)}`
-    : imageUrl;
+  const candidateSrcs = useMemo(() => {
+    const list: string[] = [];
+    const buster = getSafeBusterValue(product?.updated_at || product?.created_at);
+
+    // 1. Primary Product Image
+    if (imageUrl) {
+      list.push(`${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${buster}`);
+      list.push(imageUrl);
+    }
+
+    // 2. Secondary Product Images
+    if (Array.isArray(product?.images)) {
+      product.images.forEach((img: any, idx: number) => {
+        if (idx !== index) {
+          const fallbackImgUrl = resolveImageUrl(img, 'product');
+          if (fallbackImgUrl) {
+            list.push(`${fallbackImgUrl}${fallbackImgUrl.includes('?') ? '&' : '?'}t=${buster}`);
+            list.push(fallbackImgUrl);
+          }
+        }
+      });
+    }
+
+    // 3. Shop Banner Fallback
+    const bannerUrl = resolveImageUrl(shop?.banner_url, 'banner');
+    if (bannerUrl) {
+      list.push(`${bannerUrl}${bannerUrl.includes('?') ? '&' : '?'}t=${buster}`);
+      list.push(bannerUrl);
+    }
+
+    // 4. Shop Logo Fallback
+    if (logoUrl) {
+      list.push(`${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${buster}`);
+      list.push(logoUrl);
+    }
+
+    // 5. Hardcoded Apparel Unsplash fallback
+    list.push('https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&q=80');
+
+    return list;
+  }, [imageUrl, logoUrl, shop, product, index]);
 
   return (
     <ImageWithSkeleton
-      src={srcWithBust}
+      srcs={candidateSrcs}
+      src={candidateSrcs[0]}
       alt={alt || product?.name || 'Product catalog item'}
       className={className}
       skeletonType="product"
+      fallbackText={product?.name || 'P'}
       style={{
         width,
         height,
