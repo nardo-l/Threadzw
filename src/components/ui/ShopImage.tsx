@@ -137,7 +137,7 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
     if (skeletonType === 'logo') {
       return (
         <div 
-          className={`animate-pulse bg-[#121212] border border-white/[0.04] flex items-center justify-center relative overflow-hidden ${className}`}
+          className={`animate-pulse bg-zinc-100 border border-zinc-200/50 flex items-center justify-center relative overflow-hidden ${className}`}
           style={{
             width: extraStyle.width || logoSize,
             height: extraStyle.height || logoSize,
@@ -145,8 +145,8 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
             ...extraStyle
           }}
         >
-          <div className="w-[85%] h-[85%] rounded-full bg-white/[0.03] flex items-center justify-center border border-white/[0.02]">
-            <span className="text-[9px] font-black tracking-wider text-white/10 font-mono">TZW</span>
+          <div className="w-[85%] h-[85%] rounded-full bg-zinc-50 flex items-center justify-center border border-zinc-200/40">
+            <span className="text-[10px] font-bold tracking-wider text-zinc-400 font-sans">TZW</span>
           </div>
         </div>
       );
@@ -155,22 +155,22 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
     if (skeletonType === 'banner') {
       return (
         <div 
-          className={`animate-pulse bg-[#121212] border border-white/[0.04] flex flex-col justify-center items-center relative overflow-hidden ${className}`}
+          className={`animate-pulse bg-zinc-100 border border-zinc-200/50 flex flex-col justify-center items-center relative overflow-hidden ${className}`}
           style={{
             width: extraStyle.width || '100%',
             height: extraStyle.height || 180,
             ...extraStyle
           }}
         >
-          <div className="flex flex-col items-center gap-1.5 opacity-[0.08]">
-            <ImageIcon size={22} className="text-white" />
-            <span className="text-[9px] font-black tracking-widest text-white font-mono">STUDIO BANNER</span>
+          <div className="flex flex-col items-center gap-1.5 text-zinc-400">
+            <ImageIcon size={22} className="text-zinc-300" />
+            <span className="text-[9px] font-semibold tracking-widest font-sans">STORE BANNER</span>
           </div>
           {/* Subtle grid lines inside modern banner skeleton */}
-          <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4 opacity-[0.02] pointer-events-none">
-            <div className="border border-dashed border-white rounded-lg"></div>
-            <div className="border border-dashed border-white rounded-lg"></div>
-            <div className="border border-dashed border-white rounded-lg"></div>
+          <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4 opacity-5 pointer-events-none">
+            <div className="border border-dashed border-zinc-400 rounded-lg"></div>
+            <div className="border border-dashed border-zinc-400 rounded-lg"></div>
+            <div className="border border-dashed border-zinc-400 rounded-lg"></div>
           </div>
         </div>
       );
@@ -179,20 +179,20 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
     // Default: product image skeleton
     return (
       <div 
-        className={`animate-pulse bg-[#121212] border border-white/[0.04] flex flex-col justify-center items-center relative overflow-hidden ${className}`}
+        className={`animate-pulse bg-zinc-100 border border-zinc-200/50 flex flex-col justify-center items-center relative overflow-hidden ${className}`}
         style={{
           width: extraStyle.width || '100%',
           height: extraStyle.height || '100%',
           ...extraStyle
         }}
       >
-        <div className="flex flex-col items-center gap-1.5 opacity-[0.08]">
-          <ImageIcon size={18} className="text-white" />
-          <span className="text-[8px] font-black tracking-wider text-white font-mono">STYLING_CATALOG</span>
+        <div className="flex flex-col items-center gap-1.5 text-zinc-400">
+          <ImageIcon size={18} className="text-zinc-300" />
+          <span className="text-[8px] font-semibold tracking-wider font-sans">CATALOG IMAGE</span>
         </div>
-        <div className="absolute bottom-2 left-2 right-2 flex flex-col gap-1 pointer-events-none opacity-[0.03]">
-          <div className="h-1.5 w-2/3 bg-white rounded"></div>
-          <div className="h-1 w-1/3 bg-white rounded"></div>
+        <div className="absolute bottom-2 left-2 right-2 flex flex-col gap-1 pointer-events-none opacity-20">
+          <div className="h-1.5 w-2/3 bg-zinc-300 rounded"></div>
+          <div className="h-1 w-1/3 bg-zinc-300 rounded"></div>
         </div>
       </div>
     );
@@ -200,7 +200,7 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
 
   return (
     <div 
-      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-[#121212]" 
+      className="relative w-full h-full overflow-hidden flex items-center justify-center bg-zinc-50" 
       style={{ 
         width: extraStyle.width, 
         height: extraStyle.height,
@@ -210,13 +210,13 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
       {/* Background Skeleton visible while actively buffering */}
       {!loaded && (
         <div 
-          className="absolute inset-0 animate-pulse bg-[#121212] flex items-center justify-center z-10"
+          className="absolute inset-0 animate-pulse bg-zinc-100 flex items-center justify-center z-10"
           style={{ borderRadius: extraStyle.borderRadius }}
         >
           {skeletonType === 'logo' ? (
-            <div className="w-[85%] h-[85%] rounded-full bg-white/[0.03] border border-white/[0.02]"></div>
+            <div className="w-[85%] h-[85%] rounded-full bg-zinc-50 border border-zinc-200/20"></div>
           ) : (
-            <ImageIcon size={18} className="text-white/5 animate-pulse" />
+            <ImageIcon size={18} className="text-zinc-300 animate-pulse" />
           )}
         </div>
       )}
@@ -274,16 +274,12 @@ export const ShopLogo: React.FC<ShopLogoProps> = ({
   alt
 }) => {
   const rawUrl = url || shop?.logo_url || shop?.avatar_url;
-  const logoUrl = resolveImageUrl(rawUrl);
+  const logoUrl = resolveImageUrl(rawUrl) || getGlobalImageUrl(rawUrl, 'logo');
   const numericSize = typeof size === 'number' ? size : parseInt(size as string) || 48;
 
   const srcWithBust = (logoUrl && !logoUrl.startsWith('blob:') && !logoUrl.startsWith('data:') && !logoUrl.includes('unsplash.com'))
     ? `${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue(shop?.updated_at || shop?.created_at)}`
     : logoUrl;
-
-  console.log("LOGO URL:", shop?.logo_url);
-  console.log("LOGO URL FROM DB:", shop?.logo_url);
-  console.log("IMAGE SRC:", srcWithBust);
 
   return (
     <ImageWithSkeleton
@@ -322,7 +318,7 @@ export const ShopBanner: React.FC<ShopBannerProps> = ({
   alt
 }) => {
   const rawUrl = url || shop?.banner_url;
-  const bannerUrl = resolveImageUrl(rawUrl);
+  const bannerUrl = resolveImageUrl(rawUrl) || getGlobalImageUrl(rawUrl, 'banner');
   
   const srcWithBust = (bannerUrl && !bannerUrl.startsWith('blob:') && !bannerUrl.startsWith('data:') && !bannerUrl.includes('unsplash.com'))
     ? `${bannerUrl}${bannerUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue(shop?.updated_at || shop?.created_at)}`
@@ -373,7 +369,7 @@ export const ProductImage: React.FC<ProductImageProps> = ({
       : [];
 
   const rawUrl = url || images[index] || images[0];
-  const imageUrl = resolveImageUrl(rawUrl);
+  const imageUrl = resolveImageUrl(rawUrl) || getGlobalImageUrl(rawUrl, 'product');
 
   const srcWithBust = (imageUrl && !imageUrl.startsWith('blob:') && !imageUrl.startsWith('data:') && !imageUrl.includes('unsplash.com'))
     ? `${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${getSafeBusterValue(product?.updated_at || product?.created_at)}`

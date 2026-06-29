@@ -59,6 +59,7 @@ export const StorefrontPage: React.FC = () => {
 
   // Navigate helper maintaining slug structure
   const navigateToPage = useCallback((pageName: StorefrontPageType, params?: Record<string, string>) => {
+    console.log(`[ROUTE TRANSITION] Transitioning page from '${activePage}' to '${pageName}'`, params || {});
     const nextParams = new URLSearchParams();
     nextParams.set('page', pageName);
     if (params) {
@@ -71,7 +72,7 @@ export const StorefrontPage: React.FC = () => {
     // Scroll to top of inner main container
     const mainEl = document.getElementById('storefront-main-scroll');
     if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [setSearchParams]);
+  }, [activePage, setSearchParams]);
 
   // Back navigation dispatcher
   const handleBackNavigation = () => {
@@ -305,10 +306,10 @@ export const StorefrontPage: React.FC = () => {
   // Loading Screen
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center font-sans tracking-widest gap-4">
-        <div className="w-12 h-12 rounded-full border border-t-2 border-t-[#C6FF00] border-white/10 animate-spin" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/50 animate-pulse font-mono">
-          Syncing Luxury Brand...
+      <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col items-center justify-center font-sans tracking-widest gap-4">
+        <div className="w-10 h-10 rounded-full border-2 border-zinc-200 border-t-green-600 animate-spin" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500 animate-pulse font-sans">
+          Loading Storefront...
         </span>
       </div>
     );
@@ -317,15 +318,15 @@ export const StorefrontPage: React.FC = () => {
   // Error/Shop Not Found Screen
   if (error || !shop) {
     return (
-      <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 text-center font-sans gap-4 select-none">
-        <ShieldAlert className="w-16 h-16 text-[#C6FF00] animate-bounce" />
-        <h1 className="text-xl font-black uppercase tracking-widest font-syne">Storefront Offline</h1>
-        <p className="text-zinc-400 text-xs max-w-xs leading-relaxed">
+      <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col items-center justify-center p-6 text-center font-sans gap-4 select-none">
+        <ShieldAlert className="w-12 h-12 text-green-600 animate-bounce" />
+        <h1 className="text-lg font-bold tracking-tight text-zinc-900">Storefront Offline</h1>
+        <p className="text-zinc-500 text-xs max-w-xs leading-relaxed">
           Could not locate boutique parameters matching this handle. Check the link or explore standard directories.
         </p>
         <button 
           onClick={() => navigate('/')} 
-          className="mt-6 px-6 py-3 bg-[#C6FF00] text-black text-[10px] font-bold uppercase tracking-widest rounded-full cursor-pointer shadow-lg shadow-[#C6FF00]/10"
+          className="mt-4 px-6 py-2.5 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 transition-colors cursor-pointer shadow-sm"
         >
           Return Home
         </button>
@@ -464,17 +465,17 @@ export const StorefrontPage: React.FC = () => {
   };
 
   const renderPolicyPage = (title: string, bodyText: string) => (
-    <div className="space-y-6 px-5 pb-16 text-left select-none">
-      <div className="space-y-1.5">
-        <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#C6FF00] font-mono">Brand Policy</span>
-        <h2 className="font-syne text-2xl font-black uppercase tracking-tight text-white">{title}</h2>
+    <div className="space-y-6 px-5 pb-16 text-left select-none bg-white min-h-screen pt-6">
+      <div className="space-y-1">
+        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-green-600 font-sans">Brand Policy</span>
+        <h2 className="font-sans text-xl font-bold tracking-tight text-zinc-900">{title}</h2>
       </div>
-      <div className="bg-neutral-900/40 border border-neutral-850 p-6 rounded-2xl">
-        <p className="text-xs text-neutral-300 leading-relaxed font-sans">{bodyText}</p>
+      <div className="bg-zinc-50 border border-zinc-100 p-6 rounded-2xl">
+        <p className="text-sm text-zinc-600 leading-relaxed font-sans">{bodyText}</p>
       </div>
       <button
         onClick={() => navigateToPage('home')}
-        className="w-full py-3.5 bg-neutral-900 border border-neutral-800 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:border-neutral-700 cursor-pointer"
+        className="w-full py-3 bg-zinc-100 border border-zinc-200 text-zinc-850 text-xs font-semibold rounded-xl hover:bg-zinc-200 cursor-pointer transition-colors"
       >
         Return to Home
       </button>
@@ -482,84 +483,82 @@ export const StorefrontPage: React.FC = () => {
   );
 
   const render404Page = () => (
-    <div className="py-24 text-center px-5 space-y-4 select-none">
-      <h3 className="font-syne text-5xl font-black text-[#C6FF00] tracking-tighter leading-none animate-pulse">404</h3>
+    <div className="py-24 text-center px-5 space-y-4 select-none bg-white min-h-screen">
+      <h3 className="font-sans text-5xl font-extrabold text-green-600 tracking-tighter leading-none">404</h3>
       <div className="space-y-1">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-500 font-mono">Coordinate Lost</span>
-        <h4 className="text-sm font-bold uppercase text-white">Garment View Not Found</h4>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 font-sans">Page Not Found</span>
+        <h4 className="text-sm font-bold text-zinc-900">This view does not exist</h4>
       </div>
-      <p className="text-[11px] text-neutral-400 max-w-xs mx-auto leading-relaxed">
+      <p className="text-xs text-zinc-500 max-w-xs mx-auto leading-relaxed">
         The requested boutique page coordinates do not exist or are offline. Let's return to the active catalog collection.
       </p>
       <div className="flex gap-2 pt-3">
         <button
           onClick={() => navigateToPage('home')}
-          className="flex-1 py-3 bg-neutral-900 border border-neutral-850 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl hover:border-neutral-700 cursor-pointer"
+          className="flex-1 py-2.5 bg-zinc-100 border border-zinc-200 text-zinc-800 text-xs font-semibold rounded-xl hover:bg-zinc-200 cursor-pointer transition-colors"
         >
           Go Home
         </button>
         <button
           onClick={() => navigateToPage('shop')}
-          className="flex-grow py-3 bg-[#C6FF00] text-black text-[10px] font-black uppercase tracking-wider rounded-xl hover:opacity-95 cursor-pointer"
+          className="flex-grow py-2.5 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 cursor-pointer transition-colors"
         >
-          Browse drops
+          Browse Shop
         </button>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex justify-center font-sans antialiased overflow-x-hidden selection:bg-[#C6FF00] selection:text-black">
+    <div className="min-h-screen bg-zinc-100 text-zinc-900 flex justify-center font-sans antialiased overflow-x-hidden selection:bg-green-100 selection:text-green-800">
       {/* Centered Mobile Frame container on desktop */}
-      <div className="w-full max-w-[480px] bg-[#000000] min-h-screen flex flex-col relative border-x border-neutral-900 shadow-2xl relative select-none">
+      <div className="w-full max-w-[480px] bg-white min-h-screen flex flex-col relative border-x border-zinc-200/60 shadow-xl relative select-none">
         
-        <div style={{
-          background:'red',
-          color:'white',
-          padding:'12px',
-          fontWeight:'bold',
-          textAlign:'center'
-        }}>
-          STOREFRONT V2 ACTIVE
+        {/* THREADZW BRAND GREEN BANNER */}
+        <div 
+          onClick={() => navigate('/')}
+          className="bg-[#22C55E] hover:bg-green-600 text-white py-2 px-4 text-[11px] font-semibold text-center cursor-pointer transition-colors flex items-center justify-center gap-1 select-none font-sans"
+        >
+          <span>Built with ThreadZW 💚</span>
         </div>
 
         {/* ----------------- GLOBAL HEADER ----------------- */}
-        <header className="sticky top-0 z-40 bg-black/85 backdrop-blur-md px-5 py-3.5 flex items-center justify-between border-b border-neutral-900/60">
+        <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-zinc-100">
           <button 
             type="button" 
             onClick={() => setShowMenu(true)}
-            className="p-1 text-zinc-300 hover:text-[#C6FF00] transition-colors cursor-pointer"
+            className="p-1 text-zinc-700 hover:text-green-600 transition-colors cursor-pointer"
             title="Open Menu"
           >
-            <Menu className="w-6 h-6 stroke-[2]" />
+            <Menu className="w-5 h-5 stroke-[2.5]" />
           </button>
 
           <span 
             onClick={() => navigateToPage('home')}
-            className="font-black text-sm uppercase tracking-[0.25em] font-sans text-white hover:text-[#C6FF00] cursor-pointer"
+            className="font-bold text-base tracking-tight font-sans text-zinc-900 hover:text-green-600 cursor-pointer"
           >
             {shop.name}
           </span>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button 
               type="button" 
               onClick={() => navigateToPage('shop')}
-              className="p-1.5 text-zinc-300 hover:text-[#C6FF00] transition-colors cursor-pointer"
+              className="p-1.5 text-zinc-700 hover:text-green-600 transition-colors cursor-pointer"
               title="Search catalog"
             >
-              <Search className="w-5.5 h-5.5 stroke-[2]" />
+              <Search className="w-5 h-5 stroke-[2.5]" />
             </button>
             
             <button 
               type="button" 
               onClick={() => navigateToPage('cart')}
-              className="p-1.5 text-zinc-300 hover:text-[#C6FF00] transition-colors cursor-pointer relative"
+              className="p-1.5 text-zinc-700 hover:text-green-600 transition-colors cursor-pointer relative"
               title="View Cart"
             >
-              <ShoppingBag className="w-5.5 h-5.5 stroke-[2]" />
+              <ShoppingBag className="w-5 h-5 stroke-[2.5]" />
               {cart.length > 0 && (
-                <div className="absolute -top-1 -right-1 bg-[#C6FF00] text-black text-[8px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                <div className="absolute top-0 right-0 bg-green-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                   {cart.reduce((s, i) => s + i.quantity, 0)}
                 </div>
               )}
@@ -568,14 +567,14 @@ export const StorefrontPage: React.FC = () => {
         </header>
 
         {/* ----------------- INTERACTIVE MAIN PANEL ----------------- */}
-        <main id="storefront-main-scroll" className="flex-1 overflow-y-auto pb-24">
+        <main id="storefront-main-scroll" className="flex-1 overflow-y-auto pb-24 bg-white">
           <AnimatePresence mode="wait">
             <motion.div
               key={activePage}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.15 }}
               className="w-full"
             >
               {renderActivePage()}
@@ -584,91 +583,91 @@ export const StorefrontPage: React.FC = () => {
 
           {/* ----------------- UNIFIED FOOTER ----------------- */}
           {activePage !== 'success' && activePage !== 'checkout' && activePage !== 'product' && (
-            <footer className="mt-12 border-t border-neutral-900 bg-neutral-950/40 p-6 space-y-6 text-left border-b border-neutral-950 pb-20 select-none">
-              <div className="space-y-1.5">
-                <span className="font-syne text-sm font-black uppercase text-white tracking-widest block">{shop.name}</span>
-                <p className="text-[10px] text-neutral-500 max-w-xs">
-                  Constructed streetwear & curated boutique drops. Handcrafted or selected in Bulawayo, Zimbabwe.
+            <footer className="mt-12 border-t border-zinc-100 bg-zinc-50/50 p-6 space-y-6 text-left border-b border-zinc-100 pb-20 select-none">
+              <div className="space-y-1">
+                <span className="text-sm font-bold text-zinc-900 block">{shop.name}</span>
+                <p className="text-[11px] text-zinc-500 max-w-xs leading-relaxed">
+                  Zimbabwe's easiest shop link. Friendly, clean, and mobile-first. Powered by ThreadZW.
                 </p>
               </div>
 
               {/* Navigation links */}
-              <div className="grid grid-cols-2 gap-4 text-xs font-bold uppercase tracking-wider text-neutral-400">
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-zinc-600">
                 <div className="space-y-2.5">
-                  <button onClick={() => navigateToPage('shop')} className="block hover:text-[#C6FF00] cursor-pointer text-left">Garment Catalog</button>
-                  <button onClick={() => navigateToPage('about')} className="block hover:text-[#C6FF00] cursor-pointer text-left">About Brand</button>
-                  <button onClick={() => navigateToPage('contact')} className="block hover:text-[#C6FF00] cursor-pointer text-left">Contact Coordinates</button>
+                  <button onClick={() => navigateToPage('shop')} className="block hover:text-green-600 cursor-pointer text-left">Browse Shop</button>
+                  <button onClick={() => navigateToPage('about')} className="block hover:text-green-600 cursor-pointer text-left">About Brand</button>
+                  <button onClick={() => navigateToPage('contact')} className="block hover:text-green-600 cursor-pointer text-left">Contact Us</button>
                 </div>
                 <div className="space-y-2.5">
-                  <button onClick={() => navigateToPage('track')} className="block hover:text-[#C6FF00] cursor-pointer text-left font-mono text-[10.5px]">Track Logistics</button>
-                  <button onClick={() => navigateToPage('terms')} className="block hover:text-[#C6FF00] cursor-pointer text-left">Terms & Conditions</button>
-                  <button onClick={() => navigateToPage('privacy')} className="block hover:text-[#C6FF00] cursor-pointer text-left">Privacy Framework</button>
+                  <button onClick={() => navigateToPage('track')} className="block hover:text-green-600 cursor-pointer text-left">Track Order</button>
+                  <button onClick={() => navigateToPage('terms')} className="block hover:text-green-600 cursor-pointer text-left">Terms & Conditions</button>
+                  <button onClick={() => navigateToPage('privacy')} className="block hover:text-green-600 cursor-pointer text-left">Privacy Policy</button>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-neutral-900 flex flex-col gap-2 font-mono text-[9px] uppercase tracking-widest text-neutral-600">
-                <span>© {new Date().getFullYear()} {shop.name} LTD.</span>
-                <span>ThreadZW Boutique Network ● Zimbabwe Fashion</span>
+              <div className="pt-4 border-t border-zinc-100 flex flex-col gap-1 text-[10px] text-zinc-400">
+                <span>© {new Date().getFullYear()} {shop.name}. All rights reserved.</span>
+                <span>Powered by ThreadZW 💚</span>
               </div>
             </footer>
           )}
         </main>
 
         {/* ----------------- MOBILE BOTTOM NAVIGATION BAR ----------------- */}
-        <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-black/95 backdrop-blur-md border-t border-neutral-900 h-14 z-40 flex justify-around items-center px-2 select-none">
+        <nav className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white/95 backdrop-blur-md border-t border-zinc-150 h-14 z-40 flex justify-around items-center px-2 select-none shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
           <button
             onClick={() => navigateToPage('home')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer ${
-              activePage === 'home' ? 'text-[#C6FF00]' : 'text-neutral-500 hover:text-neutral-300'
+              activePage === 'home' ? 'text-green-600' : 'text-zinc-400 hover:text-zinc-600'
             }`}
           >
             <Home className="w-5 h-5" />
-            <span className="text-[8px] font-bold uppercase tracking-widest">Home</span>
+            <span className="text-[9px] font-medium">Home</span>
           </button>
 
           <button
             onClick={() => navigateToPage('shop')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer ${
-              activePage === 'shop' ? 'text-[#C6FF00]' : 'text-neutral-500 hover:text-neutral-300'
+              activePage === 'shop' ? 'text-green-600' : 'text-zinc-400 hover:text-zinc-600'
             }`}
           >
             <Grid className="w-5 h-5" />
-            <span className="text-[8px] font-bold uppercase tracking-widest">Shop</span>
+            <span className="text-[9px] font-medium">Shop</span>
           </button>
 
           <button
             onClick={() => navigateToPage('categories')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer ${
-              activePage === 'categories' ? 'text-[#C6FF00]' : 'text-neutral-500 hover:text-neutral-300'
+              activePage === 'categories' ? 'text-green-600' : 'text-zinc-400 hover:text-zinc-600'
             }`}
           >
             <Search className="w-5 h-5" />
-            <span className="text-[8px] font-bold uppercase tracking-widest">Catalog</span>
+            <span className="text-[9px] font-medium">Categories</span>
           </button>
 
           <button
             onClick={() => navigateToPage('cart')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer relative ${
-              activePage === 'cart' ? 'text-[#C6FF00]' : 'text-neutral-500 hover:text-neutral-300'
+              activePage === 'cart' ? 'text-green-600' : 'text-zinc-400 hover:text-zinc-600'
             }`}
           >
             <ShoppingBag className="w-5 h-5" />
             {cart.length > 0 && (
-              <div className="absolute top-2 right-6 bg-[#C6FF00] text-black text-[7px] font-extrabold w-3.5 h-3.5 rounded-full flex items-center justify-center">
+              <div className="absolute top-1.5 right-6 bg-green-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                 {cart.reduce((s, i) => s + i.quantity, 0)}
               </div>
             )}
-            <span className="text-[8px] font-bold uppercase tracking-widest">Bag</span>
+            <span className="text-[9px] font-medium">Cart</span>
           </button>
 
           <button
             onClick={() => navigateToPage('account')}
             className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 cursor-pointer ${
-              activePage === 'account' ? 'text-[#C6FF00]' : 'text-neutral-500 hover:text-neutral-300'
+              activePage === 'account' ? 'text-green-600' : 'text-zinc-400 hover:text-zinc-600'
             }`}
           >
             <User className="w-5 h-5" />
-            <span className="text-[8px] font-bold uppercase tracking-widest">Account</span>
+            <span className="text-[9px] font-medium">Account</span>
           </button>
         </nav>
 
@@ -682,7 +681,7 @@ export const StorefrontPage: React.FC = () => {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setShowMenu(false)}
-                className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 max-w-[480px] mx-auto"
+                className="fixed inset-0 bg-zinc-900/40 backdrop-blur-xs z-50 max-w-[480px] mx-auto"
               />
 
               {/* Sidebar Panel */}
@@ -690,39 +689,39 @@ export const StorefrontPage: React.FC = () => {
                 initial={{ x: '-100%' }}
                 animate={{ x: 0 }}
                 exit={{ x: '-100%' }}
-                transition={{ type: 'tween', duration: 0.3 }}
-                className="fixed inset-y-0 left-0 w-72 bg-neutral-950 border-r border-neutral-900 z-50 flex flex-col p-6 space-y-6 text-left shadow-2xl"
+                transition={{ type: 'tween', duration: 0.25 }}
+                className="fixed inset-y-0 left-0 w-72 bg-white border-r border-zinc-100 z-50 flex flex-col p-6 space-y-6 text-left shadow-2xl"
               >
                 {/* Close Row */}
-                <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-                  <span className="font-syne font-black uppercase text-white tracking-widest">{shop.name}</span>
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                  <span className="font-bold text-base tracking-tight text-zinc-900">{shop.name}</span>
                   <button 
                     onClick={() => setShowMenu(false)}
-                    className="p-1 bg-neutral-900 border border-neutral-800 rounded-full hover:border-neutral-700 text-white cursor-pointer"
+                    className="p-1.5 bg-zinc-50 border border-zinc-150 rounded-full hover:bg-zinc-100 text-zinc-500 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
                 {/* Sidebar Links */}
-                <div className="space-y-4 text-xs font-black uppercase tracking-wider text-neutral-300 flex-grow">
-                  <div className="text-[9px] uppercase font-mono tracking-widest text-[#C6FF00] pb-1 block">Boutique Directory</div>
-                  <button onClick={() => navigateToPage('home')} className="block hover:text-[#C6FF00] py-2 cursor-pointer w-full text-left">Home Base</button>
-                  <button onClick={() => navigateToPage('shop')} className="block hover:text-[#C6FF00] py-2 cursor-pointer w-full text-left">Garment Shop</button>
-                  <button onClick={() => navigateToPage('categories')} className="block hover:text-[#C6FF00] py-2 cursor-pointer w-full text-left">Collection Banners</button>
-                  <button onClick={() => navigateToPage('wishlist')} className="block hover:text-[#C6FF00] py-2 cursor-pointer w-full text-left flex items-center justify-between">
-                    <span>Saved Wishlist</span>
-                    <Heart className="w-3.5 h-3.5 fill-[#C6FF00] text-[#C6FF00]" />
+                <div className="space-y-4 text-xs font-semibold text-zinc-600 flex-grow">
+                  <div className="text-[10px] uppercase font-bold tracking-wider text-green-600 pb-1 block">Menu Directory</div>
+                  <button onClick={() => navigateToPage('home')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Home</button>
+                  <button onClick={() => navigateToPage('shop')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Shop</button>
+                  <button onClick={() => navigateToPage('categories')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Categories</button>
+                  <button onClick={() => navigateToPage('wishlist')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left flex items-center justify-between border-b border-zinc-50">
+                    <span>Wishlist</span>
+                    <Heart className="w-4 h-4 text-green-600" />
                   </button>
-                  <button onClick={() => navigateToPage('about')} className="block hover:text-[#C6FF00] py-2 cursor-pointer w-full text-left">Brand Manifesto</button>
-                  <button onClick={() => navigateToPage('contact')} className="block hover:text-[#C6FF00] py-2 cursor-pointer w-full text-left">Contact Representation</button>
-                  <button onClick={() => navigateToPage('track')} className="block hover:text-[#C6FF00] py-2 cursor-pointer w-full text-left font-mono text-[11px]">Track Logistics</button>
+                  <button onClick={() => navigateToPage('about')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">About Brand</button>
+                  <button onClick={() => navigateToPage('contact')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Contact Us</button>
+                  <button onClick={() => navigateToPage('track')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left">Track Order</button>
                 </div>
 
                 {/* Bottom coordinates */}
-                <div className="border-t border-neutral-900 pt-4 space-y-1 font-mono text-[8px] uppercase tracking-widest text-neutral-550">
-                  <p>Location: {shop.city || 'Bulawayo'}</p>
-                  <p>Zimbabwe Street Culture</p>
+                <div className="border-t border-zinc-100 pt-4 space-y-1 text-xs text-zinc-400">
+                  <p>Location: {shop.city || 'Harare'}, Zimbabwe</p>
+                  <p>Powered by ThreadZW 💚</p>
                 </div>
               </motion.div>
             </>
