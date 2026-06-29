@@ -38,7 +38,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
   const [description, setDescription] = useState(myShop?.description || '');
   const [town, setTown] = useState(myShop?.location || myShop?.town || '');
   const [directions, setDirections] = useState(myShop?.directions || '');
-  const [whatsapp, setWhatsapp] = useState(myShop?.whatsapp || '');
+  const [whatsapp, setWhatsapp] = useState(myShop?.whatsapp_number || myShop?.whatsapp || '');
   const [instagram, setInstagram] = useState(myShop?.instagram || '');
   
   const [bannerPreview, setBannerPreview] = useState<string | null>(myShop?.banner_url || null);
@@ -176,7 +176,7 @@ export const ShopEditView: React.FC<ShopEditViewProps> = ({ myShop, onUpdate }) 
           name,
           description,
           location: town, 
-          whatsapp,
+          whatsapp_number: whatsapp,
           instagram,
           banner_url: finalBannerUrl,
           logo_url: finalAvatarUrl

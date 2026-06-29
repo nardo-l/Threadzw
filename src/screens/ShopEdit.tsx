@@ -261,7 +261,18 @@ export const ShopEdit = () => {
       setDirections(config.directions || data.directions || '');
       setOnlineOnly(config.online_only !== undefined ? config.online_only : (data.online_only || false));
       setDeliveryInfo(config.delivery_info || data.delivery_info || '');
-      setWhatsapp(data.whatsapp ? data.whatsapp.replace('+263', '') : '');
+      
+      // Zimbabwe WhatsApp prefill normalization
+      const rawWa = data.whatsapp_number || data.whatsapp || '';
+      let cleanWa = rawWa.replace(/\D/g, '');
+      if (cleanWa.startsWith('263')) {
+        cleanWa = cleanWa.substring(3);
+      }
+      if (cleanWa.startsWith('0')) {
+        cleanWa = cleanWa.substring(1);
+      }
+      setWhatsapp(cleanWa);
+
       setInstagram(config.instagram || data.instagram || '');
       if (config.trading_hours) {
         setTradingHours(config.trading_hours);
@@ -608,12 +619,9 @@ export const ShopEdit = () => {
         description: serializedDescription,
         categories,
         location: onlineOnly ? null : area,
-        whatsapp: `+263${cleanWhatsapp}`,
         whatsapp_number: `+263${cleanWhatsapp}`,
-        instagram: instagram.trim() || null,
         banner_url: cleanBanner,
-        logo_url: cleanAvatar,
-        updated_at: new Date().toISOString()
+        logo_url: cleanAvatar
       };
 
       Object.keys(updateData).forEach(key => {

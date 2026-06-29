@@ -59,7 +59,7 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
           categories: [shopFormData.category],
           description: shopFormData.description || '',
           location: shopFormData.town,
-          whatsapp: shopFormData.whatsapp,
+          whatsapp_number: shopFormData.whatsapp,
           is_live: true,
           subscription_status: 'trial',
           trial_ends_at: trialEnd.toISOString(),

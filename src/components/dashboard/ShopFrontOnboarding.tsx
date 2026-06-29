@@ -191,7 +191,7 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
         name: name.trim(),
         handle: handle.trim().toLowerCase(),
         slug: handle.trim().toLowerCase(),
-        whatsapp: whatsapp.trim(),
+        whatsapp_number: whatsapp.trim(),
         location: finalLocation,
         categories: [category],
         description: description.trim(),

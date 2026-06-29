@@ -75,27 +75,33 @@ export const resolveImageUrl = (url: string | null | undefined, type?: 'logo' | 
   // Strip any existing bucket prefix to avoid double prefix or incorrect bucket mapping
   const buckets = ['shop-images', 'product-images', 'shop-banners', 'shop-avatars', 'avatars'];
   let cleanPath = finalUrl;
+  let detectedBucket = null;
   for (const b of buckets) {
     if (finalUrl.startsWith(`${b}/`)) {
       cleanPath = finalUrl.substring(b.length + 1);
+      detectedBucket = b;
       break;
     }
   }
 
-  // Now resolve strictly based on type
-  let targetBucket = 'shop-images';
-  if (type === 'product') {
-    targetBucket = 'product-images';
-  } else if (type === 'logo' || type === 'banner') {
-    targetBucket = 'shop-images';
-  } else {
-    // Fallback if no type is provided (should generally be avoided as explicit type parameters are passed)
-    if (finalUrl.includes('avatar') || finalUrl.includes('logo')) {
-      targetBucket = 'shop-images';
-    } else if (finalUrl.includes('banner')) {
-      targetBucket = 'shop-images';
-    } else if (finalUrl.includes('/') || finalUrl.includes('product') || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(finalUrl)) {
+  // Now resolve strictly based on type or detectedBucket
+  let targetBucket = detectedBucket || 'shop-images';
+  if (!detectedBucket) {
+    if (type === 'product') {
       targetBucket = 'product-images';
+    } else if (type === 'logo') {
+      targetBucket = 'shop-avatars';
+    } else if (type === 'banner') {
+      targetBucket = 'shop-banners';
+    } else {
+      // Fallback if no type is provided (should generally be avoided as explicit type parameters are passed)
+      if (finalUrl.includes('avatar') || finalUrl.includes('logo')) {
+        targetBucket = 'shop-avatars';
+      } else if (finalUrl.includes('banner')) {
+        targetBucket = 'shop-banners';
+      } else if (finalUrl.includes('/') || finalUrl.includes('product') || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(finalUrl)) {
+        targetBucket = 'product-images';
+      }
     }
   }
 
