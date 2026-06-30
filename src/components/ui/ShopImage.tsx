@@ -53,8 +53,8 @@ export const resolveImageUrl = (url: string | null | undefined, type?: 'logo' | 
     return null;
   }
 
-  // If URL starts with http:// or https://, check if it's already a full Supabase storage URL or a normal URL
-  if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://')) {
+  // If URL starts with http://, https://, or blob:, return unchanged (with base domain correction for Supabase URLs if relevant)
+  if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://') || finalUrl.startsWith('blob:')) {
     const activeBaseUrl = SUPABASE_URL ? SUPABASE_URL.trim().replace(/\/$/, '') : "https://dxfnoswvuhqvhyofcain.supabase.co";
     if (finalUrl.includes('.supabase.co/')) {
       const match = finalUrl.match(/https?:\/\/[a-z0-9-]+\.supabase\.co/i);
@@ -273,6 +273,12 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
       <img
         src={activeSrc}
         alt={alt}
+        ref={(el) => {
+          if (el && el.complete && !loaded) {
+            setLoaded(true);
+            setFailedAll(false);
+          }
+        }}
         onLoad={() => {
           setLoaded(true);
           setFailedAll(false);
@@ -333,40 +339,58 @@ export const ShopLogo: React.FC<ShopLogoProps> = ({
   style: extraStyle = {},
   alt
 }) => {
+  // Preview priority: uploaded preview URL -> saved database URL -> image placeholder
   const rawUrl = url || shop?.logo_url || shop?.avatar_url;
-  const logoUrl = resolveImageUrl(rawUrl, 'logo');
+  
+  let srcToUse = null;
+  if (rawUrl && rawUrl.trim() !== '') {
+    if (rawUrl.startsWith('https://') || rawUrl.startsWith('http://') || rawUrl.startsWith('blob:')) {
+      srcToUse = rawUrl;
+    } else {
+      srcToUse = resolveImageUrl(rawUrl, 'logo');
+    }
+  }
+
+  // If we have an image URL, render it directly using a native img tag
+  if (srcToUse) {
+    return (
+      <img
+        src={srcToUse}
+        alt={alt || name || shop?.name || 'Shop logo'}
+        className={className}
+        referrerPolicy="no-referrer"
+        style={{
+          width: size,
+          height: size,
+          borderRadius: typeof size === 'number' ? size * 0.22 : '8px',
+          objectFit: 'cover',
+          display: 'block',
+          ...extraStyle
+        }}
+      />
+    );
+  }
+
+  // Typographic/Icon placeholder fallback if no URL is available (Never render a blank white rectangle)
+  const fallbackText = name || shop?.name || alt || 'S';
+  const letter = fallbackText.trim().charAt(0).toUpperCase();
+  const colorClass = getDeterministicColor(fallbackText);
   const numericSize = typeof size === 'number' ? size : parseInt(size as string) || 48;
 
-  const candidateSrcs = useMemo(() => {
-    const list: string[] = [];
-    const buster = getSafeBusterValue(shop?.updated_at || shop?.created_at);
-    if (logoUrl) {
-      list.push(`${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${buster}`);
-      list.push(logoUrl);
-    }
-    // Static fallback of last resort
-    list.push('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=150&q=80');
-    return list;
-  }, [logoUrl, shop]);
-
   return (
-    <ImageWithSkeleton
-      srcs={candidateSrcs}
-      src={candidateSrcs[0]}
-      alt={alt || name || shop?.name || 'Shop logo'}
-      className={className}
-      skeletonType="logo"
-      logoSize={numericSize}
-      fallbackText={name || shop?.name || alt || 'S'}
+    <div 
+      className={`flex items-center justify-center font-sans font-bold select-none bg-gradient-to-br ${colorClass} ${className}`}
       style={{
         width: size,
         height: size,
         borderRadius: numericSize * 0.22,
-        objectFit: 'cover',
-        display: 'block',
         ...extraStyle
       }}
-    />
+    >
+      <span style={{ fontSize: `${numericSize * 0.45}px` }} className="font-black tracking-tight uppercase">
+        {letter}
+      </span>
+    </div>
   );
 };
 
@@ -387,41 +411,63 @@ export const ShopBanner: React.FC<ShopBannerProps> = ({
   style: extraStyle = {},
   alt
 }) => {
+  // Preview priority: uploaded preview URL -> saved database URL -> image placeholder
   const rawUrl = url || shop?.banner_url;
-  const bannerUrl = resolveImageUrl(rawUrl, 'banner');
-  const logoUrl = resolveImageUrl(shop?.logo_url || shop?.avatar_url, 'logo');
+  
+  let srcToUse = null;
+  if (rawUrl && rawUrl.trim() !== '') {
+    if (rawUrl.startsWith('https://') || rawUrl.startsWith('http://') || rawUrl.startsWith('blob:')) {
+      srcToUse = rawUrl;
+    } else {
+      srcToUse = resolveImageUrl(rawUrl, 'banner');
+    }
+  }
 
-  const candidateSrcs = useMemo(() => {
-    const list: string[] = [];
-    const buster = getSafeBusterValue(shop?.updated_at || shop?.created_at);
-    if (bannerUrl) {
-      list.push(`${bannerUrl}${bannerUrl.includes('?') ? '&' : '?'}t=${buster}`);
-      list.push(bannerUrl);
-    }
-    if (logoUrl) {
-      list.push(`${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${buster}`);
-      list.push(logoUrl);
-    }
-    list.push('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80');
-    return list;
-  }, [bannerUrl, logoUrl, shop]);
+  // If we have an image URL, render it directly using a native img tag
+  if (srcToUse) {
+    return (
+      <img
+        src={srcToUse}
+        alt={alt || `${shop?.name || ''} banner`}
+        className={className}
+        referrerPolicy="no-referrer"
+        style={{
+          width: '100%',
+          height,
+          objectFit: 'cover',
+          display: 'block',
+          ...extraStyle
+        }}
+      />
+    );
+  }
+
+  // Typographic fallback placeholder if no URL is available (Never render a blank white rectangle)
+  const fallbackText = shop?.name || 'B';
+  const letter = fallbackText.trim().charAt(0).toUpperCase();
+  const colorClass = getDeterministicColor(fallbackText);
 
   return (
-    <ImageWithSkeleton
-      srcs={candidateSrcs}
-      src={candidateSrcs[0]}
-      alt={alt || `${shop?.name || ''} banner`}
-      className={className}
-      skeletonType="banner"
-      fallbackText={shop?.name || 'B'}
+    <div 
+      className={`relative flex flex-col justify-center items-center font-sans select-none bg-gradient-to-br ${colorClass} ${className}`}
       style={{
         width: '100%',
         height,
-        objectFit: 'cover',
-        display: 'block',
         ...extraStyle
       }}
-    />
+    >
+      <div className="flex flex-col items-center gap-1.5">
+        <span className="text-4xl font-black tracking-widest">{letter}</span>
+        <span className="text-[9px] font-bold tracking-[0.25em] uppercase opacity-70">
+          {fallbackText}
+        </span>
+      </div>
+      <div className="absolute inset-0 grid grid-cols-3 gap-4 p-4 opacity-[0.03] pointer-events-none">
+        <div className="border border-dashed border-zinc-900 rounded-lg"></div>
+        <div className="border border-dashed border-zinc-900 rounded-lg"></div>
+        <div className="border border-dashed border-zinc-900 rounded-lg"></div>
+      </div>
+    </div>
   );
 };
 
@@ -455,59 +501,46 @@ export const ProductImage: React.FC<ProductImageProps> = ({
   }, [product]);
 
   const rawUrl = url || images[index] || images[0];
-  const imageUrl = resolveImageUrl(rawUrl, 'product');
-  const logoUrl = resolveImageUrl(shop?.logo_url || shop?.avatar_url, 'logo');
 
-  const candidateSrcs = useMemo(() => {
-    const list: string[] = [];
-    const buster = getSafeBusterValue(product?.updated_at || product?.created_at);
+  // If there's no image URL, render the typographic fallback
+  if (!rawUrl || rawUrl.trim() === '') {
+    const fallbackText = product?.name || 'P';
+    const letter = fallbackText.trim().charAt(0).toUpperCase();
+    const colorClass = getDeterministicColor(fallbackText);
+    return (
+      <div 
+        className={`relative border flex flex-col justify-center items-center overflow-hidden font-sans select-none bg-gradient-to-br ${colorClass} ${className}`}
+        style={{
+          width,
+          height,
+          ...extraStyle
+        }}
+      >
+        <span className="text-6xl font-black tracking-tight">{letter}</span>
+        <span className="text-[10px] font-bold tracking-[0.15em] uppercase opacity-70 mt-2.5 truncate max-w-[80%] text-center">
+          {fallbackText}
+        </span>
+        <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-1 pointer-events-none opacity-20">
+          <div className="h-1.5 w-2/3 bg-current rounded-full opacity-40"></div>
+          <div className="h-1 w-1/3 bg-current rounded-full opacity-30"></div>
+        </div>
+      </div>
+    );
+  }
 
-    // 1. Primary Product Image
-    if (imageUrl) {
-      list.push(`${imageUrl}${imageUrl.includes('?') ? '&' : '?'}t=${buster}`);
-      list.push(imageUrl);
-    }
-
-    // 2. Secondary Product Images
-    if (Array.isArray(product?.images)) {
-      product.images.forEach((img: any, idx: number) => {
-        if (idx !== index) {
-          const fallbackImgUrl = resolveImageUrl(img, 'product');
-          if (fallbackImgUrl) {
-            list.push(`${fallbackImgUrl}${fallbackImgUrl.includes('?') ? '&' : '?'}t=${buster}`);
-            list.push(fallbackImgUrl);
-          }
-        }
-      });
-    }
-
-    // 3. Shop Banner Fallback
-    const bannerUrl = resolveImageUrl(shop?.banner_url, 'banner');
-    if (bannerUrl) {
-      list.push(`${bannerUrl}${bannerUrl.includes('?') ? '&' : '?'}t=${buster}`);
-      list.push(bannerUrl);
-    }
-
-    // 4. Shop Logo Fallback
-    if (logoUrl) {
-      list.push(`${logoUrl}${logoUrl.includes('?') ? '&' : '?'}t=${buster}`);
-      list.push(logoUrl);
-    }
-
-    // 5. Hardcoded Apparel Unsplash fallback
-    list.push('https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=400&q=80');
-
-    return list;
-  }, [imageUrl, logoUrl, shop, product, index]);
+  // Otherwise, render a standard native <img> tag without ImageWithSkeleton
+  // DO NOT use resolveImageUrl if the database value already starts with https://
+  let srcToUse = rawUrl;
+  if (!rawUrl.startsWith('https://') && !rawUrl.startsWith('http://')) {
+    srcToUse = resolveImageUrl(rawUrl, 'product') || '';
+  }
 
   return (
-    <ImageWithSkeleton
-      srcs={candidateSrcs}
-      src={candidateSrcs[0]}
-      alt={alt || product?.name || 'Product catalog item'}
-      className={className}
-      skeletonType="product"
-      fallbackText={product?.name || 'P'}
+    <img
+      src={srcToUse}
+      alt={alt || product?.name || 'Product Image'}
+      className={`${className}`}
+      referrerPolicy="no-referrer"
       style={{
         width,
         height,

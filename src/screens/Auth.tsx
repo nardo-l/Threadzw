@@ -33,12 +33,18 @@ export const Auth: React.FC = () => {
       setError('Please enter your email and password.');
       return;
     }
+
+    // Explicitly wipe stale credentials/sessions to avoid false-positive mock authentication
+    localStorage.removeItem('threadzw_logged_in');
+    localStorage.removeItem('supabase_logged_in_user_id');
+    localStorage.removeItem('threadzw_owner_email');
+    localStorage.removeItem('threadzw_owner_name');
     
     setLoading(true);
     setError(null);
   
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password: password
       });
@@ -52,8 +58,18 @@ export const Auth: React.FC = () => {
         }
         throw signInError;
       }
+
+      if (!data?.session) {
+        throw new Error('No authenticated session was returned from the authentication service.');
+      }
+
       localStorage.setItem('thread_has_account', 'true');
     } catch (err: any) {
+      // Clear out states completely on failure
+      localStorage.removeItem('threadzw_logged_in');
+      localStorage.removeItem('supabase_logged_in_user_id');
+      localStorage.removeItem('threadzw_owner_email');
+      localStorage.removeItem('threadzw_owner_name');
       setError(mapError(err));
     } finally {
       if (mounted.current) setLoading(false);

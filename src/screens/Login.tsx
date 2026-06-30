@@ -21,6 +21,12 @@ export const Login: React.FC = () => {
       return;
     }
 
+    // Clear any stale local storage session states to prevent false-positive mock fallbacks
+    localStorage.removeItem('threadzw_logged_in');
+    localStorage.removeItem('supabase_logged_in_user_id');
+    localStorage.removeItem('threadzw_owner_email');
+    localStorage.removeItem('threadzw_owner_name');
+
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -29,6 +35,9 @@ export const Login: React.FC = () => {
       });
 
       if (error) throw error;
+      if (!data?.session || !data?.session?.user) {
+        throw new Error('No authenticated user session was returned from the authentication service.');
+      }
 
       toast.success('Signed in successfully');
       if (data?.user?.id) {
@@ -39,6 +48,11 @@ export const Login: React.FC = () => {
       navigate('/dashboard');
     } catch (err: any) {
       console.error('Sign in error:', err);
+      // Ensure all local storage session state remains cleared on failure
+      localStorage.removeItem('threadzw_logged_in');
+      localStorage.removeItem('supabase_logged_in_user_id');
+      localStorage.removeItem('threadzw_owner_email');
+      localStorage.removeItem('threadzw_owner_name');
       toast.error(err.message || 'Invalid login credentials');
     } finally {
       setLoading(false);

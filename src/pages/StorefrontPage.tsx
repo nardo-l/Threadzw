@@ -149,14 +149,14 @@ export const StorefrontPage: React.FC = () => {
           name: nameWord.includes('Shop') || nameWord.includes('Brand') ? nameWord : `${nameWord} Streetwear`,
           slug: cleanSlug,
           handle: cleanSlug,
-          location: "Harare CBD, Zimbabwe",
+          location: "Available Online Across Zimbabwe",
           description: `Premium Zimbabwe boutique ${nameWord}. Beautiful modern clothes, styled local accents. Built from ethically sourced materials.`,
           whatsapp: "263776223144",
           logo_url: null,
           banner_url: null,
           hours: "Mon-Sat 8:30am - 6:00pm",
-          landmark: "Near OK First Street",
-          directions: "We are situated beautifully opposite OK First Street in Harare. Head into the main level lobby, shop 7.",
+          landmark: "",
+          directions: "",
           online_only: false
         };
       }
@@ -960,7 +960,7 @@ export const StorefrontPage: React.FC = () => {
                       <div className="space-y-0.5">
                         <span className="text-[10px] font-extrabold text-green-700 uppercase tracking-wider block">Availability</span>
                         <p className="text-zinc-650 leading-relaxed font-sans font-medium text-[11px]">
-                          {shop.delivery_info?.trim() || "Local Harare showroom pickup available. Secured nationwide courier shipping & door delivery options are calculated during checkout."}
+                          {shop.delivery_info?.trim() || `Showroom pickup available in ${shop.city || 'Zimbabwe'}. Secured nationwide courier shipping & door delivery options are calculated during checkout.`}
                         </p>
                       </div>
                     </div>
@@ -1073,7 +1073,7 @@ export const StorefrontPage: React.FC = () => {
 
                 {/* Bottom coordinates */}
                 <div className="border-t border-zinc-100 pt-4 space-y-1 text-xs text-zinc-400">
-                  <p>Location: {shop.city || 'Harare'}, Zimbabwe</p>
+                  <p>Location: {shop.city || shop.location || (shop.id?.startsWith('shop-') ? 'Available Online' : 'Harare')}, Zimbabwe</p>
                   <p>Powered by ThreadZW 💚</p>
                 </div>
               </motion.div>

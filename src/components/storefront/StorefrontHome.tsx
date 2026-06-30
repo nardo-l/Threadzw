@@ -23,10 +23,18 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
 }) => {
   // Dynamic location text based on priority order: Landmark -> Area -> Location -> City
   const dynamicLocationText = useMemo(() => {
-    const landmark = shop?.landmark?.trim();
-    const area = shop?.suburb?.trim() || shop?.area?.trim();
-    const location = shop?.location?.trim();
-    const city = shop?.city?.trim();
+    const isMock = shop?.id?.startsWith('shop-');
+    
+    const filterHarare = (val: string | null | undefined) => {
+      if (!val) return null;
+      if (isMock && val.toLowerCase().includes('harare')) return null;
+      return val;
+    };
+
+    const landmark = filterHarare(shop?.landmark?.trim());
+    const area = filterHarare(shop?.suburb?.trim() || shop?.area?.trim());
+    const location = filterHarare(shop?.location?.trim());
+    const city = filterHarare(shop?.city?.trim());
 
     if (landmark) {
       return `Located in ${landmark}`;
