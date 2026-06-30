@@ -21,6 +21,28 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
   onToggleWishlist,
   onNavigateToPage,
 }) => {
+  // Dynamic location text based on priority order: Landmark -> Area -> Location -> City
+  const dynamicLocationText = useMemo(() => {
+    const landmark = shop?.landmark?.trim();
+    const area = shop?.suburb?.trim() || shop?.area?.trim();
+    const location = shop?.location?.trim();
+    const city = shop?.city?.trim();
+
+    if (landmark) {
+      return `Located in ${landmark}`;
+    }
+    if (area) {
+      return `Located in ${area}`;
+    }
+    if (location) {
+      return `Located in ${location}`;
+    }
+    if (city) {
+      return `Located in ${city}`;
+    }
+    return 'Available Online Across Zimbabwe';
+  }, [shop]);
+
   // Highlights Carousel Info matching redesign specifications
   const highlightCards = useMemo(() => {
     return [
@@ -33,7 +55,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       {
         icon: '🚚',
         title: 'Nationwide Delivery',
-        desc: 'Speedy shipping options within Harare, Bulawayo, and reliable door-to-door courier services.',
+        desc: 'Speedy shipping options and reliable door-to-door courier services across Zimbabwe.',
         bg: 'bg-indigo-50/70 text-indigo-950 border-indigo-100/40',
       },
       {
@@ -44,8 +66,10 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       },
       {
         icon: '📍',
-        title: `Located in ${shop.city || 'Harare'}`,
-        desc: `Operating active logistics coordinates in ${shop.city || 'Harare'}, Zimbabwe. Order online 24/7.`,
+        title: dynamicLocationText,
+        desc: shop?.location || shop?.landmark || shop?.suburb || shop?.city
+          ? `Operating active logistics coordinates at our physical destination. Order online 24/7.`
+          : `We ship nationwide right to your door with certified courier options anywhere in Zimbabwe.`,
         bg: 'bg-violet-50/70 text-violet-950 border-violet-100/40',
       },
       {
@@ -55,7 +79,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
         bg: 'bg-rose-50/70 text-rose-950 border-rose-100/40',
       }
     ];
-  }, [shop.city]);
+  }, [shop, dynamicLocationText]);
 
   return (
     <div className="space-y-10 pb-16 select-none bg-white">

@@ -827,42 +827,6 @@ export const StorefrontPage: React.FC = () => {
             <span className="text-[10px]">Shop</span>
           </button>
 
-          {/* Conditional Raised Circular Location Button - Premium Visit Shop iOS Style */}
-          {hasLocationInfo && (
-            <div className="flex-grow flex justify-center items-center h-full relative w-[96px] shrink-0">
-              <div className="absolute bottom-1.5 flex flex-col items-center">
-                {/* Surround the button with a white circular ring */}
-                <div className="w-[96px] h-[96px] rounded-full bg-white flex items-center justify-center shadow-[0_10px_30px_rgba(22,163,74,0.15)] border border-zinc-150/50 relative z-10">
-                  <motion.button
-                    onClick={() => setShowLocationSheet(true)}
-                    whileTap={{ scale: 0.95, transition: { type: 'spring', stiffness: 500, damping: 15 } }}
-                    animate={{
-                      scale: [1, 1.05, 1],
-                      boxShadow: [
-                        '0 10px 25px -5px rgba(22, 163, 74, 0.4), 0 8px 10px -6px rgba(22, 163, 74, 0.4)',
-                        '0 12px 35px 5px rgba(22, 163, 74, 0.65), 0 10px 15px -4px rgba(22, 163, 74, 0.65)',
-                        '0 10px 25px -5px rgba(22, 163, 74, 0.4), 0 8px 10px -6px rgba(22, 163, 74, 0.4)'
-                      ]
-                    }}
-                    transition={{
-                      duration: 6,
-                      repeat: Infinity,
-                      ease: 'easeInOut'
-                    }}
-                    className="w-[84px] h-[84px] rounded-full bg-green-600 hover:bg-green-500 text-white flex flex-col items-center justify-center border-4 border-white cursor-pointer select-none"
-                    title="Visit Shop"
-                  >
-                    <MapPin className="w-7 h-7" />
-                  </motion.button>
-                </div>
-                {/* Add text label underneath: Visit Shop */}
-                <span className="text-[9.5px] font-extrabold text-green-700 uppercase tracking-widest mt-1 bg-white/90 backdrop-blur-xs px-2.5 py-0.5 rounded-full border border-zinc-150 shadow-3xs relative z-20 font-sans leading-none">
-                  Visit Shop
-                </span>
-              </div>
-            </div>
-          )}
-
           <button
             onClick={() => navigateToPage('cart')}
             className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer relative ${

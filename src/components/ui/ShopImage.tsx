@@ -164,11 +164,15 @@ export const ImageWithSkeleton: React.FC<ImageWithSkeletonProps> = ({
     return list;
   }, [srcs, src]);
 
+  const serializedSrcs = useMemo(() => {
+    return candidateSrcs.join(',');
+  }, [candidateSrcs]);
+
   useEffect(() => {
     setCurrentSrcIdx(0);
     setLoaded(false);
     setFailedAll(candidateSrcs.length === 0);
-  }, [candidateSrcs]);
+  }, [serializedSrcs]);
 
   const activeSrc = candidateSrcs[currentSrcIdx] || null;
 

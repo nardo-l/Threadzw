@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontCart.tsx
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Truck, Store } from 'lucide-react';
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Truck, Store, MapPin, MessageCircle, ExternalLink, Compass } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
 import { CartItem } from './types';
 
@@ -24,6 +24,28 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
   shippingMethod,
   onChangeShippingMethod
 }) => {
+  // Check if any location data exists
+  const hasLocationData = useMemo(() => {
+    return !!(shop?.location?.trim() || shop?.landmark?.trim() || shop?.directions?.trim() || shop?.town?.trim() || shop?.city?.trim() || shop?.suburb?.trim());
+  }, [shop]);
+
+  // Clean WhatsApp number for Enquiry
+  const whatsappLink = useMemo(() => {
+    if (!shop) return '';
+    const rawNum = shop.whatsapp_number || shop.whatsapp || '';
+    let clean = rawNum.replace(/\D/g, '');
+    if (clean.startsWith('263')) {
+      // already formatted
+    } else if (clean.startsWith('0')) {
+      clean = `263${clean.substring(1)}`;
+    } else if (clean.length > 0) {
+      clean = `263${clean}`;
+    } else {
+      clean = '263771234567'; // Fallback
+    }
+    return `https://wa.me/${clean}?text=${encodeURIComponent(`Hi, I'm looking at your store ${shop.name} and would like to visit or enquire about boutique pickup/location details.`)}`;
+  }, [shop]);
+
   // Subtotal
   const subtotal = useMemo(() => {
     return cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
@@ -110,6 +132,74 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
               </div>
             ))}
           </div>
+
+          {/* ----------------- VISIT SHOP EXPERIENCE (PRIORITY 4) ----------------- */}
+          {hasLocationData && (
+            <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-3 text-left">
+              <div className="flex items-center gap-2 pb-2 border-b border-zinc-200/60">
+                <MapPin className="w-4 h-4 text-green-600 animate-pulse" />
+                <span className="text-[10px] uppercase tracking-wider text-zinc-900 font-extrabold font-sans">
+                  Visit {shop?.name || 'Our Boutique'}
+                </span>
+              </div>
+              
+              <div className="space-y-2.5">
+                {/* Location / Area */}
+                {(shop?.location || shop?.town) && (
+                  <div>
+                    <span className="text-[9px] text-zinc-400 font-extrabold uppercase font-sans tracking-wide block">Address / Area</span>
+                    <p className="text-xs text-zinc-800 font-semibold font-sans mt-0.5">{shop.location || shop.town}</p>
+                  </div>
+                )}
+
+                {/* Landmark */}
+                {shop?.landmark && (
+                  <div>
+                    <span className="text-[9px] text-zinc-400 font-extrabold uppercase font-sans tracking-wide block">Landmark</span>
+                    <p className="text-xs text-zinc-600 font-medium font-sans mt-0.5">{shop.landmark}</p>
+                  </div>
+                )}
+
+                {/* Directions */}
+                {shop?.directions && (
+                  <div>
+                    <span className="text-[9px] text-zinc-400 font-extrabold uppercase font-sans tracking-wide block">Directions</span>
+                    <p className="text-xs text-zinc-600 font-normal leading-relaxed font-sans mt-0.5">{shop.directions}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                {shop?.google_maps_url ? (
+                  <a
+                    href={shop.google_maps_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-1.5 py-2 px-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer border border-zinc-200/50"
+                  >
+                    <Compass className="w-3.5 h-3.5 text-zinc-500" />
+                    <span>Get Directions</span>
+                    <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                  </a>
+                ) : (
+                  <div className="flex items-center justify-center py-2 px-3 bg-zinc-100 text-zinc-400 text-[10px] font-bold uppercase tracking-wider rounded-xl select-none border border-zinc-200/20">
+                    No GPS Link
+                  </div>
+                )}
+
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer border border-green-200/30"
+                >
+                  <MessageCircle className="w-3.5 h-3.5 text-green-600" />
+                  <span>Enquire WA</span>
+                </a>
+              </div>
+            </div>
+          )}
 
           {/* ----------------- DELIVERY METHOD ----------------- */}
           <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-3">
