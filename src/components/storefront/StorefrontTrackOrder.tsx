@@ -77,11 +77,12 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
   const activeStepIdx = useMemo(() => {
     if (!orderResults || orderResults.length === 0) return -1;
     const status = orderResults[0].status || 'pending';
+    const lowerStatus = status.toLowerCase();
     
-    if (status === 'pending') return 0;
-    if (status === 'confirmed') return 1;
-    if (status === 'shipped') return 2;
-    if (status === 'delivered') return 3;
+    if (lowerStatus.includes('visit') || lowerStatus.includes('merchant') || lowerStatus === 'pending') return 0;
+    if (lowerStatus === 'confirmed') return 1;
+    if (lowerStatus === 'shipped' || lowerStatus === 'processing') return 2;
+    if (lowerStatus === 'completed' || lowerStatus === 'delivered') return 3;
     return 0;
   }, [orderResults]);
 

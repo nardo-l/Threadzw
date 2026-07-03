@@ -81,6 +81,10 @@ export const ShopEdit = () => {
   const [suburb, setSuburb] = useState('');
   const [city, setCity] = useState('');
   const [googleMapsUrl, setGoogleMapsUrl] = useState('');
+  const [shopAddress, setShopAddress] = useState('');
+  const [buildingName, setBuildingName] = useState('');
+  const [floor, setFloor] = useState('');
+  const [shopNumber, setShopNumber] = useState('');
   const [pickupAvailable, setPickupAvailable] = useState(false);
   const [pickupLabel, setPickupLabel] = useState('');
   const [area, setArea] = useState('');
@@ -90,6 +94,14 @@ export const ShopEdit = () => {
   const [deliveryInfo, setDeliveryInfo] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [instagram, setInstagram] = useState('');
+  
+  // Extended custom fields
+  const [harareDelivery, setHarareDelivery] = useState('');
+  const [nationwideCourier, setNationwideCourier] = useState('');
+  const [internationalShipping, setInternationalShipping] = useState('');
+  const [businessHighlights, setBusinessHighlights] = useState('');
+  const [responseTime, setResponseTime] = useState('');
+  const [customNotes, setCustomNotes] = useState('');
   
   // Custom Premium Redesigned Storefront States
   const [storeStory, setStoreStory] = useState('');
@@ -254,6 +266,10 @@ export const ShopEdit = () => {
       setSuburb(config.suburb || data.suburb || '');
       setCity(config.city || data.city || '');
       setGoogleMapsUrl(config.google_maps_url || data.google_maps_url || '');
+      setShopAddress(config.shop_address || data.location || '');
+      setBuildingName(config.building_name || '');
+      setFloor(config.floor || '');
+      setShopNumber(config.shop_number || '');
       setPickupAvailable(config.pickup_available !== undefined ? config.pickup_available : (data.pickup_available || false));
       setPickupLabel(config.pickup_label || data.pickup_label || '');
       setArea(data.location || '');
@@ -261,6 +277,12 @@ export const ShopEdit = () => {
       setDirections(config.directions || data.directions || '');
       setOnlineOnly(config.online_only !== undefined ? config.online_only : (data.online_only || false));
       setDeliveryInfo(config.delivery_info || data.delivery_info || '');
+      setHarareDelivery(typeof config.harare_delivery === 'string' ? config.harare_delivery : (config.harare_delivery ? 'Available' : ''));
+      setNationwideCourier(typeof config.nationwide_courier === 'string' ? config.nationwide_courier : (config.nationwide_courier ? 'Available' : ''));
+      setInternationalShipping(typeof config.international_shipping === 'string' ? config.international_shipping : (config.international_shipping ? 'Available' : ''));
+      setBusinessHighlights(config.business_highlights || '');
+      setResponseTime(config.response_time || '');
+      setCustomNotes(config.custom_notes || '');
       
       // Zimbabwe WhatsApp prefill normalization
       const rawWa = data.whatsapp_number || data.whatsapp || '';
@@ -599,14 +621,24 @@ export const ShopEdit = () => {
         suburb: suburb.trim() || undefined,
         city: city.trim() || undefined,
         google_maps_url: googleMapsUrl.trim() || undefined,
+        shop_address: shopAddress.trim() || undefined,
+        building_name: buildingName.trim() || undefined,
+        floor: floor.trim() || undefined,
+        shop_number: shopNumber.trim() || undefined,
         pickup_available: pickupAvailable,
         pickup_label: pickupLabel.trim() || undefined,
         landmark: landmark.trim() || undefined,
         directions: directions.trim() || undefined,
         online_only: onlineOnly,
-        delivery_info: onlineOnly ? deliveryInfo.trim() : undefined,
+        delivery_info: deliveryInfo.trim() || undefined,
         instagram_url: instagram.trim() ? `https://instagram.com/${instagram.trim().replace(/^@/, '')}` : undefined,
         trading_hours: tradingHours,
+        harare_delivery: harareDelivery.trim() || undefined,
+        nationwide_courier: nationwideCourier.trim() || undefined,
+        international_shipping: internationalShipping.trim() || undefined,
+        business_highlights: businessHighlights.trim() || undefined,
+        response_time: responseTime.trim() || undefined,
+        custom_notes: customNotes.trim() || undefined,
       };
 
       const serializedDescription = serializeShopConfig(description, configObj);
@@ -1154,10 +1186,10 @@ export const ShopEdit = () => {
           >
             <div className="space-y-1">
               <h2 className="font-syne font-bold text-lg text-white group-hover:text-primary transition-colors flex items-center gap-2">
-                Contact & Location
+                Customer Information
                 <MapPin size={16} className="text-primary" />
               </h2>
-              <p className="font-sans text-xs text-muted">Manage storefront access and secondary connections</p>
+              <p className="font-sans text-xs text-muted">Manage location settings, directions, and delivery details</p>
             </div>
             <div className="p-2 bg-elevated rounded-full text-muted group-hover:text-white transition-colors">
               <ChevronDown 
@@ -1211,72 +1243,86 @@ export const ShopEdit = () => {
                     {validationErrors.area && <FieldError message={validationErrors.area} />}
                   </div>
 
-                  {/* Suburb & City Row */}
+                  {/* Shop Address */}
+                  <div className="space-y-2">
+                    <label className="font-mono text-xs text-muted uppercase tracking-wider">Shop Address</label>
+                    <input 
+                      value={shopAddress}
+                      onChange={e => {
+                        setShopAddress(e.target.value);
+                        markChanged();
+                      }}
+                      placeholder="e.g. Bulawayo CBD"
+                      className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Building Name & Floor */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Suburb</label>
+                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Building Name</label>
                       <input 
-                        value={suburb}
+                        value={buildingName}
                         onChange={e => {
-                          setSuburb(e.target.value);
+                          setBuildingName(e.target.value);
                           markChanged();
                         }}
-                        placeholder="e.g. Avondale"
-                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                        placeholder="e.g. HnS Building"
+                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="font-mono text-xs text-muted uppercase tracking-wider">City</label>
+                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Floor</label>
                       <input 
-                        value={city}
+                        value={floor}
                         onChange={e => {
-                          setCity(e.target.value);
+                          setFloor(e.target.value);
                           markChanged();
                         }}
-                        placeholder="e.g. Harare"
-                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
+                        placeholder="e.g. First Floor"
+                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
                       />
                     </div>
                   </div>
 
-                  {/* Google Maps URL Link */}
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-muted uppercase tracking-wider">Google Maps Link</label>
-                    <input 
-                      value={googleMapsUrl}
-                      onChange={e => {
-                        setGoogleMapsUrl(e.target.value);
-                        markChanged();
-                      }}
-                      placeholder="e.g. https://maps.google.com/?q=..."
-                      className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all font-sans"
-                    />
-                  </div>
-
-                  {/* Landmark */}
-                  <div id="field-landmark" className="space-y-2">
-                    <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                      Landmark / Address <span className="text-primary">*</span>
-                    </label>
-                    <input 
-                      value={landmark}
-                      onChange={e => {
-                        setLandmark(e.target.value);
-                        markChanged();
-                      }}
-                      placeholder="e.g. Eastlea Shopping Centre, Shop 14"
-                      className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none transition-all ${
-                        validationErrors.landmark ? 'border-red' : 'border-transparent focus:border-primary'
-                      }`}
-                    />
-                    {validationErrors.landmark && <FieldError message={validationErrors.landmark} />}
+                  {/* Shop Number & Landmark */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Shop Number</label>
+                      <input 
+                        value={shopNumber}
+                        onChange={e => {
+                          setShopNumber(e.target.value);
+                          markChanged();
+                        }}
+                        placeholder="e.g. 23"
+                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                      />
+                    </div>
+                    <div id="field-landmark" className="space-y-2">
+                      <label className="font-mono text-xs text-muted uppercase tracking-wider">
+                        Landmark <span className="text-primary">*</span>
+                      </label>
+                      <input 
+                        value={landmark}
+                        onChange={e => {
+                          setLandmark(e.target.value);
+                          markChanged();
+                        }}
+                        placeholder="e.g. Opposite City Hall"
+                        className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none transition-all ${
+                          validationErrors.landmark ? 'border-red' : 'border-transparent focus:border-primary'
+                        }`}
+                      />
+                      {validationErrors.landmark && <FieldError message={validationErrors.landmark} />}
+                    </div>
                   </div>
 
                   {/* Directions */}
                   <div id="field-directions" className="space-y-2">
                     <div className="flex justify-between items-end">
                       <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                        How to Get There <span className="text-primary">*</span>
+                        Text Directions <span className="text-primary">*</span>
                       </label>
                       <span className="font-mono text-[10px] text-muted">{directions.length}/500</span>
                     </div>
@@ -1289,7 +1335,7 @@ export const ShopEdit = () => {
                         }
                       }}
                       rows={5}
-                      placeholder="Step-by-step directions from a nearby landmark..."
+                      placeholder="e.g. Enter through the main entrance of HnS Building, go to the first floor, Shop 23, directly opposite the Game Arena."
                       className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all ${
                         validationErrors.directions ? 'border-red' : 'border-transparent focus:border-primary'
                       }`}
@@ -1298,21 +1344,103 @@ export const ShopEdit = () => {
                     {validationErrors.directions && <FieldError message={validationErrors.directions} />}
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-2 animate-wipe overflow-hidden">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Delivery Information</label>
-                  <textarea 
-                    value={deliveryInfo}
+              ) : null}
+
+              {/* Delivery Details is always editable to let physical shops explain delivery methods */}
+              <div className="space-y-2 animate-wipe overflow-hidden">
+                <label className="font-mono text-xs text-muted uppercase tracking-wider">Delivery Details</label>
+                <textarea 
+                  value={deliveryInfo}
+                  onChange={e => {
+                    setDeliveryInfo(e.target.value);
+                    markChanged();
+                  }}
+                  rows={3}
+                  placeholder="e.g. Same-day delivery via courier in Harare, or bus pickup nationwide."
+                  className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
+                />
+              </div>
+
+              {/* Extended Delivery Options */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Harare Delivery</label>
+                  <input 
+                    value={harareDelivery}
                     onChange={e => {
-                      setDeliveryInfo(e.target.value);
+                      setHarareDelivery(e.target.value);
                       markChanged();
                     }}
-                    rows={3}
-                    placeholder="Describe how you deliver -- courier, pickup point, areas covered..."
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
+                    placeholder="e.g. Same Day $3"
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
                   />
                 </div>
-              )}
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Nationwide Courier</label>
+                  <input 
+                    value={nationwideCourier}
+                    onChange={e => {
+                      setNationwideCourier(e.target.value);
+                      markChanged();
+                    }}
+                    placeholder="e.g. overnight via Swift"
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">International Shipping</label>
+                  <input 
+                    value={internationalShipping}
+                    onChange={e => {
+                      setInternationalShipping(e.target.value);
+                      markChanged();
+                    }}
+                    placeholder="e.g. DHL within 5 days"
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Extended Highlights & Notes */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Response Time</label>
+                  <input 
+                    value={responseTime}
+                    onChange={e => {
+                      setResponseTime(e.target.value);
+                      markChanged();
+                    }}
+                    placeholder="e.g. Replies within minutes"
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Business Highlights</label>
+                  <input 
+                    value={businessHighlights}
+                    onChange={e => {
+                      setBusinessHighlights(e.target.value);
+                      markChanged();
+                    }}
+                    placeholder="e.g. Same Day Dispatch"
+                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-mono text-xs text-muted uppercase tracking-wider">Custom Notes / Alert</label>
+                <input 
+                  value={customNotes}
+                  onChange={e => {
+                    setCustomNotes(e.target.value);
+                    markChanged();
+                  }}
+                  placeholder="e.g. Free delivery on orders over $100 this weekend!"
+                  className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
+                />
+              </div>
 
               {/* Instagram Handle */}
               <div className="space-y-2">

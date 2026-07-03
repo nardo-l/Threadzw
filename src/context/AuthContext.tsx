@@ -31,9 +31,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const initSession = async () => {
-      // Create a 2.5 second timeout promise
+      // Create a 8.0 second timeout promise
       const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error("Supabase initial response timeout")), 2500)
+        setTimeout(() => reject(new Error("Supabase initial response timeout")), 8000)
       );
 
       try {
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } catch (e) {
-        console.error("Auth initSession error or timeout:", e);
+        console.warn("Auth initSession error or timeout (falling back gracefully):", e);
         if (mounted) {
           setSession(null);
           setProfile(null);

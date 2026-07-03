@@ -1,8 +1,10 @@
 // src/components/storefront/StorefrontShop.tsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle } from 'lucide-react';
+import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle, Star } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
+import { supabase } from '../../lib/supabase';
+import { useInventory } from '../../context/InventoryContext';
 
 interface StorefrontShopProps {
   shop: any;
@@ -21,6 +23,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
   initialCategory = 'all',
   initialSort = 'newest'
 }) => {
+  const { getProductRating } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState(initialSort);
@@ -38,6 +41,56 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
   useEffect(() => {
     setSortBy(initialSort);
   }, [initialSort]);
+
+  // Dynamic interaction traffic source tracker
+  useEffect(() => {
+    if (!shop || !shop.id) return;
+    const logInteraction = async (source: string) => {
+      try {
+        const key = `zw_source_logged_${shop.id}_${source}`;
+        if (sessionStorage.getItem(key)) return;
+        sessionStorage.setItem(key, 'true');
+
+        const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('boutique_customer_id', customerId);
+
+        const visitPayload = {
+          shop_id: shop.id,
+          owner_id: shop.owner_id,
+          product_name: 'Visit Log',
+          size: 'None',
+          quantity: 0,
+          sale_price: 0,
+          total_price: 0,
+          status: 'visit',
+          source: source,
+          customer_identifier: customerId,
+          created_at: new Date().toISOString()
+        };
+
+        let payload: any = { ...visitPayload };
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const { error } = await supabase.from('orders').insert([payload]);
+          if (!error) break;
+          const errMsg = error.message || '';
+          const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
+                        errMsg.match(/column "([^"]+)" does not exist/);
+          if (match && match[1]) {
+            delete payload[match[1]];
+          } else {
+            break;
+          }
+        }
+      } catch (_) {}
+    };
+
+    if (searchQuery.trim().length > 2) {
+      logInteraction('Search');
+    }
+    if (selectedCategory && selectedCategory !== 'all') {
+      logInteraction('Categories');
+    }
+  }, [searchQuery, selectedCategory, shop]);
 
   // List of Sort Options
   const sortOptions = [
@@ -258,6 +311,14 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                       <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-hover:text-green-600 transition-colors">
                         {p.name}
                       </h4>
+                      {/* Product Rating */}
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                        <span className="text-[10px] font-bold text-zinc-700">
+                          {getProductRating(p.id).score}
+                        </span>
+                        <span className="text-[9px] text-zinc-400 font-medium">({getProductRating(p.id).count})</span>
+                      </div>
                     </div>
 
                     <div className="mt-2.5">

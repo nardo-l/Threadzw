@@ -137,7 +137,7 @@ export const Notifications: React.FC = () => {
             </div>
             <h3 className="font-extrabold text-sm text-white">All Clear!</h3>
             <p className="text-xs text-zinc-500 max-w-xs mt-1.5 leading-relaxed">
-              No outstanding warehouse alerts or order claims. We will notify you when buyers checkout.
+              No outstanding warehouse alerts or buyer intents. We will notify you when buyers take action on your products.
             </p>
           </div>
         ) : (

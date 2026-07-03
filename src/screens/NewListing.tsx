@@ -99,6 +99,7 @@ export const NewListing: React.FC = () => {
   const [photoErrors, setPhotoErrors] = useState<Record<number, boolean>>({});
   
   // --- UI State ---
+  const [step, setStep] = useState(1);
   const [publishAttempted, setPublishAttempted] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
@@ -152,6 +153,61 @@ export const NewListing: React.FC = () => {
   const handleDiscardDraft = () => {
     localStorage.removeItem('thread_draft_listing');
     setShowDraftBanner(false);
+  };
+
+  const isStepValid = (s: number) => {
+    if (s === 1) {
+      return productName.trim() !== '' && category !== '' && condition !== '' && price !== '';
+    }
+    if (s === 2) {
+      return filledPhotosCount === 6;
+    }
+    if (s === 3) {
+      return noSizes || sizeVariants.length > 0;
+    }
+    return true;
+  };
+
+  const validateStepToGo = (targetStep: number): boolean => {
+    for (let s = 1; s < targetStep; s++) {
+      if (!isStepValid(s)) return false;
+    }
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (step === 1) {
+      if (!productName.trim() || !category || !condition || !price) {
+        showToast('Please complete all required fields', 'error');
+        setPublishAttempted(true);
+        return;
+      }
+    } else if (step === 2) {
+      if (filledPhotosCount < 6) {
+        showToast('Please upload all 6 required photo perspectives', 'error');
+        setPublishAttempted(true);
+        return;
+      }
+    } else if (step === 3) {
+      if (!noSizes && sizeVariants.length === 0) {
+        showToast('Please register at least one size variant or select Universal Scale', 'error');
+        return;
+      }
+    }
+    
+    if (step < 6) {
+      setStep(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (step > 1) {
+      setStep(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      handleBack();
+    }
   };
 
   // --- Computed State ---
@@ -389,14 +445,40 @@ export const NewListing: React.FC = () => {
             Save Draft
           </button>
         </div>
-        {/* Progress Bar */}
-        <div className="h-1 bg-charcoal/5 w-full">
-          <motion.div 
-            className="h-full bg-[#C6FF00] shadow-[0_0_10px_rgba(244,166,193,0.5)]"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-          />
+        {/* Step Indicator Bubbles */}
+        <div className="max-w-[430px] mx-auto px-6 py-3 bg-cream/90 backdrop-blur-md flex items-center justify-between border-t border-charcoal/5 gap-2 select-none">
+          {[
+            { n: 1, label: 'Details' },
+            { n: 2, label: 'Gallery' },
+            { n: 3, label: 'Sizing' },
+            { n: 4, label: 'Colors' },
+            { n: 5, label: 'Narrative' },
+            { n: 6, label: 'Review' }
+          ].map((s) => (
+            <button
+              key={s.n}
+              type="button"
+              onClick={() => {
+                if (s.n < step) {
+                  setStep(s.n);
+                } else if (validateStepToGo(s.n)) {
+                  setStep(s.n);
+                }
+              }}
+              className="flex-1 flex flex-col items-center gap-1 cursor-pointer group"
+            >
+              <div className={`h-1.5 w-full rounded-full transition-all ${
+                s.n === step 
+                  ? 'bg-[#C6FF00] shadow-[0_0_8px_#C6FF00]' 
+                  : s.n < step 
+                    ? 'bg-charcoal' 
+                    : 'bg-charcoal/10'
+              }`} />
+              <span className={`text-[8px] font-black uppercase tracking-tight transition-colors ${s.n === step ? 'text-charcoal' : 'text-charcoal/40 group-hover:text-charcoal/70'}`}>
+                {s.label}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -429,635 +511,759 @@ export const NewListing: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Section 1: Photos */}
-        <section id="error-photos" className="flex flex-col gap-8 relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-4 mb-3">
-               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Perspective</h2>
-               <div className="h-px flex-1 bg-charcoal/10" />
+        {/* Step 1: Details */}
+        {step === 1 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-10 relative z-10"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 mb-3">
+                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Metadata</h2>
+                 <div className="h-px flex-1 bg-charcoal/10" />
+              </div>
+              <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Identity Core</h3>
             </div>
-            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8] mb-2">Digital Exhibit</h3>
-            <p className="text-[11px] font-black text-[#C6FF00] uppercase tracking-widest italic">High-fidelity visual verification required</p>
-          </div>
 
-          <div className="grid grid-cols-2 gap-5">
-            {PHOTO_SLOTS_CONFIG.map((slot, idx) => {
-              const isMain = slot.id === 1;
-              const preview = photos[idx];
-              const hasError = photoErrors[idx];
+            {/* Name */}
+            <div id="error-productName" className="flex flex-col gap-5">
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Product Title</label>
+                <div className="flex items-center gap-2">
+                   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${productName.trim() ? 'bg-[#C6FF00] shadow-[0_0_10px_rgba(244,166,193,0.8)]' : 'bg-charcoal/5'}`} />
+                   <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+                </div>
+              </div>
+              <div className="relative group">
+                <input 
+                  type="text"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value.slice(0, 80))}
+                  placeholder="Declare product name..."
+                  className={`w-full bg-white border-2 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 ${
+                    publishAttempted && !productName ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
+                  }`}
+                />
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
+                  <span className="text-[10px] font-black text-charcoal/30 italic leading-none">{productName.length}/80</span>
+                </div>
+              </div>
+              <FieldError message={publishAttempted && !productName ? 'Identity label unresolved' : null} />
+            </div>
+
+            {/* Category */}
+            <div id="error-category" className="flex flex-col gap-6">
+              <div className="flex items-center justify-between px-2">
+                 <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Classification</label>
+                 <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+              </div>
+              <div className={`flex gap-4 overflow-x-auto no-scrollbar pb-6 -mx-8 px-8 ${publishAttempted && !category ? 'animate-shake' : ''}`}>
+                {globalCategoriesLoading ? (
+                  <div className="py-4 text-center text-xs text-charcoal/40 uppercase tracking-widest font-bold">Loading...</div>
+                ) : (
+                  globalCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategory(cat.name)}
+                      className={`relative w-44 h-24 rounded-[20px] overflow-hidden transition-all flex items-end p-4 border-2 flex-shrink-0 text-left ${
+                        category === cat.name 
+                          ? 'border-charcoal scale-105 shadow-md font-bold' 
+                          : 'border-charcoal/10 hover:border-charcoal/35'
+                      }`}
+                    >
+                      <div className="absolute inset-0 bg-black/55 z-10" />
+                      {cat.cover_image_url && (
+                        <img 
+                          src={cat.cover_image_url} 
+                          alt={cat.name} 
+                          className="absolute inset-0 w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      )}
+                      <span className={`text-[10px] font-black uppercase tracking-widest z-20 relative ${category === cat.name ? 'text-[#C6FF00]' : 'text-white'}`}>
+                        {cat.name}
+                      </span>
+                    </button>
+                  ))
+                )}
+              </div>
+              <FieldError message={publishAttempted && !category ? 'Classification scope missing' : null} />
+            </div>
+
+            {/* Collection */}
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between px-2">
+                 <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Collection Drop</label>
+              </div>
+              <div className="relative group">
+                <input 
+                  type="text"
+                  value={collection}
+                  onChange={(e) => setCollection(e.target.value.slice(0, 50))}
+                  placeholder="e.g. Corteiz RTW, Essentials 2026..."
+                  className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 font-sans"
+                />
+                <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
+                  <span className="text-[10px] font-black text-charcoal/30 italic leading-none">{collection.length}/50</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Condition */}
+            <div id="error-condition" className="flex flex-col gap-6">
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Condition State</label>
+                <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {CONDITIONS.map(c => (
+                  <button
+                    key={c.label}
+                    type="button"
+                    onClick={() => setCondition(c.label)}
+                    className={`py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-all border-2 italic ${
+                      condition === c.label 
+                        ? 'bg-charcoal border-charcoal text-white shadow-xl' 
+                        : 'bg-white border-charcoal/5 text-charcoal/30 hover:border-charcoal/10'
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              <AnimatePresence mode="wait">
+                {condition && (
+                  <motion.div 
+                    key={condition}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 bg-white border-2 border-charcoal/5 rounded-[40px] flex items-start gap-5 shadow-[8px_8px_0_rgba(0,0,0,0.02)]"
+                  >
+                     <div className="w-10 h-10 rounded-full bg-cream-dark flex items-center justify-center flex-shrink-0">
+                        <Info size={16} className="text-charcoal/30" />
+                     </div>
+                     <p className="text-[11px] font-black text-charcoal/40 leading-relaxed italic uppercase tracking-widest">
+                        {CONDITIONS.find(c => c.label === condition)?.desc}
+                     </p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Pricing Section (Valuation) */}
+            <div className="flex flex-col gap-10 mt-6">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-4 mb-3">
+                   <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Valuation</h2>
+                   <div className="h-px flex-1 bg-charcoal/10" />
+                </div>
+                <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Market Value</h3>
+              </div>
               
-              return (
-                <div 
-                  key={slot.id}
-                  className={`${isMain ? 'col-span-2 aspect-[4/3]' : 'aspect-square'} relative rounded-[48px] overflow-hidden transition-all duration-500 ${
-                    hasError ? 'border-4 border-red-500 bg-red-50' :
-                    !preview ? 'bg-white border-2 border-charcoal/5 group active:scale-95' : 'bg-white border-4 border-charcoal'
-                  } ${publishAttempted && !preview && !hasError ? 'border-red-500 animate-shake shadow-[0_20px_40px_rgba(239,68,68,0.1)]' : 'shadow-[12px_12px_0_rgba(0,0,0,0.03)] hover:shadow-[12px_12px_0_rgba(0,0,0,0.06)]'}`}
-                  onClick={() => !preview && fileInputRefs.current[idx]?.click()}
-                >
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    ref={el => { fileInputRefs.current[idx] = el; }}
-                    onChange={(e) => handlePhotoUpload(idx, e)}
-                  />
-                  
-                  {hasError ? (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
-                      <AlertTriangle size={32} className="text-red-500" />
-                      <span className="text-[10px] font-black text-red-500 uppercase tracking-widest italic">Signal Lost</span>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fileInputRefs.current[idx]?.click();
-                        }}
-                        className="px-8 py-3 bg-red-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-2 active:scale-90 transition-all italic"
-                      >
-                        <RefreshCw size={12} strokeWidth={3} />
-                        Retry
-                      </button>
-                    </div>
-                  ) : preview ? (
-                    <>
-                      <img src={preview || undefined} alt={slot.label} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent opacity-80" />
-                      
-                      <div className="absolute top-6 left-6 flex flex-col items-start gap-1">
-                         <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">Exhibit</span>
-                         <span className="oval-sticker !bg-charcoal !text-white !py-1 !px-2 !text-[8px] !shadow-none border-none">
-                          0{slot.id}
-                         </span>
-                      </div>
+              <div className="grid grid-cols-2 gap-6">
+                {/* Listed Price */}
+                <div id="error-price" className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between px-2">
+                    <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Ask Price</label>
+                    <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+                  </div>
+                  <div className="relative group">
+                    <span className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-display font-black text-charcoal/10 italic">$</span>
+                    <input 
+                      type="number"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      placeholder="0.00"
+                      className={`w-full bg-white border-2 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal focus:outline-none transition-all duration-500 ${
+                        publishAttempted && !price ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
+                      }`}
+                    />
+                  </div>
+                  <FieldError message={publishAttempted && !price ? 'Valuation required' : null} />
+                </div>
 
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); removePhoto(idx); }}
-                        className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all shadow-[6px_6px_0_rgba(0,0,0,1)]"
-                      >
-                        <X size={20} strokeWidth={3} />
-                      </button>
+                {/* Original Price */}
+                <div className="flex flex-col gap-4">
+                  <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic px-2">MSRP / Baseline</label>
+                  <div className="relative group">
+                    <span className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-display font-black text-charcoal/5 italic">$</span>
+                    <input 
+                      type="number"
+                      value={originalPrice}
+                      onChange={(e) => setOriginalPrice(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal/20 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700"
+                    />
+                  </div>
+                </div>
+              </div>
 
-                      <div className="absolute bottom-8 left-8 flex flex-col gap-1">
-                        <span className="text-xs font-black text-white uppercase tracking-[0.2em] italic leading-none">{slot.label}</span>
-                        <div className="flex items-center gap-2 pt-2">
-                           <div className="w-2.5 h-2.5 rounded-full bg-lime shadow-[0_0_12px_#C6FF00]" />
-                           <span className="text-[10px] font-black text-lime uppercase tracking-widest italic">Verified</span>
-                        </div>
+              {/* Price Feedback */}
+              {(price || originalPrice) && (
+                <div className="flex items-center justify-between p-8 bg-white rounded-[48px] border-2 border-charcoal/5 shadow-[12px_12px_0_rgba(0,0,0,0.02)]">
+                  <div className="flex items-center gap-6">
+                    {price && (
+                      <motion.div 
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="flex flex-col"
+                      >
+                         <span className="text-[8px] font-black text-charcoal/20 uppercase tracking-widest italic leading-none mb-2">Quote Alpha</span>
+                         <span className="text-4xl font-display font-black text-charcoal italic tracking-tight leading-none">${price}</span>
+                      </motion.div>
+                    )}
+                    {discountPercent && (
+                      <div className="px-5 py-2.5 bg-[#C6FF00] text-white text-[10px] font-black italic rounded-full shadow-[0_15px_30px_rgba(244,166,193,0.3)] uppercase tracking-widest">
+                        {discountPercent}% OFF
                       </div>
-                    </>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center gap-6 relative group cursor-pointer">
-                      <div className="absolute top-8 left-8 text-[12px] font-black text-charcoal/5 italic leading-none">0{slot.id}</div>
-                      <div className="w-20 h-20 rounded-full bg-cream-dark flex items-center justify-center text-charcoal/10 group-hover:bg-[#C6FF00]/20 group-hover:text-[#C6FF00] transition-all duration-700 border-2 border-charcoal/5 group-hover:border-[#C6FF00]/20">
-                        <Plus size={isMain ? 40 : 32} strokeWidth={3} />
-                      </div>
-                      <div className="flex flex-col items-center gap-2">
-                        <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.4em] group-hover:text-charcoal transition-all italic leading-none">{slot.label}</span>
-                        {isMain && <span className="italic-accent text-[10px] uppercase tracking-widest">Signature View</span>}
-                      </div>
+                    )}
+                  </div>
+                  {originalPrice && price && parseFloat(originalPrice) < parseFloat(price) && (
+                    <div className="flex items-center gap-3 text-red-500 px-5 py-2 bg-red-50 rounded-full border-2 border-red-100 italic">
+                      <AlertCircle size={14} />
+                      <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Inverted Logic Warning</span>
                     </div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-
-          <div className="flex flex-col gap-4 p-8 bg-white rounded-[48px] border-2 border-charcoal/5 shadow-[16px_16px_0_rgba(0,0,0,0.02)]">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                 <span className="text-[10px] font-black uppercase tracking-widest text-charcoal/20 italic leading-none mb-2">Upload Progress</span>
-                 <span className="text-xl font-display font-black text-charcoal italic tracking-tight leading-none">{filledPhotosCount} / 6 Authenticated</span>
-              </div>
-              <div className="flex gap-2">
-                {[...Array(6)].map((_, i) => (
-                  <div key={`upload-progress-dot-${i}`} className={`w-2.5 h-2.5 rounded-full transition-all duration-700 ${i < filledPhotosCount ? 'bg-[#C6FF00] shadow-[0_0_12px_rgba(244,166,193,0.5)] scale-125' : 'bg-charcoal/10 flex-shrink-0'}`} />
-                ))}
-              </div>
-            </div>
-            {filledPhotosCount < 6 && (
-               <p className="text-[10px] font-black text-[#C6FF00] uppercase tracking-widest italic leading-none pt-2 border-t border-charcoal/5">Pending critical visual vectors</p>
-            )}
-          </div>
-        </section>
-
-          {filledPhotosCount < 6 && (
-            <div className="bg-elevated border-l-2 border-amber-500 p-4 rounded-r-xl flex flex-col gap-2">
-              <div className="flex items-center gap-2 text-amber-500">
-                <Camera size={14} />
-                <span className="text-[10px] font-mono uppercase tracking-widest">Photo Tips</span>
-              </div>
-              <ul className="flex flex-col gap-1.5">
-                {[
-                  "Main photo should be clean, well-lit, on a neutral background",
-                  "Show the back, sides, and any defects honestly",
-                  "Include the size tag — buyers always want to see it",
-                  "On Foot / worn photo increases enquiries significantly"
-                ].map((tip, i) => (
-                  <li key={`photo-tip-${i}`} className="text-[11px] font-sans text-muted leading-tight flex gap-2">
-                    <span className="text-amber-500/50">•</span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        
-        {/* Section 2: Product Details */}
-        <section className="flex flex-col gap-10 mt-16 relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-4 mb-3">
-               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Metadata</h2>
-               <div className="h-px flex-1 bg-charcoal/10" />
-            </div>
-            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Identity Core</h3>
-          </div>
-          
-          {/* Name */}
-          <div id="error-productName" className="flex flex-col gap-5">
-            <div className="flex items-center justify-between px-2">
-              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Product Title</label>
-              <div className="flex items-center gap-2">
-                 <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${productName.trim() ? 'bg-[#C6FF00] shadow-[0_0_10px_rgba(244,166,193,0.8)]' : 'bg-charcoal/5'}`} />
-                 <span className="text-[#C6FF00] text-xs font-black italic">*</span>
-              </div>
-            </div>
-            <div className="relative group">
-              <input 
-                type="text"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value.slice(0, 80))}
-                placeholder="Declare product name..."
-                className={`w-full bg-white border-2 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 ${
-                  publishAttempted && !productName ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
-                }`}
-              />
-              <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
-                <span className="text-[10px] font-black text-charcoal/30 italic leading-none">{productName.length}/80</span>
-              </div>
-            </div>
-            <FieldError message={publishAttempted && !productName ? 'Identity label unresolved' : null} />
-          </div>
-
-          {/* Category */}
-          <div id="error-category" className="flex flex-col gap-6">
-            <div className="flex items-center justify-between px-2">
-               <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Classification</label>
-               <span className="text-[#C6FF00] text-xs font-black italic">*</span>
-            </div>
-            <div className={`flex gap-4 overflow-x-auto no-scrollbar pb-6 -mx-8 px-8 ${publishAttempted && !category ? 'animate-shake' : ''}`}>
-              {globalCategoriesLoading ? (
-                <div className="py-4 text-center text-xs text-charcoal/40 uppercase tracking-widest font-bold">Loading...</div>
-              ) : (
-                globalCategories.map(cat => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategory(cat.name)}
-                    className={`relative w-44 h-24 rounded-[20px] overflow-hidden transition-all flex items-end p-4 border-2 flex-shrink-0 text-left ${
-                      category === cat.name 
-                        ? 'border-charcoal scale-105 shadow-md font-bold' 
-                        : 'border-charcoal/10 hover:border-charcoal/35'
-                    }`}
-                  >
-                    <div className="absolute inset-0 bg-black/55 z-10" />
-                    {cat.cover_image_url && (
-                      <img 
-                        src={cat.cover_image_url} 
-                        alt={cat.name} 
-                        className="absolute inset-0 w-full h-full object-cover"
-                        referrerPolicy="no-referrer"
-                      />
-                    )}
-                    <span className={`text-[10px] font-black uppercase tracking-widest z-20 relative ${category === cat.name ? 'text-[#C6FF00]' : 'text-white'}`}>
-                      {cat.name}
-                    </span>
-                  </button>
-                ))
               )}
             </div>
-            <FieldError message={publishAttempted && !category ? 'Classification scope missing' : null} />
-          </div>
 
-          {/* Collection */}
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between px-2">
-               <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Collection Drop</label>
-            </div>
-            <div className="relative group">
-              <input 
-                type="text"
-                value={collection}
-                onChange={(e) => setCollection(e.target.value.slice(0, 50))}
-                placeholder="e.g. Corteiz RTW, Essentials 2026..."
-                className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 font-sans"
-              />
-              <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
-                <span className="text-[10px] font-black text-charcoal/30 italic leading-none">{collection.length}/50</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Condition */}
-          <div id="error-condition" className="flex flex-col gap-6">
-            <div className="flex items-center justify-between px-2">
-              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Condition State</label>
-              <span className="text-[#C6FF00] text-xs font-black italic">*</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {CONDITIONS.map(c => (
-                <button
-                  key={c.label}
-                  onClick={() => setCondition(c.label)}
-                  className={`py-5 rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] transition-all border-2 italic ${
-                    condition === c.label 
-                      ? 'bg-charcoal border-charcoal text-white shadow-xl' 
-                      : 'bg-white border-charcoal/5 text-charcoal/30 hover:border-charcoal/10'
-                  }`}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-            <AnimatePresence mode="wait">
-              {condition && (
-                <motion.div 
-                  key={condition}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-6 bg-white border-2 border-charcoal/5 rounded-[40px] flex items-start gap-5 shadow-[8px_8px_0_rgba(0,0,0,0.02)]"
-                >
-                   <div className="w-10 h-10 rounded-full bg-cream-dark flex items-center justify-center flex-shrink-0">
-                      <Info size={16} className="text-charcoal/30" />
-                   </div>
-                   <p className="text-[11px] font-black text-charcoal/40 leading-relaxed italic uppercase tracking-widest">
-                      {CONDITIONS.find(c => c.label === condition)?.desc}
-                   </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-5">
-            <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-2">WhatsApp Narrative</label>
-            <div className="relative group">
-              <textarea 
-                value={description}
-                onChange={(e) => setDescription(e.target.value.slice(0, 400))}
-                placeholder="Write a description that sells... (Sent to buyers on WhatsApp)"
-                className="w-full bg-white border-2 border-charcoal/5 rounded-[40px] p-8 text-sm font-medium text-charcoal/80 placeholder:text-charcoal/5 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700 h-56 resize-none italic leading-relaxed"
-              />
-              <div className="absolute bottom-8 right-10 flex flex-col items-end">
-                <span className="text-[10px] font-black text-charcoal/20 italic">{description.length}/400</span>
-              </div>
-            </div>
-            <p className="text-[9px] font-black text-charcoal/15 italic uppercase tracking-[0.3em] leading-none text-center">Honest narratives accelerate conversion cycles</p>
-          </div>
-        </section>
-
-        {/* Section 3: Pricing */}
-        <section className="flex flex-col gap-10 mt-16 relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-4 mb-3">
-               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Valuation</h2>
-               <div className="h-px flex-1 bg-charcoal/10" />
-            </div>
-            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Market Value</h3>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-6">
-            {/* Listed Price */}
-            <div id="error-price" className="flex flex-col gap-4">
-              <div className="flex items-center justify-between px-2">
-                <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Ask Price</label>
-                <span className="text-[#C6FF00] text-xs font-black italic">*</span>
-              </div>
-              <div className="relative group">
-                <span className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-display font-black text-charcoal/10 italic">$</span>
-                <input 
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="0.00"
-                  className={`w-full bg-white border-2 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal focus:outline-none transition-all duration-500 ${
-                    publishAttempted && !price ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
-                  }`}
-                />
-              </div>
-              <FieldError message={publishAttempted && !price ? 'Valuation required' : null} />
-            </div>
-
-            {/* Original Price */}
-            <div className="flex flex-col gap-4">
-              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic px-2">MSRP / Baseline</label>
-              <div className="relative group">
-                <span className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-display font-black text-charcoal/5 italic">$</span>
-                <input 
-                  type="number"
-                  value={originalPrice}
-                  onChange={(e) => setOriginalPrice(e.target.value)}
-                  placeholder="0.00"
-                  className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal/20 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Price Feedback */}
-          {(price || originalPrice) && (
-            <div className="flex items-center justify-between p-8 bg-white rounded-[48px] border-2 border-charcoal/5 shadow-[12px_12px_0_rgba(0,0,0,0.02)]">
-              <div className="flex items-center gap-6">
-                {price && (
-                  <motion.div 
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="flex flex-col"
-                  >
-                     <span className="text-[8px] font-black text-charcoal/20 uppercase tracking-widest italic leading-none mb-2">Quote Alpha</span>
-                     <span className="text-4xl font-display font-black text-charcoal italic tracking-tight leading-none">${price}</span>
-                  </motion.div>
+            {/* Priority Broadcaster / Shop Information */}
+            <div className="flex flex-col gap-6 mt-6">
+              <div 
+                className={`p-10 rounded-[48px] border-4 transition-all duration-700 relative overflow-hidden group cursor-pointer ${isFeatured ? 'bg-charcoal border-lime shadow-[0_20px_40px_rgba(198,255,0,0.15)]' : 'bg-white border-charcoal/5 shadow-[12px_12px_0_rgba(0,0,0,0.02)]'}`} 
+                onClick={() => setIsFeatured(!isFeatured)}
+              >
+                {isFeatured && (
+                   <div className="absolute inset-0 bg-gradient-to-br from-lime/5 via-transparent to-transparent opacity-50" />
                 )}
-                {discountPercent && (
-                  <div className="px-5 py-2.5 bg-[#C6FF00] text-white text-[10px] font-black italic rounded-full shadow-[0_15px_30px_rgba(244,166,193,0.3)] uppercase tracking-widest">
-                    {discountPercent}% OFF
+                <div className="flex items-center justify-between relative z-10">
+                  <div className="flex flex-col gap-4 max-w-[75%]">
+                    <div className="flex items-center gap-4">
+                      <h4 className={`text-2xl font-display font-black uppercase italic tracking-tighter transition-colors ${isFeatured ? 'text-lime' : 'text-charcoal'}`}>Priority Broadcaster</h4>
+                       <div className={`w-3 h-3 rounded-full ${isFeatured ? 'bg-lime animate-pulse shadow-[0_0_12px_#C6FF00]' : 'bg-charcoal/5'}`} />
+                    </div>
+                    <p className={`text-[12px] font-black uppercase italic leading-tight tracking-[0.1em] ${isFeatured ? 'text-white/40' : 'text-charcoal/30'}`}>
+                      Amplify acquisition frequency. Elevate listing to the primary discovery layer for global terminal visibility.
+                    </p>
+                  </div>
+                  <div className={`w-16 h-16 rounded-[28px] flex items-center justify-center border-4 transition-all duration-700 ${isFeatured ? 'bg-lime border-lime text-charcoal shadow-2xl scale-110' : 'bg-white border-charcoal/10 text-charcoal/10'}`}>
+                     <Zap size={32} strokeWidth={4} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Step 2: Gallery */}
+        {step === 2 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-8 relative z-10 animate-fade-in"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 mb-3">
+                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Perspective</h2>
+                 <div className="h-px flex-1 bg-charcoal/10" />
+              </div>
+              <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8] mb-2">Digital Exhibit</h3>
+              <p className="text-[11px] font-black text-[#C6FF00] uppercase tracking-widest italic">High-fidelity visual verification required</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-5">
+              {PHOTO_SLOTS_CONFIG.map((slot, idx) => {
+                const isMain = slot.id === 1;
+                const preview = photos[idx];
+                const hasError = photoErrors[idx];
+                
+                return (
+                  <div 
+                    key={slot.id}
+                    className={`${isMain ? 'col-span-2 aspect-[4/3]' : 'aspect-square'} relative rounded-[48px] overflow-hidden transition-all duration-500 ${
+                      hasError ? 'border-4 border-red-500 bg-red-50' :
+                      !preview ? 'bg-white border-2 border-charcoal/5 group active:scale-95' : 'bg-white border-4 border-charcoal'
+                    } ${publishAttempted && !preview && !hasError ? 'border-red-500 animate-shake shadow-[0_20px_40px_rgba(239,68,68,0.1)]' : 'shadow-[12px_12px_0_rgba(0,0,0,0.03)] hover:shadow-[12px_12px_0_rgba(0,0,0,0.06)]'}`}
+                    onClick={() => !preview && fileInputRefs.current[idx]?.click()}
+                  >
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      ref={el => { fileInputRefs.current[idx] = el; }}
+                      onChange={(e) => handlePhotoUpload(idx, e)}
+                    />
+                    
+                    {hasError ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-8 text-center">
+                        <AlertTriangle size={32} className="text-red-500" />
+                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest italic">Signal Lost</span>
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fileInputRefs.current[idx]?.click();
+                          }}
+                          className="px-8 py-3 bg-red-500 text-white text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-2 active:scale-90 transition-all italic"
+                        >
+                          <RefreshCw size={12} strokeWidth={3} />
+                          Retry
+                        </button>
+                      </div>
+                    ) : preview ? (
+                      <>
+                        <img src={preview || undefined} alt={slot.label} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent opacity-80" />
+                        
+                        <div className="absolute top-6 left-6 flex flex-col items-start gap-1">
+                           <span className="text-[8px] font-black text-white/60 uppercase tracking-widest">Exhibit</span>
+                           <span className="oval-sticker !bg-charcoal !text-white !py-1 !px-2 !text-[8px] !shadow-none border-none">
+                            0{slot.id}
+                           </span>
+                        </div>
+
+                        <button 
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); removePhoto(idx); }}
+                          className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all shadow-[6px_6px_0_rgba(0,0,0,1)]"
+                        >
+                          <X size={20} strokeWidth={3} />
+                        </button>
+
+                        <div className="absolute bottom-8 left-8 flex flex-col gap-1">
+                          <span className="text-xs font-black text-white uppercase tracking-[0.2em] italic leading-none">{slot.label}</span>
+                          <div className="flex items-center gap-2 pt-2">
+                             <div className="w-2.5 h-2.5 rounded-full bg-lime shadow-[0_0_12px_#C6FF00]" />
+                             <span className="text-[10px] font-black text-lime uppercase tracking-widest italic">Verified</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center gap-6 relative group cursor-pointer">
+                        <div className="absolute top-8 left-8 text-[12px] font-black text-charcoal/5 italic leading-none">0{slot.id}</div>
+                        <div className="w-20 h-20 rounded-full bg-cream-dark flex items-center justify-center text-charcoal/10 group-hover:bg-[#C6FF00]/20 group-hover:text-[#C6FF00] transition-all duration-700 border-2 border-charcoal/5 group-hover:border-[#C6FF00]/20">
+                          <Plus size={isMain ? 40 : 32} strokeWidth={3} />
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                          <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.4em] group-hover:text-charcoal transition-all italic leading-none">{slot.label}</span>
+                          {isMain && <span className="italic-accent text-[10px] uppercase tracking-widest">Signature View</span>}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-col gap-4 p-8 bg-white rounded-[48px] border-2 border-charcoal/5 shadow-[16px_16px_0_rgba(0,0,0,0.02)]">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                   <span className="text-[10px] font-black uppercase tracking-widest text-charcoal/20 italic leading-none mb-2">Upload Progress</span>
+                   <span className="text-xl font-display font-black text-charcoal italic tracking-tight leading-none">{filledPhotosCount} / 6 Authenticated</span>
+                </div>
+                <div className="flex gap-2">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={`upload-progress-dot-${i}`} className={`w-2.5 h-2.5 rounded-full transition-all duration-700 ${i < filledPhotosCount ? 'bg-[#C6FF00] shadow-[0_0_12px_rgba(244,166,193,0.5)] scale-125' : 'bg-charcoal/10 flex-shrink-0'}`} />
+                  ))}
+                </div>
+              </div>
+              {filledPhotosCount < 6 && (
+                 <p className="text-[10px] font-black text-[#C6FF00] uppercase tracking-widest italic leading-none pt-2 border-t border-charcoal/5">Pending critical visual vectors</p>
+              )}
+            </div>
+
+            {filledPhotosCount < 6 && (
+              <div className="bg-elevated border-l-2 border-amber-500 p-4 rounded-r-xl flex flex-col gap-2 bg-white/50 border border-charcoal/5">
+                <div className="flex items-center gap-2 text-amber-500">
+                  <Camera size={14} />
+                  <span className="text-[10px] font-mono uppercase tracking-widest">Photo Tips</span>
+                </div>
+                <ul className="flex flex-col gap-1.5">
+                  {[
+                    "Main photo should be clean, well-lit, on a neutral background",
+                    "Show the back, sides, and any defects honestly",
+                    "Include the size tag — buyers always want to see it",
+                    "On Foot / worn photo increases enquiries significantly"
+                  ].map((tip, i) => (
+                    <li key={`photo-tip-${i}`} className="text-[11px] font-sans text-muted leading-tight flex gap-2">
+                      <span className="text-amber-500/50">•</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Step 3: Size Specifications */}
+        {step === 3 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-10 relative z-10"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 mb-3">
+                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Logistics</h2>
+                 <div className="h-px flex-1 bg-charcoal/10" />
+              </div>
+              <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Availability Index</h3>
+            </div>
+
+            {/* No Sizes Toggle */}
+            <div className="flex items-center justify-between p-10 bg-white rounded-[48px] border-4 border-charcoal shadow-[12px_12px_0_rgba(0,0,0,0.05)] transition-all duration-500 group">
+              <div className="flex flex-col gap-2">
+                <span className="text-xl font-display font-black text-charcoal uppercase tracking-tighter italic leading-none">Universal Scale</span>
+                <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.4em] italic mb-1">Accessories / One-Size Units</span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setNoSizes(!noSizes)}
+                className={`w-20 h-10 rounded-full relative transition-all duration-700 overflow-hidden border-4 ${noSizes ? 'bg-lime border-charcoal' : 'bg-cream-dark border-charcoal/10'}`}
+              >
+                <motion.div 
+                  animate={{ x: noSizes ? 40 : 4 }}
+                  className="absolute top-1/2 -translate-y-1/2 w-7 h-7 bg-charcoal rounded-full shadow-lg z-10"
+                />
+              </button>
+            </div>
+
+            {noSizes ? (
+              <div className="flex flex-col gap-6 p-10 bg-white rounded-[48px] border-2 border-charcoal/5 shadow-[20px_20px_0_rgba(0,0,0,0.02)]">
+                <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none text-center">Master Stock Units</label>
+                <div className="flex items-center gap-10">
+                  <button 
+                    type="button"
+                    onClick={() => setSingleQuantity(Math.max(1, singleQuantity - 1))}
+                    className="w-20 h-20 rounded-[28px] bg-white border-4 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all hover:bg-cream-dark shadow-[6px_6px_0_rgba(0,0,0,1)]"
+                  >
+                    <Minus size={32} strokeWidth={4} />
+                  </button>
+                  <div className="flex-1 flex flex-col items-center">
+                     <span className="text-7xl font-display font-black text-charcoal italic tracking-tighter leading-none">{singleQuantity}</span>
+                     <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest mt-4 italic">Operational Range</span>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setSingleQuantity(singleQuantity + 1)}
+                    className="w-20 h-20 rounded-[28px] bg-charcoal flex items-center justify-center text-lime shadow-[6px_6px_0_#C6FF00] active:scale-90 transition-all"
+                  >
+                    <Plus size={32} strokeWidth={4} />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-6">
+                <AnimatePresence>
+                  {sizeVariants.map((v, idx) => (
+                    <motion.div 
+                      key={`size-variant-${idx}`}
+                      initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                      animate={{ opacity: 1, x: 0, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className="flex items-center gap-6 bg-white p-6 rounded-[32px] border-4 border-charcoal shadow-[10px_10px_0_rgba(0,0,0,0.03)] group"
+                    >
+                      <div className="flex-1 relative pl-4">
+                        <input 
+                          type="text"
+                          value={v.size}
+                          onChange={(e) => updateSizeVariant(idx, 'size', e.target.value)}
+                          placeholder="Label (e.g. UK9)"
+                          className="w-full bg-transparent text-xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/10 focus:outline-none italic"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 bg-cream-dark rounded-full border-2 border-charcoal/5 p-1.5">
+                        <button 
+                          type="button"
+                          onClick={() => updateSizeVariant(idx, 'quantity', Math.max(1, v.quantity - 1))}
+                          className="w-12 h-12 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)]"
+                        >
+                          <Minus size={18} strokeWidth={4} />
+                        </button>
+                        <span className="w-12 text-center font-display font-black text-charcoal text-xl italic">{v.quantity}</span>
+                        <button 
+                          type="button"
+                          onClick={() => updateSizeVariant(idx, 'quantity', v.quantity + 1)}
+                          className="w-12 h-12 rounded-full bg-charcoal text-cream flex items-center justify-center active:scale-90 transition-all shadow-[4px_4px_0_#C6FF00]"
+                        >
+                          <Plus size={18} strokeWidth={4} />
+                        </button>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => removeSizeVariant(idx)} 
+                        className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#C6FF00] transition-all active:scale-90"
+                      >
+                        <Trash2 size={24} strokeWidth={3} />
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                
+                <button 
+                  type="button"
+                  onClick={addSizeVariant}
+                  className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group mt-4"
+                >
+                  <Plus size={28} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-[#C6FF00]" />
+                  <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Register Size Unit</span>
+                </button>
+
+                {/* Suggestions */}
+                {(category === 'Sneakers' || category === 'Clothing') && (
+                  <div className="flex flex-col gap-5 mt-6 px-4">
+                    <div className="flex items-center gap-3">
+                       <span className="text-[9px] font-black text-charcoal/20 uppercase tracking-[0.3em] italic leading-none">Protocol Shortcuts</span>
+                       <div className="h-px flex-1 bg-charcoal/5" />
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {(category === 'Sneakers' ? SNEAKER_SIZES : CLOTHING_SIZES).map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSizeVariants([...sizeVariants, { size: s, quantity: 1 }])}
+                          className="px-6 py-3 bg-white border-2 border-charcoal/10 rounded-2xl text-[10px] font-black text-charcoal/40 hover:text-charcoal hover:bg-cream-dark hover:border-charcoal/40 transition-all italic tracking-widest uppercase hover:translate-y-[-2px] shadow-sm"
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
-              {originalPrice && price && parseFloat(originalPrice) < parseFloat(price) && (
-                <div className="flex items-center gap-3 text-red-500 px-5 py-2 bg-red-50 rounded-full border-2 border-red-100 italic">
-                  <AlertCircle size={14} />
-                  <span className="text-[9px] font-black uppercase tracking-widest italic leading-none">Inverted Logic Warning</span>
-                </div>
-              )}
-            </div>
-          )}
+            )}
 
-          <div className="bg-charcoal p-10 rounded-[48px] flex items-center gap-8 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-[#C6FF00]/10 blur-[60px] rounded-full translate-x-1/2 -translate-y-1/2" />
-            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-all duration-700 border border-white/10">
-               <Info size={28} className="text-[#C6FF00]" />
-            </div>
-            <div className="flex flex-col gap-2">
-               <h4 className="text-[10px] font-black text-white uppercase tracking-[0.4em] italic">Market Logic</h4>
-               <p className="text-[11px] font-black text-white/30 leading-relaxed italic uppercase tracking-wider">
-                 Currency set to USD. Curated pricing attracts premium acquisition interest in the ZW region.
-               </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Section 4: Sizes & Stock */}
-        <section id="error-sizes" className="flex flex-col gap-10 mt-16 relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-4 mb-3">
-               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Logistics</h2>
-               <div className="h-px flex-1 bg-charcoal/10" />
-            </div>
-            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Availability Index</h3>
-          </div>
-
-          {/* No Sizes Toggle */}
-          <div className="flex items-center justify-between p-10 bg-white rounded-[48px] border-4 border-charcoal shadow-[12px_12px_0_rgba(0,0,0,0.05)] transition-all duration-500 group">
-            <div className="flex flex-col gap-2">
-              <span className="text-xl font-display font-black text-charcoal uppercase tracking-tighter italic leading-none">Universal Scale</span>
-              <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-[0.4em] italic mb-1">Accessories / One-Size Units</span>
-            </div>
-            <button 
-              onClick={() => setNoSizes(!noSizes)}
-              className={`w-20 h-10 rounded-full relative transition-all duration-700 overflow-hidden border-4 ${noSizes ? 'bg-lime border-charcoal' : 'bg-cream-dark border-charcoal/10'}`}
-            >
-              <motion.div 
-                animate={{ x: noSizes ? 40 : 4 }}
-                className="absolute top-1/2 -translate-y-1/2 w-7 h-7 bg-charcoal rounded-full shadow-lg z-10"
-              />
-            </button>
-          </div>
-
-          {noSizes ? (
-            <div className="flex flex-col gap-6 p-10 bg-white rounded-[48px] border-2 border-charcoal/5 shadow-[20px_20px_0_rgba(0,0,0,0.02)]">
-              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none text-center">Master Stock Units</label>
-              <div className="flex items-center gap-10">
-                <button 
-                  onClick={() => setSingleQuantity(Math.max(1, singleQuantity - 1))}
-                  className="w-20 h-20 rounded-[28px] bg-white border-4 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all hover:bg-cream-dark shadow-[6px_6px_0_rgba(0,0,0,1)]"
-                >
-                  <Minus size={32} strokeWidth={4} />
-                </button>
-                <div className="flex-1 flex flex-col items-center">
-                   <span className="text-7xl font-display font-black text-charcoal italic tracking-tighter leading-none">{singleQuantity}</span>
-                   <span className="text-[10px] font-black text-charcoal/30 uppercase tracking-widest mt-4 italic">Operational Range</span>
-                </div>
-                <button 
-                  onClick={() => setSingleQuantity(singleQuantity + 1)}
-                  className="w-20 h-20 rounded-[28px] bg-charcoal flex items-center justify-center text-lime shadow-[6px_6px_0_#C6FF00] active:scale-90 transition-all"
-                >
-                  <Plus size={32} strokeWidth={4} />
-                </button>
+            <div className="flex items-center justify-between p-8 bg-charcoal rounded-[48px] shadow-[12px_12px_0_#C6FF00]">
+              <div className="flex items-center gap-4">
+                 <div className={`w-3 h-3 rounded-full ${totalStock > 0 ? 'bg-lime animate-pulse shadow-[0_0_12px_#C6FF00]' : 'bg-white/10'}`} />
+                 <span className={`text-[12px] font-black uppercase tracking-widest italic transition-colors ${totalStock > 0 ? 'text-lime' : 'text-white/20'}`}>
+                  Inventory Payload: {totalStock} units
+                 </span>
               </div>
             </div>
-          ) : (
+          </motion.div>
+        )}
+
+        {/* Step 4: Color Options */}
+        {step === 4 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-10 relative z-10"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 mb-3">
+                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Spectrum</h2>
+                 <div className="h-px flex-1 bg-charcoal/10" />
+              </div>
+              <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Color Mapping</h3>
+            </div>
+
             <div className="flex flex-col gap-6">
               <AnimatePresence>
-                {sizeVariants.map((v, idx) => (
+                {colours.map((c, idx) => (
                   <motion.div 
-                    key={`size-variant-${idx}`}
-                    initial={{ opacity: 0, x: -20, scale: 0.95 }}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
+                    key={`colour-mapping-${idx}`}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
                     className="flex items-center gap-6 bg-white p-6 rounded-[32px] border-4 border-charcoal shadow-[10px_10px_0_rgba(0,0,0,0.03)] group"
                   >
                     <div className="flex-1 relative pl-4">
                       <input 
                         type="text"
-                        value={v.size}
-                        onChange={(e) => updateSizeVariant(idx, 'size', e.target.value)}
-                        placeholder="Label (e.g. UK9)"
+                        value={c.name}
+                        onChange={(e) => updateColour(idx, 'name', e.target.value)}
+                        placeholder="Declaration (e.g. Noir)"
                         className="w-full bg-transparent text-xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/10 focus:outline-none italic"
                       />
                     </div>
-                    <div className="flex items-center gap-2 bg-cream-dark rounded-full border-2 border-charcoal/5 p-1.5">
-                      <button 
-                        onClick={() => updateSizeVariant(idx, 'quantity', Math.max(1, v.quantity - 1))}
-                        className="w-12 h-12 rounded-full bg-white border-2 border-charcoal flex items-center justify-center text-charcoal active:scale-90 transition-all shadow-[4px_4px_0_rgba(0,0,0,1)]"
-                      >
-                        <Minus size={18} strokeWidth={4} />
-                      </button>
-                      <span className="w-12 text-center font-display font-black text-charcoal text-xl italic">{v.quantity}</span>
-                      <button 
-                        onClick={() => updateSizeVariant(idx, 'quantity', v.quantity + 1)}
-                        className="w-12 h-12 rounded-full bg-charcoal text-cream flex items-center justify-center active:scale-90 transition-all shadow-[4px_4px_0_#C6FF00]"
-                      >
-                        <Plus size={18} strokeWidth={4} />
-                      </button>
+                    <div className="relative w-16 h-16 rounded-[20px] overflow-hidden border-4 border-charcoal hover:scale-105 transition-all cursor-pointer shadow-[4px_4px_0_rgba(0,0,0,0.1)]">
+                      <input 
+                        type="color"
+                        value={c.hex}
+                        onChange={(e) => updateColour(idx, 'hex', e.target.value)}
+                        className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
+                      />
                     </div>
                     <button 
-                      onClick={() => removeSizeVariant(idx)} 
+                      type="button"
+                      onClick={() => removeColour(idx)} 
                       className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#C6FF00] transition-all active:scale-90"
                     >
-                      <Trash2 size={24} strokeWidth={3} />
+                      <X size={24} strokeWidth={3} />
                     </button>
                   </motion.div>
                 ))}
               </AnimatePresence>
-              
-              <button 
-                onClick={addSizeVariant}
-                className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group mt-4"
-              >
-                <Plus size={28} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-[#C6FF00]" />
-                <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Register Size Unit</span>
-              </button>
 
-              {/* Suggestions */}
-              {(category === 'Sneakers' || category === 'Clothing') && (
-                <div className="flex flex-col gap-5 mt-6 px-4">
-                  <div className="flex items-center gap-3">
-                     <span className="text-[9px] font-black text-charcoal/20 uppercase tracking-[0.3em] italic leading-none">Protocol Shortcuts</span>
-                     <div className="h-px flex-1 bg-charcoal/5" />
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {(category === 'Sneakers' ? SNEAKER_SIZES : CLOTHING_SIZES).map(s => (
-                      <button
-                        key={s}
-                        onClick={() => setSizeVariants([...sizeVariants, { size: s, quantity: 1 }])}
-                        className="px-6 py-3 bg-white border-2 border-charcoal/10 rounded-2xl text-[10px] font-black text-charcoal/40 hover:text-charcoal hover:bg-cream-dark hover:border-charcoal/40 transition-all italic tracking-widest uppercase hover:translate-y-[-2px] shadow-sm"
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="flex items-center justify-between p-8 bg-charcoal rounded-[48px] shadow-[12px_12px_0_#C6FF00]">
-            <div className="flex items-center gap-4">
-               <div className={`w-3 h-3 rounded-full ${totalStock > 0 ? 'bg-lime animate-pulse shadow-[0_0_12px_#C6FF00]' : 'bg-white/10'}`} />
-               <span className={`text-[12px] font-black uppercase tracking-widest italic transition-colors ${totalStock > 0 ? 'text-lime' : 'text-white/20'}`}>
-                Inventory Payload: {totalStock} units
-               </span>
-            </div>
-          </div>
-          <FieldError message={publishAttempted && progress < 80 ? 'Inventory details incomplete' : null} />
-        </section>
-
-        {/* Section 5: Colours */}
-        <section className="flex flex-col gap-10 mt-20 relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-4 mb-3">
-               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Spectrum</h2>
-               <div className="h-px flex-1 bg-charcoal/10" />
-            </div>
-            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Color Mapping</h3>
-          </div>
-
-          <div className="flex flex-col gap-6">
-            <AnimatePresence>
-              {colours.map((c, idx) => (
-                <motion.div 
-                  key={`colour-mapping-${idx}`}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex items-center gap-6 bg-white p-6 rounded-[32px] border-4 border-charcoal shadow-[10px_10px_0_rgba(0,0,0,0.03)] group"
+              {colours.length < 6 && (
+                <button 
+                  type="button"
+                  onClick={addColour}
+                  className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group"
                 >
-                  <div className="flex-1 relative pl-4">
-                    <input 
-                      type="text"
-                      value={c.name}
-                      onChange={(e) => updateColour(idx, 'name', e.target.value)}
-                      placeholder="Declaration (e.g. Noir)"
-                      className="w-full bg-transparent text-xl font-display font-black text-charcoal uppercase tracking-tighter placeholder:text-charcoal/10 focus:outline-none italic"
-                    />
-                  </div>
-                  <div className="relative w-16 h-16 rounded-[20px] overflow-hidden border-4 border-charcoal hover:scale-105 transition-all cursor-pointer shadow-[4px_4px_0_rgba(0,0,0,0.1)]">
-                    <input 
-                      type="color"
-                      value={c.hex}
-                      onChange={(e) => updateColour(idx, 'hex', e.target.value)}
-                      className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer"
-                    />
-                  </div>
-                  <button onClick={() => removeColour(idx)} className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#C6FF00] transition-all active:scale-90">
-                    <X size={24} strokeWidth={3} />
-                  </button>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-
-            {colours.length < 6 && (
-              <button 
-                onClick={addColour}
-                className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group"
-              >
-                <Plus size={28} strokeWidth={4} className="text-[#C6FF00] group-hover:rotate-180 transition-transform duration-700" />
-                <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Inject Hue Variant</span>
-              </button>
-            )}
-
-            <div className="flex flex-wrap gap-3 mt-4 justify-center">
-              {QUICK_COLOURS.map(qc => (
-                <button
-                  key={qc.name}
-                  onClick={() => colours.length < 6 && setColours([...colours, qc])}
-                  className="flex items-center gap-3 pl-2 pr-6 py-2.5 bg-white border-2 border-charcoal/5 rounded-full hover:bg-cream-dark hover:border-charcoal/20 transition-all active:scale-95 shadow-sm"
-                >
-                  <div className="w-6 h-6 rounded-full border-2 border-charcoal/10" style={{ background: qc.hex }} />
-                  <span className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em] italic">{qc.name}</span>
+                  <Plus size={28} strokeWidth={4} className="text-[#C6FF00] group-hover:rotate-180 transition-transform duration-700" />
+                  <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Inject Hue Variant</span>
                 </button>
-              ))}
-            </div>
-          </div>
-        </section>
+              )}
 
-        {/* Section 6: Shop & Visibility */}
-        <section className="flex flex-col gap-10 mt-20 relative z-10">
-          <div className="flex flex-col">
-            <div className="flex items-center gap-4 mb-3">
-               <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Authority</h2>
-               <div className="h-px flex-1 bg-charcoal/10" />
-            </div>
-            <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Signal Range</h3>
-          </div>
-          
-          <div className="flex flex-col gap-5">
-            <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-4">Origin Point</label>
-            <div className="flex items-center gap-8 bg-charcoal p-10 rounded-[48px] border-4 border-lime/10 relative overflow-hidden group shadow-[12px_12px_0_#C6FF00]">
-               <div className="absolute top-0 right-0 w-48 h-48 bg-lime/5 blur-[50px] rounded-full translate-x-1/2 -translate-y-1/2" />
-              <div className="w-20 h-20 rounded-[28px] bg-white flex items-center justify-center text-4xl border-4 border-white/20 shadow-2xl group-hover:scale-110 transition-all duration-700">
-                {userShop?.logo_url ? <img src={userShop.logo_url} className="w-full h-full object-cover rounded-[24px]" /> : '🏛️'}
-              </div>
-              <div className="flex flex-col gap-2">
-                <span className="text-2xl font-display font-black text-white italic leading-tight tracking-tight">{userShop?.name || 'Authorized Entity'}</span>
-                <span className="text-[10px] font-black text-lime/60 uppercase tracking-widest italic leading-none">Verified Distribution Center</span>
+              <div className="flex flex-wrap gap-3 mt-4 justify-center">
+                {QUICK_COLOURS.map(qc => (
+                  <button
+                    key={qc.name}
+                    type="button"
+                    onClick={() => colours.length < 6 && setColours([...colours, qc])}
+                    className="flex items-center gap-3 pl-2 pr-6 py-2.5 bg-white border-2 border-charcoal/5 rounded-full hover:bg-cream-dark hover:border-charcoal/20 transition-all active:scale-95 shadow-sm"
+                  >
+                    <div className="w-6 h-6 rounded-full border-2 border-charcoal/10" style={{ background: qc.hex }} />
+                    <span className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.2em] italic">{qc.name}</span>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          </motion.div>
+        )}
 
-          <div 
-            className={`p-10 rounded-[48px] border-4 transition-all duration-700 relative overflow-hidden group cursor-pointer ${isFeatured ? 'bg-charcoal border-lime shadow-[0_20px_40px_rgba(198,255,0,0.15)]' : 'bg-white border-charcoal/5 shadow-[12px_12px_0_rgba(0,0,0,0.02)]'}`} 
-            onClick={() => setIsFeatured(!isFeatured)}
+        {/* Step 5: Description */}
+        {step === 5 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col gap-10 relative z-10"
           >
-            {isFeatured && (
-               <div className="absolute inset-0 bg-gradient-to-br from-lime/5 via-transparent to-transparent opacity-50" />
-            )}
-            <div className="flex items-center justify-between relative z-10">
-              <div className="flex flex-col gap-4 max-w-[75%]">
-                <div className="flex items-center gap-4">
-                  <h4 className={`text-2xl font-display font-black uppercase italic tracking-tighter transition-colors ${isFeatured ? 'text-lime' : 'text-charcoal'}`}>Priority Broadcaster</h4>
-                   <div className={`w-3 h-3 rounded-full ${isFeatured ? 'bg-lime animate-pulse shadow-[0_0_12px_#C6FF00]' : 'bg-charcoal/5'}`} />
-                </div>
-                <p className={`text-[12px] font-black uppercase italic leading-tight tracking-[0.1em] ${isFeatured ? 'text-white/40' : 'text-charcoal/30'}`}>
-                  Amplify acquisition frequency. Elevate listing to the primary discovery layer for global terminal visibility.
-                </p>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 mb-3">
+                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Editorial</h2>
+                 <div className="h-px flex-1 bg-charcoal/10" />
               </div>
-              <div className={`w-16 h-16 rounded-[28px] flex items-center justify-center border-4 transition-all duration-700 ${isFeatured ? 'bg-lime border-lime text-charcoal shadow-2xl scale-110' : 'bg-white border-charcoal/10 text-charcoal/10'}`}>
-                 <Zap size={32} strokeWidth={4} />
+              <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Narrative</h3>
+            </div>
+
+            <div className="flex flex-col gap-5">
+              <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic leading-none px-2">WhatsApp Narrative Description</label>
+              <div className="relative group">
+                <textarea 
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value.slice(0, 400))}
+                  placeholder="Write a description that sells... (Sent to buyers on WhatsApp)"
+                  className="w-full bg-white border-2 border-charcoal/5 rounded-[40px] p-8 text-sm font-medium text-charcoal/80 placeholder:text-charcoal/5 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700 h-56 resize-none italic leading-relaxed"
+                />
+                <div className="absolute bottom-8 right-10 flex flex-col items-end">
+                  <span className="text-[10px] font-black text-charcoal/20 italic">{description.length}/400</span>
+                </div>
+              </div>
+              <p className="text-[9px] font-black text-charcoal/15 italic uppercase tracking-[0.3em] leading-none text-center font-mono">Honest narratives accelerate conversion cycles</p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Step 6: Review Step */}
+        {step === 6 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 15 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="flex flex-col gap-8 relative z-10"
+          >
+            <div className="flex flex-col">
+              <div className="flex items-center gap-4 mb-3">
+                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/20 italic leading-none">Verification</h2>
+                 <div className="h-px flex-1 bg-charcoal/10" />
+              </div>
+              <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Review Unit</h3>
+              <p className="text-[11px] font-black text-[#C6FF00] uppercase tracking-widest italic font-mono">Verify all digital fragments before commit</p>
+            </div>
+
+            {/* Premium recap card */}
+            <div className="bg-white border-4 border-charcoal rounded-[48px] p-8 space-y-6 shadow-[16px_16px_0_rgba(0,0,0,0.05)] text-left select-none">
+              {/* Photo strip */}
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 border-b border-charcoal/5 -mx-4 px-4">
+                {photos.map((p, i) => p && (
+                  <div key={`review-img-${i}`} className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-charcoal shrink-0 shadow-sm bg-zinc-50">
+                    <img src={p} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4 font-sans">
+                <div>
+                  <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Title</span>
+                  <p className="text-xl font-display font-black text-charcoal italic tracking-tight leading-none mt-1">{productName}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Classification</span>
+                    <p className="text-xs font-black text-charcoal uppercase tracking-wider mt-1">{category}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Condition State</span>
+                    <p className="text-xs font-black text-charcoal uppercase tracking-wider mt-1">{condition}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Listed Price</span>
+                    <p className="text-2xl font-display font-black text-charcoal italic leading-none mt-1">${price}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Baseline / MSRP</span>
+                    <p className="text-lg font-display font-black text-charcoal/25 italic leading-none mt-1">{originalPrice ? `$${originalPrice}` : 'None'}</p>
+                  </div>
+                </div>
+
+                {collection && (
+                  <div>
+                    <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Collection Drop</span>
+                    <p className="text-xs font-black text-charcoal uppercase tracking-wider mt-1">{collection}</p>
+                  </div>
+                )}
+
+                <div>
+                  <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Availability Inventory</span>
+                  <p className="text-xs font-black text-charcoal uppercase tracking-wider mt-1">
+                    {noSizes ? `One Size (${singleQuantity} Unit)` : `${sizeVariants.map(v => `${v.size} (Qty: ${v.quantity})`).join(', ')}`}
+                  </p>
+                </div>
+
+                {colours.length > 0 && (
+                  <div>
+                    <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Spectrum Hues</span>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      {colours.map((c, i) => (
+                        <div key={`review-col-${i}`} className="flex items-center gap-1.5 bg-zinc-50 border border-charcoal/10 px-2.5 py-1 rounded-full text-[10px] font-bold font-mono">
+                          <div className="w-3.5 h-3.5 rounded-full border border-charcoal/10" style={{ background: c.hex }} />
+                          <span>{c.name || 'Custom'}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {description && (
+                  <div>
+                    <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono font-sans">WhatsApp Narrative Description</span>
+                    <p className="text-xs text-charcoal/60 leading-relaxed italic bg-zinc-50/50 p-4 rounded-3xl border border-charcoal/5 mt-1">
+                      {description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-charcoal/5">
+                  <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Priority Broadcaster</span>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFeatured ? 'bg-[#C6FF00] text-black shadow-sm' : 'bg-zinc-100 text-zinc-400'}`}>
+                    {isFeatured ? 'Activated' : 'Standard'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </motion.div>
+        )}
           
       </div>
 
@@ -1076,37 +1282,58 @@ export const NewListing: React.FC = () => {
              </div>
           </div>
           
-          <button 
-            onClick={handlePublish}
-            disabled={filledPhotosCount < 6 || isPublishing}
-            className={`group relative w-full h-20 rounded-full flex items-center justify-center overflow-hidden transition-all duration-700 active:translate-y-1 active:shadow-none ${
-              filledPhotosCount < 6 
-                ? 'bg-white border-4 border-charcoal/10 text-charcoal/10 cursor-not-allowed opacity-50' 
-                : progress < 100 
-                  ? 'bg-white border-4 border-charcoal/5 text-charcoal/20' 
-                  : 'bg-charcoal text-cream shadow-[12px_12px_0_#C6FF00] active:shadow-none'
-            }`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-            
-            <div className="relative z-10 flex items-center justify-center gap-5">
-              {isPublishing ? (
-                <RefreshCw size={28} className="animate-spin text-lime" strokeWidth={4} />
-              ) : filledPhotosCount < 6 ? (
-                <>
-                  <Lock size={24} className="opacity-40" strokeWidth={3} />
-                  <span className="text-base font-display font-black uppercase tracking-[0.1em] italic">Signals Pending</span>
-                </>
-              ) : progress < 100 ? (
-                <span className="text-base font-display font-black uppercase tracking-[0.1em] italic">Calibrating Data</span>
-              ) : (
-                <>
-                  <span className="text-2xl font-display font-black uppercase italic tracking-tighter">Sync to Node</span>
-                  <ArrowRight size={32} strokeWidth={4} className="group-hover:translate-x-3 transition-transform duration-700" />
-                </>
-              )}
-            </div>
-          </button>
+          <div className="flex gap-4">
+            {step > 1 && (
+              <button 
+                type="button"
+                onClick={handlePrevStep}
+                className="h-20 px-8 rounded-full bg-white border-4 border-charcoal text-charcoal font-display uppercase font-black italic flex items-center justify-center transition-all duration-300 active:scale-95 shadow-[4px_4px_0_rgba(0,0,0,1)] active:shadow-none shrink-0"
+              >
+                Back
+              </button>
+            )}
+
+            {step < 6 ? (
+              <button 
+                type="button"
+                onClick={handleNextStep}
+                className="group relative flex-1 h-20 rounded-full bg-charcoal text-cream font-display uppercase font-black italic flex items-center justify-center gap-4 overflow-hidden transition-all duration-500 active:translate-y-1 active:shadow-none shadow-[8px_8px_0_#C6FF00] hover:shadow-[6px_6px_0_#C6FF00]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                <span className="text-xl tracking-tight relative z-10">Next Step</span>
+                <ArrowRight size={24} strokeWidth={4} className="group-hover:translate-x-2 transition-transform duration-300 relative z-10" />
+              </button>
+            ) : (
+              <button 
+                type="button"
+                onClick={handlePublish}
+                disabled={filledPhotosCount < 6 || isPublishing}
+                className={`group relative flex-1 h-20 rounded-full flex items-center justify-center overflow-hidden transition-all duration-700 active:translate-y-1 active:shadow-none ${
+                  filledPhotosCount < 6 
+                    ? 'bg-white border-4 border-charcoal/10 text-charcoal/10 cursor-not-allowed opacity-50' 
+                    : 'bg-charcoal text-cream shadow-[12px_12px_0_#C6FF00] active:shadow-none hover:shadow-[10px_10px_0_#C6FF00]'
+                }`}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                
+                <div className="relative z-10 flex items-center justify-center gap-5">
+                  {isPublishing ? (
+                    <RefreshCw size={28} className="animate-spin text-lime" strokeWidth={4} />
+                  ) : filledPhotosCount < 6 ? (
+                    <>
+                      <Lock size={24} className="opacity-40" strokeWidth={3} />
+                      <span className="text-base font-display font-black uppercase tracking-[0.1em] italic">Signals Pending</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-2xl font-display font-black uppercase italic tracking-tighter">Sync to Node</span>
+                      <ArrowRight size={32} strokeWidth={4} className="group-hover:translate-x-3 transition-transform duration-700" />
+                    </>
+                  )}
+                </div>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

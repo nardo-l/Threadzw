@@ -1,8 +1,10 @@
 // src/components/storefront/StorefrontHome.tsx
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, MessageCircle, Heart, Sparkles, Grid } from 'lucide-react';
+import { ArrowRight, MessageCircle, Heart, Sparkles, Grid, Star } from 'lucide-react';
 import { ProductImage, ShopLogo, ShopBanner } from '../ui/ShopImage';
+import { parseShopConfig } from '../../utils/configHelper';
+import { useInventory } from '../../context/InventoryContext';
 
 interface StorefrontHomeProps {
   shop: any;
@@ -21,6 +23,14 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
   onToggleWishlist,
   onNavigateToPage,
 }) => {
+  const { getProductRating, getShopRating } = useInventory();
+  // Parse merchant settings
+  const shopConfig = useMemo(() => {
+    if (!shop?.description) return {};
+    const { config } = parseShopConfig(shop.description);
+    return config;
+  }, [shop?.description]);
+
   // Dynamic location text based on priority order: Landmark -> Area -> Location -> City
   const dynamicLocationText = useMemo(() => {
     const isMock = shop?.id?.startsWith('shop-');
@@ -31,10 +41,10 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       return val;
     };
 
-    const landmark = filterHarare(shop?.landmark?.trim());
-    const area = filterHarare(shop?.suburb?.trim() || shop?.area?.trim());
+    const landmark = filterHarare(shopConfig?.landmark?.trim() || shop?.landmark?.trim());
+    const area = filterHarare(shopConfig?.suburb?.trim() || shop?.suburb?.trim() || shop?.area?.trim());
     const location = filterHarare(shop?.location?.trim());
-    const city = filterHarare(shop?.city?.trim());
+    const city = filterHarare(shopConfig?.city?.trim() || shop?.city?.trim());
 
     if (landmark) {
       return `Located in ${landmark}`;
@@ -48,46 +58,76 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
     if (city) {
       return `Located in ${city}`;
     }
-    return 'Available Online Across Zimbabwe';
-  }, [shop]);
+    return '';
+  }, [shop, shopConfig]);
 
   // Highlights Carousel Info matching redesign specifications
   const highlightCards = useMemo(() => {
-    return [
-      {
-        icon: '🛍️',
-        title: 'Our Collection',
-        desc: 'We offer curated selections of modern streetwear, lifestyle garments, and premium boutique drops.',
-        bg: 'bg-emerald-50/70 text-emerald-950 border-emerald-100/40',
-      },
-      {
+    const cards: { icon: string; title: string; desc: string; bg: string; visible: boolean }[] = [];
+
+    // 1. Location Card
+    if (dynamicLocationText) {
+      cards.push({
+        icon: '📍',
+        title: 'Store Location',
+        desc: dynamicLocationText,
+        bg: 'bg-violet-50/70 text-violet-950 border-violet-100/40',
+        visible: true,
+      });
+    }
+
+    // 2. Nationwide Delivery Card
+    const hasDelivery = shopConfig?.nationwide_courier || shopConfig?.delivery_info || shop?.delivery_info;
+    if (hasDelivery) {
+      const courierText = shopConfig?.nationwide_courier 
+        ? `Courier service: ${shopConfig.nationwide_courier}`
+        : (shopConfig?.delivery_info || shop?.delivery_info || '');
+      
+      cards.push({
         icon: '🚚',
         title: 'Nationwide Delivery',
-        desc: 'Speedy shipping options and reliable door-to-door courier services across Zimbabwe.',
+        desc: courierText,
         bg: 'bg-indigo-50/70 text-indigo-950 border-indigo-100/40',
-      },
-      {
+        visible: true,
+      });
+    }
+
+    // 3. Business Highlights Card
+    if (shopConfig?.business_highlights) {
+      cards.push({
         icon: '⭐',
-        title: 'Highly Rated Boutique',
-        desc: 'Trusted by the local fashion community for verified premium product authenticity and supreme service.',
+        title: 'Business Highlights',
+        desc: shopConfig.business_highlights,
         bg: 'bg-amber-50/70 text-amber-950 border-amber-100/40',
-      },
-      {
-        icon: '📍',
-        title: dynamicLocationText,
-        desc: shop?.location || shop?.landmark || shop?.suburb || shop?.city
-          ? `Operating active logistics coordinates at our physical destination. Order online 24/7.`
-          : `We ship nationwide right to your door with certified courier options anywhere in Zimbabwe.`,
-        bg: 'bg-violet-50/70 text-violet-950 border-violet-100/40',
-      },
-      {
-        icon: '🔥',
-        title: 'Weekly New Releases',
-        desc: 'Limited apparel sets and custom apparel drops refreshed weekly. Lock in notifications to catch them.',
-        bg: 'bg-rose-50/70 text-rose-950 border-rose-100/40',
-      }
-    ];
-  }, [shop, dynamicLocationText]);
+        visible: true,
+      });
+    }
+
+    // 4. Physical Store / Store Pickup Available Card
+    const isPickupAvailable = shopConfig?.pickup_available || shop?.pickup_available;
+    if (isPickupAvailable) {
+      cards.push({
+        icon: '🏪',
+        title: 'Store Pickup Available',
+        desc: shopConfig?.pickup_label || 'In-store pickup is fully supported.',
+        bg: 'bg-emerald-50/70 text-emerald-950 border-emerald-100/40',
+        visible: true,
+      });
+    }
+
+    // 5. Response Time Card
+    if (shopConfig?.response_time) {
+      cards.push({
+        icon: '💬',
+        title: 'Active Support',
+        desc: shopConfig.response_time,
+        bg: 'bg-teal-50/70 text-teal-950 border-teal-100/40',
+        visible: true,
+      });
+    }
+
+    return cards.filter(c => c.visible);
+  }, [shop, shopConfig, dynamicLocationText]);
 
   return (
     <div className="space-y-10 pb-16 select-none bg-white">
@@ -108,7 +148,22 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
             {shop.name}
           </h1>
           
-          <p className="text-[10px] font-bold text-green-600 mt-1 tracking-wider uppercase font-sans flex items-center gap-1">
+          {/* Shop Rating */}
+          <div className="flex items-center gap-1 mt-1">
+            <div className="flex items-center gap-0.5 text-amber-500">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <Star key={s} size={11} className={s <= Math.round(Number(getShopRating(shop.id).score)) ? "fill-amber-550 text-amber-550" : "text-zinc-200"} />
+              ))}
+            </div>
+            <span className="text-xs font-bold text-zinc-700 ml-0.5">
+              {getShopRating(shop.id).score}
+            </span>
+            <span className="text-[10px] text-zinc-400 font-medium">
+              ({getShopRating(shop.id).count} reviews)
+            </span>
+          </div>
+          
+          <p className="text-[10px] font-bold text-green-600 mt-2 tracking-wider uppercase font-sans flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5 fill-current" />
             {shop.city || 'Zimbabwe'} Store Link
           </p>
@@ -228,6 +283,14 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                       <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-hover:text-green-600 transition-colors">
                         {p.name}
                       </h4>
+                      {/* Product Rating */}
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                        <span className="text-[10px] font-bold text-zinc-700">
+                          {getProductRating(p.id).score}
+                        </span>
+                        <span className="text-[9px] text-zinc-400 font-medium">({getProductRating(p.id).count})</span>
+                      </div>
                     </div>
 
                     <div className="mt-2 text-left">

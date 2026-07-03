@@ -58,7 +58,7 @@ export const ResetPassword = () => {
       window.history.replaceState({}, '', window.location.pathname);
       
       setTimeout(() => {
-        navigate('/auth');
+        navigate('/login');
       }, 3000);
     } catch (err: any) {
       console.error('Update password error:', err);
@@ -117,7 +117,7 @@ export const ResetPassword = () => {
           The vault is secure. Initializing terminal login...
         </p>
         <button
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate('/login')}
           className="w-full max-w-sm py-5 bg-[#C6FF00] text-black rounded-full font-black uppercase tracking-widest text-lg shadow-xl shadow-[#C6FF00]/20 transition-all active:scale-[0.98] relative z-10"
         >
           Enter Dashboard

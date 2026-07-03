@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Home, Package, BarChart3, Settings as SettingsIcon, ShoppingBag,
   LogOut, Shield, ChevronRight, User, Settings as GearIcon,
-  FileText, Globe, Activity, CheckCircle2, AlertCircle
+  FileText, Globe, Activity, CheckCircle2, AlertCircle, Percent
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -17,6 +17,9 @@ export const Settings: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [testResults, setTestResults] = useState<TestResult[] | null>(null);
   const [runningTests, setRunningTests] = useState(false);
+  const [conversionRate, setConversionRate] = useState<number>(() => {
+    return Number(localStorage.getItem('threadzw_conversion_rate') || '30');
+  });
 
   useEffect(() => {
     const fetchShop = async () => {
@@ -186,6 +189,50 @@ export const Settings: React.FC = () => {
             <ChevronRight size={16} className="text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
           </div>
 
+        </div>
+
+        {/* Business Metrics Configuration Section */}
+        <div className="h-4" />
+        <div className="bg-white border border-zinc-150/80 rounded-3xl p-5 shadow-sm text-left">
+          <div className="flex items-center gap-2.5 mb-2">
+            <div className="w-8 h-8 rounded-full bg-zinc-50 border border-zinc-200/40 flex items-center justify-center text-zinc-800">
+              <Percent size={15} className="stroke-[3.5px] text-zinc-700" />
+            </div>
+            <div>
+              <h3 className="text-zinc-900 font-bold text-[14px]">Business Metrics</h3>
+              <p className="text-zinc-400 text-[10px] uppercase tracking-wider font-mono font-bold">Sales & Conversion Rates</p>
+            </div>
+          </div>
+          <p className="text-zinc-500 text-xs font-medium leading-relaxed mb-4">
+            Configure the estimated conversion percentage from Buyer Intent actions (WhatsApp clicks and shop direction views) to actual completed sales. This value is used to calculate Estimated Revenue throughout your merchant dashboard.
+          </p>
+          <div className="space-y-3.5 pt-1.5">
+            <div className="flex justify-between items-center">
+              <label className="text-zinc-800 text-[11px] font-black uppercase tracking-wider">
+                Estimated Buyer Intent → Sale Conversion %
+              </label>
+              <span className="bg-[#C6FF00]/15 text-zinc-900 px-3 py-1 rounded-xl text-xs font-mono font-black border border-[#C6FF00]/30">
+                {conversionRate}%
+              </span>
+            </div>
+            <input 
+              type="range"
+              min="5"
+              max="100"
+              value={conversionRate}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setConversionRate(val);
+                localStorage.setItem('threadzw_conversion_rate', String(val));
+                toast.success(`Conversion rate set to ${val}%! Dashboard updated.`);
+              }}
+              className="w-full accent-zinc-900 h-2 bg-zinc-150 rounded-lg cursor-pointer appearance-none border border-zinc-200"
+            />
+            <div className="flex justify-between text-[9px] text-zinc-400 font-bold tracking-widest uppercase">
+              <span>5% (Conservative)</span>
+              <span>100% (Direct)</span>
+            </div>
+          </div>
         </div>
 
         {/* System Integrity & Routing Diagnostics Panel */}

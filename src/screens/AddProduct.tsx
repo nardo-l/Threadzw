@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  X, ArrowLeft, Plus, Trash2, Camera, Check, ChevronRight, Loader2, ChevronDown, Image as ImageIcon, Sparkles, Tag, Layers, HelpCircle
+  X, ArrowLeft, Plus, Trash2, Camera, Check, ChevronRight, Loader2, ChevronDown, Image as ImageIcon, Sparkles, Tag, Layers, HelpCircle, ArrowUp, ArrowDown, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -19,7 +19,15 @@ export const AddProduct: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Flow State
+  const triggerFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const triggerCameraPicker = () => {
+    cameraInputRef.current?.click();
+  };
+
+  // Flow State (6 Steps)
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [uploading, setUploading] = useState(false);
@@ -33,31 +41,16 @@ export const AddProduct: React.FC = () => {
   // Fetch Global Categories
   const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
 
-  // SCREEN 1: Photos State (Allow up to 6, first is cover)
-  const [images, setImages] = useState<string[]>([]);
-
-  // SCREEN 2: Basic Details State
+  // Step 1: Basic Details
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  // Default the category when globalCategories are loaded
-  useEffect(() => {
-    if (globalCategories && globalCategories.length > 0 && !selectedCategory) {
-      // Find default category
-      setSelectedCategory(globalCategories[0].name);
-    }
-  }, [globalCategories, selectedCategory]);
+  // Step 2: Photos & Drag and Drop
+  const [images, setImages] = useState<string[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
 
-  // SCREEN 3: Optional Details states (Collapsible)
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [sizesExpanded, setSizesExpanded] = useState(false);
-  const [conditionExpanded, setConditionExpanded] = useState(false);
-
-  // Field states inside accordions
-  const [description, setDescription] = useState('');
-  const [condition, setCondition] = useState('New');
-  const [generalStock, setGeneralStock] = useState('10');
+  // Step 3: Sizes Management
   const [useMultipleSizes, setUseMultipleSizes] = useState(false);
   const [sizeCategory, setSizeCategory] = useState<'apparel' | 'sneakers' | 'onesize'>('apparel');
   const [customSizeInput, setCustomSizeInput] = useState('');
@@ -69,14 +62,32 @@ export const AddProduct: React.FC = () => {
     'XL': { active: false, stock: 10 },
     'XXL': { active: false, stock: 10 },
   });
+  const [generalStock, setGeneralStock] = useState('10');
 
-  // SCREEN 4: Review & Publish State
+  // Step 4: Colours Management
+  const [selectedColors, setSelectedColors] = useState<string[]>(['Midnight Black']);
+  const [customColorInput, setCustomColorInput] = useState('');
+
+  // Step 5: Description & Specs
+  const [description, setDescription] = useState('');
+  const [brand, setBrand] = useState('');
+  const [material, setMaterial] = useState('');
+  const [gender, setGender] = useState('Unisex');
+  const [condition, setCondition] = useState('New');
+  const [features, setFeatures] = useState('');
+  const [careInstructions, setCareInstructions] = useState('');
+
+  // Step 6: Review & Publish
   const [isFeatured, setIsFeatured] = useState(false);
 
-  // Colors optional State (hardcoded fallback palette)
-  const [selectedColors, setSelectedColors] = useState<string[]>(['Midnight Black']);
+  // Default category on globalCategories load
+  useEffect(() => {
+    if (globalCategories && globalCategories.length > 0 && !selectedCategory) {
+      setSelectedCategory(globalCategories[0].name);
+    }
+  }, [globalCategories, selectedCategory]);
 
-  // Fetch shop details on mount
+  // Fetch shop info on mount
   useEffect(() => {
     const fetchShopInfo = async () => {
       try {
@@ -99,26 +110,15 @@ export const AddProduct: React.FC = () => {
     fetchShopInfo();
   }, []);
 
-  // Upload trigger helpers
-  const triggerFilePicker = () => {
-    fileInputRef.current?.click();
-  };
-
-  const triggerCameraPicker = () => {
-    cameraInputRef.current?.click();
-  };
-
-  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
+  // Shared file upload processor
+  const processFiles = async (files: File[]) => {
     if (images.length + files.length > 6) {
       toast.error('Maximum of 6 photos allowed.');
       return;
     }
 
     setUploading(true);
-    const toastId = toast.loading('Uploading photo...');
+    const toastId = toast.loading('Uploading photo to secure storage...');
     try {
       for (const file of files) {
         if (file.size > 5 * 1024 * 1024) {
@@ -152,12 +152,64 @@ export const AddProduct: React.FC = () => {
     }
   };
 
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      processFiles(files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      processFiles(files);
+    }
+  };
+
   const handleRemovePhoto = (index: number) => {
     setImages(prev => prev.filter((_, i) => i !== index));
     toast.success('Photo removed.');
   };
 
-  // Step 3 Sizing Adjustments
+  // Move images in gallery
+  const moveImage = (index: number, moveDirection: 'left' | 'right') => {
+    if (moveDirection === 'left' && index === 0) return;
+    if (moveDirection === 'right' && index === images.length - 1) return;
+    const targetIdx = moveDirection === 'left' ? index - 1 : index + 1;
+    setImages(prev => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
+  };
+
+  // Promote thumbnail to cover photo
+  const setAsCover = (index: number) => {
+    if (index === 0) return;
+    setImages(prev => {
+      const copy = [...prev];
+      const target = copy[index];
+      copy.splice(index, 1);
+      copy.unshift(target);
+      return copy;
+    });
+    toast.success('Main cover photo updated.');
+  };
+
+  // Step 3: Size Adjustments
   const handleSizeCategoryChange = (val: 'apparel' | 'sneakers' | 'onesize') => {
     setSizeCategory(val);
     if (val === 'apparel') {
@@ -199,7 +251,7 @@ export const AddProduct: React.FC = () => {
       };
     });
     setCustomSizeInput('');
-    toast.success(`Size "${sizeName}" added!`);
+    toast.success(`Size "${sizeName}" added.`);
   };
 
   const toggleSizeActive = (sz: string) => {
@@ -226,18 +278,101 @@ export const AddProduct: React.FC = () => {
     }));
   };
 
-  // Nav actions
+  // Reordering Sizes in the size list helper
+  const moveSize = (sizeKey: string, moveDirection: 'up' | 'down') => {
+    const keys = Object.keys(sizeStock);
+    const idx = keys.indexOf(sizeKey);
+    if (moveDirection === 'up' && idx === 0) return;
+    if (moveDirection === 'down' && idx === keys.length - 1) return;
+    const targetIdx = moveDirection === 'up' ? idx - 1 : idx + 1;
+    
+    const entries = Object.entries(sizeStock);
+    const temp = entries[idx];
+    entries[idx] = entries[targetIdx];
+    entries[targetIdx] = temp;
+    
+    setSizeStock(Object.fromEntries(entries));
+  };
+
+  // Step 4: Colour Adjustments
+  const handleAddCustomColor = () => {
+    if (!customColorInput.trim()) return;
+    const colName = customColorInput.trim();
+    if (selectedColors.includes(colName)) {
+      toast.error('Color already exists.');
+      return;
+    }
+    setSelectedColors(prev => [...prev, colName]);
+    setCustomColorInput('');
+    toast.success(`Color "${colName}" added.`);
+  };
+
+  const handleRemoveColor = (colName: string) => {
+    setSelectedColors(prev => prev.filter(c => c !== colName));
+    toast.success(`Color "${colName}" removed.`);
+  };
+
+  const moveColor = (index: number, moveDirection: 'left' | 'right') => {
+    if (moveDirection === 'left' && index === 0) return;
+    if (moveDirection === 'right' && index === selectedColors.length - 1) return;
+    const targetIdx = moveDirection === 'left' ? index - 1 : index + 1;
+    setSelectedColors(prev => {
+      const copy = [...prev];
+      const temp = copy[index];
+      copy[index] = copy[targetIdx];
+      copy[targetIdx] = temp;
+      return copy;
+    });
+  };
+
+  // Nav Actions
   const goNext = () => {
-    if (step === 1 && images.length === 0) {
-      toast.error('Please upload at least one product image.');
-      return;
+    if (step === 1) {
+      if (!name.trim()) {
+        toast.error('Please enter a product name.');
+        return;
+      }
+      if (!price.trim() || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+        toast.error('Please enter a valid retail price.');
+        return;
+      }
+      if (!selectedCategory) {
+        toast.error('Please select a product category.');
+        return;
+      }
     }
-    if (step === 2 && (!name.trim() || !price.trim())) {
-      toast.error('Please enter a product name and price.');
-      return;
+
+    if (step === 2) {
+      if (images.length === 0) {
+        toast.error('Please upload at least one product photo.');
+        return;
+      }
     }
+
+    if (step === 3) {
+      if (useMultipleSizes) {
+        const activeSizes = Object.entries(sizeStock).filter(([_, val]) => val.active);
+        if (activeSizes.length === 0) {
+          toast.error('Please activate at least one size option or switch to Single Size.');
+          return;
+        }
+      } else {
+        if (!generalStock.trim() || isNaN(parseInt(generalStock)) || parseInt(generalStock) < 0) {
+          toast.error('Please provide a valid stock level.');
+          return;
+        }
+      }
+    }
+
+    if (step === 4) {
+      if (selectedColors.length === 0) {
+        toast.error('Please add at least one color option.');
+        return;
+      }
+    }
+
     setDirection(1);
-    setStep(s => s + 1);
+    setStep(s => Math.min(6, s + 1));
   };
 
   const goBack = () => {
@@ -248,7 +383,7 @@ export const AddProduct: React.FC = () => {
   // Database publishing flow
   const handlePublishProduct = async () => {
     if (!name || !price || images.length === 0) {
-      toast.error('Required product information missing.');
+      toast.error('Required product specifications missing.');
       return;
     }
 
@@ -261,7 +396,7 @@ export const AddProduct: React.FC = () => {
       }
       const ownerId = session.user.id;
 
-      // Structure size variants based on whether Multiple Sizes is enabled
+      // Structure size variants
       let configuredSizes = [];
       let totalStock = 0;
 
@@ -279,6 +414,18 @@ export const AddProduct: React.FC = () => {
         totalStock = qty;
       }
 
+      // Appending dynamic specs to description to preserve 100% database schema compatibility
+      let finalDescription = description.trim();
+      if (material || brand || gender || condition || features || careInstructions) {
+        finalDescription += "\n\n--- SPECIFICATIONS ---";
+        if (brand) finalDescription += `\nBrand: ${brand}`;
+        if (material) finalDescription += `\nMaterial: ${material}`;
+        if (gender) finalDescription += `\nGender: ${gender}`;
+        if (condition) finalDescription += `\nCondition: ${condition}`;
+        if (features) finalDescription += `\nFeatures: ${features}`;
+        if (careInstructions) finalDescription += `\nCare Instructions: ${careInstructions}`;
+      }
+
       const productPayload = {
         shop_id: shopId,
         owner_id: ownerId,
@@ -286,7 +433,7 @@ export const AddProduct: React.FC = () => {
         price: parseFloat(price),
         category: selectedCategory || null,
         condition: condition || 'New',
-        description: description.trim() || null,
+        description: finalDescription || null,
         images,
         sizes: configuredSizes,
         colours: selectedColors,
@@ -312,7 +459,7 @@ export const AddProduct: React.FC = () => {
       const generatedId = newProd?.id;
       setProductId(generatedId);
 
-      // Safe inventory table upsert (for setups that use it)
+      // Safe inventory table upsert
       try {
         if (generatedId) {
           for (const size of configuredSizes) {
@@ -329,7 +476,7 @@ export const AddProduct: React.FC = () => {
         console.log('Using inline products JSON array storage.');
       }
 
-      // Safe RPC count increment
+      // Increment shop product count via RPC
       if (shopId) {
         await supabase.rpc('increment_shop_product_count', { shop_id: shopId });
       }
@@ -345,27 +492,21 @@ export const AddProduct: React.FC = () => {
   };
 
   const handleResetForm = () => {
-    setImages([]);
     setName('');
     setPrice('');
-    setCondition('New');
-    setGeneralStock('10');
+    setImages([]);
     setUseMultipleSizes(false);
+    setSelectedColors(['Midnight Black']);
     setDescription('');
+    setBrand('');
+    setMaterial('');
+    setGender('Unisex');
+    setCondition('New');
     setIsFeatured(false);
     setStep(1);
     setIsSuccess(false);
   };
 
-  // Conditions list
-  const conditions = [
-    { value: 'New', label: 'New', desc: 'Brand new, never worn' },
-    { value: 'Like New', label: 'Like New', desc: 'Worn once or twice' },
-    { value: 'Good', label: 'Good', desc: 'Minor wear, well cared for' },
-    { value: 'Fair', label: 'Fair', desc: 'Visible wear but fully functional' }
-  ];
-
-  // Motion animation presets
   const slideVariants = {
     enter: (dir: number) => ({
       x: dir > 0 ? '50px' : '-50px',
@@ -381,9 +522,6 @@ export const AddProduct: React.FC = () => {
     })
   };
 
-  const isStep1Valid = images.length > 0;
-  const isStep2Valid = name.trim() !== '' && price.trim() !== '' && selectedCategory !== '';
-
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-y-auto select-none relative flex flex-col justify-between">
       
@@ -391,7 +529,7 @@ export const AddProduct: React.FC = () => {
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-white/10 z-50 max-w-[430px] mx-auto">
         <div 
           className="h-full bg-[#C6FF00] transition-all duration-300"
-          style={{ width: `${(step / 4) * 100}%` }}
+          style={{ width: `${(step / 6) * 100}%` }}
         />
       </div>
 
@@ -422,7 +560,7 @@ export const AddProduct: React.FC = () => {
           </button>
         ) : (
           <span className="text-white/30 text-[10px] font-mono tracking-widest font-black uppercase bg-white/5 px-2.5 py-1 rounded-full border border-white/[0.04]">
-            Step {step} of 4
+            Step {step} of 6
           </span>
         )}
       </div>
@@ -443,143 +581,727 @@ export const AddProduct: React.FC = () => {
             >
               
               {/* ========================================================
-                  STEP 1: UPLOAD PRODUCT PHOTO
+                  STEP 1: BASIC INFORMATION
                  ======================================================== */}
               {step === 1 && (
                 <div className="space-y-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">START HERE</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Upload product photo</h1>
-                    <p className="text-white/50 text-xs">First image will be displayed as the main cover photo.</p>
+                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 1 OF 6</span>
+                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Basic Information</h1>
+                    <p className="text-white/50 text-xs">Configure the identity, retail cost, and classification.</p>
                   </div>
 
-                  {/* Large upload area centerpiece */}
-                  <div className="flex-1 flex flex-col justify-center py-4">
-                    {images.length === 0 ? (
-                      <div 
-                        onClick={triggerFilePicker}
-                        className="aspect-square w-full bg-white/[0.02] border-2 border-dashed border-white/10 hover:border-[#C6FF00]/40 rounded-2xl flex flex-col items-center justify-center p-6 text-center transition-all cursor-pointer group relative overflow-hidden"
-                      >
-                        <div className="w-16 h-16 rounded-full bg-white/[0.03] group-hover:bg-[#C6FF00]/10 flex items-center justify-center text-white/40 group-hover:text-[#C6FF00] transition-all mb-4 border border-white/5">
-                          <Camera size={28} />
-                        </div>
-                        <span className="text-sm font-bold text-white group-hover:text-[#C6FF00] transition-colors">
-                          Tap to upload photo
-                        </span>
-                        <p className="text-[11px] text-white/45 mt-1 max-w-[200px]">
-                          Accepts high quality PNG, JPG or WebP images
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="aspect-square w-full relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
-                        <img src={images[0]} className="w-full h-full object-cover" alt="Product Cover" />
-                        
-                        <div className="absolute bottom-3 left-3 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/15 flex items-center gap-1.5">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-[#C6FF00]">
-                            Cover Photo
-                          </span>
-                        </div>
+                  <div className="space-y-4 py-2 flex-1">
+                    {/* Product Name */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Name <span className="text-red-500">*</span></label>
+                      <input 
+                        type="text"
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        placeholder="e.g. Vintage Heavyweight Tee"
+                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                      />
+                    </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePhoto(0)}
-                          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/80 hover:bg-black text-white hover:text-red transition-colors flex items-center justify-center border border-white/10 cursor-pointer"
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                    {/* Price USD */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Retail Price (USD) <span className="text-red-500">*</span></label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-white/30 text-sm">$</span>
+                        <input 
+                          type="number"
+                          value={price}
+                          onChange={e => setPrice(e.target.value)}
+                          placeholder="25.00"
+                          className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 pl-8 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Category Selection */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Category <span className="text-red-500">*</span></label>
+                      {globalCategoriesLoading ? (
+                        <div className="h-14 bg-white/[0.03] rounded-xl flex items-center justify-center border border-white/[0.08]">
+                          <Loader2 size={16} className="text-white/30 animate-spin" />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto no-scrollbar">
+                          {globalCategories?.map((cat) => (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => setSelectedCategory(cat.name)}
+                              className={`p-3.5 rounded-xl border text-xs font-bold font-sans transition-all cursor-pointer ${
+                                selectedCategory === cat.name
+                                  ? 'bg-[#C6FF00] text-black border-[#C6FF00] shadow-md shadow-[#C6FF00]/10'
+                                  : 'bg-white/[0.02] text-white/75 border-white/[0.08] hover:border-white/15'
+                              }`}
+                            >
+                              {cat.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Navigation footer */}
+                  <div className="pt-4">
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="w-full h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000] active:scale-[0.98]"
+                    >
+                      <span>Continue to Photos</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================
+                  STEP 2: PHOTOS (DRAG AND DROP, PREVIEWS, REORDER)
+                 ======================================================== */}
+              {step === 2 && (
+                <div className="space-y-6 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 2 OF 6</span>
+                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Product Gallery</h1>
+                    <p className="text-white/50 text-xs">Upload up to 6 high-res photos. Drag or shift to arrange display order.</p>
+                  </div>
+
+                  <div className="flex-1 flex flex-col justify-start space-y-4 py-2">
+                    {/* Drag and Drop Box */}
+                    <div 
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={triggerFilePicker}
+                      className={`h-40 w-full bg-white/[0.01] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 text-center transition-all cursor-pointer group relative overflow-hidden ${
+                        isDragOver ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-white/10 hover:border-white/20'
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-full bg-white/[0.03] group-hover:bg-[#C6FF00]/10 flex items-center justify-center text-white/40 group-hover:text-[#C6FF00] transition-all mb-2 border border-white/5">
+                        <Camera size={20} />
+                      </div>
+                      <span className="text-xs font-bold text-white group-hover:text-[#C6FF00] transition-colors">
+                        Drag & Drop or Click to Upload
+                      </span>
+                      <p className="text-[10px] text-white/40 mt-1">PNG, JPG, or WebP up to 5MB (Max 6)</p>
+                    </div>
+
+                    <input 
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFilesSelected}
+                      multiple
+                      className="hidden"
+                      accept="image/*"
+                    />
+
+                    {/* Previews grid */}
+                    {images.length > 0 && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Uploaded Previews ({images.length} / 6)</label>
+                        <div className="grid grid-cols-2 gap-2.5 max-h-64 overflow-y-auto no-scrollbar py-1">
+                          {images.map((img, idx) => (
+                            <div 
+                              key={`preview-${idx}`}
+                              className="aspect-[3/4] bg-neutral-900 border border-white/[0.08] rounded-xl overflow-hidden relative group"
+                            >
+                              <img src={img} className="w-full h-full object-cover" alt="" />
+                              
+                              {/* Label badge */}
+                              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-3xs border border-white/10 text-[9px] font-mono text-white/90">
+                                {idx === 0 ? '🏆 Cover' : `#${idx + 1}`}
+                              </div>
+
+                              {/* Controls Overlay */}
+                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                                <div className="flex justify-end gap-1.5">
+                                  {idx > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setAsCover(idx)}
+                                      className="w-6 h-6 rounded-md bg-black/80 hover:bg-black text-[9px] text-white flex items-center justify-center border border-white/10 cursor-pointer"
+                                      title="Make Cover"
+                                    >
+                                      ⭐
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemovePhoto(idx)}
+                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-red-700 text-white flex items-center justify-center border border-white/10 cursor-pointer"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+
+                                <div className="flex justify-between">
+                                  <button
+                                    type="button"
+                                    disabled={idx === 0}
+                                    onClick={() => moveImage(idx, 'left')}
+                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-black text-white flex items-center justify-center border border-white/10 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    ←
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={idx === images.length - 1}
+                                    onClick={() => moveImage(idx, 'right')}
+                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-black text-white flex items-center justify-center border border-white/10 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    →
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
+                  </div>
 
-                    {/* Camera and Gallery buttons */}
-                    <div className="grid grid-cols-2 gap-3 mt-4">
+                  {/* Navigation footer */}
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={goBack}
+                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                    >
+                      <span>Continue</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================
+                  STEP 3: SIZES (PRESETS, ADD UNLIMITED, REORDER, STOCK)
+                 ======================================================== */}
+              {step === 3 && (
+                <div className="space-y-6 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 3 OF 6</span>
+                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Size Specifications</h1>
+                    <p className="text-white/50 text-xs">Choose between a single universal size or configure complex multi-size inventory.</p>
+                  </div>
+
+                  <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-96">
+                    {/* Toggle Selector */}
+                    <div className="flex gap-2 p-1 bg-white/[0.02] border border-white/[0.08] rounded-xl">
                       <button
                         type="button"
-                        onClick={triggerCameraPicker}
-                        className="h-12 bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors text-white/80 hover:text-white"
+                        onClick={() => setUseMultipleSizes(false)}
+                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          !useMultipleSizes 
+                            ? 'bg-white/10 text-white font-black' 
+                            : 'text-white/50 hover:text-white/70'
+                        }`}
                       >
-                        <Camera size={16} className="text-[#C6FF00]" />
-                        <span>Use Camera</span>
+                        Single Size
                       </button>
-                      
                       <button
                         type="button"
-                        onClick={triggerFilePicker}
-                        className="h-12 bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 rounded-xl font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors text-white/80 hover:text-white"
+                        onClick={() => setUseMultipleSizes(true)}
+                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          useMultipleSizes 
+                            ? 'bg-white/10 text-white font-black' 
+                            : 'text-white/50 hover:text-white/70'
+                        }`}
                       >
-                        <ImageIcon size={16} className="text-[#C6FF00]" />
-                        <span>Open Gallery</span>
+                        Multiple Sizes
                       </button>
                     </div>
 
-                    {/* Additional photos horizontal line (up to 6) */}
-                    {images.length > 0 && (
-                      <div className="mt-5 space-y-2">
-                        <span className="text-[10px] text-white/40 font-mono tracking-wider block uppercase">
-                          Additional Photos ({images.length - 1} / 5)
-                        </span>
-                        <div className="flex gap-2 items-center overflow-x-auto no-scrollbar py-1">
-                          {images.slice(1).map((img, idx) => (
-                            <div key={`extra-img-${idx}`} className="w-14 h-14 rounded-lg relative overflow-hidden border border-white/10 shrink-0">
-                              <img src={img} className="w-full h-full object-cover" alt="" />
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(idx + 1)}
-                                className="absolute inset-0 bg-black/60 hover:bg-black/80 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center text-red cursor-pointer"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          ))}
-
-                          {images.length < 6 && (
+                    {!useMultipleSizes ? (
+                      <div className="space-y-3 p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl animate-wipe">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Universal Item Stock Count</label>
+                        <input 
+                          type="number"
+                          value={generalStock}
+                          onChange={e => setGeneralStock(e.target.value)}
+                          placeholder="10"
+                          className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                        />
+                        <p className="text-[10px] text-white/40 leading-relaxed font-mono">
+                          This product is universal "One Size". Enter total quantity in inventory.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4 animate-wipe">
+                        {/* Preset categories picker */}
+                        <div className="flex gap-2">
+                          {(['apparel', 'sneakers', 'onesize'] as const).map((cat) => (
                             <button
+                              key={cat}
                               type="button"
-                              onClick={triggerFilePicker}
-                              className="w-14 h-14 bg-white/[0.03] hover:bg-white/[0.06] border border-dashed border-white/15 hover:border-[#C6FF00] rounded-lg flex items-center justify-center transition-colors cursor-pointer"
+                              onClick={() => handleSizeCategoryChange(cat)}
+                              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg border transition-all cursor-pointer ${
+                                sizeCategory === cat
+                                  ? 'bg-[#C6FF00] text-black border-[#C6FF00] font-extrabold'
+                                  : 'bg-white/[0.02] text-white/60 border-white/[0.08]'
+                              }`}
                             >
-                              <Plus size={16} className="text-white/40" />
+                              {cat}
                             </button>
-                          )}
+                          ))}
+                        </div>
+
+                        {/* Custom Size Addition */}
+                        <div className="flex gap-2">
+                          <input 
+                            type="text"
+                            value={customSizeInput}
+                            onChange={e => setCustomSizeInput(e.target.value)}
+                            placeholder="Add Custom Size (e.g. 3XL)"
+                            className="flex-1 bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCustomSize}
+                            className="px-4 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer"
+                          >
+                            Add
+                          </button>
+                        </div>
+
+                        {/* Active size list */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Manage Sizes & Stock</label>
+                          <div className="space-y-2.5">
+                            {Object.entries(sizeStock).map(([sz, details]) => (
+                              <div 
+                                key={`sz-${sz}`}
+                                className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                                  details.active 
+                                    ? 'bg-white/[0.03] border-white/[0.12]' 
+                                    : 'bg-transparent border-white/[0.04] opacity-45'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleSizeActive(sz)}
+                                    className={`w-5 h-5 rounded-md flex items-center justify-center border cursor-pointer transition-colors ${
+                                      details.active 
+                                        ? 'bg-[#C6FF00] border-[#C6FF00] text-black' 
+                                        : 'bg-transparent border-white/20 text-transparent'
+                                    }`}
+                                  >
+                                    <Check size={12} className="stroke-[3]" />
+                                  </button>
+                                  <span className="font-sans text-xs font-bold text-white uppercase">{sz}</span>
+                                </div>
+
+                                {details.active && (
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex items-center bg-white/[0.02] border border-white/[0.08] rounded-lg h-9 overflow-hidden">
+                                      <button
+                                        type="button"
+                                        onClick={() => updateSizeStock(sz, details.stock - 1)}
+                                        className="px-2.5 h-full text-white/50 hover:text-white hover:bg-white/5 transition-colors font-mono cursor-pointer"
+                                      >
+                                        -
+                                      </button>
+                                      <input 
+                                        type="number"
+                                        value={details.stock}
+                                        onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
+                                        className="w-10 text-center bg-transparent text-xs font-mono text-white focus:outline-none"
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={() => updateSizeStock(sz, details.stock + 1)}
+                                        className="px-2.5 h-full text-white/50 hover:text-white hover:bg-white/5 transition-colors font-mono cursor-pointer"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+
+                                    {/* Size shifting/reorder buttons */}
+                                    <div className="flex gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => moveSize(sz, 'up')}
+                                        className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                                      >
+                                        <ArrowUp size={12} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => moveSize(sz, 'down')}
+                                        className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                                      >
+                                        <ArrowDown size={12} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  {/* File inputs */}
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    multiple 
-                    accept="image/jpeg,image/png,image/webp" 
-                    onChange={handleFilesSelected} 
-                    className="hidden" 
-                  />
-                  <input 
-                    type="file" 
-                    ref={cameraInputRef} 
-                    accept="image/*" 
-                    capture="environment"
-                    onChange={handleFilesSelected} 
-                    className="hidden" 
-                  />
-
-                  {/* BOTTOM NEXT BUTTON */}
-                  <div className="pt-2">
+                  {/* Navigation footer */}
+                  <div className="pt-4 flex gap-3">
                     <button
                       type="button"
-                      disabled={!isStep1Valid || uploading}
-                      onClick={goNext}
-                      className="w-full h-14 rounded-xl bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98]"
+                      onClick={goBack}
+                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
                     >
-                      {uploading ? (
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                    >
+                      <span>Continue</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================
+                  STEP 4: COLOUR VARIATIONS (CHIPS, ADD, REMOVE, REORDER)
+                 ======================================================== */}
+              {step === 4 && (
+                <div className="space-y-6 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 4 OF 6</span>
+                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Colour Options</h1>
+                    <p className="text-white/50 text-xs">Configure the color choices buyers can choose from on checkout.</p>
+                  </div>
+
+                  <div className="flex-1 space-y-4 py-2">
+                    {/* Add Color Input Row */}
+                    <div className="flex gap-2">
+                      <input 
+                        type="text"
+                        value={customColorInput}
+                        onChange={e => setCustomColorInput(e.target.value)}
+                        placeholder="Add colour (e.g. Sage Green)"
+                        className="flex-1 bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3.5 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomColor}
+                        className="px-5 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer"
+                      >
+                        Add
+                      </button>
+                    </div>
+
+                    {/* Chips Display */}
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Active Colours (Arrange displays)</label>
+                      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto no-scrollbar">
+                        {selectedColors.map((col, idx) => (
+                          <div 
+                            key={`col-chip-${col}-${idx}`}
+                            className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between text-xs font-sans font-bold"
+                          >
+                            <span className="text-white font-bold">{col}</span>
+                            <div className="flex items-center gap-1.5">
+                              {/* Reorder Buttons */}
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => moveColor(idx, 'left')}
+                                className="w-7 h-7 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center justify-center border border-white/5 cursor-pointer disabled:opacity-30"
+                                title="Move Up"
+                              >
+                                <ArrowUp size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === selectedColors.length - 1}
+                                onClick={() => moveColor(idx, 'right')}
+                                className="w-7 h-7 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center justify-center border border-white/5 cursor-pointer disabled:opacity-30"
+                                title="Move Down"
+                              >
+                                <ArrowDown size={12} />
+                              </button>
+                              
+                              {/* Remove Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveColor(col)}
+                                className="w-7 h-7 bg-white/5 hover:bg-red-950 hover:text-red-400 text-white/55 hover:border-red-500/20 rounded-lg flex items-center justify-center border border-white/5 cursor-pointer"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Navigation footer */}
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={goBack}
+                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                    >
+                      <span>Continue</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================
+                  STEP 5: DESCRIPTION & TECHNICAL SPECS
+                 ======================================================== */}
+              {step === 5 && (
+                <div className="space-y-6 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 5 OF 6</span>
+                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Garment Description</h1>
+                    <p className="text-white/50 text-xs">Describe key aesthetics and provide specific technical classifications.</p>
+                  </div>
+
+                  <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-[380px]">
+                    {/* Story / Description Text Box */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Narrative Description</label>
+                      <textarea 
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        rows={3}
+                        placeholder="Detail materials, fitment notes, model reference, or drop context..."
+                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-white font-sans focus:outline-none resize-none transition-all placeholder:text-white/20 text-xs leading-relaxed"
+                      />
+                    </div>
+
+                    {/* Material Option */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Material Composition</label>
+                      <input 
+                        type="text"
+                        value={material}
+                        onChange={e => setMaterial(e.target.value)}
+                        placeholder="e.g. 100% Cotton, 360gsm French Terry"
+                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                      />
+                    </div>
+
+                    {/* Brand */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Brand / Designer</label>
+                      <input 
+                        type="text"
+                        value={brand}
+                        onChange={e => setBrand(e.target.value)}
+                        placeholder="e.g. Custom Boutique or Own Label"
+                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                      />
+                    </div>
+
+                    {/* Features */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Key Features</label>
+                      <input 
+                        type="text"
+                        value={features}
+                        onChange={e => setFeatures(e.target.value)}
+                        placeholder="e.g. Heavyweight feel, Drop shoulder, Distressed hem"
+                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                      />
+                    </div>
+
+                    {/* Care Instructions */}
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Care Instructions</label>
+                      <input 
+                        type="text"
+                        value={careInstructions}
+                        onChange={e => setCareInstructions(e.target.value)}
+                        placeholder="e.g. Machine wash cold, lay flat to dry"
+                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                      />
+                    </div>
+
+                    {/* Gender and Condition Row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Gender Classification</label>
+                        <select
+                          value={gender}
+                          onChange={e => setGender(e.target.value)}
+                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
+                        >
+                          <option value="Unisex">Unisex</option>
+                          <option value="Men">Men</option>
+                          <option value="Women">Women</option>
+                          <option value="Kids">Kids</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Condition Status</label>
+                        <select
+                          value={condition}
+                          onChange={e => setCondition(e.target.value)}
+                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
+                        >
+                          <option value="New">New</option>
+                          <option value="Like New">Like New</option>
+                          <option value="Good">Good</option>
+                          <option value="Fair">Fair</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Navigation footer */}
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={goBack}
+                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goNext}
+                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                    >
+                      <span>Continue</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================
+                  STEP 6: REVIEW & PUBLISH (PRODUCT CARD PREVIEW)
+                 ======================================================== */}
+              {step === 6 && (
+                <div className="space-y-6 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">FINAL STEP</span>
+                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Review & Deploy</h1>
+                    <p className="text-white/50 text-xs">Inspect how your product will look inside the storefront catalog page.</p>
+                  </div>
+
+                  {/* Catalog-Style Mock Product Card */}
+                  <div className="flex-1 py-1 flex flex-col justify-start space-y-4">
+                    <div className="bg-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl p-4 flex flex-col gap-3 font-sans">
+                      <div className="aspect-[4/5] rounded-xl overflow-hidden bg-neutral-900 relative">
+                        <img src={images[0]} className="w-full h-full object-cover" alt="" />
+                        <span className="absolute top-3 left-3 bg-[#C6FF00] text-black text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md">
+                          {selectedCategory}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 text-left">
+                        <div className="flex justify-between items-start gap-2">
+                          <h3 className="text-base font-extrabold tracking-tight text-white leading-tight">{name}</h3>
+                          <span className="text-base font-black text-[#C6FF00] shrink-0">${parseFloat(price || '0').toFixed(2)}</span>
+                        </div>
+
+                        {/* Specs overview line */}
+                        <div className="flex flex-wrap gap-1.5 pt-1.5">
+                          {useMultipleSizes ? (
+                            <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-white/[0.08] px-2 py-0.5 rounded">
+                              Sizes: {Object.entries(sizeStock).filter(([_, v]) => v.active).map(([k]) => k).join(', ')}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-white/[0.08] px-2 py-0.5 rounded">
+                              Size: Universal (Qty: {generalStock})
+                            </span>
+                          )}
+
+                          <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-white/[0.08] px-2 py-0.5 rounded">
+                            Colors: {selectedColors.join(', ')}
+                          </span>
+
+                          {material && (
+                            <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-[#C6FF00]/20 px-2 py-0.5 rounded">
+                              {material}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Featured Product Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#C6FF00]/10 flex items-center justify-center text-[#C6FF00]">
+                          <Sparkles size={16} />
+                        </div>
+                        <div className="text-left">
+                          <span className="text-xs font-bold text-white block">Feature on Home</span>
+                          <span className="text-[10px] text-white/40">Place this garment inside your homepage catalog hero.</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsFeatured(!isFeatured)}
+                        className={`w-12 h-6 rounded-full relative transition-all ${
+                          isFeatured ? 'bg-[#C6FF00]' : 'bg-white/10'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-black transition-all ${
+                          isFeatured ? 'left-7 bg-black' : 'left-1 bg-white/60'
+                        }`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Navigation footer */}
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="button"
+                      disabled={publishing}
+                      onClick={goBack}
+                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer disabled:opacity-50"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="button"
+                      disabled={publishing}
+                      onClick={handlePublishProduct}
+                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000] disabled:opacity-50"
+                    >
+                      {publishing ? (
                         <>
-                          <Loader2 size={16} className="animate-spin text-black" />
-                          <span>Uploading...</span>
+                          <Loader2 size={14} className="animate-spin" />
+                          <span>Publishing...</span>
                         </>
                       ) : (
                         <>
-                          <span>Continue</span>
-                          <ChevronRight size={16} strokeWidth={3} />
+                          <Check size={14} className="stroke-[3]" />
+                          <span>Publish Live</span>
                         </>
                       )}
                     </button>
@@ -587,465 +1309,24 @@ export const AddProduct: React.FC = () => {
                 </div>
               )}
 
-              {/* ========================================================
-                  STEP 2: BASIC DETAILS
-                 ======================================================== */}
-              {step === 2 && (
-                <div className="space-y-6 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">PRODUCT IDENTITY</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Basic details</h1>
-                    <p className="text-white/50 text-xs">Specify the main parameters of your product.</p>
-                  </div>
-
-                  <div className="space-y-5 flex-grow py-4 justify-center flex flex-col">
-                    {/* Name input */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono font-bold uppercase tracking-[1.5px] text-white/40 block">
-                        Product Name <span className="text-[#C6FF00]">*</span>
-                      </label>
-                      <input 
-                        type="text" 
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g. Air Jordan 4 Retro"
-                        className="w-full text-base font-bold bg-white/[0.04] border border-white/10 focus:border-[#C6FF00] rounded-xl px-4 py-3.5 text-white placeholder-white/25 outline-none focus:outline-none transition-all"
-                      />
-                    </div>
-
-                    {/* Price input */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono font-bold uppercase tracking-[1.5px] text-white/40 block">
-                        Price (USD) <span className="text-[#C6FF00]">*</span>
-                      </label>
-                      <div className="relative flex items-center">
-                        <span className="absolute left-4 font-black text-lg text-[#C6FF00] select-none">$</span>
-                        <input 
-                          type="number" 
-                          inputMode="decimal"
-                          value={price}
-                          onChange={(e) => setPrice(e.target.value)}
-                          placeholder="0.00"
-                          className="w-full text-lg font-black bg-white/[0.04] border border-white/10 focus:border-[#C6FF00] rounded-xl pl-10 pr-4 py-3.5 text-[#C6FF00] placeholder-white/20 outline-none focus:outline-none transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Category Selection */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono font-bold uppercase tracking-[1.5px] text-white/40 block">
-                        Category <span className="text-[#C6FF00]">*</span>
-                      </label>
-                      {globalCategoriesLoading ? (
-                        <div className="h-12 bg-white/[0.02] rounded-xl animate-pulse flex items-center justify-center text-xs text-white/30">
-                          Loading categories...
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto no-scrollbar p-0.5">
-                          {globalCategories.map((cat) => {
-                            const isSelected = selectedCategory === cat.name;
-                            return (
-                              <button
-                                key={`cat-select-${cat.id}`}
-                                type="button"
-                                onClick={() => setSelectedCategory(cat.name)}
-                                className={`h-11 px-3 text-[12px] font-bold rounded-xl border flex items-center gap-2 transition-all cursor-pointer ${
-                                  isSelected 
-                                    ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00] shadow-lg shadow-[#C6FF00]/5' 
-                                    : 'bg-white/[0.03] border-white/5 text-white/60 hover:text-white'
-                                }`}
-                              >
-                                <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-[#C6FF00]' : 'bg-white/20'}`} />
-                                <span className="truncate">{cat.name}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* CONTINUE */}
-                  <button
-                    type="button"
-                    disabled={!isStep2Valid}
-                    onClick={goNext}
-                    className="w-full h-14 rounded-xl bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
-                  >
-                    <span>Continue</span>
-                    <ChevronRight size={16} strokeWidth={3} />
-                  </button>
-                </div>
-              )}
-
-              {/* ========================================================
-                  STEP 3: OPTIONAL DETAILS (COLLAPSIBLE ACCORDIONS)
-                 ======================================================== */}
-              {step === 3 && (
-                <div className="space-y-6 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">OPTIONAL STEP</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Optional details</h1>
-                    <p className="text-white/50 text-xs">All fields here are optional. Tap any header to configure.</p>
-                  </div>
-
-                  <div className="space-y-4 flex-grow py-2">
-                    
-                    {/* ACCORDION 1: DESCRIPTION */}
-                    <div className="border border-white/[0.06] bg-white/[0.02] rounded-xl overflow-hidden transition-colors duration-200">
-                      <button
-                        type="button"
-                        onClick={() => setDescExpanded(!descExpanded)}
-                        className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${descExpanded ? 'bg-[#C6FF00]/10 border-[#C6FF00]/25 text-[#C6FF00]' : 'bg-white/5 border-white/5 text-white/50'}`}>
-                            <Sparkles size={14} />
-                          </div>
-                          <div>
-                            <span className="text-xs font-extrabold text-white uppercase tracking-wider block">Description</span>
-                            <span className="text-[10px] text-white/40 truncate block max-w-[200px]">
-                              {description ? description : 'Add details, fit, style guide'}
-                            </span>
-                          </div>
-                        </div>
-                        <ChevronDown size={16} className={`text-white/40 transition-transform duration-300 ${descExpanded ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {descExpanded && (
-                        <div className="p-4 pt-0 border-t border-white/[0.04] space-y-2 animate-wipe">
-                          <div className="flex justify-between text-[10px] font-mono text-white/40 uppercase tracking-widest mt-3">
-                            <span>Write details</span>
-                            <span>{description.length}/300</span>
-                          </div>
-                          <textarea
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value.slice(0, 300))}
-                            placeholder="Write high-converting details about materials, fit, design, or sizing guide..."
-                            rows={3}
-                            className="w-full text-xs bg-black/40 border border-white/10 rounded-lg p-3 text-white placeholder-white/20 outline-none focus:border-[#C6FF00] resize-none leading-relaxed transition-colors"
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ACCORDION 2: SIZES & STOCK QUANTITY */}
-                    <div className="border border-white/[0.06] bg-white/[0.02] rounded-xl overflow-hidden transition-colors duration-200">
-                      <button
-                        type="button"
-                        onClick={() => setSizesExpanded(!sizesExpanded)}
-                        className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${sizesExpanded ? 'bg-[#C6FF00]/10 border-[#C6FF00]/25 text-[#C6FF00]' : 'bg-white/5 border-white/5 text-white/50'}`}>
-                            <Layers size={14} />
-                          </div>
-                          <div>
-                            <span className="text-xs font-extrabold text-white uppercase tracking-wider block">Sizes & Stock</span>
-                            <span className="text-[10px] text-white/40 block">
-                              {useMultipleSizes ? 'Custom sizing configured' : `Default One Size · ${generalStock} units`}
-                            </span>
-                          </div>
-                        </div>
-                        <ChevronDown size={16} className={`text-white/40 transition-transform duration-300 ${sizesExpanded ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {sizesExpanded && (
-                        <div className="p-4 pt-0 border-t border-white/[0.04] space-y-4 animate-wipe">
-                          
-                          {/* Toggle Use multiple sizes */}
-                          <div className="flex items-center justify-between mt-4">
-                            <span className="text-xs text-white/70">Does this product have multiple sizes?</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setUseMultipleSizes(!useMultipleSizes);
-                                if (!useMultipleSizes) handleSizeCategoryChange('apparel');
-                              }}
-                              className={`w-11 h-6 rounded-lg relative transition-colors ${useMultipleSizes ? 'bg-[#C6FF00]' : 'bg-white/10'}`}
-                            >
-                              <div className={`absolute top-0.5 w-5 h-5 rounded-md bg-black transition-all ${useMultipleSizes ? 'left-5.5' : 'left-0.5 bg-white/40'}`} />
-                            </button>
-                          </div>
-
-                          {!useMultipleSizes ? (
-                            <div className="space-y-2 pt-2 bg-black/30 p-3 rounded-xl border border-white/[0.03]">
-                              <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-white/40 block">
-                                Global Stock Volume
-                              </label>
-                              <div className="flex items-center gap-3">
-                                <input
-                                  type="number"
-                                  min={0}
-                                  value={generalStock}
-                                  onChange={(e) => setGeneralStock(e.target.value)}
-                                  className="w-full h-11 rounded-lg bg-black/40 border border-white/15 px-3 text-white text-sm font-extrabold outline-none focus:border-[#C6FF00]"
-                                  placeholder="10"
-                                />
-                                <span className="text-xs text-white/40 shrink-0 uppercase tracking-widest font-mono">units available</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="space-y-4 pt-2">
-                              {/* Category Tabs */}
-                              <div className="flex gap-1.5 p-1 bg-black/40 border border-white/10 rounded-lg">
-                                {(['apparel', 'sneakers', 'onesize'] as const).map((cat) => (
-                                  <button
-                                    key={cat}
-                                    type="button"
-                                    onClick={() => handleSizeCategoryChange(cat)}
-                                    className={`flex-1 py-1.5 text-[10px] font-extrabold rounded-md transition-all capitalize cursor-pointer ${
-                                      sizeCategory === cat 
-                                        ? 'bg-[#C6FF00] text-black' 
-                                        : 'text-white/50 hover:text-white'
-                                    }`}
-                                  >
-                                    {cat === 'onesize' ? 'One Size' : cat}
-                                  </button>
-                                ))}
-                              </div>
-
-                              {/* Size selection grids */}
-                              <div className="grid grid-cols-3 gap-2">
-                                {Object.entries(sizeStock).map(([sz, value]) => (
-                                  <div
-                                    key={`opt-size-${sz}`}
-                                    className={`p-2 rounded-lg border flex flex-col items-center gap-1.5 relative transition-all ${
-                                      value.active
-                                        ? 'bg-[#C6FF00]/5 border-[#C6FF00] text-[#C6FF00]'
-                                        : 'bg-black/20 border-white/5 text-white/30'
-                                    }`}
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleSizeActive(sz)}
-                                      className="absolute inset-0 w-full h-full rounded-lg cursor-pointer"
-                                    />
-                                    <span className="font-black text-xs relative z-10">{sz}</span>
-                                    {value.active && (
-                                      <input
-                                        type="number"
-                                        min={0}
-                                        value={value.stock}
-                                        onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
-                                        className="w-12 h-6 rounded bg-black/40 border border-white/10 text-white font-bold text-[10px] text-center relative z-10 focus:outline-none focus:border-[#C6FF00]"
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-
-                              {/* Add custom sizes */}
-                              <div className="flex gap-1.5">
-                                <input
-                                  type="text"
-                                  value={customSizeInput}
-                                  onChange={(e) => setCustomSizeInput(e.target.value)}
-                                  placeholder="e.g. EU 46"
-                                  className="flex-1 text-[11px] bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white outline-none focus:border-[#C6FF00]"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={handleAddCustomSize}
-                                  className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
-                                >
-                                  Add +
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ACCORDION 3: CONDITION (FOR THRIFT SELLERS) */}
-                    <div className="border border-white/[0.06] bg-white/[0.02] rounded-xl overflow-hidden transition-colors duration-200">
-                      <button
-                        type="button"
-                        onClick={() => setConditionExpanded(!conditionExpanded)}
-                        className="w-full flex items-center justify-between p-4 text-left hover:bg-white/[0.02]"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${conditionExpanded ? 'bg-[#C6FF00]/10 border-[#C6FF00]/25 text-[#C6FF00]' : 'bg-white/5 border-white/5 text-white/50'}`}>
-                            <Tag size={14} />
-                          </div>
-                          <div>
-                            <span className="text-xs font-extrabold text-white uppercase tracking-wider block">Product Condition</span>
-                            <span className="text-[10px] text-white/40 block">
-                              {condition}
-                            </span>
-                          </div>
-                        </div>
-                        <ChevronDown size={16} className={`text-white/40 transition-transform duration-300 ${conditionExpanded ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {conditionExpanded && (
-                        <div className="p-4 pt-0 border-t border-white/[0.04] space-y-3 animate-wipe">
-                          <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-white/40 block mt-4">
-                            Select Condition
-                          </label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {conditions.map((item) => {
-                              const isSelected = condition === item.value;
-                              return (
-                                <button
-                                  key={`cond-${item.value}`}
-                                  type="button"
-                                  onClick={() => setCondition(item.value)}
-                                  className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between h-[68px] cursor-pointer ${
-                                    isSelected 
-                                      ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00]' 
-                                      : 'bg-black/30 border-white/5 text-white/60 hover:text-white'
-                                  }`}
-                                >
-                                  <span className="text-xs font-extrabold block">{item.label}</span>
-                                  <span className={`text-[9px] block ${isSelected ? 'text-[#C6FF00]/70' : 'text-white/30'}`}>{item.desc}</span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                  </div>
-
-                  {/* CONTINUE */}
-                  <button
-                    type="button"
-                    onClick={goNext}
-                    className="w-full h-14 rounded-xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
-                  >
-                    <span>Continue to Review</span>
-                    <ChevronRight size={16} strokeWidth={3} />
-                  </button>
-                </div>
-              )}
-
-              {/* ========================================================
-                  STEP 4: REVIEW & PUBLISH
-                 ======================================================== */}
-              {step === 4 && (
-                <div className="space-y-6 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">FINAL REVIEW</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Review & publish</h1>
-                    <p className="text-white/50 text-xs">Verify your product listing details before publishing.</p>
-                  </div>
-
-                  {/* Elegant product showcase representation card */}
-                  <div className="flex-grow flex flex-col justify-center py-2 space-y-4">
-                    <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl flex flex-col">
-                      <div className="aspect-video w-full bg-neutral-900 border-b border-white/[0.05] relative overflow-hidden flex items-center justify-center">
-                        {images[0] ? (
-                          <img src={images[0]} className="w-full h-full object-cover" alt="" />
-                        ) : (
-                          <span className="text-[11px] text-white/20 uppercase font-black tracking-widest">
-                            No Photo
-                          </span>
-                        )}
-                        <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/80 backdrop-blur-md border border-white/15 rounded-lg text-[9px] font-black uppercase tracking-wider text-[#C6FF00]">
-                          {selectedCategory}
-                        </div>
-                      </div>
-
-                      <div className="p-4 space-y-3.5 text-left">
-                        <div className="space-y-1">
-                          <h4 className="font-extrabold text-lg leading-snug text-white">
-                            {name || 'Untitled Product'}
-                          </h4>
-                          <p className="text-[#C6FF00] font-black text-xl leading-none">
-                            ${price ? parseFloat(price).toFixed(2) : '0.00'}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/[0.04]">
-                          <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-1 bg-white/5 border border-white/10 text-white/70 rounded-md">
-                            Condition: {condition}
-                          </span>
-                          
-                          {useMultipleSizes ? (
-                            Object.entries(sizeStock)
-                              .filter(([_, data]) => data.active)
-                              .map(([sz]) => (
-                                <span 
-                                  key={`review-chip-${sz}`} 
-                                  className="text-[9px] font-mono uppercase tracking-wider px-2 py-1 bg-[#C6FF00]/10 border border-[#C6FF00]/20 text-[#C6FF00] rounded-md"
-                                >
-                                  {sz}
-                                </span>
-                              ))
-                          ) : (
-                            <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-1 bg-white/5 border border-white/10 text-white/70 rounded-md">
-                              Qty: {generalStock} units
-                            </span>
-                          )}
-                        </div>
-
-                        {description && (
-                          <p className="text-[11px] text-white/50 leading-relaxed pt-2 border-t border-white/[0.04] line-clamp-3">
-                            {description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Feature this product toggle */}
-                    <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.06] rounded-xl">
-                      <div className="space-y-0.5">
-                        <span className="text-xs font-bold text-white block">Feature on Storefront</span>
-                        <p className="text-white/40 text-[10px]">Pins this product at the top of your shop</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsFeatured(!isFeatured)}
-                        className={`w-11 h-6 rounded-lg relative transition-colors ${isFeatured ? 'bg-[#C6FF00]' : 'bg-white/10'}`}
-                      >
-                        <div className={`absolute top-0.5 w-5 h-5 rounded-md bg-black transition-all ${isFeatured ? 'left-5.5' : 'left-0.5 bg-white/40'}`} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* ACTION PUBLISH BUTTON */}
-                  <button
-                    type="button"
-                    disabled={publishing}
-                    onClick={handlePublishProduct}
-                    className="w-full h-14 rounded-xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-[0_8px_24px_rgba(198,255,0,0.25)]"
-                  >
-                    {publishing ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin text-black" />
-                        <span>Publishing product...</span>
-                      </>
-                    ) : (
-                      <>
-                        <span>Publish Product 🚀</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
             </motion.div>
           ) : (
-            
-            // SUCCESS DEPLOYED PAGE
+            /* ========================================================
+               SUCCESS STATE SCREEN (CONGRATULATORY ANIMATION)
+               ======================================================== */
             <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-              className="w-full flex-1 flex flex-col justify-between py-6 text-center"
+              key="success-card"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full flex-1 flex flex-col justify-between py-12 text-center space-y-6 h-full max-h-[500px]"
             >
-              <div className="space-y-6 flex-grow flex flex-col items-center justify-center">
-                
+              <div className="space-y-6 my-auto">
+                {/* Visual confirmation circle */}
                 <motion.div 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: [0, 1.1, 1] }}
-                  transition={{ duration: 0.4 }}
-                  className="w-20 h-20 rounded-full border-2 border-[#C6FF00] bg-[#C6FF00]/10 flex items-center justify-center text-[#C6FF00] mb-2"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: [0.5, 1.2, 1], opacity: 1 }}
+                  transition={{ delay: 0.1, duration: 0.4 }}
+                  className="w-20 h-20 rounded-full bg-[#C6FF00]/10 border border-[#C6FF00]/30 flex items-center justify-center text-[#C6FF00] mx-auto shadow-lg shadow-[#C6FF00]/10"
                 >
                   <Check size={36} className="stroke-[3]" />
                 </motion.div>
@@ -1083,7 +1364,7 @@ export const AddProduct: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="w-full h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer active:scale-[0.98]"
+                  className="w-full h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] hover:bg-[#b0e000]"
                 >
                   Add another product
                 </button>

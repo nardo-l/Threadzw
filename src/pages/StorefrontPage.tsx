@@ -6,6 +6,15 @@ import { Menu, X, ShoppingBag, Search, Home, Grid, Heart, User, ShieldAlert, Arr
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { DEFAULT_MOCK_CATEGORIES } from '../utils/storefrontData';
+import { parseShopConfig } from '../utils/configHelper';
+import { 
+  trackStoreView, 
+  trackProductView, 
+  trackWishlistAdd, 
+  trackCategoryClick, 
+  trackSearchUsage 
+} from '../lib/analytics';
+
 
 // Modular Page Components
 import { StorefrontHome } from '../components/storefront/StorefrontHome';
@@ -66,9 +75,112 @@ export const StorefrontPage: React.FC = () => {
     return validPages.includes(pageVal) ? pageVal : '404';
   }, [searchParams]);
 
+  // Traffic logging database integration helpers
+  const logStorefrontVisit = async (shopId: string, ownerId: string) => {
+    try {
+      const lastLogged = sessionStorage.getItem(`threadzw_visit_logged_${shopId}`);
+      if (lastLogged) return;
+      sessionStorage.setItem(`threadzw_visit_logged_${shopId}`, 'true');
+
+      const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('boutique_customer_id', customerId);
+
+      let source = 'Direct Link';
+      
+      const pageVal = searchParams.get('page');
+      const prodVal = searchParams.get('prod_id') || searchParams.get('product_id') || searchParams.get('product');
+      
+      if (prodVal || pageVal === 'product') {
+        source = 'Shared Product Link';
+      } else {
+        const ref = document.referrer || '';
+        if (ref.includes('google') || ref.includes('bing') || ref.includes('yahoo')) {
+          source = 'Search';
+        }
+      }
+
+      const visitPayload = {
+        shop_id: shopId,
+        owner_id: ownerId,
+        product_name: 'Visit Log',
+        size: 'None',
+        quantity: 0,
+        sale_price: 0,
+        total_price: 0,
+        status: 'visit',
+        source: source,
+        customer_identifier: customerId,
+        created_at: new Date().toISOString()
+      };
+
+      let payload: any = { ...visitPayload };
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const { error } = await supabase.from('orders').insert([payload]);
+        if (!error) break;
+        const errMsg = error.message || '';
+        const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
+                      errMsg.match(/column "([^"]+)" does not exist/);
+        if (match && match[1]) {
+          delete payload[match[1]];
+        } else {
+          break;
+        }
+      }
+    } catch (_) {}
+  };
+
+  const logInteractiveVisit = async (shopId: string, ownerId: string, source: string) => {
+    try {
+      const key = `zw_source_logged_${shopId}_${source}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, 'true');
+
+      const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('boutique_customer_id', customerId);
+
+      const visitPayload = {
+        shop_id: shopId,
+        owner_id: ownerId,
+        product_name: 'Visit Log',
+        size: 'None',
+        quantity: 0,
+        sale_price: 0,
+        total_price: 0,
+        status: 'visit',
+        source: source,
+        customer_identifier: customerId,
+        created_at: new Date().toISOString()
+      };
+
+      let payload: any = { ...visitPayload };
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const { error } = await supabase.from('orders').insert([payload]);
+        if (!error) break;
+        const errMsg = error.message || '';
+        const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
+                      errMsg.match(/column "([^"]+)" does not exist/);
+        if (match && match[1]) {
+          delete payload[match[1]];
+        } else {
+          break;
+        }
+      }
+    } catch (_) {}
+  };
+
   // Navigate helper maintaining slug structure
   const navigateToPage = useCallback((pageName: StorefrontPageType, params?: Record<string, string>) => {
     console.log(`[ROUTE TRANSITION] Transitioning page from '${activePage}' to '${pageName}'`, params || {});
+    
+    // Dynamic traffic source click tracking
+    if (shop) {
+      if (pageName === 'categories') {
+        logInteractiveVisit(shop.id, shop.owner_id, 'Categories');
+      } else if (pageName === 'home' || pageName === 'shop') {
+        logInteractiveVisit(shop.id, shop.owner_id, 'Homepage');
+      }
+    }
+
     const nextParams = new URLSearchParams();
     nextParams.set('page', pageName);
     if (params) {
@@ -81,7 +193,7 @@ export const StorefrontPage: React.FC = () => {
     // Scroll to top of inner main container
     const mainEl = document.getElementById('storefront-main-scroll');
     if (mainEl) mainEl.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activePage, setSearchParams]);
+  }, [activePage, setSearchParams, shop]);
 
   // Back navigation dispatcher
   const handleBackNavigation = () => {
@@ -161,6 +273,15 @@ export const StorefrontPage: React.FC = () => {
         };
       }
 
+      if (shopResult) {
+        const { description: plainDesc, config } = parseShopConfig(shopResult.description || '');
+        shopResult = {
+          ...shopResult,
+          description: plainDesc,
+          ...config
+        };
+      }
+
       setShop(shopResult);
       document.title = `${shopResult.name} | Storefront`;
 
@@ -213,6 +334,9 @@ export const StorefrontPage: React.FC = () => {
         setSavedAddress('');
       }
 
+      // Log initial storefront entry visit
+      logStorefrontVisit(shopResult.id, shopResult.owner_id);
+
     } catch (err) {
       console.error(err);
       setError('error');
@@ -225,6 +349,29 @@ export const StorefrontPage: React.FC = () => {
   useEffect(() => {
     loadStorefront();
   }, [slug, loadStorefront]);
+
+  // Redesigned Funnel Analytics Event Tracker
+  useEffect(() => {
+    if (!shop?.id) return;
+
+    if (activePage === 'home' || activePage === 'shop') {
+      const q = searchParams.get('q') || searchParams.get('search') || '';
+      if (q.trim()) {
+        trackSearchUsage(shop.id, q);
+      } else {
+        const urlRef = searchParams.get('ref') || undefined;
+        trackStoreView(shop.id, urlRef);
+      }
+    } else if (activePage === 'product') {
+      const prodId = searchParams.get('productId');
+      if (prodId) {
+        const prod = products.find(p => p.id === prodId);
+        trackProductView(shop.id, prodId, prod?.name || 'Listing Item');
+      }
+    } else if (activePage === 'categories') {
+      trackCategoryClick(shop.id, searchParams.get('category') || 'All Categories');
+    }
+  }, [activePage, searchParams, shop?.id, products]);
 
   // Save Cart to local storage helper
   const handleSaveCart = (newCart: CartItem[]) => {
@@ -293,6 +440,11 @@ export const StorefrontPage: React.FC = () => {
     } else {
       updated.push(productId);
       toast.success('Added to wishlist');
+      // Track wishlist action
+      if (shop?.id) {
+        const prod = products.find(p => p.id === productId);
+        trackWishlistAdd(shop.id, productId, prod?.name || 'Listing');
+      }
     }
     setWishlist(updated);
     if (shop?.id) {
@@ -910,45 +1062,82 @@ export const StorefrontPage: React.FC = () => {
                 {/* Scrollable details */}
                 <div className="p-5 space-y-5 overflow-y-auto font-sans text-xs flex-1">
                   
-                  {/* Physical Address with Copy Feature */}
-                  {shop.location && (
-                    <div className="bg-zinc-50/50 border border-zinc-100/80 p-3.5 rounded-2xl flex items-center justify-between gap-3">
-                      <div className="space-y-1 flex-1">
-                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest block">Physical Address</span>
-                        <p className="font-semibold text-zinc-800 text-xs leading-snug">{shop.location}</p>
+                  <div className="space-y-4">
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 shadow-sm space-y-3.5 text-left w-full">
+                      {/* 📍 Address */}
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm shrink-0">📍</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Address</span>
+                          <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.shop_address || shop.location || shop.town || 'Bulawayo CBD'}</span>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText(shop.location || '');
-                          toast.success('Address copied to clipboard!');
-                        }}
-                        className="p-2 bg-white hover:bg-zinc-100 border border-zinc-200/80 text-zinc-500 hover:text-zinc-800 rounded-lg transition-all shadow-2xs shrink-0 cursor-pointer flex items-center gap-1"
-                        title="Copy address"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-bold px-0.5">Copy</span>
-                      </button>
-                    </div>
-                  )}
 
-                  {/* Landmark Section */}
-                  {shop.landmark && (
-                    <div className="space-y-1.5 px-1">
-                      <span className="text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest block">Landmark / Proximity</span>
-                      <div className="flex items-start gap-2 text-zinc-700 font-medium">
-                        <Compass className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-                        <p className="leading-relaxed">{shop.landmark}</p>
-                      </div>
+                      {/* 📍 Building */}
+                      {(shop.building_name) && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm shrink-0">📍</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Building</span>
+                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.building_name}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 🏢 Floor */}
+                      {(shop.floor) && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm shrink-0">🏢</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Floor</span>
+                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.floor}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 🚪 Shop Number */}
+                      {(shop.shop_number) && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm shrink-0">🚪</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Shop Number</span>
+                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.shop_number}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 📌 Landmark */}
+                      {(shop.landmark) && (
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm shrink-0">📌</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Landmark</span>
+                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.landmark}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 🧭 Directions (Most prominent) */}
+                      {(shop.directions) && (
+                        <div className="bg-white border-2 border-green-200/80 rounded-xl p-3 shadow-xs mt-3 flex items-start gap-3">
+                          <span className="text-base shrink-0 mt-0.5">🧭</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[9px] font-extrabold text-green-700 uppercase tracking-wider block font-mono">Directions</span>
+                            <p className="text-xs font-bold text-zinc-950 font-sans mt-0.5 leading-relaxed break-words whitespace-pre-wrap">
+                              {shop.directions}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   {/* Trading Hours */}
-                  <div className="space-y-1.5 px-1">
+                  <div className="space-y-1.5 px-1 pt-1">
                     <span className="text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest block">Trading Hours</span>
                     <div className="flex items-center gap-2.5 text-zinc-700 font-medium">
                       <Clock className="w-4 h-4 text-green-600 shrink-0" />
-                      <p className="leading-none">{shop.hours || "Monday - Saturday: 8:30 AM - 6:00 PM (Closed Sundays)"}</p>
+                      <p className="leading-none text-xs">{shop.hours || "Monday - Saturday: 8:30 AM - 6:00 PM (Closed Sundays)"}</p>
                     </div>
                   </div>
 
@@ -966,27 +1155,6 @@ export const StorefrontPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Step-by-Step Directions */}
-                  {shop.directions && (
-                    <div className="space-y-2 px-1 pt-1">
-                      <span className="text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest block">Merchant's Directions</span>
-                      <div className="bg-zinc-50 border border-zinc-150 p-4 rounded-2xl space-y-3.5">
-                        {shop.directions.split(/\.|\n/).map((step: string, sIdx: number) => {
-                          const cleanStep = step.trim();
-                          if (!cleanStep) return null;
-                          return (
-                            <div key={`step-${sIdx}`} className="flex gap-3 items-start">
-                              <span className="w-5 h-5 rounded-full bg-green-50 border border-green-100 flex items-center justify-center text-green-700 text-[10px] font-extrabold shrink-0 mt-0.5">
-                                {sIdx + 1}
-                              </span>
-                              <span className="text-zinc-650 text-xs leading-relaxed font-sans">{cleanStep}.</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Quick helper tip */}
                   <div className="bg-zinc-50 rounded-xl p-3 text-[10px] text-zinc-450 leading-normal flex items-start gap-2">
                     <span className="text-zinc-400">💡</span>
@@ -994,30 +1162,21 @@ export const StorefrontPage: React.FC = () => {
                   </div>
 
                   {/* Actions mapping links */}
-                  <div className="grid grid-cols-2 gap-3 pt-3">
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((shop.location ? `${shop.location}, ` : '') + shop.name)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-center rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-zinc-200/80 cursor-pointer text-xs"
-                    >
-                      <Map className="w-4 h-4" />
-                      Open Google Maps
-                    </a>
-                    {shop.whatsapp && (
+                  {shop.whatsapp && (
+                    <div className="pt-2">
                       <a
                         href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(
-                          `Hi ${shop.name}, I'm browsing your ThreadZW shop and would love more details/directions on how to visit your physical showroom!`
+                          `Hi, I'm interested in visiting your shop. Could I get more details on visiting your physical showroom?`
                         )}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="py-3 bg-green-600 hover:bg-green-700 text-white text-center rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer text-xs shadow-sm hover:shadow-md"
+                        className="w-full py-3 bg-green-600 hover:bg-green-700 text-white text-center rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer text-xs shadow-sm hover:shadow-md uppercase tracking-wider"
                       >
                         <MessageSquare className="w-4 h-4" />
-                        WhatsApp Inquiry
+                        <span>Enquire via WhatsApp</span>
                       </a>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </>
@@ -1067,8 +1226,7 @@ export const StorefrontPage: React.FC = () => {
                     <Heart className="w-4 h-4 text-green-600" />
                   </button>
                   <button onClick={() => navigateToPage('about')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">About Brand</button>
-                  <button onClick={() => navigateToPage('contact')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Contact Us</button>
-                  <button onClick={() => navigateToPage('track')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left">Track Order</button>
+                  <button onClick={() => navigateToPage('contact')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left">Contact Us</button>
                 </div>
 
                 {/* Bottom coordinates */}

@@ -25,6 +25,10 @@ export interface StorefrontConfig {
   suburb?: string;
   city?: string;
   google_maps_url?: string;
+  shop_address?: string;
+  building_name?: string;
+  floor?: string;
+  shop_number?: string;
   pickup_available?: boolean;
   pickup_label?: string;
   landmark?: string;
@@ -33,6 +37,12 @@ export interface StorefrontConfig {
   delivery_info?: string;
   instagram_url?: string;
   trading_hours?: any[];
+  harare_delivery?: boolean | string;
+  nationwide_courier?: boolean | string;
+  international_shipping?: boolean | string;
+  response_time?: string;
+  business_highlights?: string;
+  custom_notes?: string;
 }
 
 const CONFIG_DELIMITER = '\n\n---STOREFRONT_CONFIG---\n';

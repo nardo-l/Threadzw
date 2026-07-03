@@ -12,7 +12,6 @@ import { Inventory } from './screens/Inventory';
 import { Settings } from './screens/Settings';
 import { ShopEdit } from './screens/ShopEdit';
 import { SalesSystem } from './screens/SalesSystem';
-import { OrderManagement } from './screens/OrderManagement';
 import { Profile } from './screens/Profile';
 import { Support } from './screens/Support';
 import { Notifications } from './screens/Notifications';
@@ -33,6 +32,8 @@ import { StorefrontPage } from './pages/StorefrontPage';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
 import { SignUp } from './screens/SignUp';
+import { ForgotPassword } from './screens/ForgotPassword';
+import { ResetPassword } from './screens/ResetPassword';
 import { MaintenanceOverlay } from './components/MaintenanceOverlay';
 
 
@@ -242,6 +243,14 @@ function AppContent() {
   // Standalone Login and Signup Router Blocks
   if (cleanPath === '/login') {
     return <Login />;
+  }
+
+  if (cleanPath === '/forgot-password') {
+    return <ForgotPassword />;
+  }
+
+  if (cleanPath === '/reset-password') {
+    return <ResetPassword />;
   }
 
   if (cleanPath === '/signup') {

@@ -53,7 +53,7 @@ export const ForgotPassword = () => {
             Access link transmitted to <span className="text-white font-bold">{email}</span>. 
           </p>
           <button
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/login')}
             className="w-full py-5 bg-[#C6FF00] text-black rounded-full font-black uppercase tracking-widest text-lg shadow-xl shadow-[#C6FF00]/20 transition-all active:scale-[0.98]"
           >
             Terminal Login ✓
@@ -68,7 +68,7 @@ export const ForgotPassword = () => {
       <div className="absolute top-[-10%] left-[-10%] w-[50%] aspect-square bg-[#C6FF00] opacity-[0.05] blur-[120px] rounded-full pointer-events-none" />
       <header className="py-4 relative z-10">
         <button
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate('/login')}
           className="w-12 h-12 rounded-full bg-[#111] border border-[#222] flex items-center justify-center text-white active:scale-90 transition-transform"
         >
           <ArrowLeft size={20} />

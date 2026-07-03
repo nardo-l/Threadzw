@@ -135,67 +135,92 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
 
           {/* ----------------- VISIT SHOP EXPERIENCE (PRIORITY 4) ----------------- */}
           {hasLocationData && (
-            <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-3 text-left">
+            <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-3.5 text-left">
               <div className="flex items-center gap-2 pb-2 border-b border-zinc-200/60">
                 <MapPin className="w-4 h-4 text-green-600 animate-pulse" />
                 <span className="text-[10px] uppercase tracking-wider text-zinc-900 font-extrabold font-sans">
-                  Visit {shop?.name || 'Our Boutique'}
+                  How to Find Us
                 </span>
               </div>
               
-              <div className="space-y-2.5">
-                {/* Location / Area */}
-                {(shop?.location || shop?.town) && (
-                  <div>
-                    <span className="text-[9px] text-zinc-400 font-extrabold uppercase font-sans tracking-wide block">Address / Area</span>
-                    <p className="text-xs text-zinc-800 font-semibold font-sans mt-0.5">{shop.location || shop.town}</p>
+              <div className="space-y-3">
+                {/* 📍 Address */}
+                <div className="flex items-center gap-2.5">
+                  <span className="text-xs shrink-0">📍</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Address</span>
+                    <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.shop_address || shop?.location || shop?.town || 'Bulawayo CBD'}</span>
+                  </div>
+                </div>
+
+                {/* 📍 Building */}
+                {(shop?.building_name) && (
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs shrink-0">📍</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Building</span>
+                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.building_name}</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Landmark */}
-                {shop?.landmark && (
-                  <div>
-                    <span className="text-[9px] text-zinc-400 font-extrabold uppercase font-sans tracking-wide block">Landmark</span>
-                    <p className="text-xs text-zinc-600 font-medium font-sans mt-0.5">{shop.landmark}</p>
+                {/* 🏢 Floor */}
+                {(shop?.floor) && (
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs shrink-0">🏢</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Floor</span>
+                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.floor}</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Directions */}
-                {shop?.directions && (
-                  <div>
-                    <span className="text-[9px] text-zinc-400 font-extrabold uppercase font-sans tracking-wide block">Directions</span>
-                    <p className="text-xs text-zinc-600 font-normal leading-relaxed font-sans mt-0.5">{shop.directions}</p>
+                {/* 🚪 Shop Number */}
+                {(shop?.shop_number) && (
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs shrink-0">🚪</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Shop Number</span>
+                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.shop_number}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 📌 Landmark */}
+                {(shop?.landmark) && (
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xs shrink-0">📌</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Landmark</span>
+                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.landmark}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* 🧭 Directions */}
+                {(shop?.directions) && (
+                  <div className="bg-white border border-green-200 rounded-xl p-3 shadow-xs mt-3 flex items-start gap-2.5">
+                    <span className="text-sm shrink-0 mt-0.5">🧭</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[8px] font-bold text-green-700 uppercase tracking-wider block font-mono">Directions</span>
+                      <p className="text-xs font-bold text-zinc-950 font-sans mt-0.5 leading-relaxed break-words whitespace-pre-wrap">
+                        {shop?.directions}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                {shop?.google_maps_url ? (
-                  <a
-                    href={shop.google_maps_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-1.5 py-2 px-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer border border-zinc-200/50"
-                  >
-                    <Compass className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>Get Directions</span>
-                    <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-                  </a>
-                ) : (
-                  <div className="flex items-center justify-center py-2 px-3 bg-zinc-100 text-zinc-400 text-[10px] font-bold uppercase tracking-wider rounded-xl select-none border border-zinc-200/20">
-                    No GPS Link
-                  </div>
-                )}
-
+              <div className="pt-2">
                 <a
                   href={whatsappLink}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-center gap-1.5 py-2 px-3 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer border border-green-200/30"
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs"
                 >
-                  <MessageCircle className="w-3.5 h-3.5 text-green-600" />
-                  <span>Enquire WA</span>
+                  <MessageCircle className="w-4 h-4 fill-white/10" />
+                  <span>Enquire via WhatsApp</span>
                 </a>
               </div>
             </div>

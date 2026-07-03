@@ -89,8 +89,11 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({
       const insertedOrders: any[] = [];
 
       // 2. Insert order records for each item in the cart
+      const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('boutique_customer_id', customerId);
+
       for (const item of cart) {
-        const orderData = {
+        const orderData: any = {
           shop_id: shop.id,
           owner_id: shop.owner_id,
           product_id: item.product.id,
@@ -104,21 +107,44 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({
           status: 'pending',
           customer_name: customerName,
           customer_whatsapp: formatWhatsAppNumber(customerPhone),
-          note: `Address: ${deliveryAddress || 'Pickup Showroom'}. Payment: ${paymentOption === 'cod' ? 'Cash On Delivery' : paymentOption === 'pickup' ? 'Pay at Showroom' : 'WhatsApp Checkout'}. Shipping: ${shippingLabel}`
+          note: `Address: ${deliveryAddress || 'Pickup Showroom'}. Payment: ${paymentOption === 'cod' ? 'Cash On Delivery' : paymentOption === 'pickup' ? 'Pay at Showroom' : 'WhatsApp Checkout'}. Shipping: ${shippingLabel}`,
+          // New DB analytics columns
+          total_amount: item.product.price * item.quantity,
+          price: item.product.price,
+          customer_identifier: customerId,
+          source: 'Checkout'
         };
 
-        const { data, error } = await supabase
-          .from('orders')
-          .insert(orderData)
-          .select();
+        // Safe insertion with automatic unsupported columns stripping
+        let inserted = false;
+        let payload = { ...orderData };
+        for (let attempt = 0; attempt < 10; attempt++) {
+          const { data, error } = await supabase
+            .from('orders')
+            .insert([payload])
+            .select();
 
-        if (error) {
-          console.error('Error inserting order:', error);
-          throw error;
+          if (!error) {
+            if (data && data[0]) {
+              insertedOrders.push(data[0]);
+            }
+            inserted = true;
+            break;
+          }
+
+          const errMsg = error.message || '';
+          const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
+                        errMsg.match(/column "([^"]+)" does not exist/);
+          if (match && match[1]) {
+            const missingCol = match[1];
+            delete payload[missingCol];
+          } else {
+            console.error('Error inserting order:', error);
+            throw error;
+          }
         }
-
-        if (data && data[0]) {
-          insertedOrders.push(data[0]);
+        if (!inserted) {
+          throw new Error("Could not insert order due to schema constraints.");
         }
       }
 

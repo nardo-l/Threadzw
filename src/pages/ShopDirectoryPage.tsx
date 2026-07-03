@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useInventory } from '../context/InventoryContext';
 import { 
   Store, 
   Search as SearchIcon, 
@@ -81,6 +82,7 @@ const getStableShopImages = (shopId: string, customLogo: string | null, customBa
 
 export const ShopDirectoryPage: React.FC = () => {
   const navigate = useNavigate();
+  const { getShopRating } = useInventory();
   const [shops, setShops] = useState<ShopRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,16 +178,7 @@ export const ShopDirectoryPage: React.FC = () => {
 
   // Calculate stable rating base on shop ID hash for gorgeous pixel-perfect display
   const getStableRating = (shopId: string) => {
-    let sum = 0;
-    for (let i = 0; i < shopId.length; i++) {
-        sum += shopId.charCodeAt(i);
-    }
-    const score = 4.5 + (sum % 6) * 0.1; // Produces 4.5 to 5.0
-    const reviewsCount = 10 + (sum % 45); // Produces 10 to 55 reviews
-    return {
-      score: score.toFixed(1),
-      count: reviewsCount
-    };
+    return getShopRating(shopId);
   };
 
   return (

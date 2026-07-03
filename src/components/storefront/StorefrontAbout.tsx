@@ -1,8 +1,9 @@
 // src/components/storefront/StorefrontAbout.tsx
 import React from 'react';
 import { motion } from 'motion/react';
-import { Shield, Sparkles, Feather } from 'lucide-react';
+import { Shield, Sparkles, Feather, Star } from 'lucide-react';
 import { ShopLogo, ShopBanner } from '../ui/ShopImage';
+import { useInventory } from '../../context/InventoryContext';
 
 interface StorefrontAboutProps {
   shop: any;
@@ -13,6 +14,9 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
   shop,
   onNavigateToPage
 }) => {
+  const { getShopRating } = useInventory();
+  const ratingInfo = getShopRating(shop.id);
+
   return (
     <div className="space-y-8 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       {/* Editorial Header */}
@@ -25,17 +29,25 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
       <div className="h-48 rounded-2xl overflow-hidden bg-zinc-50 border border-zinc-150 relative shadow-sm">
         <ShopBanner shop={shop} height="100%" className="w-full h-full object-cover filter brightness-[0.7]" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        <div className="absolute bottom-5 left-5 right-5 flex items-center gap-3.5 z-10">
-          <div className="w-12 h-12 rounded-full border-2 border-white p-0.5 bg-white overflow-hidden flex items-center justify-center shrink-0 shadow-md">
-            <ShopLogo shop={shop} size="100%" className="w-full h-full rounded-full object-cover" />
+        <div className="absolute bottom-5 left-5 right-5 flex items-center justify-between z-10">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-full border-2 border-white p-0.5 bg-white overflow-hidden flex items-center justify-center shrink-0 shadow-md">
+              <ShopLogo shop={shop} size="100%" className="w-full h-full rounded-full object-cover" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white leading-tight font-sans">
+                {shop.name}
+              </h3>
+              <span className="text-[10px] font-bold text-green-300 mt-0.5 block font-sans">
+                EST. {shop.created_at ? new Date(shop.created_at).getFullYear() : '2026'}
+              </span>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-white leading-tight font-sans">
-              {shop.name}
-            </h3>
-            <span className="text-[10px] font-bold text-green-300 mt-0.5 block font-sans">
-              EST. {shop.created_at ? new Date(shop.created_at).getFullYear() : '2026'}
-            </span>
+          
+          <div className="bg-black/40 backdrop-blur-md rounded-xl p-2 flex items-center gap-1 border border-white/10 shrink-0">
+            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+            <span className="text-xs font-bold text-white">{ratingInfo.score}</span>
+            <span className="text-[9px] text-zinc-300 font-medium">({ratingInfo.count})</span>
           </div>
         </div>
       </div>

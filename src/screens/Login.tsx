@@ -14,6 +14,9 @@ export const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [shake, setShake] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -21,20 +24,27 @@ export const Login: React.FC = () => {
       return;
     }
 
-    // Clear any stale local storage session states to prevent false-positive mock fallbacks
+    // Clear any stale local storage session states before every login attempt
     localStorage.removeItem('threadzw_logged_in');
     localStorage.removeItem('supabase_logged_in_user_id');
     localStorage.removeItem('threadzw_owner_email');
     localStorage.removeItem('threadzw_owner_name');
 
     setLoading(true);
+    setLoginError(null);
+    setShake(false);
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password
       });
 
-      if (error) throw error;
+      // Strict validation of the authenticated session
+      if (error) {
+        throw error;
+      }
+      
       if (!data?.session || !data?.session?.user) {
         throw new Error('No authenticated user session was returned from the authentication service.');
       }
@@ -47,13 +57,16 @@ export const Login: React.FC = () => {
       localStorage.setItem('threadzw_logged_in', 'true');
       navigate('/dashboard');
     } catch (err: any) {
-      console.error('Sign in error:', err);
+      // Clear password field and do NOT print raw error to developer console or chat
+      setPassword('');
+      setShake(true);
+      setLoginError('The email/username or password you entered is incorrect. Please try again.');
+      
       // Ensure all local storage session state remains cleared on failure
       localStorage.removeItem('threadzw_logged_in');
       localStorage.removeItem('supabase_logged_in_user_id');
       localStorage.removeItem('threadzw_owner_email');
       localStorage.removeItem('threadzw_owner_name');
-      toast.error(err.message || 'Invalid login credentials');
     } finally {
       setLoading(false);
     }
@@ -110,6 +123,69 @@ export const Login: React.FC = () => {
           </p>
         </div>
 
+        {loginError && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1.5px solid rgba(239, 68, 68, 0.2)',
+              borderRadius: '12px',
+              padding: '20px',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}
+          >
+            <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px' }}>
+              ❌ Incorrect email or password
+            </div>
+            <p style={{ color: '#a1a1aa', fontSize: '13px', margin: 0, lineHeight: '1.4' }}>
+              Please check your credentials and try again.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginError(null);
+                  setShake(false);
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  background: '#C6FF00',
+                  color: '#000000',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontWeight: 900,
+                  fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+              >
+                Try Again
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/forgot-password')}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '10px',
+                  fontWeight: 900,
+                  fontSize: '13px',
+                  cursor: 'pointer'
+                }}
+              >
+                Forgot Password?
+              </button>
+            </div>
+          </motion.div>
+        )}
+
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label style={{
@@ -131,7 +207,7 @@ export const Login: React.FC = () => {
                 width: '100%',
                 padding: '14px 16px',
                 fontSize: 15,
-                border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                border: loginError ? '1.5px solid #ef4444' : '1.5px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 10,
                 outline: 'none',
                 background: '#121215',
@@ -150,7 +226,11 @@ export const Login: React.FC = () => {
             }}>
               Password
             </label>
-            <div style={{ position: 'relative' }}>
+            <motion.div
+              animate={shake ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}}
+              transition={{ duration: 0.4 }}
+              style={{ position: 'relative' }}
+            >
               <input 
                 type={showPassword ? "text" : "password"}
                 required
@@ -162,7 +242,7 @@ export const Login: React.FC = () => {
                   padding: '14px 16px',
                   paddingRight: 44,
                   fontSize: 15,
-                  border: '1.5px solid rgba(255, 255, 255, 0.1)',
+                  border: loginError ? '1.5px solid #ef4444' : '1.5px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: 10,
                   outline: 'none',
                   background: '#121215',
@@ -188,7 +268,7 @@ export const Login: React.FC = () => {
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-            </div>
+            </motion.div>
           </div>
 
           <button 
