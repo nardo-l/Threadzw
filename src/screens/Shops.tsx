@@ -168,10 +168,6 @@ const ShopCard: React.FC<{ shop: any, onClick: () => void }> = ({ shop, onClick 
       <div className="flex-1 flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <h4 className="font-bold text-white">{shop.name}</h4>
-          <div className="flex items-center gap-1">
-            <Star size={12} fill="currentColor" className="text-[#f59e0b]" />
-            <span className="text-[10px] font-mono font-bold text-[#888]">{shop.rating || 5.0}</span>
-          </div>
         </div>
         <div className="flex items-center gap-1 text-[#555]">
           <MapPin size={10} />

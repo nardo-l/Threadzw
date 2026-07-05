@@ -196,3 +196,67 @@ export async function seedShopProductsIfEmpty(supabase: any, shopId: string, use
 
   return insertedProducts;
 }
+
+export function generateRealisticSeedEvents(shopId: string, products: any[]): any[] {
+  const events: any[] = [];
+  const now = Date.now();
+  
+  // Generate high-density simulated visitor events over the past 30 days
+  const referrers = ['Instagram', 'Facebook', 'WhatsApp', 'Google Search', 'Direct', 'Shared Link'];
+  const cities = ['Harare', 'Bulawayo', 'Gweru', 'Mutare', 'Masvingo', 'Chinhoyi'];
+  const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge'];
+
+  for (let i = 0; i < 180; i++) {
+    // Distribute events over the last 30 days
+    // 15% today, 35% this week, 50% older
+    let ageMs = 0;
+    const rand = Math.random();
+    if (rand < 0.15) {
+      ageMs = Math.random() * 24 * 60 * 60 * 1000;
+    } else if (rand < 0.50) {
+      ageMs = (1 + Math.random() * 6) * 24 * 60 * 60 * 1000;
+    } else {
+      ageMs = (7 + Math.random() * 23) * 24 * 60 * 60 * 1000;
+    }
+
+    const eventDate = new Date(now - ageMs);
+    const eventType = Math.random() < 0.4 ? 'store_view' : 'product_view';
+    const ref = referrers[Math.floor(Math.random() * referrers.length)];
+    const city = cities[Math.floor(Math.random() * cities.length)];
+    const device = Math.random() < 0.7 ? 'Mobile' : (Math.random() < 0.85 ? 'Desktop' : 'Tablet');
+    const browser = browsers[Math.floor(Math.random() * browsers.length)];
+    const visitor_id = 'visitor_seed_' + Math.floor(Math.random() * 45);
+    const session_id = 'session_seed_' + Math.floor(Math.random() * 80);
+
+    let product_id = null;
+    let metadata: any = {};
+
+    if (eventType === 'product_view' && products && products.length > 0) {
+      const prod = products[Math.floor(Math.random() * products.length)];
+      product_id = prod.id;
+      metadata = { name: prod.name };
+    } else {
+      metadata = { referrer_label: ref };
+    }
+
+    events.push({
+      id: `seed_event_${i}_${Math.random().toString(36).substring(2, 7)}`,
+      event_type: eventType,
+      shop_id: shopId,
+      product_id: product_id,
+      visitor_id: visitor_id,
+      session_id: session_id,
+      referrer: ref,
+      device: device,
+      browser: browser,
+      country: 'Zimbabwe',
+      city: city,
+      metadata: metadata,
+      created_at: eventDate.toISOString()
+    });
+  }
+
+  // Sort descending by created_at
+  return events.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+}
+

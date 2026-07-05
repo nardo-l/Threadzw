@@ -303,6 +303,28 @@ function getLoggedUserId(): string {
   return MOCK_USER_ID;
 }
 
+// Helper to find the owner ID from a shop ID, handle, or slug in localStorage
+function getOwnerIdFromShopId(shopIdOrSlug: string | undefined): string | undefined {
+  if (!shopIdOrSlug) return undefined;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('shop_') && key !== 'shop_local-session-id' && key !== 'shop_undefined') {
+        const contents = localStorage.getItem(key);
+        if (contents) {
+          try {
+            const shopObj = JSON.parse(contents);
+            if (shopObj && (shopObj.id === shopIdOrSlug || shopObj.owner_id === shopIdOrSlug || (shopObj.slug && shopObj.slug.toLowerCase() === shopIdOrSlug.toLowerCase()) || (shopObj.handle && shopObj.handle.toLowerCase() === shopIdOrSlug.toLowerCase()))) {
+              return shopObj.owner_id || key.substring(5);
+            }
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (e) {}
+  return shopIdOrSlug.replace(/^shop-/, '');
+}
+
 // Fallback generator for queries that timeout or fail
 function getFallbackForRelation(
   relation: string, 
@@ -317,7 +339,7 @@ function getFallbackForRelation(
     let parsed: any = null;
     const allLocalShops: any[] = [];
     try {
-      const cached = localStorage.getItem(`shop_${activeUserId}`) || localStorage.getItem('threadzw_shop');
+      const cached = localStorage.getItem(`shop_${activeUserId}`);
       if (cached) {
         parsed = JSON.parse(cached);
         parsed.id = parsed.id || parsed.owner_id || activeUserId;
@@ -423,7 +445,7 @@ function getFallbackForRelation(
 
   if (relation === 'categories') {
     try {
-      const parentUser = filterOwnerId || getLoggedUserId();
+      const parentUser = filterOwnerId || getOwnerIdFromShopId(filterShopId) || getLoggedUserId();
       const cached = localStorage.getItem(`categories_${parentUser}`);
       if (cached) {
         return JSON.parse(cached);
@@ -439,7 +461,7 @@ function getFallbackForRelation(
 
   if (relation === 'demand_requests') {
     try {
-      const parentUser = filterOwnerId || getLoggedUserId();
+      const parentUser = filterOwnerId || getOwnerIdFromShopId(filterShopId) || getLoggedUserId();
       const cached = localStorage.getItem(`demand_requests_${parentUser}`);
       if (cached) {
         return JSON.parse(cached);
@@ -672,7 +694,6 @@ supabase.from = function(relation: string) {
                   const baseId = shopObj.id || (existing ? JSON.parse(existing).id : null) || ownerId;
                   const merged = existing ? { id: baseId, ...JSON.parse(existing), ...shopObj } : { id: baseId, ...shopObj };
                   localStorage.setItem(`shop_${ownerId}`, JSON.stringify(merged));
-                  localStorage.setItem('threadzw_shop', JSON.stringify(merged));
                   if (merged.name) {
                     localStorage.setItem('threadzw_owner_name', merged.name);
                   }

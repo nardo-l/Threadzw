@@ -82,7 +82,6 @@ const getStableShopImages = (shopId: string, customLogo: string | null, customBa
 
 export const ShopDirectoryPage: React.FC = () => {
   const navigate = useNavigate();
-  const { getShopRating } = useInventory();
   const [shops, setShops] = useState<ShopRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -129,12 +128,10 @@ export const ShopDirectoryPage: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (queryError) {
-        console.error('[ShopDirectory Diagnostic] Query failed. Potential RLS/Permission issue:', queryError);
         throw queryError;
       }
 
       const rawShops = data || [];
-      console.log("[ShopDirectory Diagnostic] Real database stores loaded:", rawShops.length, rawShops);
       setShops(rawShops);
     } catch (err: any) {
       console.error('[ShopDirectory] Failed loading directory stores:', err);
@@ -175,11 +172,6 @@ export const ShopDirectoryPage: React.FC = () => {
 
     return matchesQuery && matchesCategory;
   });
-
-  // Calculate stable rating base on shop ID hash for gorgeous pixel-perfect display
-  const getStableRating = (shopId: string) => {
-    return getShopRating(shopId);
-  };
 
   return (
     <div className="min-h-screen bg-zinc-100 text-zinc-900 flex justify-center items-start selection:bg-black selection:text-[#C6FF00] antialiased font-sans">
@@ -337,7 +329,6 @@ export const ShopDirectoryPage: React.FC = () => {
               <div className="space-y-10">
                 {filteredShops.map((shop, i) => {
                   const { banner, colorSet } = getStableShopImages(shop.id, shop.logo_url, shop.banner_url, i);
-                  const ratingInfo = getStableRating(shop.id);
                   const displayCategory = shop.categories && shop.categories.length > 0 
                     ? shop.categories[0] 
                     : (shop.description || '').toLowerCase().includes('thrift') ? 'Thrift' : 'Streetwear';
@@ -413,7 +404,7 @@ export const ShopDirectoryPage: React.FC = () => {
                         </p>
 
                         {/* Stats Row inside elegant white cards */}
-                        <div className="grid grid-cols-3 gap-2 mt-4">
+                        <div className="grid grid-cols-2 gap-2 mt-4">
                           <div className="bg-zinc-50/80 border border-zinc-100 p-2.5 rounded-xl text-center">
                             <span className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-0.5">Products</span>
                             <span className="font-mono text-xs font-black text-zinc-800">{shop.product_count || 0}</span>
@@ -421,13 +412,6 @@ export const ShopDirectoryPage: React.FC = () => {
                           <div className="bg-zinc-50/80 border border-zinc-100 p-2.5 rounded-xl text-center">
                             <span className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-0.5">Followers</span>
                             <span className="font-mono text-xs font-black text-zinc-800">{shop.follower_count || 0}</span>
-                          </div>
-                          <div className="bg-zinc-50/80 border border-zinc-100 p-2.5 rounded-xl text-center">
-                            <span className="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-0.5">Rating</span>
-                            <span className="text-xs font-black text-zinc-800 flex items-center justify-center gap-0.5 font-mono">
-                              <Star size={10} className="text-zinc-700 fill-zinc-700 font-extrabold" />
-                              {ratingInfo.score}
-                            </span>
                           </div>
                         </div>
 

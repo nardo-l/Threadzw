@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontHome.tsx
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, MessageCircle, Heart, Sparkles, Grid, Star } from 'lucide-react';
+import { ArrowRight, MessageCircle, Heart, Sparkles, Grid } from 'lucide-react';
 import { ProductImage, ShopLogo, ShopBanner } from '../ui/ShopImage';
 import { parseShopConfig } from '../../utils/configHelper';
 import { useInventory } from '../../context/InventoryContext';
@@ -23,7 +23,6 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
   onToggleWishlist,
   onNavigateToPage,
 }) => {
-  const { getProductRating, getShopRating } = useInventory();
   // Parse merchant settings
   const shopConfig = useMemo(() => {
     if (!shop?.description) return {};
@@ -148,20 +147,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
             {shop.name}
           </h1>
           
-          {/* Shop Rating */}
-          <div className="flex items-center gap-1 mt-1">
-            <div className="flex items-center gap-0.5 text-amber-500">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} size={11} className={s <= Math.round(Number(getShopRating(shop.id).score)) ? "fill-amber-550 text-amber-550" : "text-zinc-200"} />
-              ))}
-            </div>
-            <span className="text-xs font-bold text-zinc-700 ml-0.5">
-              {getShopRating(shop.id).score}
-            </span>
-            <span className="text-[10px] text-zinc-400 font-medium">
-              ({getShopRating(shop.id).count} reviews)
-            </span>
-          </div>
+
           
           <p className="text-[10px] font-bold text-green-600 mt-2 tracking-wider uppercase font-sans flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5 fill-current" />
@@ -283,14 +269,6 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                       <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-hover:text-green-600 transition-colors">
                         {p.name}
                       </h4>
-                      {/* Product Rating */}
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
-                        <span className="text-[10px] font-bold text-zinc-700">
-                          {getProductRating(p.id).score}
-                        </span>
-                        <span className="text-[9px] text-zinc-400 font-medium">({getProductRating(p.id).count})</span>
-                      </div>
                     </div>
 
                     <div className="mt-2 text-left">

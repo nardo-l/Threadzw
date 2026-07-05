@@ -24,11 +24,24 @@ export const useShop = () => {
 
   const fetchShop = async () => {
     try {
+      const { data: authData } = await supabase.auth.getUser();
+
+      console.log("AUTH USER OBJECT:", authData.user);
+      console.log("AUTH USER ID:", authData.user?.id);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      console.log("SESSION:", sessionData.session);
+      console.log("SESSION USER ID:", sessionData.session?.user?.id);
+
+      console.log("HOOK USER ID:", user.id);
       const { data, error } = await supabase
         .from('shops')
         .select('*')
         .eq('owner_id', user.id)
         .maybeSingle();
+      console.log("Returned shop:", data);
+      console.log("Returned error:", error);
 
       if (error || !data) {
         setHasShop(false);
@@ -41,7 +54,6 @@ export const useShop = () => {
         try {
           if (data.id) {
             localStorage.setItem(`shop_${user.id}`, JSON.stringify(data));
-            localStorage.setItem('threadzw_shop', JSON.stringify(data));
           }
         } catch (cacheErr) {
           console.warn('Error syncing fetched shop to cache:', cacheErr);

@@ -74,7 +74,7 @@ export const MyProducts: React.FC = () => {
       }
 
       if (!shopData) {
-        const cached = localStorage.getItem(`shop_${user.id}`) || localStorage.getItem('threadzw_shop');
+        const cached = localStorage.getItem(`shop_${user.id}`);
         if (cached) {
           try {
             shopData = JSON.parse(cached);

@@ -236,7 +236,6 @@ export const ShopFrontOnboarding: React.FC<ShopFrontOnboardingProps> = ({
       // Update local storage shop details cache
       if (userId && updatedShop) {
         localStorage.setItem(`shop_${userId}`, JSON.stringify(updatedShop));
-        localStorage.setItem('threadzw_shop', JSON.stringify(updatedShop));
       }
 
       // Success Callback!

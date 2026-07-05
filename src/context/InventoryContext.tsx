@@ -159,12 +159,6 @@ interface InventoryContextType {
   followers: any[];
   addRecentlyViewed: (productId: string) => void;
   increaseViewCount: (productId: string) => void;
-  reviews: any;
-  addReview: (shopId: string, review: any) => Promise<any>;
-  voteReview: (shopId: string, reviewId: string, delta: any) => void;
-  addSellerResponse: (shopId: string, reviewId: string, response: string) => void;
-  getShopRating: (shopId: string) => { score: string; count: number };
-  getProductRating: (productId: string) => { score: string; count: number };
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
@@ -215,7 +209,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
       return;
     }
     try {
-      console.log('[InventoryContext Diagnostic] Querying shop for user ID:', user.id);
       const { data, error } = await supabase
         .from('shops')
         .select('*')
@@ -223,12 +216,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         .maybeSingle();
 
       if (error) {
-        console.error('[InventoryContext Diagnostic] Error while fetching user shop:', error);
         throw error;
       }
 
       if (data) {
-        console.log('[InventoryContext Diagnostic] Shop entry found in database:', data);
         setUserShop(data);
         setUserData(prev => ({
           ...prev,
@@ -243,7 +234,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
           shopIsVerified: data.is_verified || false
         }));
       } else {
-        console.log('[InventoryContext Diagnostic] No shop entry found in database for user:', user.id);
         setUserShop(null);
         setUserData(prev => ({
           ...prev,
@@ -371,201 +361,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const [storiesViewerOpen, setStoriesViewerOpen] = useState(false);
   const [currentStoryShopId, setCurrentStoryShopId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [reviews, setReviews] = useState<any>(() => {
-    const cached = localStorage.getItem('threadzw_reviews_v1');
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        console.error('Failed to parse cached reviews, using seeds', e);
-      }
-    }
-    return {
-      "mock-1": [
-        {
-          id: "rev-1-1",
-          userName: "Takunda M.",
-          userHandle: "@takunda_m",
-          rating: 5,
-          text: "Top-tier quality print! Usually prints peel off after three washes but this puff-print is extremely thick and holds up perfectly.",
-          timestamp: "2026-05-28T14:30:00Z",
-          created_at: "2026-05-28T14:30:00Z",
-          helpfulCount: 14,
-          unhelpfulCount: 1,
-          isVerified: true,
-          product_id: "seed_prod_1",
-          images: []
-        },
-        {
-          id: "rev-1-2",
-          userName: "Sihle N.",
-          userHandle: "@sihle_streetwear",
-          rating: 4,
-          text: "Oversized fit is perfect. Recommending to order normal size for that streetwear aesthetic drape.",
-          timestamp: "2026-06-02T09:15:00Z",
-          created_at: "2026-06-02T09:15:00Z",
-          helpfulCount: 8,
-          unhelpfulCount: 0,
-          isVerified: true,
-          product_id: "seed_prod_1",
-          images: []
-        }
-      ],
-      "mock-2": [
-        {
-          id: "rev-2-1",
-          userName: "Farai Z.",
-          userHandle: "@farai_z",
-          rating: 5,
-          text: "Genuinely heavy cotton, thick fabric keeps you warm. Easily superior to imports. The premium hood lining is so cozy.",
-          timestamp: "2026-04-15T18:45:00Z",
-          created_at: "2026-04-15T18:45:00Z",
-          helpfulCount: 22,
-          unhelpfulCount: 2,
-          isVerified: true,
-          product_id: "seed_prod_2",
-          images: [],
-          sellerResponse: {
-            text: "Thank you so much Farai! We source our heavy-weight cotton locally in Harare to support our communities. Glad you love the premium interior feel!",
-            timestamp: "2026-04-16T10:00:00Z"
-          }
-        },
-        {
-          id: "rev-2-2",
-          userName: "Amara C.",
-          userHandle: "@amara_codes",
-          rating: 5,
-          text: "Perfect embroidery. Zimbabwe streetwear is rising! Will buy again next winter.",
-          timestamp: "2026-05-20T11:20:00Z",
-          created_at: "2026-05-20T11:20:00Z",
-          helpfulCount: 9,
-          unhelpfulCount: 0,
-          isVerified: true,
-          product_id: "seed_prod_2",
-          images: []
-        }
-      ],
-      "mock-4": [
-        {
-          id: "rev-4-1",
-          userName: "Kuda B.",
-          userHandle: "@kuda_kicks",
-          rating: 5,
-          text: "The lime green sole details make these stand out completely. Super soft leather, walk around in Bulawayo all day without pain.",
-          timestamp: "2026-06-04T16:00:00Z",
-          created_at: "2026-06-04T16:00:00Z",
-          helpfulCount: 5,
-          unhelpfulCount: 1,
-          isVerified: true,
-          product_id: "seed_prod_4",
-          images: []
-        }
-      ]
-    };
-  });
-
-  useEffect(() => {
-    localStorage.setItem('threadzw_reviews_v1', JSON.stringify(reviews));
-  }, [reviews]);
-
-  // Load and sync reviews from Supabase database in an offline-resilient manner
-  useEffect(() => {
-    const fetchReviewsFromSupabase = async () => {
-      try {
-        const { data, error } = await supabase.from('reviews').select('*');
-        if (error) {
-          console.warn("Supabase fetch reviews returned error, using local/seeds:", error);
-          return;
-        }
-        if (data && data.length > 0) {
-          setReviews((prev: any) => {
-            const merged = { ...prev };
-            data.forEach((row: any) => {
-              const shopId = row.shop_id || 'seed_shop';
-              if (!merged[shopId]) {
-                merged[shopId] = [];
-              }
-              const formatted = {
-                id: row.id,
-                product_id: row.product_id,
-                rating: row.rating,
-                text: row.comment || row.text || '',
-                userName: row.user_name || 'Anonymous',
-                userHandle: row.user_handle || '@anonymous',
-                isVerified: !!row.is_verified,
-                helpfulCount: row.helpful_count || 0,
-                unhelpfulCount: row.unhelpful_count || 0,
-                created_at: row.created_at,
-                reply: row.reply || null,
-                images: row.images || [],
-                badges: row.badges || [],
-                sellerResponse: row.reply ? { text: row.reply, timestamp: row.reply_created_at || row.created_at } : undefined
-              };
-              // Filter out existing reviews with the same ID
-              merged[shopId] = merged[shopId].filter((r: any) => r.id !== row.id);
-              merged[shopId].push(formatted);
-            });
-            return merged;
-          });
-        }
-      } catch (e) {
-        console.warn("Failed to fetch reviews from Supabase:", e);
-      }
-    };
-    fetchReviewsFromSupabase();
-  }, [user]);
-
-  const getShopRating = useCallback((shopId: string) => {
-    const shopReviews = reviews[shopId] || [];
-    if (shopReviews.length > 0) {
-      const sum = shopReviews.reduce((acc: number, r: any) => acc + r.rating, 0);
-      return {
-        score: (sum / shopReviews.length).toFixed(1),
-        count: shopReviews.length
-      };
-    }
-    let sum = 0;
-    const cleanId = shopId || 'seed_shop';
-    for (let i = 0; i < cleanId.length; i++) {
-      sum += cleanId.charCodeAt(i);
-    }
-    const score = 4.4 + (sum % 7) * 0.1;
-    const count = 15 + (sum % 170);
-    return {
-      score: score.toFixed(1),
-      count
-    };
-  }, [reviews]);
-
-  const getProductRating = useCallback((productId: string) => {
-    let prodReviews: any[] = [];
-    Object.values(reviews).forEach((shopRevList: any) => {
-      if (Array.isArray(shopRevList)) {
-        const matching = shopRevList.filter((r: any) => r.product_id === productId || r.productId === productId);
-        prodReviews.push(...matching);
-      }
-    });
-
-    if (prodReviews.length > 0) {
-      const sum = prodReviews.reduce((acc: number, r: any) => acc + r.rating, 0);
-      return {
-        score: (sum / prodReviews.length).toFixed(1),
-        count: prodReviews.length
-      };
-    }
-
-    let sum = 0;
-    const cleanId = productId || 'seed_prod';
-    for (let i = 0; i < cleanId.length; i++) {
-      sum += cleanId.charCodeAt(i);
-    }
-    const score = 4.5 + (sum % 6) * 0.1;
-    const count = 3 + (sum % 22);
-    return {
-      score: score.toFixed(1),
-      count
-    };
-  }, [reviews]);
 
   const value = useMemo(() => ({
     products,
@@ -618,247 +413,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     followers: [],
     addRecentlyViewed: () => {},
     increaseViewCount: () => {},
-    reviews,
-    addReview: async (sid: string, r: any) => {
-      const newId = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString();
-      const newR = {
-        ...r,
-        id: newId,
-        timestamp: new Date().toISOString(),
-        created_at: new Date().toISOString(),
-        helpfulCount: 0,
-        unhelpfulCount: 0,
-      };
-
-      // 1. Instantly update local state for real-time responsiveness
-      setReviews((prev: any) => {
-        const list = prev[sid] || [];
-        const filtered = list.filter((x: any) => x.id !== newId);
-        return { ...prev, [sid]: [newR, ...filtered] };
-      });
-
-      // 2. Persist asynchronously to Supabase
-      try {
-        const pName = products.find(p => p.id === r.product_id)?.name || 'your product';
-        const reviewRow = {
-          id: newId,
-          shop_id: sid,
-          user_id: user?.id || null,
-          rating: r.rating,
-          comment: r.text || '',
-          product_id: r.product_id || null,
-          user_name: r.userName || 'Anonymous',
-          user_handle: r.userHandle || '@anonymous',
-          is_verified: !!r.isVerified,
-          helpful_count: 0,
-          unhelpful_count: 0,
-          reply: null,
-          images: r.images || [],
-          badges: r.badges || []
-        };
-        
-        const { error } = await supabase.from('reviews').insert([reviewRow]);
-        if (error) {
-          console.warn("Supabase review insert failed, retaining locally:", error);
-        } else {
-          console.log("Review saved to Supabase successfully!");
-          
-          // Insert review photos if present
-          if (r.images && r.images.length > 0) {
-            const photoRows = r.images.map((img: string) => ({
-              review_id: newId,
-              image_url: img
-            }));
-            const { error: photoError } = await supabase.from('review_photos').insert(photoRows);
-            if (photoError) console.warn("Could not insert review photos into Supabase:", photoError);
-          }
-
-          // Insert badges into reviewer_badges if present
-          if (r.badges && r.badges.length > 0 && user?.id) {
-            const badgeRows = r.badges.map((b: string) => ({
-              user_id: user.id,
-              badge_type: b
-            }));
-            const { error: badgeError } = await supabase.from('reviewer_badges').insert(badgeRows);
-            if (badgeError) console.warn("Could not insert reviewer badges into Supabase:", badgeError);
-          }
-
-          // Trigger review notifications (Milestones or Score Alerts)
-          try {
-            const currentReviewsCount = (reviews[sid] || []).length + 1;
-            let notificationType: 'new_review' | 'five_star' | 'one_star_alert' | 'milestone_50' | 'milestone_100' | 'rating_drop' | null = null;
-            let notificationTitle = "";
-            let notificationBody = "";
-
-            if (r.rating === 5) {
-              notificationType = 'five_star';
-              notificationTitle = "⭐ New 5-Star Review!";
-              notificationBody = `${r.userName} left a 5-star review for ${pName}: "${r.text.slice(0, 45)}..."`;
-            } else if (r.rating === 1) {
-              notificationType = 'one_star_alert';
-              notificationTitle = "⚠️ New 1-Star Review Alert";
-              notificationBody = `${r.userName} left a 1-star review: "${r.text.slice(0, 45)}..."`;
-            } else {
-              notificationType = 'new_review';
-              notificationTitle = "💬 New Customer Review";
-              notificationBody = `${r.userName} left a ${r.rating}-star review: "${r.text.slice(0, 45)}..."`;
-            }
-
-            if (currentReviewsCount === 50) {
-              notificationType = 'milestone_50';
-              notificationTitle = "🏆 Landmark Achieved: 50 Reviews!";
-              notificationBody = "Your boutique has accumulated 50 customer reviews! You've unlocked the Elite Boutique trust banner.";
-            } else if (currentReviewsCount === 100) {
-              notificationType = 'milestone_100';
-              notificationTitle = "👑 Milestone Unlocked: 100 Reviews!";
-              notificationBody = "Incredible! 100 customer reviews registered. You are officially an industry-leading seller on ThreadZW.";
-            }
-
-            if (notificationType) {
-              // Insert into custom review_notifications table
-              const { error: notifErr } = await supabase.from('review_notifications').insert([{
-                shop_id: sid,
-                type: notificationType,
-                title: notificationTitle,
-                body: notificationBody,
-                data: { review_id: newId, rating: r.rating, userName: r.userName }
-              }]);
-              if (notifErr) console.warn("Could not save review notification:", notifErr);
-              
-              // Also add to standard notifications table if user is available
-              if (user?.id) {
-                const { error: globalNotifErr } = await supabase.from('notifications').insert([{
-                  user_id: user.id,
-                  type: 'announcement',
-                  title: notificationTitle,
-                  body: notificationBody,
-                  data: { review_id: newId, rating: r.rating, shop_id: sid }
-                }]);
-                if (globalNotifErr) console.warn("Could not save global notification:", globalNotifErr);
-              }
-            }
-          } catch (notifException) {
-            console.warn("Error processing notifications:", notifException);
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to write review to Supabase:", err);
-      }
-
-      return newR;
-    },
-    voteReview: (sid: string, id: string, type: any) => {
-      // 1. Instantly update local state
-      setReviews((prev: any) => {
-        let isSame = false;
-        const list = (prev[sid] || []).map((r: any) => {
-          if (r.id === id) {
-            isSame = r.userVote === type;
-            return {
-              ...r,
-              userVote: isSame ? null : type,
-              helpfulCount: type === 'helpful' ? (isSame ? r.helpfulCount - 1 : r.helpfulCount + 1) : r.helpfulCount,
-              unhelpfulCount: type === 'unhelpful' ? (isSame ? r.unhelpfulCount - 1 : r.unhelpfulCount + 1) : r.unhelpfulCount,
-            };
-          }
-          return r;
-        });
-
-        // 2. Persist asynchronously in background IIFE
-        (async () => {
-          try {
-            const finalVote = isSame ? null : type;
-            
-            if (user?.id) {
-              if (finalVote) {
-                const { error: rxError } = await supabase.from('review_reactions').upsert([{
-                  review_id: id,
-                  user_id: user.id,
-                  reaction_type: finalVote
-                }], { onConflict: 'review_id,user_id' });
-                if (rxError) console.warn("Supabase reaction upsert failed:", rxError);
-              } else {
-                const { error: rxDeleteError } = await supabase.from('review_reactions')
-                  .delete()
-                  .eq('review_id', id)
-                  .eq('user_id', user.id);
-                if (rxDeleteError) console.warn("Supabase reaction delete failed:", rxDeleteError);
-              }
-            }
-
-            const targetReview = list.find((r: any) => r.id === id);
-            if (targetReview) {
-              const { error: updError } = await supabase.from('reviews')
-                .update({
-                  helpful_count: targetReview.helpfulCount,
-                  unhelpful_count: targetReview.unhelpfulCount
-                })
-                .eq('id', id);
-              if (updError) console.warn("Supabase reviews count update failed:", updError);
-            }
-          } catch (e) {
-            console.warn("Failed to sync reaction to database:", e);
-          }
-        })();
-
-        return { ...prev, [sid]: list };
-      });
-    },
-    addSellerResponse: (sid: string, id: string, s: string) => {
-      // 1. Instantly update local state
-      setReviews((prev: any) => {
-        const list = (prev[sid] || []).map((r: any) => {
-          if (r.id === id) {
-            if (!s) {
-              const updated = { ...r };
-              delete updated.sellerResponse;
-              delete updated.reply;
-              return updated;
-            }
-            return { 
-              ...r, 
-              reply: s,
-              sellerResponse: { text: s, timestamp: new Date().toISOString() } 
-            };
-          }
-          return r;
-        });
-
-        // 2. Persist asynchronously in background IIFE
-        (async () => {
-          try {
-            const { error: revUpdateErr } = await supabase.from('reviews')
-              .update({
-                reply: s || null,
-                reply_created_at: s ? new Date().toISOString() : null
-              })
-              .eq('id', id);
-            if (revUpdateErr) console.warn("Supabase reviews table reply update failed:", revUpdateErr);
-
-            if (s) {
-              const { error: replyUpsertErr } = await supabase.from('merchant_replies').upsert([{
-                review_id: id,
-                shop_id: sid,
-                reply_text: s,
-                created_at: new Date().toISOString()
-              }], { onConflict: 'review_id' });
-              if (replyUpsertErr) console.warn("Supabase merchant_replies upsert failed:", replyUpsertErr);
-            } else {
-              const { error: replyDeleteErr } = await supabase.from('merchant_replies')
-                .delete()
-                .eq('review_id', id);
-              if (replyDeleteErr) console.warn("Supabase merchant_replies delete failed:", replyDeleteErr);
-            }
-          } catch (e) {
-            console.warn("Failed to sync merchant reply to database:", e);
-          }
-        })();
-
-        return { ...prev, [sid]: list };
-      });
-    },
-    getShopRating,
-    getProductRating,
     setShopFormData,
     setSellerFlowState,
     setBuyerFlowState,
@@ -895,7 +449,6 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     storiesViewerOpen,
     currentStoryShopId,
     cart,
-    reviews,
     refreshInventory,
   ]);
 

@@ -488,8 +488,8 @@ export const ProductImage: React.FC<ProductImageProps> = ({
   shop,
   url,
   index = 0,
-  width = '100%',
-  height = 200,
+  width,
+  height,
   className = '',
   style: extraStyle = {},
   alt
@@ -502,6 +502,9 @@ export const ProductImage: React.FC<ProductImageProps> = ({
 
   const rawUrl = url || images[index] || images[0];
 
+  const styleWidth = width !== undefined ? width : (className.includes('w-') ? undefined : '100%');
+  const styleHeight = height !== undefined ? height : (className.includes('h-') ? undefined : 200);
+
   // If there's no image URL, render the typographic fallback
   if (!rawUrl || rawUrl.trim() === '') {
     const fallbackText = product?.name || 'P';
@@ -511,8 +514,8 @@ export const ProductImage: React.FC<ProductImageProps> = ({
       <div 
         className={`relative border flex flex-col justify-center items-center overflow-hidden font-sans select-none bg-gradient-to-br ${colorClass} ${className}`}
         style={{
-          width,
-          height,
+          width: styleWidth,
+          height: styleHeight,
           ...extraStyle
         }}
       >
@@ -542,8 +545,8 @@ export const ProductImage: React.FC<ProductImageProps> = ({
       className={`${className}`}
       referrerPolicy="no-referrer"
       style={{
-        width,
-        height,
+        width: styleWidth,
+        height: styleHeight,
         objectFit: 'cover',
         display: 'block',
         ...extraStyle

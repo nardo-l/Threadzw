@@ -65,7 +65,7 @@ export const Inventory: React.FC = () => {
       }
 
       if (!shopData) {
-        const cached = localStorage.getItem(`shop_${session.user.id}`) || localStorage.getItem('threadzw_shop');
+        const cached = localStorage.getItem(`shop_${session.user.id}`);
         if (cached) {
           try {
             shopData = JSON.parse(cached);
@@ -101,12 +101,18 @@ export const Inventory: React.FC = () => {
     try {
       const clonedName = `${product.name} (Clone)`;
       const { data: { session } } = await supabase.auth.getSession();
-      const ownerId = session?.user?.id || product.owner_id;
+      if (!session) {
+        throw new Error('You must be logged in to duplicate listings.');
+      }
+      if (!shop || product.shop_id !== shop.id) {
+        throw new Error('You do not own this product.');
+      }
+      const ownerId = session.user.id;
       
       const { data, error } = await supabase
         .from('products')
         .insert({
-          shop_id: product.shop_id,
+          shop_id: shop.id,
           owner_id: ownerId,
           name: clonedName,
           price: product.price,
@@ -137,10 +143,15 @@ export const Inventory: React.FC = () => {
   const handleToggleFeature = async (product: Product) => {
     const nextFeatured = !product.is_featured;
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !shop || product.shop_id !== shop.id) {
+        throw new Error('Unauthorized action');
+      }
       const { error } = await supabase
         .from('products')
         .update({ is_featured: nextFeatured })
-        .eq('id', product.id);
+        .eq('id', product.id)
+        .eq('shop_id', shop.id);
 
       if (error) throw error;
 
@@ -148,7 +159,7 @@ export const Inventory: React.FC = () => {
       toast.success(nextFeatured ? 'Listing promoted to Best Seller! ⭐' : 'Pushed to standard listing.');
     } catch (err: any) {
       console.error(err);
-      toast.error('Workflow error toggling highlight.');
+      toast.error('Workflow error toggling highlight: ' + (err.message || ''));
     }
   };
 
@@ -164,6 +175,10 @@ export const Inventory: React.FC = () => {
     }));
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !shop || product.shop_id !== shop.id) {
+        throw new Error('Unauthorized action');
+      }
       const { error } = await supabase
         .from('products')
         .update({
@@ -171,7 +186,8 @@ export const Inventory: React.FC = () => {
           status: nextStatus,
           sizes: updatedSizes
         })
-        .eq('id', product.id);
+        .eq('id', product.id)
+        .eq('shop_id', shop.id);
 
       if (error) throw error;
 
@@ -182,9 +198,9 @@ export const Inventory: React.FC = () => {
       ));
 
       toast.success(currentIsSoldOut ? 'Restored inventory stock counts' : 'Listing marked as Sold Out');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      toast.error('Workflow status toggle failed.');
+      toast.error('Workflow status toggle failed: ' + (err.message || ''));
     }
   };
 
@@ -192,10 +208,15 @@ export const Inventory: React.FC = () => {
   const handleDeleteProduct = async (productId: string) => {
     try {
       setDeletingId(productId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !shop) {
+        throw new Error('Unauthorized action');
+      }
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', productId);
+        .eq('id', productId)
+        .eq('shop_id', shop.id);
 
       if (error) throw error;
 
@@ -205,7 +226,7 @@ export const Inventory: React.FC = () => {
       toast.success('Listing deleted.');
     } catch (err: any) {
       console.error(err);
-      toast.error('Could not delete product');
+      toast.error('Could not delete product: ' + (err.message || ''));
     } finally {
       setDeletingId(null);
     }

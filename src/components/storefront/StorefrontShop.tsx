@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontShop.tsx
 import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle, Star } from 'lucide-react';
+import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
 import { supabase } from '../../lib/supabase';
 import { useInventory } from '../../context/InventoryContext';
@@ -23,7 +23,6 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
   initialCategory = 'all',
   initialSort = 'newest'
 }) => {
-  const { getProductRating } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState(initialSort);
@@ -311,14 +310,6 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                       <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-hover:text-green-600 transition-colors">
                         {p.name}
                       </h4>
-                      {/* Product Rating */}
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
-                        <span className="text-[10px] font-bold text-zinc-700">
-                          {getProductRating(p.id).score}
-                        </span>
-                        <span className="text-[9px] text-zinc-400 font-medium">({getProductRating(p.id).count})</span>
-                      </div>
                     </div>
 
                     <div className="mt-2.5">

@@ -329,6 +329,7 @@ export const SalesSystem: React.FC = () => {
 
     // Update Supabase Database
     try {
+      if (!shopId) throw new Error('Missing shop context');
       // 1. Update product inventory in DB
       const { error: pUpdateError } = await supabase
         .from('products')
@@ -338,7 +339,8 @@ export const SalesSystem: React.FC = () => {
           is_published: nextIsPublished,
           status: nextStatus
         })
-        .eq('id', selectedProduct.id);
+        .eq('id', selectedProduct.id)
+        .eq('shop_id', shopId);
 
       if (pUpdateError) throw pUpdateError;
 
@@ -448,6 +450,7 @@ export const SalesSystem: React.FC = () => {
     ));
 
     try {
+      if (!shopId) throw new Error('Missing shop context');
       const { error } = await supabase
         .from('products')
         .update({
@@ -456,7 +459,8 @@ export const SalesSystem: React.FC = () => {
           is_published: nextIsPublished,
           status: nextStatus
         })
-        .eq('id', selectedProductForRestock.id);
+        .eq('id', selectedProductForRestock.id)
+        .eq('shop_id', shopId);
 
       if (error) throw error;
       toast.success(`Successfully restocked ${selectedProductForRestock.name}! 📦`);
@@ -694,11 +698,13 @@ export const SalesSystem: React.FC = () => {
       localStorage.setItem(`threadzw_sales_${shopId}`, JSON.stringify(updatedLocals));
 
       // Attempt Supabase database push
+      if (!shopId) throw new Error('Missing shop context');
       // 1. Mark as voided inside CRM sales log
       const { error: saleError } = await supabase
         .from('sales')
         .update({ voided: true })
-        .eq('id', sale.id);
+        .eq('id', sale.id)
+        .eq('shop_id', shopId);
 
       // If missing table relations, bypass gracefully
       if (saleError && saleError.code !== '42P01') throw saleError;
@@ -711,7 +717,8 @@ export const SalesSystem: React.FC = () => {
           total_stock: nextTotalStock,
           status: 'active'
         })
-        .eq('id', sale.product_id);
+        .eq('id', sale.product_id)
+        .eq('shop_id', shopId);
 
       if (productError) throw productError;
 

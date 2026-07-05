@@ -32,7 +32,8 @@ export const useSearch = (query: string, filters: SearchFilters = {}) => {
       let productQuery = supabase
         .from('products')
         .select('*, shop:shops(*)')
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .eq('is_published', true);
 
       if (query) {
         productQuery = productQuery.ilike('name', `%${query}%`);

@@ -120,7 +120,6 @@ export const ShopSetup: React.FC<ShopSetupProps> = ({ myShop, onComplete }) => {
 
       // Update local storage cache to keep details in sync immediately
       const mergedShop = { ...myShop, ...updatedFields };
-      localStorage.setItem('threadzw_shop', JSON.stringify(mergedShop));
       if (myShop.owner_id) {
         localStorage.setItem(`shop_${myShop.owner_id}`, JSON.stringify(mergedShop));
       }

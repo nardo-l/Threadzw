@@ -827,36 +827,34 @@ export const AddProduct: React.FC = () => {
 
                     {!useMultipleSizes ? (
                       <div className="space-y-3 p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl animate-wipe">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Universal Item Stock Count</label>
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Total Stock Quantity</label>
                         <input 
                           type="number"
                           value={generalStock}
                           onChange={e => setGeneralStock(e.target.value)}
-                          placeholder="10"
-                          className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                          placeholder="e.g. 10"
+                          className="w-full bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-4 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-bold shadow-sm"
                         />
-                        <p className="text-[10px] text-white/40 leading-relaxed font-mono">
-                          This product is universal "One Size". Enter total quantity in inventory.
+                        <p className="text-[11px] text-white/60 leading-relaxed font-sans">
+                          Use this if your product does not have size variations.
                         </p>
                       </div>
                     ) : (
                       <div className="space-y-4 animate-wipe">
-                        {/* Preset categories picker */}
-                        <div className="flex gap-2">
-                          {(['apparel', 'sneakers', 'onesize'] as const).map((cat) => (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={() => handleSizeCategoryChange(cat)}
-                              className={`flex-1 py-2 text-[10px] font-black uppercase tracking-wider rounded-lg border transition-all cursor-pointer ${
-                                sizeCategory === cat
-                                  ? 'bg-[#C6FF00] text-black border-[#C6FF00] font-extrabold'
-                                  : 'bg-white/[0.02] text-white/60 border-white/[0.08]'
-                              }`}
-                            >
-                              {cat}
-                            </button>
-                          ))}
+                        {/* Elegant Helper Text and Example */}
+                        <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-2.5">
+                          <p className="text-xs text-white/90 font-bold font-sans">
+                            Add each size together with its available stock quantity.
+                          </p>
+                          <div className="text-[11px] text-white/50 space-y-1 font-mono">
+                            <p className="font-bold text-[#C6FF00] uppercase tracking-wider text-[9px]">Example:</p>
+                            <div className="grid grid-cols-2 gap-x-4 max-w-xs pt-1 border-t border-white/5">
+                              <div>Small</div><div>Quantity: 5</div>
+                              <div>Medium</div><div>Quantity: 3</div>
+                              <div>Large</div><div>Quantity: 8</div>
+                              <div>XL</div><div>Quantity: 2</div>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Custom Size Addition */}
@@ -865,93 +863,73 @@ export const AddProduct: React.FC = () => {
                             type="text"
                             value={customSizeInput}
                             onChange={e => setCustomSizeInput(e.target.value)}
-                            placeholder="Add Custom Size (e.g. 3XL)"
-                            className="flex-1 bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                            placeholder="Enter size name (e.g. XXL)"
+                            className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-500 text-xs font-bold"
                           />
                           <button
                             type="button"
                             onClick={handleAddCustomSize}
-                            className="px-4 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer"
+                            className="px-4 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer gap-1 transition-all shrink-0"
                           >
-                            Add
+                            <span>+ Add Size</span>
                           </button>
                         </div>
 
-                        {/* Active size list */}
+                        {/* Active size list with inline edit capabilities */}
                         <div className="space-y-2">
                           <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Manage Sizes & Stock</label>
-                          <div className="space-y-2.5">
-                            {Object.entries(sizeStock).map(([sz, details]) => (
-                              <div 
-                                key={`sz-${sz}`}
-                                className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
-                                  details.active 
-                                    ? 'bg-white/[0.03] border-white/[0.12]' 
-                                    : 'bg-transparent border-white/[0.04] opacity-45'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleSizeActive(sz)}
-                                    className={`w-5 h-5 rounded-md flex items-center justify-center border cursor-pointer transition-colors ${
-                                      details.active 
-                                        ? 'bg-[#C6FF00] border-[#C6FF00] text-black' 
-                                        : 'bg-transparent border-white/20 text-transparent'
-                                    }`}
+                          
+                          {Object.entries(sizeStock).filter(([_, details]) => details.active).length === 0 ? (
+                            <p className="text-xs text-white/40 italic text-center py-6 border border-dashed border-white/10 rounded-xl font-sans">
+                              No sizes added yet. Use the field above to add your sizes.
+                            </p>
+                          ) : (
+                            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                              {Object.entries(sizeStock)
+                                .filter(([_, details]) => details.active)
+                                .map(([sz, details]) => (
+                                  <div 
+                                    key={`sz-${sz}`}
+                                    className="flex items-center gap-3 p-3 rounded-xl border bg-white/[0.02] border-white/10 justify-between"
                                   >
-                                    <Check size={12} className="stroke-[3]" />
-                                  </button>
-                                  <span className="font-sans text-xs font-bold text-white uppercase">{sz}</span>
-                                </div>
-
-                                {details.active && (
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex items-center bg-white/[0.02] border border-white/[0.08] rounded-lg h-9 overflow-hidden">
-                                      <button
-                                        type="button"
-                                        onClick={() => updateSizeStock(sz, details.stock - 1)}
-                                        className="px-2.5 h-full text-white/50 hover:text-white hover:bg-white/5 transition-colors font-mono cursor-pointer"
-                                      >
-                                        -
-                                      </button>
+                                    {/* Size label */}
+                                    <div className="flex-1">
+                                      <span className="text-[9px] font-mono uppercase tracking-widest text-white/40 block mb-1">Size</span>
                                       <input 
-                                        type="number"
-                                        value={details.stock}
-                                        onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
-                                        className="w-10 text-center bg-transparent text-xs font-mono text-white focus:outline-none"
+                                        type="text"
+                                        value={sz}
+                                        disabled
+                                        className="w-full bg-white/5 border border-white/10 text-white/90 rounded-lg p-2 text-xs font-bold font-sans cursor-not-allowed uppercase"
                                       />
-                                      <button
-                                        type="button"
-                                        onClick={() => updateSizeStock(sz, details.stock + 1)}
-                                        className="px-2.5 h-full text-white/50 hover:text-white hover:bg-white/5 transition-colors font-mono cursor-pointer"
-                                      >
-                                        +
-                                      </button>
                                     </div>
 
-                                    {/* Size shifting/reorder buttons */}
-                                    <div className="flex gap-1">
+                                    {/* Stock Quantity Input */}
+                                    <div className="w-32">
+                                      <span className="text-[9px] font-mono uppercase tracking-widest text-white/40 block mb-1">Stock Quantity</span>
+                                      <input 
+                                        type="number"
+                                        min={0}
+                                        value={details.stock}
+                                        onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
+                                        className="w-full bg-white text-zinc-950 border border-zinc-200 rounded-lg p-2 text-xs font-bold font-sans text-center focus:outline-none focus:ring-1 focus:ring-[#C6FF00]"
+                                      />
+                                    </div>
+
+                                    {/* Remove Button */}
+                                    <div className="pt-4">
                                       <button
                                         type="button"
-                                        onClick={() => moveSize(sz, 'up')}
-                                        className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
+                                        onClick={() => toggleSizeActive(sz)}
+                                        className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors cursor-pointer"
+                                        title="Remove size"
                                       >
-                                        <ArrowUp size={12} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => moveSize(sz, 'down')}
-                                        className="w-7 h-7 bg-white/5 hover:bg-white/10 rounded-lg flex items-center justify-center text-white/70 hover:text-white transition-colors cursor-pointer"
-                                      >
-                                        <ArrowDown size={12} />
+                                        <X size={14} />
                                       </button>
                                     </div>
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -997,12 +975,12 @@ export const AddProduct: React.FC = () => {
                         value={customColorInput}
                         onChange={e => setCustomColorInput(e.target.value)}
                         placeholder="Add colour (e.g. Sage Green)"
-                        className="flex-1 bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3.5 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                        className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3.5 font-sans focus:outline-none transition-all placeholder:text-zinc-500 text-sm font-bold shadow-sm"
                       />
                       <button
                         type="button"
                         onClick={handleAddCustomColor}
-                        className="px-5 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer"
+                        className="px-5 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer shrink-0"
                       >
                         Add
                       </button>

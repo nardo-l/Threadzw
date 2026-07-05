@@ -176,7 +176,8 @@ export async function trackPurchaseIntent(
   color?: string
 ) {
   try {
-    const cached = localStorage.getItem('threadzw_buyer_intents_logged');
+    const cachedKey = `threadzw_buyer_intents_logged_${shopId}`;
+    const cached = localStorage.getItem(cachedKey);
     const list = cached ? JSON.parse(cached) : [];
     list.push({
       shopId,
@@ -188,7 +189,7 @@ export async function trackPurchaseIntent(
       color: color || 'Black',
       timestamp: new Date().toISOString()
     });
-    localStorage.setItem('threadzw_buyer_intents_logged', JSON.stringify(list));
+    localStorage.setItem(cachedKey, JSON.stringify(list));
   } catch (e) {
     console.error("Failed to log local intent", e);
   }

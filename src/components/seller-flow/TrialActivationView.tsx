@@ -102,7 +102,6 @@ export const TrialActivationView: React.FC<TrialActivationViewProps> = ({ onActi
         is_live: true,
         setup_complete: true
       };
-      localStorage.setItem('threadzw_shop', JSON.stringify(activatedShop));
       localStorage.setItem(`shop_${user.id}`, JSON.stringify(activatedShop));
 
       await refreshInventory();

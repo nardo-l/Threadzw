@@ -94,13 +94,15 @@ export const useSetupStatus = () => {
   }, [user]);
 
   const markSetupComplete = async (shopId: string) => {
+    if (!user) return;
     const { error } = await supabase
       .from('shops')
       .update({
         setup_complete: true,
         setup_completed_at: new Date().toISOString()
       })
-      .eq('id', shopId);
+      .eq('id', shopId)
+      .eq('owner_id', user.id);
     
     if (!error) {
       setStatus(prev => ({

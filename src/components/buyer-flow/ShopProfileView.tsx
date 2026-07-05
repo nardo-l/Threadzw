@@ -130,9 +130,6 @@ export const ShopProfileView: React.FC = () => {
     );
   }
 
-  // Fallback rating logic matching mockup picture
-  const averageRating = '4.9';
-
   return (
     <div className="min-h-screen bg-[#000000] text-white pb-32 font-sans selection:bg-[#C6FF00]/30">
       
@@ -238,18 +235,14 @@ export const ShopProfileView: React.FC = () => {
         </p>
 
         {/* Metrics/Stats Card exactly like mockup */}
-        <div className="grid grid-cols-3 bg-[#111111] border border-[#1E1E1E] rounded-2xl py-4 text-center mt-1">
+        <div className="grid grid-cols-2 bg-[#111111] border border-[#1E1E1E] rounded-2xl py-4 text-center mt-1">
           <div className="flex flex-col items-center justify-center border-r border-[#1E1E1E]">
             <span className="text-xl font-bold text-white tracking-tight">{followerCount}</span>
             <span className="text-[10px] text-neutral-400 font-semibold tracking-wider uppercase mt-1">Followers</span>
           </div>
-          <div className="flex flex-col items-center justify-center border-r border-[#1E1E1E]">
+          <div className="flex flex-col items-center justify-center">
             <span className="text-xl font-bold text-white tracking-tight">{products.length}</span>
             <span className="text-[10px] text-neutral-400 font-semibold tracking-wider uppercase mt-1">Products</span>
-          </div>
-          <div className="flex flex-col items-center justify-center">
-            <span className="text-xl font-bold text-white tracking-tight">{averageRating}</span>
-            <span className="text-[10px] text-neutral-400 font-semibold tracking-wider uppercase mt-1">Rating</span>
           </div>
         </div>
 

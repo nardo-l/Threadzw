@@ -389,33 +389,58 @@ ON CONFLICT DO NOTHING;
 -- RLS POLICIES FOR SHOPS
 ALTER TABLE public.shops ENABLE ROW LEVEL SECURITY;
 
--- Drop any existing conflicting policies
+-- Drop any existing conflicting or legacy policies
 DROP POLICY IF EXISTS "owners_read_own_shop" ON public.shops;
 DROP POLICY IF EXISTS "owners_update_own_shop" ON public.shops;
 DROP POLICY IF EXISTS "owners_insert_shop" ON public.shops;
 DROP POLICY IF EXISTS "public_read_shops" ON public.shops;
+DROP POLICY IF EXISTS "Anyone can view live shops" ON public.shops;
+DROP POLICY IF EXISTS "Owners can manage own shops" ON public.shops;
+DROP POLICY IF EXISTS "owner_read_own_subscription" ON public.shops;
+DROP POLICY IF EXISTS "admin_full_access_shops" ON public.shops;
 
--- Setup exact specified policies
-CREATE POLICY "owners_read_own_shop"
+-- Setup exact specified production policies
+DROP POLICY IF EXISTS "public_select_shops" ON public.shops;
+CREATE POLICY "public_select_shops"
+ON public.shops FOR SELECT
+USING (true);
+
+DROP POLICY IF EXISTS "owner_select_shops" ON public.shops;
+CREATE POLICY "owner_select_shops"
 ON public.shops FOR SELECT
 TO authenticated
 USING (owner_id = auth.uid());
 
-CREATE POLICY "owners_update_own_shop"
+DROP POLICY IF EXISTS "owner_insert_shops" ON public.shops;
+CREATE POLICY "owner_insert_shops"
+ON public.shops FOR INSERT
+TO authenticated
+WITH CHECK (owner_id = auth.uid());
+
+DROP POLICY IF EXISTS "owner_update_shops" ON public.shops;
+CREATE POLICY "owner_update_shops"
 ON public.shops FOR UPDATE
 TO authenticated
 USING (owner_id = auth.uid())
 WITH CHECK (owner_id = auth.uid());
 
-CREATE POLICY "owners_insert_shop"
-ON public.shops FOR INSERT
+DROP POLICY IF EXISTS "owner_delete_shops" ON public.shops;
+CREATE POLICY "owner_delete_shops"
+ON public.shops FOR DELETE
 TO authenticated
-WITH CHECK (owner_id = auth.uid());
+USING (owner_id = auth.uid());
 
-CREATE POLICY "public_read_shops"
-ON public.shops FOR SELECT
-TO public
-USING (true);
+DROP POLICY IF EXISTS "admin_full_access_shops" ON public.shops;
+CREATE POLICY "admin_full_access_shops"
+ON public.shops FOR ALL
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid()
+    AND role = 'admin'
+  )
+);
 
 -- CREATE PAYMENT_CLAIMS TABLE WITH ROBUST RLS POLICIES
 CREATE TABLE IF NOT EXISTS public.payment_claims (
@@ -435,18 +460,48 @@ ALTER TABLE public.payment_claims ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_read_payment_claims" ON public.payment_claims;
 CREATE POLICY "public_read_payment_claims"
 ON public.payment_claims FOR SELECT
-USING (true);
+USING (
+  exists (
+    select 1 from public.shops 
+    where id = shop_id 
+    and owner_id = auth.uid()
+  ) or exists (
+    select 1 from public.profiles 
+    where id = auth.uid() 
+    and role = 'admin'
+  )
+);
 
 DROP POLICY IF EXISTS "auth_insert_payment_claims" ON public.payment_claims;
 CREATE POLICY "auth_insert_payment_claims"
 ON public.payment_claims FOR INSERT
 TO authenticated
-WITH CHECK (true);
+WITH CHECK (
+  exists (
+    select 1 from public.shops 
+    where id = shop_id 
+    and owner_id = auth.uid()
+  ) or exists (
+    select 1 from public.profiles 
+    where id = auth.uid() 
+    and role = 'admin'
+  )
+);
 
 DROP POLICY IF EXISTS "auth_update_payment_claims" ON public.payment_claims;
 CREATE POLICY "auth_update_payment_claims"
 ON public.payment_claims FOR UPDATE
 TO authenticated
-USING (true);
+USING (
+  exists (
+    select 1 from public.shops 
+    where id = shop_id 
+    and owner_id = auth.uid()
+  ) or exists (
+    select 1 from public.profiles 
+    where id = auth.uid() 
+    and role = 'admin'
+  )
+);
 
 

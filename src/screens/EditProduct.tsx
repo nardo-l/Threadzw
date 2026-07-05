@@ -108,7 +108,7 @@ export const EditProduct: React.FC = () => {
         }
 
         if (!shop) {
-          const cached = localStorage.getItem(`shop_${session.user.id}`) || localStorage.getItem('threadzw_shop');
+          const cached = localStorage.getItem(`shop_${session.user.id}`);
           if (cached) {
             try {
               shop = JSON.parse(cached);
@@ -433,7 +433,8 @@ export const EditProduct: React.FC = () => {
       const { error: updateError } = await supabase
         .from('products')
         .update(updatePayload)
-        .eq('id', productId);
+        .eq('id', productId)
+        .eq('shop_id', shopId);
 
       if (updateError) throw updateError;
 
@@ -762,7 +763,7 @@ export const EditProduct: React.FC = () => {
                     
                     {sizeCategory === 'onesize' ? (
                       <div className="bg-white/[0.03] border border-white/[0.06] p-4 rounded-xl flex flex-col gap-2 relative">
-                        <span className="text-[14px] font-extrabold text-white">Universal "One Size" Stock Level</span>
+                        <span className="text-[14px] font-extrabold text-white">Total Stock Quantity</span>
                         <p className="text-white/40 text-[11px] leading-tight">Caters perfectly to accessories, bags, sunglasses or raw materials that don't have sizing scales.</p>
                         <div className="flex items-center gap-3 mt-1.5">
                           <span className="font-mono text-xs text-white/55">Stock Qty:</span>
@@ -771,13 +772,32 @@ export const EditProduct: React.FC = () => {
                             min={0}
                             value={sizeStock['One Size']?.stock ?? 10}
                             onChange={(e) => updateSizeStock('One Size', parseInt(e.target.value) || 0)}
-                            className="w-20 h-9 rounded-lg bg-white/[0.06] border border-[#C6FF00]/30 text-white font-extrabold text-[15px] text-center focus:outline-none"
+                            className="w-20 h-9 rounded-lg bg-white border border-zinc-200 text-zinc-950 font-extrabold text-[15px] text-center focus:outline-none focus:ring-1 focus:ring-[#C6FF00]"
                           />
                         </div>
+                        <p className="text-[11px] text-white/60 leading-relaxed font-sans mt-2">
+                          Use this if your product does not have size variations.
+                        </p>
                       </div>
                     ) : (
                       <>
-                        <div className="grid grid-cols-3 gap-3">
+                        {/* Elegant Helper Text and Example */}
+                        <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-2.5 mb-2">
+                          <p className="text-xs text-white/90 font-bold font-sans">
+                            Add each size together with its available stock quantity.
+                          </p>
+                          <div className="text-[11px] text-white/50 space-y-1 font-mono">
+                            <p className="font-bold text-[#C6FF00] uppercase tracking-wider text-[9px]">Example:</p>
+                            <div className="grid grid-cols-2 gap-x-4 max-w-xs pt-1 border-t border-white/5">
+                              <div>Small</div><div>Quantity: 5</div>
+                              <div>Medium</div><div>Quantity: 3</div>
+                              <div>Large</div><div>Quantity: 8</div>
+                              <div>XL</div><div>Quantity: 2</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3 max-h-60 overflow-y-auto p-1">
                           {Object.entries(sizeStock).map(([sz, value]) => {
                             return (
                               <div
@@ -813,7 +833,7 @@ export const EditProduct: React.FC = () => {
                                     min={0}
                                     value={value.stock}
                                     onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
-                                    className="w-12 h-7 rounded-[6px] bg-white/[0.06] border border-[#C6FF00]/30 text-white font-extrabold text-[13px] text-center relative z-10 focus:outline-none"
+                                    className="w-16 h-8 rounded-[6px] bg-white border border-zinc-200 text-zinc-950 font-extrabold text-[13px] text-center relative z-10 focus:outline-none"
                                     onClick={(e) => e.stopPropagation()}
                                   />
                                 )}
@@ -829,14 +849,14 @@ export const EditProduct: React.FC = () => {
                             value={customSizeInput}
                             onChange={(e) => setCustomSizeInput(e.target.value)}
                             placeholder="Add custom size (e.g. US 12, EU 46)"
-                            className="flex-1 text-xs bg-white/[0.04] border border-white/10 rounded-lg px-3 py-2 outline-none focus:border-[#C6FF00] transition-colors"
+                            className="flex-1 text-xs bg-white text-zinc-950 font-bold border border-zinc-200 rounded-lg px-3 py-2 outline-none focus:border-[#C6FF00] transition-colors placeholder:text-zinc-500"
                           />
                           <button
                             type="button"
                             onClick={handleAddCustomSize}
-                            className="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all cursor-pointer"
+                            className="bg-[#C6FF00] hover:bg-[#b0e000] text-black text-xs font-bold px-4 py-2 rounded-lg transition-all cursor-pointer"
                           >
-                            Add +
+                            + Add Size
                           </button>
                         </div>
                       </>

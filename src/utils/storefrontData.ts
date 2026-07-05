@@ -1,4 +1,4 @@
-// Fallback mock stores, directions, reviews, and preset templates for ThreadZW Storefront
+// Fallback mock stores, directions, and preset templates for ThreadZW Storefront
 
 export interface MockProduct {
   id: string;
@@ -109,20 +109,6 @@ export const DEFAULT_MOCK_CATEGORIES = [
   { id: 'caps', name: 'Caps & Hats', count: 22 },
   { id: 'accessories', name: 'Accessories', count: 15 }
 ];
-
-export const MOCK_REVIEWS_PRESETS: Record<string, {name: string, rating: number, text: string, date: string}[]> = {
-  "mock-1": [
-    { name: "Takunda M.", rating: 5, text: "Top-tier quality print! Usually prints peel off after three washes but this puff-print is extremely thick and holds up perfectly.", date: "May 28, 2026" },
-    { name: "Sihle N.", rating: 4, text: "Oversized fit is perfect. Recommending to order normal size for that streetwear aesthetic drape.", date: "June 02, 2026" }
-  ],
-  "mock-2": [
-    { name: "Farai Z.", rating: 5, text: "Genuinely heavy cotton, thick fabric keeps you warm. Easily superior to imports. The premium hood lining is so cozy.", date: "April 15, 2026" },
-    { name: "Amara C.", rating: 5, text: "Perfect embroidery. Zimbabwe streetwear is rising! Will buy again next winter.", date: "May 20, 2026" }
-  ],
-  "mock-4": [
-    { name: "Kuda B.", rating: 5, text: "The lime green sole details make these stand out completely. Super soft leather, walk around in Harare all day without pain.", date: "June 04, 2026" }
-  ]
-};
 
 export const getZimbabweDirections = (location: string, shopName: string): { address: string, landmark: string, stepByStep: string } => {
   const isHarare = location?.toLowerCase().includes('harare') || !location;

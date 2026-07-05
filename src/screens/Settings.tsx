@@ -73,7 +73,6 @@ export const Settings: React.FC = () => {
       const updatedShop = { ...shop, is_live: nextIsLive };
       setShop(updatedShop);
       localStorage.setItem(`shop_${shop.owner_id}`, JSON.stringify(updatedShop));
-      localStorage.setItem('threadzw_shop', JSON.stringify(updatedShop));
       
       toast.success(nextIsLive ? 'Shop published successfully! 🚀' : 'Shop paused successfully.');
     } catch (err) {

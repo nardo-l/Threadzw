@@ -741,9 +741,10 @@ ALTER TABLE subscription_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payment_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
 
--- Shops: owner reads own subscription data
+-- Shops: owner reads own subscription data (legacy name dropped, using owner_select_shops)
 DROP POLICY IF EXISTS "owner_read_own_subscription" ON shops;
-CREATE POLICY "owner_read_own_subscription"
+DROP POLICY IF EXISTS "owner_select_shops" ON shops;
+CREATE POLICY "owner_select_shops"
 ON shops FOR SELECT
 TO authenticated
 USING (owner_id = auth.uid());

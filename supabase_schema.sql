@@ -67,15 +67,58 @@ create table if not exists public.shops (
 
 alter table public.shops enable row level security;
 
+-- Drop all old/obsolete policy names on public.shops table to prevent conflicts
 drop policy if exists "Anyone can view live shops" on public.shops;
-create policy "Anyone can view live shops"
+drop policy if exists "Owners can manage own shops" on public.shops;
+drop policy if exists "owners_read_own_shop" on public.shops;
+drop policy if exists "owners_update_own_shop" on public.shops;
+drop policy if exists "owners_insert_shop" on public.shops;
+drop policy if exists "public_read_shops" on public.shops;
+drop policy if exists "owner_read_own_subscription" on public.shops;
+drop policy if exists "admin_full_access_shops" on public.shops;
+
+-- Setup the 6 production RLS policies for public.shops table
+drop policy if exists "public_select_shops" on public.shops;
+create policy "public_select_shops"
   on public.shops for select
   using (true);
 
-drop policy if exists "Owners can manage own shops" on public.shops;
-create policy "Owners can manage own shops"
+drop policy if exists "owner_select_shops" on public.shops;
+create policy "owner_select_shops"
+  on public.shops for select
+  to authenticated
+  using (owner_id = auth.uid());
+
+drop policy if exists "owner_insert_shops" on public.shops;
+create policy "owner_insert_shops"
+  on public.shops for insert
+  to authenticated
+  with check (owner_id = auth.uid());
+
+drop policy if exists "owner_update_shops" on public.shops;
+create policy "owner_update_shops"
+  on public.shops for update
+  to authenticated
+  using (owner_id = auth.uid())
+  with check (owner_id = auth.uid());
+
+drop policy if exists "owner_delete_shops" on public.shops;
+create policy "owner_delete_shops"
+  on public.shops for delete
+  to authenticated
+  using (owner_id = auth.uid());
+
+drop policy if exists "admin_full_access_shops" on public.shops;
+create policy "admin_full_access_shops"
   on public.shops for all
-  using (auth.uid() = owner_id);
+  to authenticated
+  using (
+    exists (
+      select 1 from public.profiles
+      where id = auth.uid()
+      and role = 'admin'
+    )
+  );
 
 -- SUBSCRIPTIONS TABLE
 create table if not exists public.subscriptions (

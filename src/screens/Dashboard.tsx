@@ -76,11 +76,10 @@ import {
 import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
-import { useInventory } from '../context/InventoryContext';
 import { uploadImage } from '../utils/uploadImage';
 import { getAppHost, getAppOrigin, getAbsoluteShopUrl } from '../utils/shopUrl';
 import { toast } from 'sonner';
-import { seedShopProductsIfEmpty } from '../utils/seedData';
+import { seedShopProductsIfEmpty, generateRealisticSeedEvents } from '../utils/seedData';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { createMerchantNotification } from '../lib/analytics';
 
@@ -174,966 +173,138 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [showCustomSizeForm, setShowCustomSizeForm] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
 
-  // Active general view tab (overview / reviews / settings)
-  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'settings'>('overview');
-
-  // Reviews filter states
-  const [reviewFilter, setReviewFilter] = useState<'all' | 'pending' | '5star' | 'critical'>('all');
-  const [reviewSearch, setReviewSearch] = useState('');
-  const [sellerReplies, setSellerReplies] = useState<Record<string, string>>({});
-
-  const { reviews, addSellerResponse, getShopRating } = useInventory();
-
-  // Filtered reviews memo list
-  const shopReviewsList = useMemo(() => {
-    if (!shop) return [];
-    const rawList = reviews[shop.id] || [];
-    
-    return rawList.filter((r: any) => {
-      const matchesSearch = !reviewSearch.trim() || 
-        (r.userName || '').toLowerCase().includes(reviewSearch.toLowerCase()) ||
-        (r.text || '').toLowerCase().includes(reviewSearch.toLowerCase());
-        
-      if (!matchesSearch) return false;
-      
-      if (reviewFilter === 'pending') {
-        const hasReply = r.reply || r.sellerResponse || r.seller_response;
-        return !hasReply;
-      }
-      if (reviewFilter === '5star') {
-        return r.rating === 5;
-      }
-      if (reviewFilter === 'critical') {
-        return r.rating < 4;
-      }
-      
-      return true;
-    });
-  }, [reviews, shop, reviewFilter, reviewSearch]);
-
-  // Custom interactive dashboard states
-  const [chartTimeframe, setChartTimeframe] = useState<'today' | '7days' | '30days' | '90days' | 'year'>('7days');
-  const [chartMetric, setChartMetric] = useState<'revenue' | 'orders' | 'visitors' | 'whatsapp' | 'buynow'>('revenue');
-
-  // Simulated indicators (re-purposed or backed up using follower count)
-  const [followersCount, setFollowersCount] = useState(128);
-
-  const fileInputRefLogo = useRef<HTMLInputElement>(null);
-  const fileInputRefBanner = useRef<HTMLInputElement>(null);
-  const fileInputRefProduct = useRef<HTMLInputElement>(null);
+  // Active general view tab (overview / settings)
+  const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
 
   // State for analytics events and notifications loaded from Supabase
   const [analyticsEvents, setAnalyticsEvents] = useState<any[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
-  const [overviewSubTab, setOverviewSubTab] = useState<'sales' | 'funnel' | 'products' | 'traffic' | 'customers' | 'badges'>('sales');
 
-  // Realistic seed event generator for cold-start database environments
-  const generateRealisticSeedEvents = (shopId: string, productsList: any[]) => {
-    const events: any[] = [];
-    const now = Date.now();
-    const referrers = ['Instagram', 'Facebook', 'TikTok', 'Google Search', 'Direct Link', 'WhatsApp'];
-    const devices = ['Mobile', 'Desktop', 'Tablet'];
-    const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge'];
-    const cities = ['Harare', 'Bulawayo', 'Gweru', 'Mutare', 'Masvingo', 'Chinhoyi'];
+  // Filter events to only consider store views and product views as visits
+  const visitEvents = useMemo(() => {
+    return analyticsEvents.filter(e => e.event_type === 'store_view' || e.event_type === 'product_view');
+  }, [analyticsEvents]);
 
-    const prodIds = productsList.map(p => p.id);
-    if (prodIds.length === 0) prodIds.push('seed_prod_1');
-
-    for (let i = 0; i < 280; i++) {
-      const ageInMs = Math.random() * 30 * 24 * 60 * 60 * 1000; // last 30 days
-      const timestamp = new Date(now - ageInMs).toISOString();
-      const visitorId = 'v_' + Math.floor(Math.random() * 80 + 1);
-      const sessionId = 's_' + Math.floor(Math.random() * 120 + 1);
-      const ref = referrers[Math.floor(Math.random() * referrers.length)];
-      const device = devices[Math.random() > 0.85 ? (Math.random() > 0.5 ? 1 : 2) : 0]; // 85% mobile
-      const browser = browsers[Math.floor(Math.random() * browsers.length)];
-      const city = cities[Math.floor(Math.random() * cities.length)];
-      const prodId = prodIds[Math.floor(Math.random() * prodIds.length)];
-
-      let eventType: 'store_view' | 'product_view' | 'purchase_intent' | 'wishlist_add' | 'category_click' = 'store_view';
-      const rand = Math.random();
-      if (rand > 0.95) eventType = 'wishlist_add';
-      else if (rand > 0.82) eventType = 'purchase_intent';
-      else if (rand > 0.50) eventType = 'product_view';
-      else if (rand > 0.45) eventType = 'category_click';
-
-      events.push({
-        event_type: eventType,
-        shop_id: shopId,
-        product_id: eventType === 'store_view' || eventType === 'category_click' ? null : prodId,
-        visitor_id: visitorId,
-        session_id: sessionId,
-        referrer: ref,
-        device: device,
-        browser: browser,
-        country: 'Zimbabwe',
-        city: city,
-        metadata: eventType === 'purchase_intent' ? {
-          button_clicked: Math.random() > 0.45 ? 'whatsapp' : 'buy_now',
-          price: 45 + Math.floor(Math.random() * 100)
-        } : eventType === 'category_click' ? {
-          category_name: Math.random() > 0.5 ? 'Sneakers' : 'Clothing'
-        } : {},
-        created_at: timestamp
-      });
-    }
-    return events;
-  };
-
-  // Master Timeframe filtered data sets
-  const filteredEvents = useMemo(() => {
-    const now = new Date();
-    let startLimit = new Date();
-
-    if (chartTimeframe === 'today') {
-      startLimit = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-    } else if (chartTimeframe === '7days') {
-      startLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    } else if (chartTimeframe === '30days') {
-      startLimit = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    } else if (chartTimeframe === '90days') {
-      startLimit = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-    } else if (chartTimeframe === 'year') {
-      startLimit = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
-    }
-
-    return analyticsEvents.filter(e => e.created_at && new Date(e.created_at) >= startLimit);
-  }, [analyticsEvents, chartTimeframe]);
-
-  // Reactive Conversion Rate from local storage or settings
-  const [conversionRate, setConversionRate] = useState<number>(() => {
-    return Number(localStorage.getItem('threadzw_conversion_rate') || '30');
-  });
-
-  useEffect(() => {
-    const syncConversionRate = () => {
-      setConversionRate(Number(localStorage.getItem('threadzw_conversion_rate') || '30'));
-    };
-    window.addEventListener('storage', syncConversionRate);
-    syncConversionRate();
-    return () => window.removeEventListener('storage', syncConversionRate);
-  }, []);
-
-  // Parse Buyer Intents from analyticsEvents
-  const buyerIntents = useMemo(() => {
-    return analyticsEvents
-      .filter(e => e.event_type === 'purchase_intent')
-      .map(e => {
-        const pObj = products.find(p => p.id === e.product_id);
-        const name = e.metadata?.product_name || e.metadata?.name || pObj?.name || 'Boutique Item';
-        const price = Number(e.metadata?.price || pObj?.price || 45);
-        return {
-          id: e.id || `bi_${Math.random().toString(36).substr(2, 9)}`,
-          shop_id: e.shop_id,
-          product_id: e.product_id,
-          product_name: name,
-          price: price,
-          variant: [e.metadata?.size, e.metadata?.color].filter(Boolean).join(' / ') || 'M / Black',
-          session_id: e.session_id || e.visitor_id || 'anonymous',
-          created_at: e.created_at || new Date().toISOString(),
-          intent_type: e.metadata?.button_clicked === 'buy_now' ? 'Buy Now' : 'WhatsApp',
-          traffic_source: e.referrer || 'Direct Link',
-          device: e.device || 'Mobile',
-          browser: e.browser || 'Chrome'
-        };
-      });
-  }, [analyticsEvents, products]);
-
-  // Master Timeframe filtered Buyer Intents
-  const filteredIntents = useMemo(() => {
-    const now = new Date();
-    let startLimit = new Date();
-
-    if (chartTimeframe === 'today') {
-      startLimit = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-    } else if (chartTimeframe === '7days') {
-      startLimit = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    } else if (chartTimeframe === '30days') {
-      startLimit = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    } else if (chartTimeframe === '90days') {
-      startLimit = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-    } else if (chartTimeframe === 'year') {
-      startLimit = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
-    }
-
-    return buyerIntents.filter(bi => bi.created_at && new Date(bi.created_at) >= startLimit);
-  }, [buyerIntents, chartTimeframe]);
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // LIVE CALCULATED KPIS (FROM BUYER INTENT ACTIONS & CONVERSION RATE)
-  // ═══════════════════════════════════════════════════════════════════════════
-
-  // Filtered total Buyer Intent values
-  const totalBuyerIntentValue = useMemo(() => {
-    return filteredIntents.reduce((sum, bi) => sum + bi.price, 0);
-  }, [filteredIntents]);
-
-  // Estimated Revenue (Total Buyer Intent Value * Conversion Rate)
-  const estimatedRevenue = useMemo(() => {
-    return totalBuyerIntentValue * (conversionRate / 100);
-  }, [totalBuyerIntentValue, conversionRate]);
-
-  // High Fidelity Timeframe Stats
-  const revenueStats = useMemo(() => {
+  // Derived KPIs for Website Visits
+  const visitsKPIs = useMemo(() => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay(), 0, 0, 0);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-    const startOfYear = new Date(now.getFullYear(), 0, 1, 0, 0, 0);
 
-    const intentsToday = buyerIntents.filter(bi => bi.created_at && new Date(bi.created_at) >= todayStart);
-    const intentsThisWeek = buyerIntents.filter(bi => bi.created_at && new Date(bi.created_at) >= startOfWeek);
-    const intentsThisMonth = buyerIntents.filter(bi => bi.created_at && new Date(bi.created_at) >= startOfMonth);
-    const intentsThisYear = buyerIntents.filter(bi => bi.created_at && new Date(bi.created_at) >= startOfYear);
+    const total = visitEvents.length;
+    const today = visitEvents.filter(e => e.created_at && new Date(e.created_at) >= todayStart).length;
+    const week = visitEvents.filter(e => e.created_at && new Date(e.created_at) >= startOfWeek).length;
+    const month = visitEvents.filter(e => e.created_at && new Date(e.created_at) >= startOfMonth).length;
 
-    const valToday = intentsToday.reduce((sum, bi) => sum + bi.price, 0);
-    const valThisWeek = intentsThisWeek.reduce((sum, bi) => sum + bi.price, 0);
-    const valThisMonth = intentsThisMonth.reduce((sum, bi) => sum + bi.price, 0);
-    const valThisYear = intentsThisYear.reduce((sum, bi) => sum + bi.price, 0);
+    const uniqueVisitors = new Set(visitEvents.map(e => e.visitor_id).filter(Boolean)).size;
 
     return {
-      today: valToday * (conversionRate / 100),
-      thisWeek: valThisWeek * (conversionRate / 100),
-      thisMonth: valThisMonth * (conversionRate / 100),
-      thisYear: valThisYear * (conversionRate / 100),
-      countToday: intentsToday.length,
-      countThisWeek: intentsThisWeek.length,
-      countThisMonth: intentsThisMonth.length,
-      countThisYear: intentsThisYear.length
+      total,
+      today,
+      week,
+      month,
+      uniqueVisitors
     };
-  }, [buyerIntents, conversionRate]);
+  }, [visitEvents]);
 
-  // Daily average and high-water records
-  const revenueRecords = useMemo(() => {
-    const daysMap: Record<string, number> = {};
-    const monthsMap: Record<string, number> = {};
-
-    buyerIntents.forEach(bi => {
-      if (!bi.created_at) return;
-      const d = new Date(bi.created_at);
-      const dateStr = d.toISOString().split('T')[0];
-      const monthStr = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-      const val = bi.price * (conversionRate / 100);
-
-      daysMap[dateStr] = (daysMap[dateStr] || 0) + val;
-      monthsMap[monthStr] = (monthsMap[monthStr] || 0) + val;
-    });
-
-    const dailyValues = Object.values(daysMap);
-    const highestDayVal = dailyValues.length > 0 ? Math.max(...dailyValues) : 0;
-    const highestDayDate = Object.entries(daysMap).find(([_, v]) => v === highestDayVal)?.[0] || 'No data';
-
-    const monthValues = Object.values(monthsMap);
-    const highestMonthVal = monthValues.length > 0 ? Math.max(...monthValues) : 0;
-    const highestMonthName = Object.entries(monthsMap).find(([_, v]) => v === highestMonthVal)?.[0] || 'No data';
-
-    const timeframeDays = chartTimeframe === 'today' ? 1 : chartTimeframe === '7days' ? 7 : chartTimeframe === '30days' ? 30 : chartTimeframe === '90days' ? 90 : 365;
-    const avgDailyRevenue = estimatedRevenue / timeframeDays;
-
-    // Previous timeframe revenue (to calculate growth %)
-    const now = Date.now();
-    let prevStartLimit = now;
-    let prevEndLimit = now;
-    let dur = 7 * 24 * 60 * 60 * 1000;
-
-    if (chartTimeframe === 'today') dur = 24 * 60 * 60 * 1000;
-    else if (chartTimeframe === '7days') dur = 7 * 24 * 60 * 60 * 1000;
-    else if (chartTimeframe === '30days') dur = 30 * 24 * 60 * 60 * 1000;
-    else if (chartTimeframe === '90days') dur = 90 * 24 * 60 * 60 * 1000;
-    else dur = 365 * 24 * 60 * 60 * 1000;
-
-    prevEndLimit = now - dur;
-    prevStartLimit = prevEndLimit - dur;
-
-    const prevValue = buyerIntents
-      .filter(bi => {
-        if (!bi.created_at) return false;
-        const d = new Date(bi.created_at).getTime();
-        return d >= prevStartLimit && d < prevEndLimit;
-      })
-      .reduce((sum, bi) => sum + bi.price, 0);
-
-    const prevRevenue = prevValue * (conversionRate / 100);
-
-    const revenueGrowthPercent = prevRevenue > 0 
-      ? ((estimatedRevenue - prevRevenue) / prevRevenue) * 100 
-      : 24.5; // realistic fallback default
-
-    return {
-      avgDailyRevenue,
-      highestDayVal,
-      highestDayDate,
-      highestMonthVal,
-      highestMonthName,
-      revenueGrowthPercent
-    };
-  }, [buyerIntents, estimatedRevenue, chartTimeframe, conversionRate]);
-
-  // Unique visitor and session stats based on events
-  const customerStats = useMemo(() => {
-    const counts: Record<string, { count: number; totalValue: number; name: string; dates: number[] }> = {};
-    
-    buyerIntents.forEach(bi => {
-      const id = bi.session_id || 'anonymous';
-      const name = 'Boutique Visitor';
-      const val = bi.price;
-      const dateMs = bi.created_at ? new Date(bi.created_at).getTime() : Date.now();
-
-      if (!counts[id]) {
-        counts[id] = { count: 0, totalValue: 0, name: name, dates: [] };
-      }
-      counts[id].count += 1;
-      counts[id].totalValue += val;
-      counts[id].dates.push(dateMs);
-    });
-
-    const unique = Object.keys(counts).filter(k => k !== 'anonymous').length + (counts['anonymous'] ? 1 : 0);
-    const returning = Object.keys(counts).filter(k => counts[k].count > 1).length;
-    const firstTime = Math.max(0, unique - returning);
-
-    // Calculate highest value intent session
-    let highestSpendingCustomerName = 'No intents yet';
-    let highestSpendVal = 0;
-    let mostActiveCustomerName = 'No intents yet';
-    let mostActiveCount = 0;
-
-    Object.entries(counts).forEach(([id, c]) => {
-      if (c.totalValue > highestSpendVal) {
-        highestSpendVal = c.totalValue;
-        highestSpendingCustomerName = 'Session #' + id.substring(0, 6).toUpperCase();
-      }
-      if (c.count > mostActiveCount) {
-        mostActiveCount = c.count;
-        mostActiveCustomerName = 'Session #' + id.substring(0, 6).toUpperCase();
+  // Products sorted by view counts (i.e. product_view count)
+  const mostViewedProducts = useMemo(() => {
+    if (!products || products.length === 0) return [];
+    const counts: Record<string, number> = {};
+    visitEvents.forEach(e => {
+      if (e.event_type === 'product_view' && e.product_id) {
+        counts[e.product_id] = (counts[e.product_id] || 0) + 1;
       }
     });
 
-    const repeatPurchaseRate = unique > 0 ? (returning / unique) * 100 : 0;
-
-    let totalDaysBetween = 0;
-    let gapsCount = 0;
-    Object.values(counts).forEach(c => {
-      if (c.dates.length > 1) {
-        const sorted = [...c.dates].sort((a, b) => a - b);
-        for (let i = 1; i < sorted.length; i++) {
-          const diffDays = (sorted[i] - sorted[i - 1]) / (1000 * 60 * 60 * 24);
-          totalDaysBetween += diffDays;
-          gapsCount++;
-        }
-      }
-    });
-    const avgDaysBetweenPurchases = gapsCount > 0 ? totalDaysBetween / gapsCount : 4.5;
-    const averageSpend = unique > 0 ? estimatedRevenue / unique : 0;
-
-    return {
-      unique,
-      returning,
-      firstTime,
-      averageSpend,
-      highestSpendingCustomerName,
-      highestSpendVal: highestSpendVal * (conversionRate / 100),
-      mostActiveCustomerName,
-      mostActiveCount,
-      repeatPurchaseRate,
-      avgDaysBetweenPurchases
-    };
-  }, [buyerIntents, estimatedRevenue, conversionRate]);
-
-  // Granular Event tracking KPIs
-  const eventCounts = useMemo(() => {
-    let storeViews = 0;
-    let productViews = 0;
-    let purchaseIntent = 0;
-    let wishlistAdd = 0;
-    let searchUsage = 0;
-    let categoryClick = 0;
-
-    filteredEvents.forEach(e => {
-      if (e.event_type === 'store_view') storeViews++;
-      else if (e.event_type === 'product_view') productViews++;
-      else if (e.event_type === 'purchase_intent') purchaseIntent++;
-      else if (e.event_type === 'wishlist_add') wishlistAdd++;
-      else if (e.event_type === 'search_usage') searchUsage++;
-      else if (e.event_type === 'category_click') categoryClick++;
-    });
-
-    // Fallbacks if events array is empty/pre-seed loading
-    if (storeViews === 0) storeViews = Math.max(analyticsEvents.length, 120);
-    if (productViews === 0) productViews = Math.max(products.reduce((acc, curr) => acc + (curr.view_count || 0), 0), 80);
-    if (purchaseIntent === 0) purchaseIntent = Math.max(buyerIntents.length, 30);
-    if (wishlistAdd === 0) wishlistAdd = Math.max(products.reduce((acc, curr) => acc + (curr.save_count || 0), 0), 12);
-
-    return {
-      storeViews,
-      productViews,
-      purchaseIntent,
-      wishlistAdd,
-      searchUsage,
-      categoryClick
-    };
-  }, [filteredEvents, analyticsEvents, products, buyerIntents]);
-
-  const { mostViewedProduct, mostOrderedProduct, mostWishlistedProduct, averageCartValue } = useMemo(() => {
-    if (!products || products.length === 0) {
+    return products.map(p => {
+      const views = counts[p.id] || p.view_count || 0;
       return {
-        mostViewedProduct: null,
-        mostOrderedProduct: null,
-        mostWishlistedProduct: null,
-        averageCartValue: 0
+        ...p,
+        views
       };
-    }
+    }).sort((a, b) => b.views - a.views);
+  }, [products, visitEvents]);
 
-    let mostViewed = products[0];
-    products.forEach(p => {
-      if ((p.view_count || 0) > (mostViewed.view_count || 0)) {
-        mostViewed = p;
+  // Recent Visit Activity
+  const recentVisitActivity = useMemo(() => {
+    return visitEvents.slice(0, 10).map(e => {
+      let label = "Store homepage viewed";
+      if (e.event_type === 'product_view') {
+        const prod = products.find(p => p.id === e.product_id);
+        label = prod ? `Viewed product: ${prod.name}` : "Viewed product listing";
       }
+      return {
+        id: e.id || Math.random().toString(),
+        label,
+        created_at: e.created_at || new Date().toISOString()
+      };
     });
+  }, [visitEvents, products]);
 
-    let mostWishlisted = products[0];
-    products.forEach(p => {
-      const pSaves = (p.save_count || 0) + (p.like_count || 0);
-      const wSaves = (mostWishlisted.save_count || 0) + (mostWishlisted.like_count || 0);
-      if (pSaves > wSaves) {
-        mostWishlisted = p;
-      }
-    });
+  // Chart timeframes restricted to today, 7days, 30days
+  const [chartTimeframe, setChartTimeframe] = useState<'today' | '7days' | '30days'>('7days');
 
-    const orderCounts: Record<string, number> = {};
-    buyerIntents.forEach(bi => {
-      const pid = bi.product_id;
-      if (pid) {
-        orderCounts[pid] = (orderCounts[pid] || 0) + 1;
-      }
-    });
-
-    let mostOrdered = null;
-    let maxOrderCount = -1;
-    products.forEach(p => {
-      const count = orderCounts[p.id] || 0;
-      if (count > maxOrderCount && count > 0) {
-        maxOrderCount = count;
-        mostOrdered = p;
-      }
-    });
-    if (!mostOrdered && products.length > 0) {
-      mostOrdered = products[0];
-    }
-
-    const averageCartValue = filteredIntents.length > 0 
-      ? (totalBuyerIntentValue / filteredIntents.length)
-      : 45.00;
-
-    return {
-      mostViewedProduct: mostViewed,
-      mostOrderedProduct: mostOrdered,
-      mostWishlistedProduct: mostWishlisted,
-      averageCartValue
-    };
-  }, [products, buyerIntents, filteredIntents, totalBuyerIntentValue]);
-
-  const liveConversionRate = useMemo(() => {
-    const views = eventCounts.storeViews || 1;
-    const completedIntents = filteredIntents.length;
-    return ((completedIntents / views) * 100);
-  }, [filteredIntents, eventCounts.storeViews]);
-
-  const cartAbandonmentRate = useMemo(() => {
-    const productViewsCount = eventCounts.productViews || 1;
-    const completedIntents = filteredIntents.length;
-    const abandoned = Math.max(0, productViewsCount - completedIntents);
-    return (abandoned / productViewsCount) * 100;
-  }, [eventCounts.productViews, filteredIntents]);
-
-  // Customer Behavior Stats
-  const behaviorStats = useMemo(() => {
-    const totalViews = eventCounts.productViews;
-    const totalStore = eventCounts.storeViews;
-    const viewsPerSession = totalStore > 0 ? (totalViews / totalStore) : 1.8;
-
-    const categoriesMap: Record<string, number> = {};
-    filteredEvents.forEach(e => {
-      if (e.event_type === 'category_click' && e.metadata?.category_name) {
-        categoriesMap[e.metadata.category_name] = (categoriesMap[e.metadata.category_name] || 0) + 1;
-      }
-    });
-    products.forEach(p => {
-      if (p.category) {
-        categoriesMap[p.category] = (categoriesMap[p.category] || 0) + (p.view_count || 5);
-      }
-    });
-
-    const sortedCategories = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]);
-    const topCategory = sortedCategories[0]?.[0] || 'Sneakers';
-
-    const searchMap: Record<string, number> = {};
-    analyticsEvents.forEach(e => {
-      if (e.event_type === 'search_usage' && e.metadata?.search_query) {
-        const q = e.metadata.search_query.toLowerCase();
-        searchMap[q] = (searchMap[q] || 0) + 1;
-      }
-    });
-    const seedQueries = ['sneaker', 'varsity', 'jacket', 'nike', 'caps', 'vintage'];
-    seedQueries.forEach(q => {
-      if (!searchMap[q]) searchMap[q] = Math.floor(Math.random() * 5) + 1;
-    });
-
-    const topSearches = Object.entries(searchMap)
-      .map(([query, count]) => ({ query, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
-    let buyNowCount = 0;
-    let whatsappCount = 0;
-    filteredIntents.forEach(bi => {
-      if (bi.intent_type === 'WhatsApp') whatsappCount++;
-      else if (bi.intent_type === 'Buy Now') buyNowCount++;
-    });
-
-    return {
-      viewsPerSession,
-      topCategory,
-      topSearches,
-      buyNowCount,
-      whatsappCount,
-      avgSessionDuration: '3m 42s'
-    };
-  }, [filteredEvents, filteredIntents, analyticsEvents, products, eventCounts]);
-
-  // Traffic Source Referral Splits (Using Buyer Intents)
-  const trafficSourcesStats = useMemo(() => {
-    const sources = ['Instagram', 'Facebook', 'TikTok', 'Google Search', 'Direct Link', 'WhatsApp'];
-    const data: Array<{ label: string; visitors: number; percentage: number; orders: number; revenue: number }> = [];
-
-    const visitsBySource: Record<string, number> = {};
-    const intentsBySource: Record<string, number> = {};
-    const revenueBySource: Record<string, number> = {};
-
-    sources.forEach(src => {
-      visitsBySource[src] = 0;
-      intentsBySource[src] = 0;
-      revenueBySource[src] = 0;
-    });
-
-    analyticsEvents.forEach(e => {
-      const src = e.referrer || 'Direct Link';
-      const label = sources.find(s => src.toLowerCase().includes(s.toLowerCase())) || 'Direct Link';
-      visitsBySource[label]++;
-    });
-
-    buyerIntents.forEach(bi => {
-      const src = bi.traffic_source || 'Direct Link';
-      const label = sources.find(s => src.toLowerCase().includes(s.toLowerCase())) || 'Direct Link';
-      intentsBySource[label]++;
-      revenueBySource[label] += bi.price * (conversionRate / 100);
-    });
-
-    const totalVisits = analyticsEvents.length || 280;
-    sources.forEach((src, idx) => {
-      const defaultWeights = { 'Instagram': 0.40, 'WhatsApp': 0.22, 'Facebook': 0.15, 'TikTok': 0.10, 'Google Search': 0.08, 'Direct Link': 0.05 };
-      const weight = defaultWeights[src as keyof typeof defaultWeights] || 0.1;
-      
-      let visitors = visitsBySource[src];
-      if (visitors === 0) {
-        visitors = Math.round(totalVisits * weight);
-      }
-      let intentsCount = intentsBySource[src];
-      if (intentsCount === 0) {
-        intentsCount = Math.round(buyerIntents.length * weight) || Math.floor(Math.random() * 5);
-      }
-      let rev = revenueBySource[src];
-      if (rev === 0) {
-        rev = Math.round(buyerIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100) * weight) || (intentsCount * 15);
-      }
-
-      data.push({
-        label: src,
-        visitors,
-        percentage: 0,
-        orders: intentsCount,
-        revenue: rev
-      });
-    });
-
-    const sumVisitors = data.reduce((sum, d) => sum + d.visitors, 0) || 1;
-    data.forEach(d => {
-      d.percentage = Math.round((d.visitors / sumVisitors) * 100);
-    });
-
-    return data.sort((a, b) => b.visitors - a.visitors);
-  }, [analyticsEvents, buyerIntents, conversionRate]);
-
-  // Geographic Breakdown (Zimbabwean Cities using Buyer Intents)
-  const locationStats = useMemo(() => {
-    const cities = ['Harare', 'Bulawayo', 'Gweru', 'Mutare', 'Masvingo', 'Chinhoyi'];
-    const data: Array<{ city: string; visitors: number; orders: number; revenue: number; percentage: number }> = [];
-
-    const visitsMap: Record<string, number> = {};
-    const intentsMap: Record<string, number> = {};
-    const revenueMap: Record<string, number> = {};
-
-    cities.forEach(c => {
-      visitsMap[c] = 0;
-      intentsMap[c] = 0;
-      revenueMap[c] = 0;
-    });
-
-    analyticsEvents.forEach(e => {
-      const city = e.city || 'Harare';
-      if (visitsMap[city] !== undefined) visitsMap[city]++;
-    });
-
-    buyerIntents.forEach(bi => {
-      const citySeed = cities[Math.floor(Math.random() * cities.length)];
-      intentsMap[citySeed]++;
-      revenueMap[citySeed] += bi.price * (conversionRate / 100);
-    });
-
-    const totalViews = analyticsEvents.length || 280;
-    cities.forEach(city => {
-      const cityWeights = { 'Harare': 0.55, 'Bulawayo': 0.22, 'Gweru': 0.08, 'Mutare': 0.07, 'Masvingo': 0.05, 'Chinhoyi': 0.03 };
-      const weight = cityWeights[city as keyof typeof cityWeights] || 0.1;
-
-      let visitors = visitsMap[city];
-      if (visitors === 0) {
-        visitors = Math.round(totalViews * weight);
-      }
-      let intentsCount = intentsMap[city];
-      if (intentsCount === 0) {
-        intentsCount = Math.round(buyerIntents.length * weight) || Math.floor(Math.random() * 3);
-      }
-      let revenue = revenueMap[city];
-      if (revenue === 0) {
-        revenue = Math.round(buyerIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100) * weight) || (intentsCount * 18);
-      }
-
-      data.push({
-        city,
-        visitors,
-        orders: intentsCount,
-        revenue,
-        percentage: 0
-      });
-    });
-
-    const sumVisits = data.reduce((sum, d) => sum + d.visitors, 0) || 1;
-    data.forEach(d => {
-      d.percentage = Math.round((d.visitors / sumVisits) * 100);
-    });
-
-    return data.sort((a, b) => b.revenue - a.revenue);
-  }, [analyticsEvents, buyerIntents, conversionRate]);
-
-  // Gamified Milestones & Achievements Badges State Machine
-  const achievements = useMemo(() => {
-    const intentCount = buyerIntents.length;
-    const estSales = Math.round(intentCount * (conversionRate / 100));
-    const estRev = estimatedRevenue;
-    const storeViews = eventCounts.storeViews;
-
-    const list = [
-      {
-        id: 'first_intent',
-        title: 'First Intent',
-        description: 'Secure your first WhatsApp or Buy Now customer action.',
-        condition: '1 buyer intent',
-        unlocked: intentCount >= 1,
-        metricValue: intentCount,
-        metricTarget: 1,
-        icon: 'Sparkles'
-      },
-      {
-        id: 'intent_master',
-        title: 'Boutique Hype',
-        description: 'Generate 10 Buyer Intents across your product catalog.',
-        condition: '10 buyer intents',
-        unlocked: intentCount >= 10,
-        metricValue: intentCount,
-        metricTarget: 10,
-        icon: 'Flame'
-      },
-      {
-        id: 'estimated_sales_ten',
-        title: 'Sales Pipeline',
-        description: 'Achieve 10 estimated converted sales based on your conversion rate.',
-        condition: '10 estimated sales',
-        unlocked: estSales >= 10,
-        metricValue: estSales,
-        metricTarget: 10,
-        icon: 'Award'
-      },
-      {
-        id: 'hundred_rev',
-        title: 'Century Club',
-        description: 'Pass the $100 estimated converted revenue benchmark.',
-        condition: '$100 in est. revenue',
-        unlocked: estRev >= 100,
-        metricValue: estRev,
-        metricTarget: 100,
-        isCurrency: true,
-        icon: 'Coins'
-      },
-      {
-        id: 'thousand_rev',
-        title: 'Sartorial Lord',
-        description: 'Hit $1,000 in estimated converted revenue.',
-        condition: '$1,000 in est. revenue',
-        unlocked: estRev >= 1000,
-        metricValue: estRev,
-        metricTarget: 1000,
-        isCurrency: true,
-        icon: 'TrendingUp'
-      },
-      {
-        id: 'century_views',
-        title: 'Boutique Hype',
-        description: 'Sustain over 100 organic store site visits.',
-        condition: '100 visitors',
-        unlocked: storeViews >= 100,
-        metricValue: storeViews,
-        metricTarget: 100,
-        icon: 'Eye'
-      }
-    ];
-
-    return list;
-  }, [buyerIntents, estimatedRevenue, eventCounts, conversionRate]);
-
-  // Dynamic, data-backed insights with actual data derivations
-  const dynamicInsights = useMemo(() => {
-    const insights: Array<{ title: string; body: string; type: 'success' | 'info' | 'warning'; icon: string }> = [];
-    if (!shop?.id) return insights;
-
-    // 1. Conversion Performance
-    const rate = liveConversionRate;
-    if (rate > 5) {
-      insights.push({
-        title: 'Stellar Conversion Rate ⚡',
-        body: `Your store conversion rate is exceptional at ${rate.toFixed(1)}%. Customers love your curated collections!`,
-        type: 'success',
-        icon: 'Activity'
-      });
-    } else if (rate > 0 && rate < 2) {
-      insights.push({
-        title: 'Optimize Storefront Layout 📈',
-        body: `Conversion is at ${rate.toFixed(1)}%. Try adjusting the spacing of your product images or configuring custom sizing guides!`,
-        type: 'warning',
-        icon: 'AlertCircle'
-      });
-    } else {
-      insights.push({
-        title: 'Increase Engagement 🏪',
-        body: `Zero sales registered this week. Share your store link directly on your Instagram Bio or WhatsApp status to capture visits!`,
-        type: 'info',
-        icon: 'Sparkles'
-      });
-    }
-
-    // 2. Marketing Channels
-    const topReferral = trafficSourcesStats[0];
-    if (topReferral && topReferral.percentage > 30) {
-      insights.push({
-        title: `${topReferral.label} Traffic Domination 📸`,
-        body: `${topReferral.label} is your absolute #1 customer channel, generating ${topReferral.percentage}% of all boutique site visits. Keep putting out styling Reels!`,
-        type: 'success',
-        icon: 'TrendingUp'
-      });
-    }
-
-    // 3. Top-Selling Products
-    if (buyerIntents.length > 0) {
-      const prodCounts: Record<string, { count: number; rev: number }> = {};
-      buyerIntents.forEach(bi => {
-        const name = bi.product_name || 'Boutique Item';
-        if (!prodCounts[name]) prodCounts[name] = { count: 0, rev: 0 };
-        prodCounts[name].count += 1;
-        prodCounts[name].rev += bi.price * (conversionRate / 100);
-      });
-      const sorted = Object.entries(prodCounts).sort((a, b) => b[1].rev - a[1].rev);
-      if (sorted[0]) {
-        const share = estimatedRevenue > 0 ? (sorted[0][1].rev / estimatedRevenue) * 100 : 0;
-        insights.push({
-          title: `Bestseller: ${sorted[0][0]} 💎`,
-          body: `This specific item represents ${share.toFixed(0)}% of your overall estimated boutique earnings. Consider adding complementary items!`,
-          type: 'success',
-          icon: 'Flame'
-        });
-      }
-    }
-
-    // 4. Zimbabwe buying hours and WhatsApp ordering preference
-    const waIntents = behaviorStats.whatsappCount;
-    const buyNowIntents = behaviorStats.buyNowCount;
-    if (waIntents > buyNowIntents && waIntents > 0) {
-      insights.push({
-        title: 'Zimbabwe WhatsApp Shopping preference 💬',
-        body: `WhatsApp buttons are clicked ${((waIntents / (waIntents + buyNowIntents)) * 100).toFixed(0)}% more than standard checkouts. Zimbabwe shoppers prefer custom negotiating!`,
-        type: 'info',
-        icon: 'MessageSquare'
-      });
-    }
-
-    // 5. Geographic Spend variations
-    const topCityData = locationStats[0];
-    if (topCityData && topCityData.percentage > 40) {
-      insights.push({
-        title: `${topCityData.city} Retail Goldmine 🏙️`,
-        body: `Boutique customers in ${topCityData.city} drive ${topCityData.percentage}% of your digital storefront traffic. Tailor your deliveries here!`,
-        type: 'success',
-        icon: 'MapPin'
-      });
-    }
-
-    return insights;
-  }, [shop?.id, liveConversionRate, trafficSourcesStats, buyerIntents, estimatedRevenue, behaviorStats, locationStats, conversionRate]);
-
-  // Dynamic Chart calculations based on Timeframe and Metric selectors using Buyer Intents
-  const dynamicChartData = useMemo(() => {
+  // Daily average and trend calculations
+  const dailyVisitsChartData = useMemo(() => {
     const now = new Date();
     const points: { label: string; value: number }[] = [];
 
-    const filterByRange = (items: any[], start: Date, end: Date) => {
-      return items.filter(item => {
-        if (!item.created_at) return false;
-        const d = new Date(item.created_at);
+    const filterVisitsByRange = (start: Date, end: Date) => {
+      return visitEvents.filter(e => {
+        if (!e.created_at) return false;
+        const d = new Date(e.created_at);
         return d >= start && d <= end;
       });
     };
 
     if (chartTimeframe === 'today') {
+      // 6 blocks of 4 hours
       for (let i = 5; i >= 0; i--) {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - (i + 1) * 4);
         const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - i * 4);
-        const periodIntents = filterByRange(buyerIntents, start, end);
-        const periodEvents = filterByRange(analyticsEvents, start, end);
-
-        let value = 0;
-        if (chartMetric === 'revenue') {
-          value = periodIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100);
-        } else if (chartMetric === 'orders') {
-          value = periodIntents.length;
-        } else if (chartMetric === 'visitors') {
-          value = periodEvents.filter(e => e.event_type === 'store_view').length || (periodIntents.length * 3);
-        } else if (chartMetric === 'whatsapp') {
-          value = periodIntents.filter(bi => bi.intent_type === 'WhatsApp').length;
-        } else if (chartMetric === 'buynow') {
-          value = periodIntents.filter(bi => bi.intent_type === 'Buy Now').length;
-        }
-
+        const count = filterVisitsByRange(start, end).length;
         const label = `${end.getHours()}:00`;
-        points.push({ label, value });
+        points.push({ label, value: count });
       }
     } else if (chartTimeframe === '7days') {
+      // Last 7 days
       for (let i = 6; i >= 0; i--) {
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 0, 0, 0);
         const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 23, 59, 59);
-        const periodIntents = filterByRange(buyerIntents, start, end);
-        const periodEvents = filterByRange(analyticsEvents, start, end);
-
-        let value = 0;
-        if (chartMetric === 'revenue') {
-          value = periodIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100);
-        } else if (chartMetric === 'orders') {
-          value = periodIntents.length;
-        } else if (chartMetric === 'visitors') {
-          value = periodEvents.filter(e => e.event_type === 'store_view').length || (periodIntents.length * 3) + Math.floor(Math.random() * 2);
-        } else if (chartMetric === 'whatsapp') {
-          value = periodIntents.filter(bi => bi.intent_type === 'WhatsApp').length;
-        } else if (chartMetric === 'buynow') {
-          value = periodIntents.filter(bi => bi.intent_type === 'Buy Now').length;
-        }
-
+        const count = filterVisitsByRange(start, end).length;
         const label = start.toLocaleDateString('en-US', { weekday: 'short' });
-        points.push({ label, value });
-      }
-    } else if (chartTimeframe === '30days') {
-      for (let i = 5; i >= 0; i--) {
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (i + 1) * 5, 0, 0, 0);
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 5, 23, 59, 59);
-        const periodIntents = filterByRange(buyerIntents, start, end);
-        const periodEvents = filterByRange(analyticsEvents, start, end);
-
-        let value = 0;
-        if (chartMetric === 'revenue') {
-          value = periodIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100);
-        } else if (chartMetric === 'orders') {
-          value = periodIntents.length;
-        } else if (chartMetric === 'visitors') {
-          value = periodEvents.filter(e => e.event_type === 'store_view').length || (periodIntents.length * 4);
-        } else if (chartMetric === 'whatsapp') {
-          value = periodIntents.filter(bi => bi.intent_type === 'WhatsApp').length;
-        } else if (chartMetric === 'buynow') {
-          value = periodIntents.filter(bi => bi.intent_type === 'Buy Now').length;
-        }
-
-        const label = `Day ${30 - (i + 1) * 5}-${30 - i * 5}`;
-        points.push({ label, value });
-      }
-    } else if (chartTimeframe === '90days') {
-      for (let i = 5; i >= 0; i--) {
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (i + 1) * 15, 0, 0, 0);
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 15, 23, 59, 59);
-        const periodIntents = filterByRange(buyerIntents, start, end);
-        const periodEvents = filterByRange(analyticsEvents, start, end);
-
-        let value = 0;
-        if (chartMetric === 'revenue') {
-          value = periodIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100);
-        } else if (chartMetric === 'orders') {
-          value = periodIntents.length;
-        } else if (chartMetric === 'visitors') {
-          value = periodEvents.filter(e => e.event_type === 'store_view').length || (periodIntents.length * 4);
-        } else if (chartMetric === 'whatsapp') {
-          value = periodIntents.filter(bi => bi.intent_type === 'WhatsApp').length;
-        } else if (chartMetric === 'buynow') {
-          value = periodIntents.filter(bi => bi.intent_type === 'Buy Now').length;
-        }
-
-        const label = `D${90 - (i + 1) * 15}-${90 - i * 15}`;
-        points.push({ label, value });
+        points.push({ label, value: count });
       }
     } else {
-      for (let i = 11; i >= 0; i--) {
-        const start = new Date(now.getFullYear(), now.getMonth() - i, 1, 0, 0, 0);
-        const end = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
-        const periodIntents = filterByRange(buyerIntents, start, end);
-        const periodEvents = filterByRange(analyticsEvents, start, end);
-
-        let value = 0;
-        if (chartMetric === 'revenue') {
-          value = periodIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100);
-        } else if (chartMetric === 'orders') {
-          value = periodIntents.length;
-        } else if (chartMetric === 'visitors') {
-          value = periodEvents.filter(e => e.event_type === 'store_view').length || (periodIntents.length * 5);
-        } else if (chartMetric === 'whatsapp') {
-          value = periodIntents.filter(bi => bi.intent_type === 'WhatsApp').length;
-        } else if (chartMetric === 'buynow') {
-          value = periodIntents.filter(bi => bi.intent_type === 'Buy Now').length;
-        }
-
-        const label = start.toLocaleDateString('en-US', { month: 'short' });
-        points.push({ label, value });
+      // Last 30 days
+      for (let i = 29; i >= 0; i--) {
+        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 0, 0, 0);
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 23, 59, 59);
+        const count = filterVisitsByRange(start, end).length;
+        const label = start.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+        points.push({ label, value: count });
       }
     }
 
     return points;
-  }, [buyerIntents, analyticsEvents, chartTimeframe, chartMetric, conversionRate]);
+  }, [visitEvents, chartTimeframe]);
 
-  const maxChartValue = useMemo(() => {
-    const vals = dynamicChartData.map(pt => pt.value);
+  const maxVisitsValue = useMemo(() => {
+    const vals = dailyVisitsChartData.map(pt => pt.value);
     return Math.max(...vals, 1);
-  }, [dynamicChartData]);
+  }, [dailyVisitsChartData]);
 
-  const chartPoints = useMemo(() => {
-    if (dynamicChartData.length === 0) return [];
+  const visitsChartPoints = useMemo(() => {
+    if (dailyVisitsChartData.length === 0) return [];
     const width = 700;
     const height = 160;
-    const stepX = dynamicChartData.length > 1 ? width / (dynamicChartData.length - 1) : width;
+    const stepX = dailyVisitsChartData.length > 1 ? width / (dailyVisitsChartData.length - 1) : width;
     
-    return dynamicChartData.map((pt, idx) => {
+    return dailyVisitsChartData.map((pt, idx) => {
       const x = idx * stepX;
-      const valRatio = maxChartValue > 0 ? pt.value / maxChartValue : 0;
+      const valRatio = maxVisitsValue > 0 ? pt.value / maxVisitsValue : 0;
       const y = 180 - (valRatio * height);
       return {
         x,
@@ -1142,125 +313,48 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         count: pt.value
       };
     });
-  }, [dynamicChartData, maxChartValue]);
+  }, [dailyVisitsChartData, maxVisitsValue]);
 
-  const pathD = useMemo(() => {
-    if (chartPoints.length === 0) return '';
-    return chartPoints.map((pt, idx) => {
+  const visitsPathD = useMemo(() => {
+    if (visitsChartPoints.length === 0) return '';
+    return visitsChartPoints.map((pt, idx) => {
       if (idx === 0) return `M ${pt.x} ${pt.y}`;
       return `L ${pt.x} ${pt.y}`;
     }).join(' ');
-  }, [chartPoints]);
+  }, [visitsChartPoints]);
 
-  const fillD = useMemo(() => {
-    if (chartPoints.length === 0) return '';
+  const visitsFillD = useMemo(() => {
+    if (visitsChartPoints.length === 0) return '';
     const startPath = `M 0 180`;
-    const linePaths = chartPoints.map(pt => `L ${pt.x} ${pt.y}`).join(' ');
-    const endPath = `L ${chartPoints[chartPoints.length - 1].x} 180 Z`;
+    const linePaths = visitsChartPoints.map(pt => `L ${pt.x} ${pt.y}`).join(' ');
+    const endPath = `L ${visitsChartPoints[visitsChartPoints.length - 1].x} 180 Z`;
     return `${startPath} ${linePaths} ${endPath}`;
-  }, [chartPoints]);
+  }, [visitsChartPoints]);
 
-  const handleExportCSV = () => {
-    if (orders.length === 0) return;
-    const headers = ['Order ID', 'Customer Name', 'Status', 'Total Price', 'Created At'];
-    const rows = orders.map(o => [
-      o.id || '',
-      o.customer_name || '',
-      o.status || '',
-      o.total_price || o.total_amount || 0,
-      o.created_at || ''
-    ]);
-    const csvContent = [headers.join(','), ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `boutique_orders_${new Date().toISOString().slice(0,10)}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const formatTimeAgo = (isoString: string) => {
+    try {
+      const date = new Date(isoString);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (_) {
+      return 'some time ago';
+    }
   };
 
-  // Unified Product Diagnostics Lists (calculated dynamically using Buyer Intents)
-  const productDiagnostics = useMemo(() => {
-    if (!products || products.length === 0) return [];
-    
-    return products.map(p => {
-      const views = analyticsEvents.filter(e => e.product_id === p.id && e.event_type === 'product_view').length || p.view_count || Math.floor(Math.random() * 20) + 1;
-      const wishlists = analyticsEvents.filter(e => e.product_id === p.id && e.event_type === 'wishlist_add').length || p.save_count || Math.floor(Math.random() * 6) + 1;
-      const productIntents = buyerIntents.filter(bi => bi.product_id === p.id);
-      const intentsCount = productIntents.length;
-      const estRevenue = productIntents.reduce((sum, bi) => sum + bi.price, 0) * (conversionRate / 100);
-      const conversion = views > 0 ? (intentsCount / views) * 100 : 0;
+  // Simulated indicators
+  const [followersCount, setFollowersCount] = useState(128);
 
-      return {
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        image: p.images?.[0] || '',
-        category: p.category || 'Apparel',
-        views,
-        wishlists,
-        ordersCount: intentsCount,
-        revenue: estRevenue,
-        conversion,
-        stock: p.stock || 10
-      };
-    });
-  }, [products, analyticsEvents, buyerIntents, conversionRate]);
-
-  const topProducts = useMemo(() => {
-    if (buyerIntents.length === 0) {
-      return products.slice(0, 4).map((p) => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        images: p.images,
-        soldCount: 0,
-        revenue: 0
-      }));
-    }
-
-    const counts: Record<string, { name: string; price: number; image: string; count: number; revenue: number }> = {};
-    buyerIntents.forEach((bi: any) => {
-      const pid = bi.product_id || bi.product_name;
-      if (!counts[pid]) {
-        const pObj = products.find(p => p.id === pid || p.name === pid);
-        const img = pObj?.images?.[0] || '';
-        counts[pid] = {
-          name: bi.product_name || pObj?.name || 'Listing Item',
-          price: pObj?.price || bi.price || 0,
-          image: img,
-          count: 0,
-          revenue: 0
-        };
-      }
-      counts[pid].count += 1;
-      counts[pid].revenue += bi.price * (conversionRate / 100);
-    });
-
-    return Object.entries(counts)
-      .map(([id, item]) => ({
-        id,
-        name: item.name,
-        price: item.price,
-        images: item.image ? [item.image] : [],
-        soldCount: item.count,
-        revenue: item.revenue
-      }))
-      .sort((a, b) => b.revenue - a.revenue)
-      .slice(0, 4);
-  }, [buyerIntents, products, conversionRate]);
-
-  // Image helper mapper
-  const getProductImage = (productId: string, productName?: string) => {
-    const prod = products.find((p) => (p.id === productId || p.name === productName));
-    if (prod && prod.images && prod.images.length > 0) {
-      return prod.images[0];
-    }
-    return '';
-  };
+  const fileInputRefLogo = useRef<HTMLInputElement>(null);
+  const fileInputRefBanner = useRef<HTMLInputElement>(null);
+  const fileInputRefProduct = useRef<HTMLInputElement>(null);
 
   // Initialize fields when shop context loads
   useEffect(() => {
@@ -1285,30 +379,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
       setFollowersCount(128);
     }
   }, [shop]);
-
-  // Real-time Estimated Revenue Milestones Notification Check
-  useEffect(() => {
-    if (!shop?.id || !estimatedRevenue) return;
-    const milestones = [100, 500, 1000, 5000, 10000];
-    for (const ms of milestones) {
-      if (estimatedRevenue >= ms) {
-        const hasNotified = localStorage.getItem(`notified_ms_${shop.id}_${ms}`);
-        if (!hasNotified) {
-          supabase.from('notifications').insert([{
-            user_id: user?.id,
-            type: 'announcement',
-            title: `🎉 Revenue Milestone Reached!`,
-            body: `Incredible! Your boutique shop has generated over $${ms} in estimated converted sales! Keep crushing it!`,
-            read: false,
-            created_at: new Date().toISOString()
-          }]).then(() => {
-            localStorage.setItem(`notified_ms_${shop.id}_${ms}`, 'true');
-            toast.success(`🎉 Milestone reached! Over $${ms} in estimated converted sales!`);
-          });
-        }
-      }
-    }
-  }, [estimatedRevenue, shop?.id, user?.id]);
 
   const fetchDashboardData = async (shopId: string) => {
     try {
@@ -1920,16 +990,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               >
                 Overview
               </button>
-              <button
-                onClick={() => setActiveTab('reviews')}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
-                  activeTab === 'reviews' 
-                    ? 'bg-zinc-950 text-white shadow-xs font-bold' 
-                    : 'text-zinc-600 hover:text-zinc-900'
-                }`}
-              >
-                Reviews & Ratings
-              </button>
             </div>
           </div>
           
@@ -1962,1005 +1022,380 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         {activeTab === 'overview' ? (
           <div className="space-y-6">
             
-            {/* Business Intelligence Toolbar Control Center */}
-            <div id="bi-control-toolbar" className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm">
+            {/* Website Visits Control Center Toolbar */}
+            <div id="visits-control-toolbar" className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm">
               <div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[#C6FF00]/15 text-zinc-900 mb-1">
-                  <Activity size={12} className="text-zinc-950 animate-pulse" />
-                  Live Store Analytics
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 mb-1.5">
+                  <Activity size={12} className="animate-pulse" />
+                  Live Store Traffic
                 </span>
-                <h2 className="text-lg font-black tracking-tight text-zinc-950">ThreadZW Boutique Dashboard</h2>
-                <p className="text-xs text-zinc-500">Live transaction funnels and real-time customer behavior analysis.</p>
+                <h2 className="text-lg font-black tracking-tight text-zinc-950">Boutique Website Visits</h2>
+                <p className="text-xs text-zinc-500">Monitor storefront visitors and product engagement trends in real-time.</p>
               </div>
 
-              {/* Timeframe Selectors & Print/Export Handlers */}
+              {/* Timeframe Selectors */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center bg-zinc-100 p-1 rounded-2xl border border-zinc-200">
-                  {(['today', '7days', '30days', '90days', 'year'] as const).map((tf) => (
+                  {([
+                    { key: 'today', label: 'Today' },
+                    { key: '7days', label: '7 Days' },
+                    { key: '30days', label: '30 Days' }
+                  ] as const).map((tf) => (
                     <button
-                      key={tf}
-                      id={`btn-tf-${tf}`}
-                      onClick={() => setChartTimeframe(tf)}
-                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 ${
-                        chartTimeframe === tf 
+                      key={tf.key}
+                      onClick={() => setChartTimeframe(tf.key)}
+                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                        chartTimeframe === tf.key 
                           ? 'bg-zinc-950 text-white shadow-sm' 
                           : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'
                       }`}
                     >
-                      {tf === '7days' ? '7 Days' : tf === '30days' ? '30 Days' : tf === '90days' ? '90 Days' : tf}
+                      {tf.label}
                     </button>
                   ))}
                 </div>
-
-                <div className="flex items-center gap-1.5">
-                  <button
-                    id="btn-export-csv"
-                    onClick={handleExportCSV}
-                    className="flex items-center gap-1 px-3 py-2 rounded-2xl text-xs font-bold text-zinc-700 bg-white border border-zinc-200 hover:bg-zinc-50 transition-all shadow-sm active:scale-95 cursor-pointer"
-                    title="Export all orders as a clean CSV table"
-                  >
-                    <Download size={13} />
-                    <span>CSV</span>
-                  </button>
-
-                  <button
-                    id="btn-print-pdf"
-                    onClick={() => window.print()}
-                    className="flex items-center gap-1 px-3 py-2 rounded-2xl text-xs font-bold text-white bg-zinc-900 hover:bg-zinc-800 transition-all shadow-sm active:scale-95 cursor-pointer"
-                    title="Print professional business report"
-                  >
-                    <Printer size={13} />
-                    <span>Print Report</span>
-                  </button>
-                </div>
               </div>
             </div>
 
-            {/* Welcoming Header Greeting Card */}
-            <div id="welcome-greeting-header" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-zinc-150 rounded-3xl p-6 text-left relative overflow-hidden shadow-sm">
-              <div className="absolute right-0 top-0 bottom-0 w-[45%] bg-[#C6FF00]/5 rounded-l-[100px] pointer-events-none filter blur-2xl" />
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-black text-zinc-950 tracking-tight leading-none mb-1">
-                  Good morning, {capitalOwnerName} 👋
-                </h1>
-                <p className="text-xs text-zinc-500">
-                  Here's a full diagnostic summary of your boutique's customer engagement.
-                </p>
-                {shop && (
-                  <div className="mt-3.5 flex flex-wrap items-center gap-2">
-                    <span className="text-[11px] font-mono font-medium text-zinc-500 bg-zinc-50 border border-zinc-100/60 px-2.5 py-1.5 rounded-lg max-w-full sm:max-w-xs truncate block select-all">
-                      {getAbsoluteShopUrl(shop.slug || shop.handle, shop.id)}
-                    </span>
-                    <button
-                      id="btn-copy-link-welcome"
-                      onClick={handleCopyLink}
-                      className="px-3 py-1.5 bg-[#C6FF00] hover:bg-opacity-95 text-zinc-900 font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95"
-                    >
-                      <Copy size={12} />
-                      <span>Copy link</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* KPI METRICS CARDS GRID (REAL CALCULATIONS) */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Visits KPI Metric Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               
-              {/* Card 1: Revenue Performance */}
-              <div id="kpi-card-revenue" className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm hover:border-zinc-300 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
-                <div className="absolute right-0 top-0 w-24 h-24 bg-[#C6FF00]/5 rounded-bl-[80px] pointer-events-none group-hover:scale-110 transition-transform" />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Estimated Revenue</span>
-                    <div className="group/tooltip relative inline-block cursor-pointer">
-                      <Info size={11} className="text-zinc-400 hover:text-zinc-750" />
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 hidden group-hover/tooltip:block bg-zinc-950 text-white text-[9px] p-2.5 rounded-xl shadow-xl z-50 text-center leading-normal font-medium">
-                        Estimated Revenue = Total Intent Value (${totalBuyerIntentValue.toFixed(0)}) × Conversion Rate (${conversionRate}%)
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black text-zinc-950 tracking-tight">${estimatedRevenue.toFixed(2)}</span>
-                    <span className={`text-[10px] font-bold inline-flex items-center gap-0.5 ${revenueRecords.revenueGrowthPercent >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                      <ChevronUp size={10} className={revenueRecords.revenueGrowthPercent < 0 ? 'rotate-180' : ''} />
-                      {revenueRecords.revenueGrowthPercent.toFixed(1)}%
-                    </span>
-                  </div>
+              {/* Total Visits Card */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
+                  <Eye size={18} className="text-emerald-600" />
                 </div>
-                <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
-                  <span>Today: ${revenueStats.today.toFixed(0)}</span>
-                  <span>Week: ${revenueStats.thisWeek.toFixed(0)}</span>
-                  <span>Month: ${revenueStats.thisMonth.toFixed(0)}</span>
-                </div>
-              </div>
-
-              {/* Card 2: Sales Funnel Volume */}
-              <div id="kpi-card-sales" className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm hover:border-zinc-300 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
-                <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/5 rounded-bl-[80px] pointer-events-none group-hover:scale-110 transition-transform" />
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Buyer Intents</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black text-zinc-950 tracking-tight">{filteredIntents.length}</span>
-                    <span className="text-[10px] text-zinc-400 font-semibold">total actions</span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
-                  <span className="text-zinc-600 font-semibold">Today: {revenueStats.countToday}</span>
-                  <span className="text-zinc-600 font-semibold">Week: {revenueStats.countThisWeek}</span>
-                  <span className="text-zinc-600 font-semibold">Month: {revenueStats.countThisMonth}</span>
-                </div>
-              </div>
-
-              {/* Card 3: Footprint store traffic */}
-              <div id="kpi-card-traffic" className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm hover:border-zinc-300 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
-                <div className="absolute right-0 top-0 w-24 h-24 bg-purple-500/5 rounded-bl-[80px] pointer-events-none group-hover:scale-110 transition-transform" />
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Store views</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black text-zinc-950 tracking-tight">{eventCounts.storeViews}</span>
-                    <span className="text-[10px] text-zinc-400 font-semibold">{eventCounts.productViews} item views</span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
-                  <span>Wishlisted: {eventCounts.wishlistAdd}</span>
-                  <span>Searches: {eventCounts.searchUsage}</span>
-                </div>
-              </div>
-
-              {/* Card 4: Shop Performance conversion ratios */}
-              <div id="kpi-card-performance" className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm hover:border-zinc-300 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group">
-                <div className="absolute right-0 top-0 w-24 h-24 bg-amber-500/5 rounded-bl-[80px] pointer-events-none group-hover:scale-110 transition-transform" />
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Conversion rate</span>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl font-black text-zinc-950 tracking-tight">{liveConversionRate.toFixed(2)}%</span>
-                    <span className="text-[10px] text-zinc-400 font-semibold">AIV: ${averageCartValue.toFixed(0)}</span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-[10px] text-zinc-500 font-medium">
-                  <span className="text-zinc-500">Cart Abandonment:</span>
-                  <span className="font-bold text-zinc-800">{cartAbandonmentRate.toFixed(0)}%</span>
-                </div>
-              </div>
-
-            </div>
-
-
-            {/* Orders Overview Chart Canvas */}
-            <div className="bg-white border border-zinc-150/80 rounded-3xl p-6 text-left shadow-sm space-y-6">
-              
-              {/* Header & Controls Row */}
-              <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 border-b border-zinc-100 pb-5">
                 <div>
-                  <h4 className="text-sm font-bold text-zinc-950">Analytics Visualization</h4>
-                  <p className="text-[11px] text-zinc-400 font-sans mt-0.5">Real boutique database-driven traffic & sales trend mapping</p>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Total Visits</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.total}</h3>
                 </div>
-                
-                {/* Timeframe selector buttons */}
-                <div className="flex flex-wrap gap-1.5 bg-zinc-100 p-1 rounded-xl self-start">
-                  {(['today', '7days', '30days', '90days', 'year'] as const).map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setChartTimeframe(tf)}
-                      className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all capitalize cursor-pointer ${
-                        chartTimeframe === tf 
-                          ? 'bg-[#C6FF00] text-zinc-950 shadow-xs font-bold' 
-                          : 'text-zinc-500 hover:text-zinc-800'
-                      }`}
-                    >
-                      {tf === '7days' ? '7 Days' : tf === '30days' ? '30 Days' : tf === '90days' ? '90 Days' : tf}
-                    </button>
-                  ))}
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">All-time store traffic</span>
+              </div>
+
+              {/* Today's Visits Card */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
+                  <Activity size={18} className="text-emerald-600" />
                 </div>
-              </div>
-
-              {/* Metric selector tabs */}
-              <div className="flex flex-wrap gap-1.5 pb-2">
-                {[
-                  { value: 'revenue', label: 'Revenue Generated', icon: Coins },
-                  { value: 'orders', label: 'Customer Orders', icon: ShoppingBag },
-                  { value: 'visitors', label: 'Store Visitors', icon: User },
-                  { value: 'whatsapp', label: 'WhatsApp Order Hits', icon: MessageSquare },
-                  { value: 'buynow', label: 'Buy Now Button Clicks', icon: Activity }
-                ].map((m) => {
-                  const Icon = m.icon;
-                  return (
-                    <button
-                      key={m.value}
-                      onClick={() => setChartMetric(m.value as any)}
-                      className={`flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold rounded-xl border transition-all cursor-pointer ${
-                        chartMetric === m.value
-                          ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-zinc-950 font-bold'
-                          : 'border-zinc-100 hover:border-zinc-200 text-zinc-500'
-                      }`}
-                    >
-                      <Icon size={12} />
-                      <span>{m.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Pure SVG Line Plot with dynamic gradients */}
-              <div className="w-full h-[220px] relative pt-2">
-                <svg className="w-full h-full overflow-visible" viewBox="0 0 700 200" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#C6FF00" stopOpacity="0.4" />
-                      <stop offset="100%" stopColor="#C6FF00" stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-                  
-                  {/* Grid Lines */}
-                  <line x1="0" y1="40" x2="700" y2="40" stroke="#F1F3F6" strokeDasharray="3,3" strokeWidth="1" />
-                  <line x1="0" y1="100" x2="700" y2="100" stroke="#F1F3F6" strokeDasharray="3,3" strokeWidth="1" />
-                  <line x1="0" y1="160" x2="700" y2="160" stroke="#F1F3F6" strokeDasharray="3,3" strokeWidth="1" />
-                  
-                  {/* Glowing Path underlay */}
-                  {pathD && (
-                    <path 
-                      d={pathD} 
-                      fill="none" 
-                      stroke="#C6FF00" 
-                      strokeWidth="4" 
-                      className="opacity-20 animate-pulse"
-                    />
-                  )}
-
-                  {/* Area fill */}
-                  {fillD && (
-                    <path 
-                      d={fillD} 
-                      fill="url(#chartGradient)"
-                    />
-                  )}
-
-                  {/* Active Neon Line */}
-                  {pathD && (
-                    <path 
-                      d={pathD} 
-                      fill="none" 
-                      stroke="#C6FF00" 
-                      strokeWidth="3.5" 
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  )}
-
-                  {/* Highlights Anchor Nodes */}
-                  {chartPoints.map((pt, idx) => (
-                    <circle 
-                      key={idx} 
-                      cx={pt.x} 
-                      cy={pt.y} 
-                      r={idx === chartPoints.length - 1 ? "5.5" : "4"} 
-                      fill={idx === chartPoints.length - 1 ? "#C6FF00" : "#FFFFFF"} 
-                      stroke={idx === chartPoints.length - 1 ? "#FFFFFF" : "#C6FF00"} 
-                      strokeWidth={idx === chartPoints.length - 1 ? "1.5" : "3"} 
-                      className="cursor-pointer transition-all duration-300 hover:scale-125"
-                    >
-                      <title>{pt.label}: {chartMetric === 'revenue' ? `$${pt.count}` : `${pt.count} hits`}</title>
-                    </circle>
-                  ))}
-                </svg>
-              </div>
-
-              {/* X axis index ticks */}
-              <div className="flex justify-between items-center px-2 mt-2 font-semibold text-[10px] text-zinc-400">
-                {chartPoints.map((pt, idx) => (
-                  <span key={idx} className={idx === chartPoints.length - 1 ? "font-bold text-zinc-700" : ""}>
-                    {pt.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Actions Panel */}
-            <div className="bg-white border border-zinc-150/80 rounded-3xl p-5 text-left shadow-sm">
-              <h4 className="text-sm font-bold text-zinc-950 mb-4">Quick Actions</h4>
-              
-              <div className="grid grid-cols-5 gap-2.5">
-                
-                <button 
-                  onClick={() => handleOpenProductModal()}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-[#C6FF00]/40 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-white border border-zinc-100 flex items-center justify-center text-zinc-600 group-hover:text-zinc-950 transition-colors">
-                    <PlusCircle size={18} />
-                  </div>
-                  <span className="text-[10px] font-bold text-zinc-500 group-hover:text-zinc-800 transition-colors mt-2 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">Add Product</span>
-                </button>
-
-                <button 
-                  onClick={handleOpenStore}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-[#C6FF00]/40 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-white border border-zinc-100 flex items-center justify-center text-zinc-600 group-hover:text-zinc-950 transition-colors">
-                    <ShoppingBag size={17} />
-                  </div>
-                  <span className="text-[10px] font-bold text-zinc-500 group-hover:text-zinc-800 transition-colors mt-2 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">View Store</span>
-                </button>
-
-                <button 
-                  onClick={handleShare}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-[#C6FF00]/40 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-white border border-zinc-100 flex items-center justify-center text-zinc-600 group-hover:text-zinc-950 transition-colors">
-                    <Share2 size={16} />
-                  </div>
-                  <span className="text-[10px] font-bold text-zinc-500 group-hover:text-zinc-800 transition-colors mt-2 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">Share Store</span>
-                </button>
-
-                <button 
-                  onClick={() => toast.success("Create discounts from the Catalog setup configurations!")}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-[#C6FF00]/40 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-white border border-zinc-100 flex items-center justify-center text-zinc-600 group-hover:text-zinc-950 transition-colors">
-                    <Percent size={16} />
-                  </div>
-                  <span className="text-[10px] font-bold text-zinc-500 group-hover:text-zinc-800 transition-colors mt-2 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">Discount Tool</span>
-                </button>
-
-                <button 
-                  onClick={() => navigate('/edit-shop')}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-2xl bg-zinc-50 border border-zinc-100 hover:border-[#C6FF00]/40 transition-all cursor-pointer text-center group"
-                >
-                  <div className="w-10 h-10 rounded-full bg-white border border-zinc-100 flex items-center justify-center text-zinc-600 group-hover:text-zinc-950 transition-colors">
-                    <Edit size={16} />
-                  </div>
-                  <span className="text-[10px] font-bold text-zinc-500 group-hover:text-zinc-800 transition-colors mt-2 text-center whitespace-nowrap overflow-hidden text-ellipsis w-full">Customize</span>
-                </button>
-
-              </div>
-
-              {/* Huge Chartreuse Product Addition Button */}
-              <button 
-                onClick={() => handleOpenProductModal()}
-                className="w-full mt-4 h-[52px] rounded-2xl bg-[#C6FF00] hover:bg-opacity-95 text-zinc-950 font-bold text-[12.5px] uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98] transition-all"
-              >
-                <Plus size={16} strokeWidth={2.5} />
-                <span>Add Product</span>
-              </button>
-            </div>
-
-            {/* Split Grid for Recent Orders & Top Products */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              
-              {/* Recent Orders Section */}
-              <div className="bg-white border border-zinc-150/80 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="flex justify-between items-center mb-5">
-                    <h4 className="text-sm font-bold text-zinc-950">Recent Orders</h4>
-                    <button 
-                      onClick={() => navigate('/orders')} 
-                      className="text-xs font-bold text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer"
-                    >
-                      View all
-                    </button>
-                  </div>
-
-                  <div className="divide-y divide-zinc-50">
-                    {loadingOrders ? (
-                      <div className="py-6 text-center text-xs text-zinc-400">Loading orders...</div>
-                    ) : orders.length === 0 ? (
-                      <div className="py-12 text-center text-zinc-400 flex flex-col items-center justify-center">
-                        <ShoppingBag size={24} className="text-zinc-300 mb-2" />
-                        <p className="text-xs font-semibold">No orders logged yet.</p>
-                        <p className="text-[10px] text-zinc-400 mt-1 max-w-[240px] leading-relaxed mx-auto text-center">
-                          Share your shop front link with customers to start receiving orders on ThreadZW!
-                        </p>
-                      </div>
-                    ) : (
-                      orders.slice(0, 5).map((order: any, idx: number) => {
-                        const imgUrl = getProductImage(order.product_id, order.product_name);
-                        return (
-                          <div key={order.id || idx} className="py-3 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400 shrink-0">
-                                {imgUrl ? (
-                                  <img 
-                                    src={imgUrl} 
-                                    className="w-full h-full object-cover" 
-                                    alt=""
-                                    referrerPolicy="no-referrer"
-                                  />
-                                ) : (
-                                  <ShoppingBag size={16} className="text-zinc-300" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <h5 className="text-xs font-bold text-zinc-900 truncate">
-                                  {order.order_reference || `#TZW-${(order.id || '').substring(0, 4).toUpperCase()}`} • {order.customer_name || 'Customer'}
-                                </h5>
-                                <span className="text-[11px] font-semibold text-zinc-400">
-                                  ${Number(order.total_price || order.sale_price * (order.quantity || 1)).toFixed(2)}
-                                </span>
-                              </div>
-                            </div>
-                            <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg uppercase tracking-wider shrink-0 ${
-                              order.status === 'delivered' || order.status === 'completed'
-                                ? 'bg-green-50 text-green-700 border border-green-100'
-                                : order.status === 'shipped' || order.status === 'active'
-                                ? 'bg-blue-50 text-blue-700 border border-blue-100'
-                                : 'bg-amber-50 text-amber-700 border border-amber-100'
-                            }`}>
-                              {order.status || 'Pending'}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Today's Visits</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.today}</h3>
                 </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Since midnight UTC</span>
               </div>
 
-              {/* Top Selling Products, Behaviour, and Traffic Sources Section */}
-              <div className="space-y-6">
-                
-                {/* Top Selling Products Card */}
-                <div className="bg-white border border-zinc-150/80 rounded-3xl p-5 text-left shadow-sm">
-                  <div className="flex justify-between items-center mb-5">
-                    <h4 className="text-sm font-bold text-zinc-950">Top Selling Products</h4>
-                    <button 
-                      onClick={() => navigate('/inventory')} 
-                      className="text-xs font-bold text-zinc-400 hover:text-zinc-950 transition-colors cursor-pointer"
-                    >
-                      View all
-                    </button>
-                  </div>
-
-                  <div className="space-y-4">
-                    {loadingProds ? (
-                      <div className="py-6 text-center text-xs text-zinc-450 animate-pulse">Loading catalog...</div>
-                    ) : topProducts.length === 0 ? (
-                      <div className="py-8 text-center text-zinc-400 flex flex-col items-center justify-center">
-                        <ShoppingBag size={24} className="text-zinc-300 mb-2" />
-                        <p className="text-xs font-semibold">No products registered yet.</p>
-                      </div>
-                    ) : (
-                      topProducts.map((prod: any, idx: number) => {
-                        const imgUrl = (prod.images && prod.images.length > 0) ? prod.images[0] : '';
-                        return (
-                          <div key={prod.id || idx} className="flex items-center justify-between border-b border-zinc-50 pb-3 last:border-0 last:pb-0">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-11 h-11 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400 shrink-0">
-                                {imgUrl ? (
-                                  <img 
-                                    src={imgUrl} 
-                                    className="w-full h-full object-cover" 
-                                    alt={prod.name}
-                                    referrerPolicy="no-referrer"
-                                  />
-                                ) : (
-                                  <ShoppingBag size={18} className="text-zinc-350" />
-                                )}
-                              </div>
-                              <div className="min-w-0">
-                                <h5 className="text-xs font-bold text-[#111111] leading-tight truncate">{prod.name}</h5>
-                                <div className="flex items-center gap-1.5 mt-0.5">
-                                  <span className="text-[10px] font-bold text-zinc-400">
-                                    {prod.soldCount !== undefined ? `${prod.soldCount} orders` : '0 orders'}
-                                  </span>
-                                  <span className="text-[8px] text-zinc-300">•</span>
-                                  <span className="text-[10px] font-bold text-zinc-500">
-                                    ${Number(prod.revenue || 0).toFixed(2)} generated
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <span className="text-xs font-bold text-[#C6FF00] bg-zinc-950 px-2 py-1 rounded-lg shrink-0">
-                              ${Number(prod.price || 0).toFixed(2)}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+              {/* This Week's Visits Card */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
+                  <Calendar size={18} className="text-emerald-600" />
                 </div>
-
-                {/* Customer Behaviour Insights Card */}
-                <div className="bg-white border border-zinc-150/80 rounded-3xl p-5 text-left shadow-sm space-y-4">
-                  <h4 className="text-sm font-bold text-zinc-950">Customer Behaviour Insights</h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                    
-                    <div className="bg-zinc-50/55 border border-zinc-100 p-3 rounded-2xl">
-                      <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Most Viewed Product</span>
-                      {mostViewedProduct ? (
-                        <div className="mt-1">
-                          <div className="text-xs font-bold text-zinc-900 truncate">{mostViewedProduct.name}</div>
-                          <div className="text-[10px] text-zinc-500 mt-0.5 font-semibold">{mostViewedProduct.view_count || 0} views</div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-zinc-400 font-medium mt-1">No view logs yet</div>
-                      )}
-                    </div>
-
-                    <div className="bg-zinc-50/55 border border-zinc-100 p-3 rounded-2xl">
-                      <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Top Intent Product</span>
-                      {mostOrderedProduct ? (
-                        <div className="mt-1">
-                          <div className="text-xs font-bold text-zinc-900 truncate">{mostOrderedProduct.name}</div>
-                          <div className="text-[10px] text-zinc-500 mt-0.5 font-semibold">Active catalog bestseller</div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-zinc-400 font-medium mt-1">No buyer intents yet</div>
-                      )}
-                    </div>
-
-                    <div className="bg-zinc-50/55 border border-zinc-100 p-3 rounded-2xl">
-                      <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Most Wishlisted Product</span>
-                      {mostWishlistedProduct ? (
-                        <div className="mt-1">
-                          <div className="text-xs font-bold text-zinc-900 truncate">{mostWishlistedProduct.name}</div>
-                          <div className="text-[10px] text-zinc-500 mt-0.5 font-semibold">{(mostWishlistedProduct.save_count || 0) + (mostWishlistedProduct.like_count || 0)} saves & likes</div>
-                        </div>
-                      ) : (
-                        <div className="text-xs text-zinc-400 font-medium mt-1">No saves yet</div>
-                      )}
-                    </div>
-
-                    <div className="bg-zinc-50/55 border border-zinc-100 p-3 rounded-2xl flex flex-col justify-between">
-                      <div>
-                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Average Intent Value (AIV)</span>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          <div>
-                            <div className="text-xs font-black text-zinc-900">${averageCartValue.toFixed(2)}</div>
-                            <div className="text-[8px] font-bold text-zinc-400 uppercase tracking-tight">Intent Value</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">This Week</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.week}</h3>
                 </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Current calendar week</span>
+              </div>
 
-                {/* Traffic Sources progress card */}
-                <div className="bg-white border border-zinc-150/80 rounded-3xl p-5 text-left shadow-sm space-y-4">
-                  <div>
-                    <h4 className="text-sm font-bold text-zinc-950">Storefront Traffic Sources</h4>
-                    <p className="text-[10px] text-zinc-400 font-medium mt-0.5">Tracking how customers reached your catalog storefront</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    {trafficSourcesStats.map((src) => (
-                      <div key={src.label} className="space-y-1">
-                        <div className="flex justify-between items-center text-[11px] font-bold">
-                          <span className="text-zinc-700">{src.label}</span>
-                          <span className="text-zinc-950">{src.percentage}%</span>
-                        </div>
-                        <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-zinc-900 rounded-full transition-all duration-500" 
-                            style={{ width: `${src.percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              {/* This Month's Visits Card */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
+                  <Globe size={18} className="text-emerald-600" />
                 </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">This Month</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.month}</h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Current calendar month</span>
+              </div>
 
+              {/* Unique Visitors Card */}
+              <div className="bg-white border border-zinc-150 rounded-3xl col-span-2 lg:col-span-1 p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
+                  <User size={18} className="text-emerald-600" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Unique Visitors</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.uniqueVisitors}</h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Distinct shopper profiles</span>
               </div>
 
             </div>
 
-          </div>
-        ) : activeTab === 'reviews' ? (
-          /* Merchant Reviews & Replies Tab */
-          <div className="space-y-6 text-left select-none animate-fadeIn">
-            {/* 1. REPUTATION CARD & TRUST BADGES */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Condition: Empty State vs. Live Dashboard Charts & Activities */}
+            {visitEvents.length === 0 ? (
               
-              {/* Card 1: Reputation Rating Ring */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-6 flex flex-col justify-between shadow-sm relative overflow-hidden">
-                <div className="absolute right-0 top-0 w-24 h-24 bg-green-500/5 rounded-bl-[80px] pointer-events-none" />
-                <div className="space-y-1.5 text-left">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">Merchant Reputation Score</span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-zinc-950">
-                      {(() => {
-                        if (!shop) return 98;
-                        const score = Number(getShopRating(shop.id).score) || 4.8;
-                        const rawList = reviews[shop.id] || [];
-                        const total = rawList.length;
-                        const replied = rawList.filter((r: any) => r.reply || r.sellerResponse || r.seller_response).length;
-                        const ratio = total === 0 ? 1 : replied / total;
-                        return Math.min(100, Math.round((score / 5) * 85 + ratio * 15));
-                      })()}
-                    </span>
-                    <span className="text-xs font-bold text-zinc-400">/ 100</span>
-                  </div>
-                  <p className="text-[10px] text-zinc-500 leading-normal">
-                    Calculated dynamically based on customer satisfaction rating, Verified Buyer Intent ratios, and reply fastness.
+              /* Beautiful welcoming empty state for new shops */
+              <div className="bg-white border border-zinc-150 rounded-3xl p-8 text-center shadow-sm max-w-2xl mx-auto space-y-6">
+                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+                  <Globe size={28} className="animate-pulse" />
+                </div>
+                
+                <div className="space-y-2">
+                  <h3 className="text-xl font-extrabold text-zinc-900">Awaiting Your First Boutique Visitors</h3>
+                  <p className="text-zinc-500 text-sm max-w-md mx-auto leading-relaxed">
+                    Your ThreadZW storefront is active and ready to handle traffic! Share your boutique link to start tracking visitor sessions, views, and product popularity in real-time.
                   </p>
                 </div>
-                <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-500 font-medium">
-                  <span className="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                    Status: {(() => {
-                      if (!shop) return "Excellent";
-                      const score = Number(getShopRating(shop.id).score) || 4.8;
-                      const rawList = reviews[shop.id] || [];
-                      const total = rawList.length;
-                      const replied = rawList.filter((r: any) => r.reply || r.sellerResponse || r.seller_response).length;
-                      const ratio = total === 0 ? 1 : replied / total;
-                      const finalVal = Math.min(100, Math.round((score / 5) * 85 + ratio * 15));
-                      return finalVal >= 90 ? "Pristine" : finalVal >= 75 ? "Excellent" : "Constructive";
-                    })()}
-                  </span>
-                  <span className="text-[10px] text-zinc-400">Score updated live</span>
-                </div>
-              </div>
 
-              {/* Card 2: Trust Badges Earned */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-6 flex flex-col justify-between shadow-sm relative overflow-hidden md:col-span-2">
-                <div className="space-y-2 text-left">
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider block">Reputation Milestone Badges</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-                    {(() => {
-                      if (!shop) return null;
-                      const score = Number(getShopRating(shop.id).score) || 4.8;
-                      const rawList = reviews[shop.id] || [];
-                      const total = rawList.length;
-                      const replied = rawList.filter((r: any) => r.reply || r.sellerResponse || r.seller_response).length;
-                      const verifiedCount = rawList.filter((r: any) => r.isVerified).length;
-                      
-                      const badges = [
-                        {
-                          id: 'champ',
-                          name: "🌟 Customer Champion",
-                          desc: "4.8+ rating with 10+ reviews",
-                          unlocked: score >= 4.8 && total >= 10,
-                          progress: `${Math.min(score, 4.8)}/4.8 ★, ${total}/10 reviews`
-                        },
-                        {
-                          id: 'responder',
-                          name: "⚡ Rapid Responder",
-                          desc: "100% reply rate on feedback",
-                          unlocked: total > 0 && replied === total,
-                          progress: `${total > 0 ? Math.round((replied / total) * 100) : 0}% / 100% replies`
-                        },
-                        {
-                          id: 'anchor',
-                          name: "🤝 Credibility Anchor",
-                          desc: "10+ verified buyer intent reviews",
-                          unlocked: verifiedCount >= 10,
-                          progress: `${verifiedCount}/10 verified`
-                        }
-                      ];
+                {/* Micro Onboarding Wizard / Tips */}
+                <div className="bg-zinc-50 border border-zinc-200/60 rounded-2xl p-5 text-left space-y-4 max-w-lg mx-auto">
+                  <h4 className="text-xs font-black text-zinc-800 uppercase tracking-wider">How to secure your first visits:</h4>
+                  
+                  <div className="space-y-3 text-xs text-zinc-600">
+                    <div className="flex gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center font-bold text-emerald-700 shrink-0">1</span>
+                      <p className="leading-relaxed">
+                        <strong className="text-zinc-900">Add to Instagram bio:</strong> Copy your storefront link and set it as your social bio website URL to capture mobile buyers.
+                      </p>
+                    </div>
+                    
+                    <div className="flex gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center font-bold text-emerald-700 shrink-0">2</span>
+                      <p className="leading-relaxed">
+                        <strong className="text-zinc-900">Post to WhatsApp Status:</strong> Send a quick collection teaser photo and ask your customers to swipe up or tap your storefront URL.
+                      </p>
+                    </div>
 
-                      return badges.map((badge) => (
-                        <div 
-                          key={badge.id}
-                          className={`border p-3.5 rounded-2xl flex flex-col justify-between text-left transition-colors relative ${
-                            badge.unlocked 
-                              ? 'bg-emerald-50/50 border-emerald-200 hover:bg-emerald-50' 
-                              : 'bg-zinc-50 border-zinc-200/65 opacity-75'
-                          }`}
-                        >
-                          <div>
-                            <span className={`font-extrabold text-[11px] tracking-wide block ${badge.unlocked ? 'text-emerald-800' : 'text-zinc-600'}`}>{badge.name}</span>
-                            <span className="text-[9px] text-zinc-400 mt-1 block leading-tight">{badge.desc}</span>
-                          </div>
-                          <div className="mt-2.5 pt-2.5 border-t border-zinc-100/50 flex items-center justify-between text-[8px] font-bold">
-                            <span className={badge.unlocked ? 'text-emerald-600 font-extrabold uppercase' : 'text-zinc-400'}>
-                              {badge.unlocked ? '🏆 Unlocked' : '🔒 Locked'}
-                            </span>
-                            <span className="text-zinc-500 font-mono">{badge.progress}</span>
-                          </div>
-                        </div>
-                      ));
-                    })()}
+                    <div className="flex gap-2.5">
+                      <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center font-bold text-emerald-700 shrink-0">3</span>
+                      <p className="leading-relaxed">
+                        <strong className="text-zinc-900">Simulate a live test:</strong> Open your storefront link in a new tab or window, click around some products, and return here to watch this dashboard light up instantly!
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-            </div>
-
-            {/* NEW: ANALYTICS GRID CARD & TRENDS */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              {/* Dynamic Stats Grid */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-6 shadow-sm text-left space-y-4">
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Reviews Performance Metrics</h4>
-                  <p className="text-[10px] text-zinc-400 font-medium mt-0.5">Summary of customer feedback activity</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3.5">
-                  {(() => {
-                    if (!shop) return null;
-                    const score = Number(getShopRating(shop.id).score) || 4.8;
-                    const rawList = reviews[shop.id] || [];
-                    const total = rawList.length;
-                    const verifiedCount = rawList.filter((r: any) => r.isVerified).length;
-                    const replied = rawList.filter((r: any) => r.reply || r.sellerResponse || r.seller_response).length;
-                    const rate = total === 0 ? 100 : Math.round((replied / total) * 100);
-
-                    return [
-                      { label: "Average Rating", val: `${score} ★`, sub: `${total} total reviews` },
-                      { label: "Buyer Intent Reviews", val: `${verifiedCount}`, sub: "Verified badges" },
-                      { label: "Reply Rate", val: `${rate}%`, sub: `${replied}/${total} responses` },
-                      { label: "Response Time", val: total > 0 ? "~1.5 hours" : "N/A", sub: "Speed Index" },
-                    ].map((stat, sidx) => (
-                      <div key={sidx} className="bg-zinc-50/50 border border-zinc-100 p-3 rounded-2xl flex flex-col justify-between">
-                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">{stat.label}</span>
-                        <div className="mt-1">
-                          <span className="text-lg font-black text-zinc-950 font-sans block">{stat.val}</span>
-                          <span className="text-[8px] text-zinc-500 font-bold font-sans block uppercase tracking-tight">{stat.sub}</span>
-                        </div>
-                      </div>
-                    ));
-                  })()}
-                </div>
-
-                <div className="bg-zinc-50/70 border border-zinc-150 rounded-2xl p-3 flex items-center justify-between text-xs font-sans">
-                  <div>
-                    <span className="text-[9px] text-zinc-400 font-bold uppercase block">Review Growth (30d)</span>
-                    <span className="text-xs font-black text-zinc-800 mt-0.5 block">+15% monthly increase</span>
-                  </div>
-                  <span className="text-xs bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-xl font-bold">★ Active Growth</span>
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button 
+                    onClick={handleCopyLink}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-zinc-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                  >
+                    <Copy size={13} />
+                    <span>Copy Storefront Link</span>
+                  </button>
+                  <button 
+                    onClick={handleOpenStore}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-100/50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <ExternalLink size={13} />
+                    <span>Open Storefront</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Monthly Ratings Trend Line Chart */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-6 shadow-sm text-left flex flex-col justify-between md:col-span-2">
-                <div>
-                  <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Monthly Ratings Trend</h4>
-                  <p className="text-[10px] text-zinc-400 font-medium mt-0.5">Average ratings and reviews count trajectory over 5 months</p>
-                </div>
+            ) : (
 
-                <div className="h-44 w-full mt-3">
-                  {(() => {
-                    if (!shop) return null;
-                    const score = Number(getShopRating(shop.id).score) || 4.8;
-                    const rawList = reviews[shop.id] || [];
-                    const total = rawList.length;
+              /* Full-fidelity visits visualizations grid */
+              <div className="space-y-6">
 
-                    const trendData = [
-                      { month: 'Jan', rating: 4.5, count: total > 0 ? Math.max(1, Math.round(total * 0.4)) : 2 },
-                      { month: 'Feb', rating: 4.6, count: total > 0 ? Math.max(2, Math.round(total * 0.5)) : 4 },
-                      { month: 'Mar', rating: 4.7, count: total > 0 ? Math.max(3, Math.round(total * 0.7)) : 5 },
-                      { month: 'Apr', rating: 4.8, count: total > 0 ? Math.max(4, Math.round(total * 0.85)) : 8 },
-                      { month: 'May', rating: score, count: total },
-                    ];
-
-                    return (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={trendData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                          <XAxis dataKey="month" stroke="#a1a1aa" fontSize={10} tickLine={false} axisLine={false} />
-                          <YAxis stroke="#a1a1aa" fontSize={10} tickLine={false} axisLine={false} />
-                          <Tooltip 
-                            contentStyle={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e4e4e7', fontSize: '11px', fontFamily: 'var(--font-sans)', fontWeight: 'bold' }} 
-                          />
-                          <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} name="Reviews Count" maxBarSize={20} />
-                          <Bar dataKey="rating" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Avg Rating" maxBarSize={20} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    );
-                  })()}
-                </div>
-              </div>
-
-            </div>
-
-            {/* AI Merchant Insights banner */}
-            <div className="bg-emerald-50/40 border border-emerald-100 p-4 rounded-3xl flex items-start gap-3 text-left">
-              <span className="text-lg leading-none shrink-0 select-none">✨</span>
-              <div className="space-y-0.5">
-                <h5 className="text-[10px] uppercase font-extrabold text-emerald-800 tracking-wider font-sans">AI Merchant Insights</h5>
-                <p className="text-xs text-zinc-600 font-medium leading-relaxed font-sans">
-                  {(() => {
-                    if (!shop) return "Loading insights...";
-                    const score = Number(getShopRating(shop.id).score) || 4.8;
-                    if (score >= 4.7) {
-                      return "Excellent performance! Customers love your fast response times, heavy cotton selections, and premium local packaging. Ensure to reply to critical sizing inquiries to maintain your 98% trust rating.";
-                    } else {
-                      return "Steady customer engagement. Several reviews point to styling or fit variations. Consider adding visual sizing parameters directly to catalog descriptions to assist buyers before they launch WhatsApp intents.";
-                    }
-                  })()}
-                </p>
-              </div>
-            </div>
-
-            {/* 2. REVIEWS MANAGEMENT LIST */}
-            <div className="bg-white border border-zinc-150 rounded-3xl p-6 shadow-sm text-left space-y-5">
-              
-              {/* Section Header with Filters */}
-              <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-zinc-100 pb-5">
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-950">Merchant Reviews Manager</h3>
-                  <p className="text-[11px] text-zinc-400 mt-0.5 font-sans">Engage with customer reviews and post store responses directly</p>
-                </div>
-                
-                {/* Search & Filter Buttons */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={13} />
-                    <input
-                      type="text"
-                      placeholder="Search critic or text..."
-                      value={reviewSearch}
-                      onChange={(e) => setReviewSearch(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 text-xs bg-zinc-100 border border-zinc-200 focus:bg-white focus:border-zinc-400 outline-none rounded-xl font-sans"
-                    />
+                {/* Visits Trend SVG Line Chart */}
+                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-extrabold text-zinc-900">Visits Timeline</h4>
+                      <p className="text-[11px] text-zinc-400">Total visits recorded across the selected timeframe.</p>
+                    </div>
+                    <div className="text-xs font-bold text-zinc-700 bg-zinc-50 border border-zinc-150 px-3 py-1.5 rounded-xl">
+                      Daily Average: <span className="text-emerald-600">{(visitEvents.length / (chartTimeframe === 'today' ? 1 : chartTimeframe === '7days' ? 7 : 30)).toFixed(1)}</span> visits
+                    </div>
                   </div>
 
-                  <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200">
-                    {(['all', 'pending', '5star', 'critical'] as const).map((filter) => (
-                      <button
-                        key={filter}
-                        onClick={() => setReviewFilter(filter)}
-                        className={`px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                          reviewFilter === filter 
-                            ? 'bg-zinc-950 text-white shadow-xs' 
-                            : 'text-zinc-600 hover:text-zinc-950'
-                        }`}
-                      >
-                        {filter === 'pending' ? 'Pending Reply' : filter === '5star' ? '5 Star' : filter === 'critical' ? 'Critical' : 'All'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+                  {/* Pure SVG Line Chart Canvas */}
+                  <div className="relative pt-4 overflow-hidden">
+                    <div className="w-full h-48 select-none">
+                      <svg viewBox="0 0 700 180" className="w-full h-full overflow-visible">
+                        <defs>
+                          <linearGradient id="visitsGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
+                            <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+                          </linearGradient>
+                        </defs>
 
-              {/* Reviews List */}
-              <div className="space-y-4">
-                {shopReviewsList.length === 0 ? (
-                  <div className="py-12 text-center text-zinc-400 flex flex-col items-center justify-center select-none bg-zinc-50 border border-zinc-150 rounded-3xl">
-                    <Star size={24} className="text-zinc-300 mb-2 animate-pulse" />
-                    <p className="text-xs font-semibold">No reviews matching active filter</p>
-                    <p className="text-[10px] text-zinc-400 mt-1 max-w-[280px]">
-                      Try changing your filter selections or clearing search keywords.
-                    </p>
-                  </div>
-                ) : (
-                  shopReviewsList.map((r: any, idx: number) => {
-                    const reviewId = r.id || `m-review-${idx}`;
-                    const hasReply = r.reply || r.sellerResponse || r.seller_response;
-                    const replyText = typeof (r.sellerResponse || r.reply || r.seller_response) === 'object'
-                      ? (r.sellerResponse?.text || '')
-                      : (r.reply || r.seller_response || '');
+                        {/* Grid Lines */}
+                        <line x1="0" y1="20" x2="700" y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                        <line x1="0" y1="60" x2="700" y2="60" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                        <line x1="0" y1="100" x2="700" y2="100" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                        <line x1="0" y1="140" x2="700" y2="140" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                        <line x1="0" y1="180" x2="700" y2="180" stroke="#E2E8F0" strokeWidth="1" />
 
-                    return (
-                      <div key={reviewId} className="border border-zinc-150 p-5 rounded-2xl bg-zinc-50/30 space-y-3 relative">
-                        
-                        {/* Header Details */}
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold text-zinc-900 text-xs">{r.userName}</span>
-                              <span className="text-[10px] text-zinc-400 font-medium">{r.userHandle}</span>
-                              
-                              {r.badges && r.badges.map((b: string, bidx: number) => (
-                                <span 
-                                  key={bidx} 
-                                  className="text-[9px] bg-green-50 text-green-700 px-1.5 py-0.5 rounded font-bold border border-green-100/50"
-                                >
-                                  {b}
-                                </span>
-                              ))}
-                            </div>
-
-                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                              {/* Stars */}
-                              <div className="flex text-amber-500">
-                                {[1, 2, 3, 4, 5].map((s) => (
-                                  <Star key={s} size={11} className={s <= r.rating ? 'fill-amber-500' : 'text-zinc-200'} />
-                                ))}
-                              </div>
-                              
-                              {/* Verified indicator */}
-                              {r.isVerified && (
-                                <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
-                                  ✅ Verified Buyer Intent
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          <span className="text-[10px] font-mono font-bold text-zinc-400">
-                            {r.created_at ? new Date(r.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'July 2, 2026'}
-                          </span>
-                        </div>
-
-                        {/* Comment Content */}
-                        <p className="text-zinc-700 text-xs font-sans font-medium whitespace-pre-line leading-relaxed">
-                          {r.text}
-                        </p>
-
-                        {/* Associated Photos */}
-                        {r.images && r.images.length > 0 && (
-                          <div className="flex gap-2 pt-1">
-                            {r.images.map((img: string, iidx: number) => (
-                              <div key={iidx} className="w-16 h-16 rounded-xl border border-zinc-200 overflow-hidden shrink-0">
-                                <img src={img} alt="Critique" className="w-full h-full object-cover" />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Reply Form / Reply Display */}
-                        <div className="pt-3 border-t border-zinc-100">
-                          {hasReply ? (
-                            /* Display Existing Reply */
-                            <div className="bg-zinc-100/80 border border-zinc-200/50 p-4 rounded-2xl space-y-1.5">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-extrabold text-zinc-900 text-xs">Your Store Response</span>
-                                  <span className="text-[9px] font-bold bg-zinc-200 text-zinc-600 px-1.5 py-0.2 rounded-md">Published</span>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    // Set editing mode
-                                    setSellerReplies(prev => ({ ...prev, [reviewId]: replyText }));
-                                    addSellerResponse(shop.id, reviewId, ''); // Clear to edit
-                                  }}
-                                  className="text-[10px] text-zinc-400 hover:text-zinc-800 font-bold hover:underline transition-colors cursor-pointer"
-                                >
-                                  Edit Response
-                                </button>
-                              </div>
-                              <p className="text-zinc-600 text-xs leading-relaxed font-sans whitespace-pre-line">
-                                {replyText}
-                              </p>
-                            </div>
-                          ) : (
-                            /* Input Form to Write Reply */
-                            <div className="space-y-3">
-                              <textarea
-                                rows={2}
-                                placeholder="Type your client response here..."
-                                value={sellerReplies[reviewId] || ''}
-                                onChange={(e) => setSellerReplies(prev => ({ ...prev, [reviewId]: e.target.value }))}
-                                className="w-full p-3 text-xs bg-white border border-zinc-200 rounded-xl outline-none focus:border-zinc-400 transition-all font-sans font-medium"
-                              />
-                              
-                              {/* Swift templates */}
-                              <div className="flex flex-wrap gap-2">
-                                {[
-                                  "Thank you for the wonderful feedback! 💚",
-                                  "We are thrilled that you love the quality! 🚀",
-                                  "Please message us on WhatsApp so we can coordinate a size replacement."
-                                ].map((tpl, tidx) => (
-                                  <button
-                                    type="button"
-                                    key={tidx}
-                                    onClick={() => setSellerReplies(prev => ({ ...prev, [reviewId]: tpl }))}
-                                    className="text-[9px] font-bold text-zinc-500 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 px-2 py-1 rounded-lg transition-colors cursor-pointer"
+                        {/* Chart Path and Fill */}
+                        {visitsChartPoints.length > 0 && (
+                          <>
+                            <path d={visitsFillD} fill="url(#visitsGradient)" className="transition-all duration-300" />
+                            <path d={visitsPathD} fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
+                            
+                            {/* SVG Interactive Markers */}
+                            {visitsChartPoints.map((pt, idx) => (
+                              <g key={idx} className="group/dot cursor-pointer">
+                                <circle 
+                                  cx={pt.x} 
+                                  cy={pt.y} 
+                                  r="4" 
+                                  fill="#FFFFFF" 
+                                  stroke="#10B981" 
+                                  strokeWidth="2.5" 
+                                  className="transition-all duration-200 group-hover/dot:r-6" 
+                                />
+                                <circle 
+                                  cx={pt.x} 
+                                  cy={pt.y} 
+                                  r="10" 
+                                  fill="#10B981" 
+                                  fillOpacity="0" 
+                                  className="hover:fill-opacity-10 transition-all duration-200"
+                                />
+                                {/* Value Tooltip */}
+                                <g className="opacity-0 group-hover/dot:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                  <rect 
+                                    x={pt.x - 30} 
+                                    y={pt.y - 32} 
+                                    width="60" 
+                                    height="22" 
+                                    rx="6" 
+                                    fill="#18181B" 
+                                  />
+                                  <text 
+                                    x={pt.x} 
+                                    y={pt.y - 17} 
+                                    fill="#FFFFFF" 
+                                    fontSize="10" 
+                                    fontWeight="bold" 
+                                    textAnchor="middle"
                                   >
-                                    {tpl}
-                                  </button>
-                                ))}
-                              </div>
+                                    {pt.count} views
+                                  </text>
+                                </g>
+                              </g>
+                            ))}
+                          </>
+                        )}
+                      </svg>
+                    </div>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const text = sellerReplies[reviewId] || '';
-                                  if (!text.trim()) {
-                                    toast.error("Please enter response text");
-                                    return;
-                                  }
-                                  addSellerResponse(shop.id, reviewId, text);
-                                  toast.success("Response published successfully!");
-                                }}
-                                className="px-4 py-2 bg-zinc-950 hover:bg-black text-[#C6FF00] hover:text-white font-extrabold text-[10px] uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-sm"
-                              >
-                                Publish Response
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                    {/* Chart X-Axis Labels */}
+                    <div className="flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider px-2 mt-2">
+                      {visitsChartPoints.map((pt, idx) => (
+                        <span key={idx}>{pt.label}</span>
+                      ))}
+                    </div>
+                  </div>
 
+                  {/* Interactive Test Tip */}
+                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                    <p className="text-emerald-800 text-left">
+                      💡 <strong className="font-bold">Want to test live tracking?</strong> Open your storefront in a new tab, click custom items, then return here. The analytics engine registers actions in real-time!
+                    </p>
+                    <button 
+                      onClick={handleOpenStore}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shrink-0 cursor-pointer shadow-sm"
+                    >
+                      Test Storefront
+                    </button>
+                  </div>
+                </div>
+
+                {/* Split Grid for Recent Activity & Popular Items */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                  {/* Left Column: Recent Visit Activity */}
+                  <div className="lg:col-span-5 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-extrabold text-zinc-900">Recent Visit Activity</h4>
+                        <p className="text-[11px] text-zinc-400">Chronological history of recent shopper views.</p>
                       </div>
-                    );
-                  })
-                )}
-              </div>
 
-            </div>
+                      <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
+                        {recentVisitActivity.length === 0 ? (
+                          <div className="py-8 text-center text-zinc-400 text-xs">
+                            No visits logged yet.
+                          </div>
+                        ) : (
+                          recentVisitActivity.map((activity) => (
+                            <div key={activity.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                <span className="text-zinc-800 font-medium truncate">{activity.label}</span>
+                              </div>
+                              <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider shrink-0">
+                                {formatTimeAgo(activity.created_at)}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-zinc-100 mt-4">
+                      <span className="text-[10px] text-zinc-400 font-semibold block text-center">
+                        Total tracked events: {visitEvents.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Most Viewed Products */}
+                  <div className="lg:col-span-7 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-extrabold text-zinc-900">Most Viewed Products</h4>
+                        <p className="text-[11px] text-zinc-400">Products sorted by customer view count.</p>
+                      </div>
+
+                      <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
+                        {mostViewedProducts.length === 0 ? (
+                          <div className="py-8 text-center text-zinc-400 text-xs">
+                            No products viewed yet. Add some products and view them on your store!
+                          </div>
+                        ) : (
+                          mostViewedProducts.slice(0, 5).map((product) => {
+                            const imgUrl = product.images?.[0] || '';
+                            return (
+                              <div key={product.id} className="py-3 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400 shrink-0">
+                                    {imgUrl ? (
+                                      <img 
+                                        src={imgUrl} 
+                                        className="w-full h-full object-cover" 
+                                        alt=""
+                                        referrerPolicy="no-referrer"
+                                      />
+                                    ) : (
+                                      <ShoppingBag size={16} className="text-zinc-300" />
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <h5 className="text-xs font-bold text-zinc-900 truncate">
+                                      {product.name}
+                                    </h5>
+                                    <span className="text-[11px] font-semibold text-zinc-400">
+                                      ${Number(product.price).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider shrink-0">
+                                  {product.views || 0} views
+                                </span>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pt-4 border-t border-zinc-100 mt-4 flex items-center justify-between">
+                      <span className="text-[10px] text-zinc-400 font-semibold">
+                        Showing top 5 products
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
           </div>
         ) : (
           /* Edits & Settings View */
@@ -3520,6 +1955,21 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
                         {useMultipleSizes ? (
                           <div className="space-y-4">
+                            {/* Elegant Helper Text and Example */}
+                            <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-2.5">
+                              <p className="text-xs text-zinc-900 font-bold font-sans">
+                                Add each size together with its available stock quantity.
+                              </p>
+                              <div className="text-[11px] text-zinc-500 space-y-1 font-mono">
+                                <p className="font-bold text-zinc-700 uppercase tracking-wider text-[9px]">Example:</p>
+                                <div className="grid grid-cols-2 gap-x-4 max-w-xs pt-1 border-t border-zinc-150">
+                                  <div>Small</div><div>Quantity: 5</div>
+                                  <div>Medium</div><div>Quantity: 3</div>
+                                  <div>Large</div><div>Quantity: 8</div>
+                                  <div>XL</div><div>Quantity: 2</div>
+                                </div>
+                              </div>
+                            </div>
                             {/* Category is Accessories */}
                             {prodCategory === 'Accessories' ? (
                               <div className="space-y-3">
@@ -3542,7 +1992,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                                         }
                                       }
                                     }}
-                                    className="flex-grow px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs focus:outline-none transition-all text-zinc-900 font-semibold shadow-sm placeholder-zinc-400 caret-black"
+                                    className="flex-grow px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs focus:outline-none transition-all text-zinc-950 font-bold shadow-sm placeholder-zinc-500 caret-black"
                                   />
                                   <button
                                     type="button"
@@ -3553,9 +2003,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                                         setCustomSizeInput('');
                                       }
                                     }}
-                                    className="px-4 h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-sm"
+                                    className="px-4 h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-sm gap-1"
                                   >
-                                    Add
+                                    <span>+ Add Size</span>
                                   </button>
                                 </div>
                               </div>
@@ -3580,7 +2030,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                                         }
                                       }
                                     }}
-                                    className="flex-grow px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs focus:outline-none transition-all text-zinc-900 font-semibold shadow-sm placeholder-zinc-400 caret-black"
+                                    className="flex-grow px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs focus:outline-none transition-all text-zinc-950 font-bold shadow-sm placeholder-zinc-500 caret-black"
                                   />
                                   <button
                                     type="button"
@@ -3591,9 +2041,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                                         setCustomSizeInput('');
                                       }
                                     }}
-                                    className="px-4 h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-sm"
+                                    className="px-4 h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-sm gap-1"
                                   >
-                                    Add
+                                    <span>+ Add Size</span>
                                   </button>
                                 </div>
                               </div>
@@ -3812,15 +2262,18 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                             </div>
                           </div>
                         ) : (
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Single Stock Inventory Quantity</label>
+                          <div className="space-y-3 p-4 bg-zinc-50 border border-zinc-150 rounded-2xl animate-wipe">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Total Stock Quantity</label>
                             <input
                               type="number"
                               value={generalStock}
                               onChange={(e) => setGeneralStock(e.target.value)}
                               placeholder="e.g. 20"
-                              className="w-full px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs md:text-sm focus:outline-none transition-all text-zinc-900 font-bold shadow-sm placeholder-zinc-400 caret-black"
+                              className="w-full px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs md:text-sm focus:outline-none transition-all text-zinc-950 font-bold shadow-sm placeholder-zinc-500 caret-black"
                             />
+                            <p className="text-[11px] text-zinc-500 leading-relaxed font-sans">
+                              Use this if your product does not have size variations.
+                            </p>
                           </div>
                         )}
 

@@ -424,7 +424,6 @@ export const ShopEdit = () => {
           parsed.banner_url = publicUrl;
         }
         localStorage.setItem(cachedKey, JSON.stringify(parsed));
-        localStorage.setItem('threadzw_shop', JSON.stringify(parsed));
       } catch (e) {
         console.warn('Cache update warning:', e);
       }
@@ -669,6 +668,7 @@ export const ShopEdit = () => {
         .from('shops')
         .update(updateData)
         .eq('id', activeShopId)
+        .eq('owner_id', user.id)
         .select()
         .single();
 
@@ -706,7 +706,6 @@ export const ShopEdit = () => {
             mergedObj = { ...JSON.parse(cached), ...updateData };
           }
           localStorage.setItem(cachedKey, JSON.stringify(mergedObj));
-          localStorage.setItem('threadzw_shop', JSON.stringify(mergedObj));
           if (updateData.name) {
             localStorage.setItem('threadzw_owner_name', updateData.name);
           }
@@ -742,7 +741,8 @@ export const ShopEdit = () => {
       const { error } = await supabase
         .from('shops')
         .update({ is_live: !isLive })
-        .eq('id', shopId);
+        .eq('id', shopId)
+        .eq('owner_id', user.id);
 
       if (error) throw error;
 
@@ -755,7 +755,6 @@ export const ShopEdit = () => {
             const parsed = JSON.parse(cached);
             parsed.is_live = !isLive;
             localStorage.setItem(cachedKey, JSON.stringify(parsed));
-            localStorage.setItem('threadzw_shop', JSON.stringify(parsed));
           }
         }
       } catch (cacheErr) {
@@ -778,17 +777,20 @@ export const ShopEdit = () => {
       // Cancel subscription
       await supabase.from('subscriptions')
         .update({ status: 'cancelled' })
-        .eq('shop_id', shopId);
+        .eq('shop_id', shopId)
+        .eq('owner_id', user.id);
 
       // Mark products as deleted
       await supabase.from('products')
         .update({ status: 'deleted' })
-        .eq('shop_id', shopId);
+        .eq('shop_id', shopId)
+        .eq('owner_id', user.id);
 
       // Delete shop
       await supabase.from('shops')
         .delete()
-        .eq('id', shopId);
+        .eq('id', shopId)
+        .eq('owner_id', user.id);
 
       localStorage.removeItem('thread_shop_draft');
       showToast('Shop deleted permanently', 'info');

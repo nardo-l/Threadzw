@@ -458,7 +458,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       // Sync local storage caches with the real database record to make sure IDs match perfectly
       try {
         localStorage.setItem(`shop_${userId}`, JSON.stringify(shopRecord));
-        localStorage.setItem('threadzw_shop', JSON.stringify(shopRecord));
       } catch (cacheErr) {
         console.warn('Error saving shop to localStorage:', cacheErr);
       }
