@@ -315,21 +315,21 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
                  value={name}
                  onChange={(e) => setName(e.target.value)}
                  placeholder="e.g. System Alpha Product"
-                 className="w-full h-12 bg-[#111] border border-[#222] rounded-[10px] px-3.5 text-white text-[15px] focus:outline-none focus:border-[#C6FF00] transition-colors font-bold"
+                 className="w-full h-12 bg-white border border-[#222] rounded-[10px] px-3.5 text-zinc-950 placeholder:text-zinc-500 text-[15px] focus:outline-none focus:border-[#C6FF00] transition-colors font-bold"
               />
            </div>
 
            {/* Price */}
            <div>
               <label className="text-white/40 font-black uppercase tracking-widest text-[10px] block mb-2 italic">Market Value (USD) *</label>
-              <div className="flex items-center bg-[#111] border border-[#222] rounded-[10px] px-3.5 focus-within:border-[#C6FF00] transition-colors">
-                 <span className="text-[#C6FF00] font-black text-[15px]">$</span>
+              <div className="flex items-center bg-white border border-[#222] rounded-[10px] px-3.5 focus-within:border-[#C6FF00] transition-colors">
+                 <span className="text-zinc-500 font-black text-[15px]">$</span>
                  <input 
                     type="number"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="0.00"
-                    className="flex-1 h-12 bg-transparent text-white text-[15px] pl-1.5 focus:outline-none font-bold"
+                    className="flex-1 h-12 bg-transparent text-zinc-950 placeholder:text-zinc-500 text-[15px] pl-1.5 focus:outline-none font-bold"
                  />
               </div>
            </div>
@@ -398,7 +398,7 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
                     value={newSize}
                     onChange={(e) => setNewSize(e.target.value)}
                     placeholder="DIM"
-                    className="w-20 h-11 bg-[#111] border border-[#222] rounded-[8px] px-3 text-white text-[13px] text-center focus:outline-none focus:border-[#C6FF00] font-black uppercase"
+                    className="w-20 h-11 bg-white border border-[#222] rounded-[8px] px-3 text-zinc-950 placeholder:text-zinc-500 text-[13px] text-center focus:outline-none focus:border-[#C6FF00] font-black uppercase"
                  />
                  <button 
                   onClick={addSize}
@@ -417,7 +417,7 @@ export const AddProductView: React.FC<{ myShop: any; onPublished: () => void | P
                  value={description}
                  onChange={(e) => setDescription(e.target.value)}
                  placeholder="Terminal entry for unit specifics, history, and metadata..."
-                 className="w-full min-h-[100px] bg-[#111] border border-[#222] rounded-[10px] p-4 text-white text-[14px] focus:outline-none focus:border-[#C6FF00] transition-colors resize-none font-medium leading-relaxed"
+                 className="w-full min-h-[100px] bg-white border border-[#222] rounded-[10px] p-4 text-zinc-950 placeholder:text-zinc-500 text-[14px] focus:outline-none focus:border-[#C6FF00] transition-colors resize-none font-medium leading-relaxed"
               />
            </div>
         </div>

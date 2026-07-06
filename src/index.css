@@ -173,6 +173,36 @@ input:focus, select:focus, textarea:focus {
   background-color: rgba(198, 255, 0, 0.04) !important;
 }
 
+/* Light background container input/textarea/select overrides */
+.bg-white input, .bg-white select, .bg-white textarea,
+.add-product-light input, .add-product-light select, .add-product-light textarea,
+.edit-product-light input, .edit-product-light select, .edit-product-light textarea,
+.sales-system-light input, .sales-system-light select, .sales-system-light textarea,
+.bg-zinc-50 input, .bg-zinc-50 select, .bg-zinc-50 textarea,
+.bg-zinc-100 input, .bg-zinc-100 select, .bg-zinc-100 textarea,
+.bg-gray-50 input, .bg-gray-50 select, .bg-gray-50 textarea,
+.bg-gray-100 input, .bg-gray-100 select, .bg-gray-100 textarea,
+input.text-zinc-950, textarea.text-zinc-950, select.text-zinc-950,
+input.text-zinc-900, textarea.text-zinc-900, select.text-zinc-900,
+input.text-black, textarea.text-black, select.text-black,
+input.text-neutral-900, textarea.text-neutral-900, select.text-neutral-900 {
+  color: #09090b !important;
+  border-color: #e4e4e7 !important;
+  background-color: #ffffff !important;
+}
+
+.bg-white input:focus, .bg-white select:focus, .bg-white textarea:focus,
+.add-product-light input:focus, .add-product-light select:focus, .add-product-light textarea:focus,
+.edit-product-light input:focus, .edit-product-light select:focus, .edit-product-light textarea:focus,
+.sales-system-light input:focus, .sales-system-light select:focus, .sales-system-light textarea:focus,
+input.text-zinc-950:focus, textarea.text-zinc-950:focus, select.text-zinc-950:focus,
+input.text-zinc-900:focus, textarea.text-zinc-900:focus, select.text-zinc-900:focus,
+input.text-black:focus, textarea.text-black:focus, select.text-black:focus {
+  border-color: var(--color-lime) !important;
+  background-color: #ffffff !important;
+  color: #09090b !important;
+}
+
 /* Cards and Modals Override */
 div[class*="bg-card-bg"],
 div[class*="bg-[#151515]"],
@@ -376,6 +406,8 @@ img.loaded {
   color: #18181b !important;
 }
 
+.bg-white input::placeholder,
+.bg-white textarea::placeholder,
 .add-product-light input::placeholder, 
 .edit-product-light input::placeholder,
 .add-product-light textarea::placeholder, 

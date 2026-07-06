@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { mapError } from '../lib/utils';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
 import { getAppHost, getAbsoluteShopUrl } from '../utils/shopUrl';
+import { useShopContext } from '../context/ShopContext';
 
 // WhatsApp icon SVG
 const WhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => (
@@ -149,6 +150,7 @@ interface OnboardingFlowProps {
 export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ 
   setAppStage
 }) => {
+  const { setShop, setHasShop, setLoading: setShopLoading, refreshShop } = useShopContext();
   const { categories: globalCategories } = useGlobalCategories();
   const [screen, setScreen] = useState(1);
 
@@ -462,10 +464,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         console.warn('Error saving shop to localStorage:', cacheErr);
       }
 
+      // Update the Shop Context immediately with the freshly created shop
+      setShop(shopRecord);
+      setHasShop(true);
+      setShopLoading(false);
+
       // Complete validation and login state
       localStorage.setItem('threadzw_onboarding_complete', 'true');
       localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
       localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
+
+      // Call refreshShop() and await completion
+      await refreshShop();
 
     } catch (err: any) {
       console.error("SHOP CREATION FAILED");

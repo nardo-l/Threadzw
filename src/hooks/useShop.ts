@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -7,6 +7,9 @@ export const useShop = () => {
   const [shop, setShop] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasShop, setHasShop] = useState(false);
+  
+  const lastFetchedUserIdRef = useRef<string | null>(null);
+  const isFetchingRef = useRef(false);
 
   useEffect(() => {
     if (authLoading) {
@@ -17,23 +20,40 @@ export const useShop = () => {
       setShop(null);
       setHasShop(false);
       setLoading(false);
+      lastFetchedUserIdRef.current = null;
       return;
     }
-    fetchShop();
+    fetchShop(false);
   }, [user, authLoading]);
 
-  const fetchShop = async () => {
+  const fetchShop = async (force = false) => {
+    if (!user) return;
+
+    // Skip if already fetched/fetching and not forced
+    if (!force && lastFetchedUserIdRef.current === user.id && shop !== null) {
+      return;
+    }
+
+    // Skip automatic fetch during signup onboarding to avoid useless query returning null
+    const path = window.location.pathname.toLowerCase();
+    const isOnboarding = path === '/signup' || path === '/onboarding';
+    const hasCompletedOnboarding = localStorage.getItem('threadzw_onboarding_complete') === 'true';
+    if (!force && isOnboarding && !hasCompletedOnboarding) {
+      setHasShop(false);
+      setShop(null);
+      setLoading(false);
+      return;
+    }
+
+    if (isFetchingRef.current && !force) {
+      return;
+    }
+
+    setLoading(true);
+    isFetchingRef.current = true;
+    lastFetchedUserIdRef.current = user.id;
+
     try {
-      const { data: authData } = await supabase.auth.getUser();
-
-      console.log("AUTH USER OBJECT:", authData.user);
-      console.log("AUTH USER ID:", authData.user?.id);
-
-      const { data: sessionData } = await supabase.auth.getSession();
-
-      console.log("SESSION:", sessionData.session);
-      console.log("SESSION USER ID:", sessionData.session?.user?.id);
-
       console.log("HOOK USER ID:", user.id);
       const { data, error } = await supabase
         .from('shops')
@@ -64,11 +84,14 @@ export const useShop = () => {
       setHasShop(false);
       setShop(null);
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
 
-  const refreshShop = () => fetchShop();
+  const refreshShop = async () => {
+    await fetchShop(true);
+  };
 
-  return { shop, loading, hasShop, refreshShop, authLoading };
+  return { shop, loading, hasShop, refreshShop, authLoading, setShop, setHasShop, setLoading };
 };

@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { uploadImage } from '../utils/uploadImage';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
+import { getSizesForCategory } from '../utils/sizes';
 
 interface SizeStock {
   active: boolean;
@@ -51,17 +52,11 @@ export const AddProduct: React.FC = () => {
   const [isDragOver, setIsDragOver] = useState(false);
 
   // Step 3: Sizes Management
-  const [useMultipleSizes, setUseMultipleSizes] = useState(false);
-  const [sizeCategory, setSizeCategory] = useState<'apparel' | 'sneakers' | 'onesize'>('apparel');
-  const [customSizeInput, setCustomSizeInput] = useState('');
-  const [sizeStock, setSizeStock] = useState<Record<string, SizeStock>>({
-    'XS': { active: false, stock: 10 },
-    'S': { active: true, stock: 10 },
-    'M': { active: true, stock: 10 },
-    'L': { active: true, stock: 10 },
-    'XL': { active: false, stock: 10 },
-    'XXL': { active: false, stock: 10 },
-  });
+  const [activeSizeEditing, setActiveSizeEditing] = useState<string | null>(null);
+  const [tempStockInput, setTempStockInput] = useState('');
+  const [showCustomSizeInput, setShowCustomSizeInput] = useState(false);
+  const [customSizeName, setCustomSizeName] = useState('');
+  const [sizeStock, setSizeStock] = useState<Record<string, SizeStock>>({});
   const [generalStock, setGeneralStock] = useState('10');
 
   // Step 4: Colours Management
@@ -210,88 +205,53 @@ export const AddProduct: React.FC = () => {
   };
 
   // Step 3: Size Adjustments
-  const handleSizeCategoryChange = (val: 'apparel' | 'sneakers' | 'onesize') => {
-    setSizeCategory(val);
-    if (val === 'apparel') {
-      setSizeStock({
-        'XS': { active: false, stock: 10 },
-        'S': { active: true, stock: 10 },
-        'M': { active: true, stock: 10 },
-        'L': { active: true, stock: 10 },
-        'XL': { active: false, stock: 10 },
-        'XXL': { active: false, stock: 10 },
-      });
-    } else if (val === 'sneakers') {
-      setSizeStock({
-        'EU 40': { active: false, stock: 10 },
-        'EU 41': { active: true, stock: 10 },
-        'EU 42': { active: true, stock: 10 },
-        'EU 43': { active: true, stock: 10 },
-        'EU 44': { active: false, stock: 10 },
-        'EU 45': { active: false, stock: 10 },
-      });
-    } else if (val === 'onesize') {
-      setSizeStock({
-        'One Size': { active: true, stock: 10 }
-      });
+  const handleConfirmStock = () => {
+    if (!activeSizeEditing) return;
+    const qty = parseInt(tempStockInput);
+    if (!tempStockInput.trim() || isNaN(qty)) {
+      toast.error('Please enter a valid stock quantity.');
+      return;
     }
-  };
+    if (qty <= 0) {
+      toast.error('Stock quantity must be greater than zero.');
+      return;
+    }
 
-  const handleAddCustomSize = () => {
-    if (!customSizeInput.trim()) return;
-    const sizeName = customSizeInput.trim().toUpperCase();
-    setSizeStock(prev => {
-      if (prev[sizeName]) {
-        toast.error('Size option already exists.');
-        return prev;
-      }
-      return {
-        ...prev,
-        [sizeName]: { active: true, stock: 10 }
-      };
-    });
-    setCustomSizeInput('');
-    toast.success(`Size "${sizeName}" added.`);
-  };
-
-  const toggleSizeActive = (sz: string) => {
-    setSizeStock(prev => {
-      const current = prev[sz] || { active: false, stock: 10 };
-      return {
-        ...prev,
-        [sz]: {
-          ...current,
-          active: !current.active,
-          stock: !current.active ? 10 : current.stock
-        }
-      };
-    });
-  };
-
-  const updateSizeStock = (sz: string, val: number) => {
+    // Save the size
     setSizeStock(prev => ({
       ...prev,
-      [sz]: {
-        ...(prev[sz] || { active: true }),
-        stock: Math.max(0, val)
-      }
+      [activeSizeEditing]: { active: true, stock: qty }
     }));
+
+    // Clear and return focus
+    setActiveSizeEditing(null);
+    setTempStockInput('');
   };
 
-  // Reordering Sizes in the size list helper
-  const moveSize = (sizeKey: string, moveDirection: 'up' | 'down') => {
-    const keys = Object.keys(sizeStock);
-    const idx = keys.indexOf(sizeKey);
-    if (moveDirection === 'up' && idx === 0) return;
-    if (moveDirection === 'down' && idx === keys.length - 1) return;
-    const targetIdx = moveDirection === 'up' ? idx - 1 : idx + 1;
+  const handleRemoveSize = (sz: string) => {
+    setSizeStock(prev => {
+      const copy = { ...prev };
+      delete copy[sz];
+      return copy;
+    });
+    toast.success(`Removed size ${sz}.`);
+  };
+
+  const handleAddCustomSizeName = () => {
+    const nameInput = customSizeName.trim();
+    if (!nameInput) return;
     
-    const entries = Object.entries(sizeStock);
-    const temp = entries[idx];
-    entries[idx] = entries[targetIdx];
-    entries[targetIdx] = temp;
-    
-    setSizeStock(Object.fromEntries(entries));
+    // Check for duplicates
+    const matchedExisting = Object.keys(sizeStock).find(k => k.toUpperCase() === nameInput.toUpperCase() && sizeStock[k]?.active);
+    if (matchedExisting) {
+      toast.error(`Size "${matchedExisting}" is already added.`);
+      return;
+    }
+
+    setActiveSizeEditing(nameInput);
+    setTempStockInput('');
+    setShowCustomSizeInput(false);
+    setCustomSizeName('');
   };
 
   // Step 4: Colour Adjustments
@@ -350,10 +310,11 @@ export const AddProduct: React.FC = () => {
     }
 
     if (step === 3) {
-      if (useMultipleSizes) {
+      const hasSizes = getSizesForCategory(selectedCategory) !== null;
+      if (hasSizes) {
         const activeSizes = Object.entries(sizeStock).filter(([_, val]) => val.active);
         if (activeSizes.length === 0) {
-          toast.error('Please activate at least one size option or switch to Single Size.');
+          toast.error('Please configure at least one size variant & stock quantity.');
           return;
         }
       } else {
@@ -400,7 +361,9 @@ export const AddProduct: React.FC = () => {
       let configuredSizes = [];
       let totalStock = 0;
 
-      if (useMultipleSizes) {
+      const hasSizes = getSizesForCategory(selectedCategory) !== null;
+
+      if (hasSizes) {
         configuredSizes = Object.entries(sizeStock)
           .filter(([_, value]) => value.active)
           .map(([size, value]) => ({
@@ -495,7 +458,6 @@ export const AddProduct: React.FC = () => {
     setName('');
     setPrice('');
     setImages([]);
-    setUseMultipleSizes(false);
     setSelectedColors(['Midnight Black']);
     setDescription('');
     setBrand('');
@@ -600,7 +562,7 @@ export const AddProduct: React.FC = () => {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="e.g. Vintage Heavyweight Tee"
-                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
                       />
                     </div>
 
@@ -608,13 +570,13 @@ export const AddProduct: React.FC = () => {
                     <div className="space-y-2">
                       <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Retail Price (USD) <span className="text-red-500">*</span></label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-white/30 text-sm">$</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-zinc-500 text-sm">$</span>
                         <input 
                           type="number"
                           value={price}
                           onChange={e => setPrice(e.target.value)}
                           placeholder="25.00"
-                          className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 pl-8 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-sm shadow-sm"
+                          className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 pl-8 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
                         />
                       </div>
                     </div>
@@ -790,171 +752,242 @@ export const AddProduct: React.FC = () => {
               {/* ========================================================
                   STEP 3: SIZES (PRESETS, ADD UNLIMITED, REORDER, STOCK)
                  ======================================================== */}
-              {step === 3 && (
-                <div className="space-y-6 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 3 OF 6</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Size Specifications</h1>
-                    <p className="text-white/50 text-xs">Choose between a single universal size or configure complex multi-size inventory.</p>
-                  </div>
+              {step === 3 && (() => {
+                const standardSizes = getSizesForCategory(selectedCategory);
+                const hasSizes = standardSizes !== null;
 
-                  <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-96">
-                    {/* Toggle Selector */}
-                    <div className="flex gap-2 p-1 bg-white/[0.02] border border-white/[0.08] rounded-xl">
-                      <button
-                        type="button"
-                        onClick={() => setUseMultipleSizes(false)}
-                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          !useMultipleSizes 
-                            ? 'bg-white/10 text-white font-black' 
-                            : 'text-white/50 hover:text-white/70'
-                        }`}
-                      >
-                        Single Size
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setUseMultipleSizes(true)}
-                        className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                          useMultipleSizes 
-                            ? 'bg-white/10 text-white font-black' 
-                            : 'text-white/50 hover:text-white/70'
-                        }`}
-                      >
-                        Multiple Sizes
-                      </button>
+                return (
+                  <div className="space-y-6 flex-1 flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 3 OF 6</span>
+                      <h1 className="text-2xl font-black tracking-tight text-white font-syne">Variants & Stock</h1>
+                      <p className="text-white/50 text-xs">
+                        {hasSizes 
+                          ? `Select the sizes you have in stock for "${selectedCategory}".` 
+                          : `Specify the stock quantity for "${selectedCategory}".`
+                        }
+                      </p>
                     </div>
 
-                    {!useMultipleSizes ? (
-                      <div className="space-y-3 p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl animate-wipe">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Total Stock Quantity</label>
-                        <input 
-                          type="number"
-                          value={generalStock}
-                          onChange={e => setGeneralStock(e.target.value)}
-                          placeholder="e.g. 10"
-                          className="w-full bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-4 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-bold shadow-sm"
-                        />
-                        <p className="text-[11px] text-white/60 leading-relaxed font-sans">
-                          Use this if your product does not have size variations.
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4 animate-wipe">
-                        {/* Elegant Helper Text and Example */}
-                        <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-2.5">
-                          <p className="text-xs text-white/90 font-bold font-sans">
-                            Add each size together with its available stock quantity.
+                    <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-96">
+                      {!hasSizes ? (
+                        <div className="space-y-3 p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl animate-wipe">
+                          <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Total Stock Quantity</label>
+                          <input 
+                            type="number"
+                            min="0"
+                            value={generalStock}
+                            onChange={e => setGeneralStock(e.target.value)}
+                            placeholder="e.g. 10"
+                            className="w-full bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-4 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-bold shadow-sm"
+                          />
+                          <p className="text-[11px] text-white/40 leading-relaxed font-sans">
+                            Since this category does not use standard sizes, please provide your current aggregate inventory count.
                           </p>
-                          <div className="text-[11px] text-white/50 space-y-1 font-mono">
-                            <p className="font-bold text-[#C6FF00] uppercase tracking-wider text-[9px]">Example:</p>
-                            <div className="grid grid-cols-2 gap-x-4 max-w-xs pt-1 border-t border-white/5">
-                              <div>Small</div><div>Quantity: 5</div>
-                              <div>Medium</div><div>Quantity: 3</div>
-                              <div>Large</div><div>Quantity: 8</div>
-                              <div>XL</div><div>Quantity: 2</div>
+                        </div>
+                      ) : (
+                        <div className="space-y-5 animate-wipe">
+                          {/* Horizontally scrollable row of size chips */}
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Available Sizes</label>
+                            
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent -mx-1 px-1">
+                              {standardSizes.map((sz) => {
+                                const isAdded = sizeStock[sz]?.active;
+                                const isSelected = activeSizeEditing === sz;
+
+                                return (
+                                  <button
+                                    key={`chip-${sz}`}
+                                    type="button"
+                                    onClick={() => {
+                                      if (isAdded) {
+                                        // Edit quantity if already added
+                                        setActiveSizeEditing(sz);
+                                        setTempStockInput(String(sizeStock[sz].stock));
+                                      } else {
+                                        setActiveSizeEditing(sz);
+                                        setTempStockInput('');
+                                      }
+                                    }}
+                                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                                      isSelected
+                                        ? 'bg-[#C6FF00] text-black border-[#C6FF00] scale-105 shadow-md shadow-[#C6FF00]/15'
+                                        : isAdded
+                                        ? 'bg-white/10 text-white border-white/20 hover:bg-white/15'
+                                        : 'bg-white/5 text-white/70 border-white/10 hover:border-white/20 hover:bg-white/10'
+                                    }`}
+                                  >
+                                    {sz} {isAdded && `(${sizeStock[sz].stock})`}
+                                  </button>
+                                );
+                              })}
+
+                              {/* Add Custom Size Chip at the end */}
+                              {!showCustomSizeInput ? (
+                                <button
+                                  key="chip-custom"
+                                  type="button"
+                                  onClick={() => setShowCustomSizeInput(true)}
+                                  className="px-4 py-2 rounded-full border border-dashed border-white/20 text-white/60 hover:text-white hover:border-white/40 text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 flex items-center gap-1 bg-transparent"
+                                >
+                                  <span>+ Custom</span>
+                                </button>
+                              ) : null}
                             </div>
                           </div>
-                        </div>
 
-                        {/* Custom Size Addition */}
-                        <div className="flex gap-2">
-                          <input 
-                            type="text"
-                            value={customSizeInput}
-                            onChange={e => setCustomSizeInput(e.target.value)}
-                            placeholder="Enter size name (e.g. XXL)"
-                            className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-500 text-xs font-bold"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddCustomSize}
-                            className="px-4 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer gap-1 transition-all shrink-0"
-                          >
-                            <span>+ Add Size</span>
-                          </button>
-                        </div>
-
-                        {/* Active size list with inline edit capabilities */}
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Manage Sizes & Stock</label>
-                          
-                          {Object.entries(sizeStock).filter(([_, details]) => details.active).length === 0 ? (
-                            <p className="text-xs text-white/40 italic text-center py-6 border border-dashed border-white/10 rounded-xl font-sans">
-                              No sizes added yet. Use the field above to add your sizes.
-                            </p>
-                          ) : (
-                            <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
-                              {Object.entries(sizeStock)
-                                .filter(([_, details]) => details.active)
-                                .map(([sz, details]) => (
-                                  <div 
-                                    key={`sz-${sz}`}
-                                    className="flex items-center gap-3 p-3 rounded-xl border bg-white/[0.02] border-white/10 justify-between"
-                                  >
-                                    {/* Size label */}
-                                    <div className="flex-1">
-                                      <span className="text-[9px] font-mono uppercase tracking-widest text-white/40 block mb-1">Size</span>
-                                      <input 
-                                        type="text"
-                                        value={sz}
-                                        disabled
-                                        className="w-full bg-white/5 border border-white/10 text-white/90 rounded-lg p-2 text-xs font-bold font-sans cursor-not-allowed uppercase"
-                                      />
-                                    </div>
-
-                                    {/* Stock Quantity Input */}
-                                    <div className="w-32">
-                                      <span className="text-[9px] font-mono uppercase tracking-widest text-white/40 block mb-1">Stock Quantity</span>
-                                      <input 
-                                        type="number"
-                                        min={0}
-                                        value={details.stock}
-                                        onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
-                                        className="w-full bg-white text-zinc-950 border border-zinc-200 rounded-lg p-2 text-xs font-bold font-sans text-center focus:outline-none focus:ring-1 focus:ring-[#C6FF00]"
-                                      />
-                                    </div>
-
-                                    {/* Remove Button */}
-                                    <div className="pt-4">
-                                      <button
-                                        type="button"
-                                        onClick={() => toggleSizeActive(sz)}
-                                        className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors cursor-pointer"
-                                        title="Remove size"
-                                      >
-                                        <X size={14} />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ))}
+                          {/* Custom Size Name Input Block */}
+                          {showCustomSizeInput && (
+                            <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl space-y-3 animate-fade-in">
+                              <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Add Custom Size Name</label>
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="e.g. XXXL or 49"
+                                  value={customSizeName}
+                                  onChange={e => setCustomSizeName(e.target.value)}
+                                  className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleAddCustomSizeName();
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleAddCustomSizeName}
+                                  className="px-4 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
+                                >
+                                  Next
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setShowCustomSizeInput(false);
+                                    setCustomSizeName('');
+                                  }}
+                                  className="px-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
                           )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
 
-                  {/* Navigation footer */}
-                  <div className="pt-4 flex gap-3">
-                    <button
-                      type="button"
-                      onClick={goBack}
-                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="button"
-                      onClick={goNext}
-                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
-                    >
-                      <span>Continue</span>
-                      <ChevronRight size={14} />
-                    </button>
+                          {/* Selected Size / Stock Input Block */}
+                          {activeSizeEditing && !showCustomSizeInput && (
+                            <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl space-y-3 animate-fade-in">
+                              <div className="flex justify-between items-center">
+                                <label className="text-[10px] font-mono uppercase tracking-wider text-[#C6FF00] block">
+                                  Stock Quantity for Size: <span className="font-sans font-black text-white text-sm ml-1">{activeSizeEditing}</span>
+                                </label>
+                                <span className="text-[9px] font-mono text-white/40 uppercase">Press Enter to save</span>
+                              </div>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="number"
+                                  min="1"
+                                  value={tempStockInput}
+                                  onChange={e => setTempStockInput(e.target.value)}
+                                  placeholder="e.g. 15"
+                                  className="flex-1 bg-white text-zinc-950 border border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
+                                  autoFocus
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      handleConfirmStock();
+                                    }
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={handleConfirmStock}
+                                  className="px-5 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
+                                >
+                                  Save Quantity
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveSizeEditing(null);
+                                    setTempStockInput('');
+                                  }}
+                                  className="px-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Completed Size Chips */}
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Configured Variants</label>
+                            
+                            {Object.entries(sizeStock).filter(([_, details]) => details.active).length === 0 ? (
+                              <p className="text-xs text-white/30 italic text-center py-6 border border-dashed border-white/5 rounded-xl font-sans bg-white/[0.01]">
+                                No sizes added to inventory. Tap a size chip above to set its stock.
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2 p-3 bg-white/[0.01] border border-white/[0.04] rounded-xl">
+                                {Object.entries(sizeStock)
+                                  .filter(([_, details]) => details.active)
+                                  .map(([sz, details]) => (
+                                    <div 
+                                      key={`completed-${sz}`}
+                                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-zinc-900 text-xs font-extrabold shadow-sm border border-zinc-200 group transition-all hover:border-zinc-300"
+                                    >
+                                      <span 
+                                        onClick={() => {
+                                          setActiveSizeEditing(sz);
+                                          setTempStockInput(String(details.stock));
+                                        }}
+                                        className="cursor-pointer"
+                                        title="Click to edit quantity"
+                                      >
+                                        {sz} <span className="text-zinc-500 font-medium font-sans">({details.stock})</span>
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveSize(sz)}
+                                        className="text-zinc-400 hover:text-red-500 transition-colors p-0.5"
+                                        title="Remove variant"
+                                      >
+                                        <X size={12} className="stroke-[3]" />
+                                      </button>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Navigation footer */}
+                    <div className="pt-4 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={goBack}
+                        className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                      >
+                        Back
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goNext}
+                        className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                      >
+                        <span>Continue</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* ========================================================
                   STEP 4: COLOUR VARIATIONS (CHIPS, ADD, REMOVE, REORDER)
@@ -1073,7 +1106,7 @@ export const AddProduct: React.FC = () => {
                         onChange={e => setDescription(e.target.value)}
                         rows={3}
                         placeholder="Detail materials, fitment notes, model reference, or drop context..."
-                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-white font-sans focus:outline-none resize-none transition-all placeholder:text-white/20 text-xs leading-relaxed"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none resize-none transition-all placeholder:text-zinc-400 text-xs leading-relaxed font-semibold"
                       />
                     </div>
 
@@ -1085,7 +1118,7 @@ export const AddProduct: React.FC = () => {
                         value={material}
                         onChange={e => setMaterial(e.target.value)}
                         placeholder="e.g. 100% Cotton, 360gsm French Terry"
-                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1097,7 +1130,7 @@ export const AddProduct: React.FC = () => {
                         value={brand}
                         onChange={e => setBrand(e.target.value)}
                         placeholder="e.g. Custom Boutique or Own Label"
-                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1109,7 +1142,7 @@ export const AddProduct: React.FC = () => {
                         value={features}
                         onChange={e => setFeatures(e.target.value)}
                         placeholder="e.g. Heavyweight feel, Drop shoulder, Distressed hem"
-                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1121,7 +1154,7 @@ export const AddProduct: React.FC = () => {
                         value={careInstructions}
                         onChange={e => setCareInstructions(e.target.value)}
                         placeholder="e.g. Machine wash cold, lay flat to dry"
-                        className="w-full bg-white/[0.03] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all placeholder:text-white/20 text-xs"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1207,7 +1240,7 @@ export const AddProduct: React.FC = () => {
 
                         {/* Specs overview line */}
                         <div className="flex flex-wrap gap-1.5 pt-1.5">
-                          {useMultipleSizes ? (
+                          {getSizesForCategory(selectedCategory) !== null ? (
                             <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-white/[0.08] px-2 py-0.5 rounded">
                               Sizes: {Object.entries(sizeStock).filter(([_, v]) => v.active).map(([k]) => k).join(', ')}
                             </span>

@@ -12,7 +12,6 @@ import { Inventory } from './screens/Inventory';
 import { Settings } from './screens/Settings';
 import { ShopEdit } from './screens/ShopEdit';
 import { SalesSystem } from './screens/SalesSystem';
-import { Profile } from './screens/Profile';
 import { Support } from './screens/Support';
 import { Notifications } from './screens/Notifications';
 import { Search } from './screens/Search';
@@ -132,14 +131,14 @@ function AppContent() {
   
   const { shop, loading: shopLoading, hasShop, refreshShop } = useShopContext();
 
-  const setAppStage = (stage: AppStage) => {
+  const setAppStage = async (stage: AppStage) => {
     appStageRef.current = stage;
     setAppStageState(stage);
     // Synced path push
     if (stage === 'landing') navigate('/');
     else if (stage === 'building') navigate('/building');
     else if (stage === 'dashboard') {
-      refreshShop();
+      await refreshShop();
       navigate('/dashboard');
     }
     else if (stage === 'admin') navigate('/admin');

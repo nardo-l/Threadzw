@@ -78,8 +78,9 @@ import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
 import { uploadImage } from '../utils/uploadImage';
 import { getAppHost, getAppOrigin, getAbsoluteShopUrl } from '../utils/shopUrl';
+import { getSizesForCategory } from '../utils/sizes';
 import { toast } from 'sonner';
-import { seedShopProductsIfEmpty, generateRealisticSeedEvents } from '../utils/seedData';
+import { seedShopProductsIfEmpty } from '../utils/seedData';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { createMerchantNotification } from '../lib/analytics';
 
@@ -105,15 +106,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { shop, refreshShop, loading: shopLoading, authLoading } = useShopContext();
-
-  const [minLoadingFinished, setMinLoadingFinished] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMinLoadingFinished(true);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProds, setLoadingProds] = useState(true);
@@ -173,6 +165,63 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   const [showCustomSizeForm, setShowCustomSizeForm] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
 
+  // New states for Step 3 size & stock matching AddProduct/EditProduct layout
+  const [activeSizeEditing, setActiveSizeEditing] = useState<string | null>(null);
+  const [tempStockInput, setTempStockInput] = useState('');
+  const [showCustomSizeInput, setShowCustomSizeInput] = useState(false);
+  const [customSizeName, setCustomSizeName] = useState('');
+
+  // Sizing adjustments helpers for the onboard wizard
+  const handleConfirmWizardStock = () => {
+    if (!activeSizeEditing) return;
+    const qty = parseInt(tempStockInput);
+    if (!tempStockInput.trim() || isNaN(qty)) {
+      toast.error('Please enter a valid stock quantity.');
+      return;
+    }
+    if (qty <= 0) {
+      toast.error('Stock quantity must be greater than zero.');
+      return;
+    }
+
+    setSizeStock(prev => ({
+      ...prev,
+      [activeSizeEditing]: { active: true, stock: qty }
+    }));
+
+    setActiveSizeEditing(null);
+    setTempStockInput('');
+  };
+
+  const handleRemoveWizardSize = (sz: string) => {
+    setSizeStock(prev => {
+      const copy = { ...prev };
+      delete copy[sz];
+      return copy;
+    });
+    toast.success(`Removed size ${sz}.`);
+  };
+
+  const handleAddWizardCustomSizeName = () => {
+    const nameInput = customSizeName.trim();
+    if (!nameInput) return;
+    
+    // Check for duplicates
+    const matchedExisting = Object.keys(sizeStock).find(k => k.toUpperCase() === nameInput.toUpperCase() && sizeStock[k]?.active);
+    if (matchedExisting) {
+      toast.error(`Size "${matchedExisting}" is already added.`);
+      return;
+    }
+
+    setActiveSizeEditing(nameInput);
+    setTempStockInput('');
+    setShowCustomSizeInput(false);
+    setCustomSizeName('');
+  };
+
+  const wizardStandardSizes = useMemo(() => getSizesForCategory(prodCategory), [prodCategory]);
+  const wizardHasSizes = wizardStandardSizes !== null;
+
   // Active general view tab (overview / settings)
   const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
 
@@ -229,19 +278,52 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
   // Recent Visit Activity
   const recentVisitActivity = useMemo(() => {
-    return visitEvents.slice(0, 10).map(e => {
+    return visitEvents.slice(0, 10).map((e, index) => {
       let label = "Store homepage viewed";
       if (e.event_type === 'product_view') {
         const prod = products.find(p => p.id === e.product_id);
         label = prod ? `Viewed product: ${prod.name}` : "Viewed product listing";
       }
       return {
-        id: e.id || Math.random().toString(),
+        id: e.id || `visit-${index}`,
         label,
         created_at: e.created_at || new Date().toISOString()
       };
     });
   }, [visitEvents, products]);
+
+  // Filter events for purchase intents
+  const purchaseIntentEvents = useMemo(() => {
+    return analyticsEvents.filter(e => e.event_type === 'purchase_intent');
+  }, [analyticsEvents]);
+
+  // Derived KPIs for Buyer Intent & Estimated Revenue
+  const merchantKPIs = useMemo(() => {
+    const totalIntents = purchaseIntentEvents.length;
+    const totalValue = purchaseIntentEvents.reduce((sum, e) => sum + Number(e.metadata?.price || 0), 0);
+    const conversionRate = Number(localStorage.getItem('threadzw_conversion_rate') || '30') / 100;
+    const estimatedRevenue = totalValue * conversionRate;
+
+    return {
+      totalIntents,
+      totalValue,
+      estimatedRevenue,
+      conversionRatePercent: Number(localStorage.getItem('threadzw_conversion_rate') || '30')
+    };
+  }, [purchaseIntentEvents]);
+
+  // Calculate top traffic sources from referrers
+  const topTrafficSources = useMemo(() => {
+    const counts: Record<string, number> = {};
+    visitEvents.forEach(e => {
+      const ref = e.referrer || e.metadata?.referrer_label || 'Direct';
+      counts[ref] = (counts[ref] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([source, count]) => ({ source, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [visitEvents]);
 
   // Chart timeframes restricted to today, 7days, 30days
   const [chartTimeframe, setChartTimeframe] = useState<'today' | '7days' | '30days'>('7days');
@@ -380,6 +462,12 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     }
   }, [shop]);
 
+  // Auto-sync useMultipleSizes with prodCategory in the wizard
+  useEffect(() => {
+    const hasSizes = getSizesForCategory(prodCategory) !== null;
+    setUseMultipleSizes(hasSizes);
+  }, [prodCategory]);
+
   const fetchDashboardData = async (shopId: string) => {
     try {
       setLoadingProds(true);
@@ -398,10 +486,9 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         .eq('shop_id', shopId)
         .order('created_at', { ascending: false });
 
-      if (eErr || !eData || eData.length === 0) {
-        console.log('No database events detected. Instantiating high-fidelity seed interactions...');
-        const seededEvents = generateRealisticSeedEvents(shopId, productsList);
-        setAnalyticsEvents(seededEvents);
+      if (eErr || !eData) {
+        console.log('No database events detected or error fetching events.');
+        setAnalyticsEvents([]);
       } else {
         setAnalyticsEvents(eData);
       }
@@ -832,7 +919,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
   const defaultAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
 
-  if (shopLoading || authLoading || !minLoadingFinished) {
+  if (shopLoading || authLoading) {
     return (
       <div className="min-h-screen bg-[#F9FAFB] text-zinc-800 font-sans pb-28 max-w-[430px] mx-auto relative border-x border-zinc-100">
         {/* Skeleton Top Bar */}
@@ -1122,279 +1209,303 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
             </div>
 
-            {/* Condition: Empty State vs. Live Dashboard Charts & Activities */}
-            {visitEvents.length === 0 ? (
+            {/* Buyer Funnel & Financial Insights Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
-              /* Beautiful welcoming empty state for new shops */
-              <div className="bg-white border border-zinc-150 rounded-3xl p-8 text-center shadow-sm max-w-2xl mx-auto space-y-6">
-                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
-                  <Globe size={28} className="animate-pulse" />
+              {/* Buyer Intents Card */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-purple-500/10 bg-purple-500/5 p-2 rounded-xl">
+                  <MessageSquare size={18} className="text-purple-600" />
                 </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-xl font-extrabold text-zinc-900">Awaiting Your First Boutique Visitors</h3>
-                  <p className="text-zinc-500 text-sm max-w-md mx-auto leading-relaxed">
-                    Your ThreadZW storefront is active and ready to handle traffic! Share your boutique link to start tracking visitor sessions, views, and product popularity in real-time.
-                  </p>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Total Buyer Intents</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{merchantKPIs.totalIntents}</h3>
                 </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">WhatsApp & Buy Now clicks</span>
+              </div>
 
-                {/* Micro Onboarding Wizard / Tips */}
-                <div className="bg-zinc-50 border border-zinc-200/60 rounded-2xl p-5 text-left space-y-4 max-w-lg mx-auto">
-                  <h4 className="text-xs font-black text-zinc-800 uppercase tracking-wider">How to secure your first visits:</h4>
-                  
-                  <div className="space-y-3 text-xs text-zinc-600">
-                    <div className="flex gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center font-bold text-emerald-700 shrink-0">1</span>
-                      <p className="leading-relaxed">
-                        <strong className="text-zinc-900">Add to Instagram bio:</strong> Copy your storefront link and set it as your social bio website URL to capture mobile buyers.
-                      </p>
-                    </div>
-                    
-                    <div className="flex gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center font-bold text-emerald-700 shrink-0">2</span>
-                      <p className="leading-relaxed">
-                        <strong className="text-zinc-900">Post to WhatsApp Status:</strong> Send a quick collection teaser photo and ask your customers to swipe up or tap your storefront URL.
-                      </p>
-                    </div>
+              {/* Total Intent Value Card */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-amber-500/10 bg-amber-500/5 p-2 rounded-xl">
+                  <Coins size={18} className="text-amber-600" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Total Funnel Value</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">${merchantKPIs.totalValue.toFixed(2)}</h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Sum of intent product values</span>
+              </div>
 
-                    <div className="flex gap-2.5">
-                      <span className="w-5 h-5 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center font-bold text-emerald-700 shrink-0">3</span>
-                      <p className="leading-relaxed">
-                        <strong className="text-zinc-900">Simulate a live test:</strong> Open your storefront link in a new tab or window, click around some products, and return here to watch this dashboard light up instantly!
-                      </p>
-                    </div>
+              {/* Estimated Revenue Card */}
+              <div className="bg-white border border-[#C6FF00]/40 bg-[#C6FF00]/5 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-zinc-900/10 bg-[#C6FF00]/20 p-2 rounded-xl">
+                  <TrendingUp size={18} className="text-zinc-900" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Estimated Revenue</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none">${merchantKPIs.estimatedRevenue.toFixed(2)}</h3>
+                </div>
+                <span className="text-[10px] text-zinc-500 font-semibold mt-3">Funnel Value × {merchantKPIs.conversionRatePercent}% Conversion</span>
+              </div>
+
+            </div>
+
+            {/* Full-fidelity visits visualizations grid */}
+            <div className="space-y-6">
+
+              {/* Visits Trend SVG Line Chart */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-zinc-900">Visits Timeline</h4>
+                    <p className="text-[11px] text-zinc-400">Total visits recorded across the selected timeframe.</p>
+                  </div>
+                  <div className="text-xs font-bold text-zinc-700 bg-zinc-50 border border-zinc-150 px-3 py-1.5 rounded-xl">
+                    Daily Average: <span className="text-emerald-600">{(visitEvents.length / (chartTimeframe === 'today' ? 1 : chartTimeframe === '7days' ? 7 : 30)).toFixed(1)}</span> visits
                   </div>
                 </div>
 
-                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-                  <button 
-                    onClick={handleCopyLink}
-                    className="w-full sm:w-auto px-5 py-2.5 bg-zinc-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
-                  >
-                    <Copy size={13} />
-                    <span>Copy Storefront Link</span>
-                  </button>
+                {/* Pure SVG Line Chart Canvas */}
+                <div className="relative pt-4 overflow-hidden">
+                  {visitEvents.length === 0 && (
+                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                      <span className="text-zinc-400 font-extrabold text-xs uppercase tracking-widest">No data yet</span>
+                      <p className="text-[10px] text-zinc-400 mt-1">Awaiting your first store visits</p>
+                    </div>
+                  )}
+                  <div className="w-full h-48 select-none">
+                    <svg viewBox="0 0 700 180" className="w-full h-full overflow-visible">
+                      <defs>
+                        <linearGradient id="visitsGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
+                          <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Grid Lines */}
+                      <line x1="0" y1="20" x2="700" y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                      <line x1="0" y1="60" x2="700" y2="60" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                      <line x1="0" y1="100" x2="700" y2="100" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                      <line x1="0" y1="140" x2="700" y2="140" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
+                      <line x1="0" y1="180" x2="700" y2="180" stroke="#E2E8F0" strokeWidth="1" />
+
+                      {/* Chart Path and Fill */}
+                      {visitsChartPoints.length > 0 && (
+                        <>
+                          <path d={visitsFillD} fill="url(#visitsGradient)" className="transition-all duration-300" />
+                          <path d={visitsPathD} fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
+                          
+                          {/* SVG Interactive Markers */}
+                          {visitsChartPoints.map((pt, idx) => (
+                            <g key={idx} className="group/dot cursor-pointer">
+                              <circle 
+                                cx={pt.x} 
+                                cy={pt.y} 
+                                r="4" 
+                                fill="#FFFFFF" 
+                                stroke="#10B981" 
+                                strokeWidth="2.5" 
+                                className="transition-all duration-200 group-hover/dot:r-6" 
+                              />
+                              <circle 
+                                cx={pt.x} 
+                                cy={pt.y} 
+                                r="10" 
+                                fill="#10B981" 
+                                fillOpacity="0" 
+                                className="hover:fill-opacity-10 transition-all duration-200"
+                              />
+                              {/* Value Tooltip */}
+                              <g className="opacity-0 group-hover/dot:opacity-100 transition-opacity duration-200 pointer-events-none">
+                                <rect 
+                                  x={pt.x - 30} 
+                                  y={pt.y - 32} 
+                                  width="60" 
+                                  height="22" 
+                                  rx="6" 
+                                  fill="#18181B" 
+                                />
+                                <text 
+                                  x={pt.x} 
+                                  y={pt.y - 17} 
+                                  fill="#FFFFFF" 
+                                  fontSize="10" 
+                                  fontWeight="bold" 
+                                  textAnchor="middle"
+                                >
+                                  {pt.count} views
+                                </text>
+                              </g>
+                            </g>
+                          ))}
+                        </>
+                      )}
+                    </svg>
+                  </div>
+
+                  {/* Chart X-Axis Labels */}
+                  <div className="flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider px-2 mt-2">
+                    {visitsChartPoints.map((pt, idx) => (
+                      <span key={idx}>{pt.label}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Interactive Test Tip */}
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                  <p className="text-emerald-800 text-left">
+                    💡 <strong className="font-bold">Want to test live tracking?</strong> Open your storefront in a new tab, click custom items, then return here. The analytics engine registers actions in real-time!
+                  </p>
                   <button 
                     onClick={handleOpenStore}
-                    className="w-full sm:w-auto px-5 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-emerald-100/50 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shrink-0 cursor-pointer shadow-sm"
                   >
-                    <ExternalLink size={13} />
-                    <span>Open Storefront</span>
+                    Test Storefront
                   </button>
                 </div>
               </div>
 
-            ) : (
+              {/* Split Grid for Recent Activity & Popular Items */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              /* Full-fidelity visits visualizations grid */
-              <div className="space-y-6">
-
-                {/* Visits Trend SVG Line Chart */}
-                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm space-y-4">
-                  <div className="flex items-center justify-between">
+                {/* Column 1: Recent Visit Activity */}
+                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
+                  <div className="space-y-4">
                     <div>
-                      <h4 className="text-sm font-extrabold text-zinc-900">Visits Timeline</h4>
-                      <p className="text-[11px] text-zinc-400">Total visits recorded across the selected timeframe.</p>
-                    </div>
-                    <div className="text-xs font-bold text-zinc-700 bg-zinc-50 border border-zinc-150 px-3 py-1.5 rounded-xl">
-                      Daily Average: <span className="text-emerald-600">{(visitEvents.length / (chartTimeframe === 'today' ? 1 : chartTimeframe === '7days' ? 7 : 30)).toFixed(1)}</span> visits
-                    </div>
-                  </div>
-
-                  {/* Pure SVG Line Chart Canvas */}
-                  <div className="relative pt-4 overflow-hidden">
-                    <div className="w-full h-48 select-none">
-                      <svg viewBox="0 0 700 180" className="w-full h-full overflow-visible">
-                        <defs>
-                          <linearGradient id="visitsGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
-                            <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
-                          </linearGradient>
-                        </defs>
-
-                        {/* Grid Lines */}
-                        <line x1="0" y1="20" x2="700" y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                        <line x1="0" y1="60" x2="700" y2="60" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                        <line x1="0" y1="100" x2="700" y2="100" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                        <line x1="0" y1="140" x2="700" y2="140" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                        <line x1="0" y1="180" x2="700" y2="180" stroke="#E2E8F0" strokeWidth="1" />
-
-                        {/* Chart Path and Fill */}
-                        {visitsChartPoints.length > 0 && (
-                          <>
-                            <path d={visitsFillD} fill="url(#visitsGradient)" className="transition-all duration-300" />
-                            <path d={visitsPathD} fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
-                            
-                            {/* SVG Interactive Markers */}
-                            {visitsChartPoints.map((pt, idx) => (
-                              <g key={idx} className="group/dot cursor-pointer">
-                                <circle 
-                                  cx={pt.x} 
-                                  cy={pt.y} 
-                                  r="4" 
-                                  fill="#FFFFFF" 
-                                  stroke="#10B981" 
-                                  strokeWidth="2.5" 
-                                  className="transition-all duration-200 group-hover/dot:r-6" 
-                                />
-                                <circle 
-                                  cx={pt.x} 
-                                  cy={pt.y} 
-                                  r="10" 
-                                  fill="#10B981" 
-                                  fillOpacity="0" 
-                                  className="hover:fill-opacity-10 transition-all duration-200"
-                                />
-                                {/* Value Tooltip */}
-                                <g className="opacity-0 group-hover/dot:opacity-100 transition-opacity duration-200 pointer-events-none">
-                                  <rect 
-                                    x={pt.x - 30} 
-                                    y={pt.y - 32} 
-                                    width="60" 
-                                    height="22" 
-                                    rx="6" 
-                                    fill="#18181B" 
-                                  />
-                                  <text 
-                                    x={pt.x} 
-                                    y={pt.y - 17} 
-                                    fill="#FFFFFF" 
-                                    fontSize="10" 
-                                    fontWeight="bold" 
-                                    textAnchor="middle"
-                                  >
-                                    {pt.count} views
-                                  </text>
-                                </g>
-                              </g>
-                            ))}
-                          </>
-                        )}
-                      </svg>
+                      <h4 className="text-sm font-extrabold text-zinc-900">Recent Visit Activity</h4>
+                      <p className="text-[11px] text-zinc-400">Chronological history of recent shopper views.</p>
                     </div>
 
-                    {/* Chart X-Axis Labels */}
-                    <div className="flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider px-2 mt-2">
-                      {visitsChartPoints.map((pt, idx) => (
-                        <span key={idx}>{pt.label}</span>
-                      ))}
+                    <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
+                      {recentVisitActivity.length === 0 ? (
+                        <div className="py-8 text-center text-zinc-400 text-xs">
+                          No visits logged yet.
+                        </div>
+                      ) : (
+                        recentVisitActivity.map((activity) => (
+                          <div key={activity.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                              <span className="text-zinc-800 font-medium truncate">{activity.label}</span>
+                            </div>
+                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider shrink-0">
+                              {formatTimeAgo(activity.created_at)}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
 
-                  {/* Interactive Test Tip */}
-                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-                    <p className="text-emerald-800 text-left">
-                      💡 <strong className="font-bold">Want to test live tracking?</strong> Open your storefront in a new tab, click custom items, then return here. The analytics engine registers actions in real-time!
-                    </p>
-                    <button 
-                      onClick={handleOpenStore}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shrink-0 cursor-pointer shadow-sm"
-                    >
-                      Test Storefront
-                    </button>
+                  <div className="pt-4 border-t border-zinc-100 mt-4">
+                    <span className="text-[10px] text-zinc-400 font-semibold block text-center">
+                      Total tracked events: {visitEvents.length}
+                    </span>
                   </div>
                 </div>
 
-                {/* Split Grid for Recent Activity & Popular Items */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Column 2: Most Viewed Products */}
+                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-extrabold text-zinc-900">Most Viewed Products</h4>
+                      <p className="text-[11px] text-zinc-400">Products sorted by customer view count.</p>
+                    </div>
 
-                  {/* Left Column: Recent Visit Activity */}
-                  <div className="lg:col-span-5 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-extrabold text-zinc-900">Recent Visit Activity</h4>
-                        <p className="text-[11px] text-zinc-400">Chronological history of recent shopper views.</p>
-                      </div>
-
-                      <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
-                        {recentVisitActivity.length === 0 ? (
-                          <div className="py-8 text-center text-zinc-400 text-xs">
-                            No visits logged yet.
-                          </div>
-                        ) : (
-                          recentVisitActivity.map((activity) => (
-                            <div key={activity.id} className="py-3 flex items-center justify-between gap-3 text-xs">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                                <span className="text-zinc-800 font-medium truncate">{activity.label}</span>
+                    <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
+                      {mostViewedProducts.length === 0 ? (
+                        <div className="py-8 text-center text-zinc-400 text-xs">
+                          No products viewed yet. Add some products and view them on your store!
+                        </div>
+                      ) : (
+                        mostViewedProducts.slice(0, 5).map((product) => {
+                          const imgUrl = product.images?.[0] || '';
+                          return (
+                            <div key={product.id} className="py-3 flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400 shrink-0">
+                                  {imgUrl ? (
+                                    <img 
+                                      src={imgUrl} 
+                                      className="w-full h-full object-cover" 
+                                      alt=""
+                                      referrerPolicy="no-referrer"
+                                    />
+                                  ) : (
+                                    <ShoppingBag size={16} className="text-zinc-300" />
+                                  )}
+                                </div>
+                                <div className="min-w-0">
+                                  <h5 className="text-xs font-bold text-zinc-900 truncate">
+                                    {product.name}
+                                  </h5>
+                                  <span className="text-[11px] font-semibold text-zinc-400">
+                                    ${Number(product.price).toFixed(2)}
+                                  </span>
+                                </div>
                               </div>
-                              <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider shrink-0">
-                                {formatTimeAgo(activity.created_at)}
+                              <span className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider shrink-0">
+                                {product.views || 0} views
                               </span>
                             </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-zinc-100 mt-4">
-                      <span className="text-[10px] text-zinc-400 font-semibold block text-center">
-                        Total tracked events: {visitEvents.length}
-                      </span>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 
-                  {/* Right Column: Most Viewed Products */}
-                  <div className="lg:col-span-7 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-sm font-extrabold text-zinc-900">Most Viewed Products</h4>
-                        <p className="text-[11px] text-zinc-400">Products sorted by customer view count.</p>
-                      </div>
+                  <div className="pt-4 border-t border-zinc-100 mt-4 flex items-center justify-between">
+                    <span className="text-[10px] text-zinc-400 font-semibold">
+                      Showing top 5 products
+                    </span>
+                  </div>
+                </div>
 
-                      <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
-                        {mostViewedProducts.length === 0 ? (
-                          <div className="py-8 text-center text-zinc-400 text-xs">
-                            No products viewed yet. Add some products and view them on your store!
-                          </div>
-                        ) : (
-                          mostViewedProducts.slice(0, 5).map((product) => {
-                            const imgUrl = product.images?.[0] || '';
-                            return (
-                              <div key={product.id} className="py-3 flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400 shrink-0">
-                                    {imgUrl ? (
-                                      <img 
-                                        src={imgUrl} 
-                                        className="w-full h-full object-cover" 
-                                        alt=""
-                                        referrerPolicy="no-referrer"
-                                      />
-                                    ) : (
-                                      <ShoppingBag size={16} className="text-zinc-300" />
-                                    )}
-                                  </div>
-                                  <div className="min-w-0">
-                                    <h5 className="text-xs font-bold text-zinc-900 truncate">
-                                      {product.name}
-                                    </h5>
-                                    <span className="text-[11px] font-semibold text-zinc-400">
-                                      ${Number(product.price).toFixed(2)}
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider shrink-0">
-                                  {product.views || 0} views
+                {/* Column 3: Top Traffic Sources */}
+                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-extrabold text-zinc-900">Top Traffic Sources</h4>
+                      <p className="text-[11px] text-zinc-400">Distribution of visitor referrers.</p>
+                    </div>
+
+                    <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
+                      {topTrafficSources.length === 0 ? (
+                        <div className="py-8 text-center text-zinc-400 text-xs">
+                          No traffic sources recorded yet.
+                        </div>
+                      ) : (
+                        topTrafficSources.map(({ source, count }) => {
+                          const percentage = visitEvents.length > 0 ? ((count / visitEvents.length) * 100).toFixed(0) : '0';
+                          return (
+                            <div key={source} className="py-3 flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="w-2 h-2 rounded-full bg-[#C6FF00] border border-black/10 shrink-0" />
+                                <span className="text-zinc-800 font-bold truncate">{source}</span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-zinc-600 font-medium">{count} visits</span>
+                                <span className="text-[10px] bg-zinc-100 text-zinc-500 font-mono font-bold px-1.5 py-0.5 rounded">
+                                  {percentage}%
                                 </span>
                               </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-zinc-100 mt-4 flex items-center justify-between">
-                      <span className="text-[10px] text-zinc-400 font-semibold">
-                        Showing top 5 products
-                      </span>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 
+                  <div className="pt-4 border-t border-zinc-100 mt-4">
+                    <span className="text-[10px] text-zinc-400 font-semibold block text-center">
+                      Traffic channels tracked live
+                    </span>
+                  </div>
                 </div>
 
               </div>
-            )}
+
+            </div>
 
           </div>
         ) : (
@@ -1937,345 +2048,206 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                     {/* STEP 3: Variants & Stock */}
                     {wizardStep === 3 && (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-3.5 bg-zinc-50 border border-zinc-150 rounded-2xl">
-                          <div>
-                            <h4 className="text-xs font-black text-zinc-900 font-sans">Configure Multiple Sizes</h4>
-                            <p className="text-[9px] text-zinc-400">Offer specific variant stock (e.g. Clothes, Sneakers)</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setUseMultipleSizes(!useMultipleSizes)}
-                            className={`w-10 h-6 flex items-center rounded-full p-0.5 transition-all cursor-pointer ${
-                              useMultipleSizes ? 'bg-[#C6FF00] justify-end' : 'bg-zinc-200 justify-start'
-                            }`}
-                          >
-                            <span className="w-5 h-5 bg-white rounded-full shadow-sm block" />
-                          </button>
-                        </div>
 
-                        {useMultipleSizes ? (
-                          <div className="space-y-4">
-                            {/* Elegant Helper Text and Example */}
-                            <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-2xl space-y-2.5">
-                              <p className="text-xs text-zinc-900 font-bold font-sans">
-                                Add each size together with its available stock quantity.
-                              </p>
-                              <div className="text-[11px] text-zinc-500 space-y-1 font-mono">
-                                <p className="font-bold text-zinc-700 uppercase tracking-wider text-[9px]">Example:</p>
-                                <div className="grid grid-cols-2 gap-x-4 max-w-xs pt-1 border-t border-zinc-150">
-                                  <div>Small</div><div>Quantity: 5</div>
-                                  <div>Medium</div><div>Quantity: 3</div>
-                                  <div>Large</div><div>Quantity: 8</div>
-                                  <div>XL</div><div>Quantity: 2</div>
-                                </div>
-                              </div>
-                            </div>
-                            {/* Category is Accessories */}
-                            {prodCategory === 'Accessories' ? (
-                              <div className="space-y-3">
-                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Custom Variants for Accessories</p>
-                                <p className="text-[11px] text-zinc-500 leading-normal">Accessories do not have predefined size ranges. You can create custom variants below.</p>
-                                {/* Custom sizes entry */}
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Add variant (e.g. Gold, Leather, Small)"
-                                    value={customSizeInput}
-                                    onChange={(e) => setCustomSizeInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        const sz = customSizeInput.trim();
-                                        if (sz) {
-                                          setSizeStock(prev => ({ ...prev, [sz]: { active: true, stock: 10 } }));
-                                          setCustomSizeInput('');
-                                        }
-                                      }
-                                    }}
-                                    className="flex-grow px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs focus:outline-none transition-all text-zinc-950 font-bold shadow-sm placeholder-zinc-500 caret-black"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const sz = customSizeInput.trim();
-                                      if (sz) {
-                                        setSizeStock(prev => ({ ...prev, [sz]: { active: true, stock: 10 } }));
-                                        setCustomSizeInput('');
-                                      }
-                                    }}
-                                    className="px-4 h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-sm gap-1"
-                                  >
-                                    <span>+ Add Size</span>
-                                  </button>
-                                </div>
-                              </div>
-                            ) : prodCategory === 'Custom' ? (
-                              <div className="space-y-3">
-                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Unlimited Custom Sizes</p>
-                                <p className="text-[11px] text-zinc-500 leading-normal">Create custom sizes for your products (e.g. Small, Medium, One Size, 42, Large Tall).</p>
-                                {/* Custom sizes entry */}
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="e.g. Large Tall, One Size, 42"
-                                    value={customSizeInput}
-                                    onChange={(e) => setCustomSizeInput(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        const sz = customSizeInput.trim();
-                                        if (sz) {
-                                          setSizeStock(prev => ({ ...prev, [sz]: { active: true, stock: 10 } }));
-                                          setCustomSizeInput('');
-                                        }
-                                      }
-                                    }}
-                                    className="flex-grow px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs focus:outline-none transition-all text-zinc-950 font-bold shadow-sm placeholder-zinc-500 caret-black"
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const sz = customSizeInput.trim();
-                                      if (sz) {
-                                        setSizeStock(prev => ({ ...prev, [sz]: { active: true, stock: 10 } }));
-                                        setCustomSizeInput('');
-                                      }
-                                    }}
-                                    className="px-4 h-11 bg-black hover:bg-zinc-800 active:scale-95 text-white rounded-xl text-xs font-bold cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-sm gap-1"
-                                  >
-                                    <span>+ Add Size</span>
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              /* Clothing or Sneakers presets */
-                              <div className="space-y-3.5">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">
-                                  Select {prodCategory === 'Sneakers' ? 'Shoe Sizes' : 'Clothing Sizes'}
-                                </label>
-                                
-                                <div className="flex flex-wrap gap-2">
-                                  {/* Static chips & added ones */}
-                                  {(() => {
-                                    const isSneakers = prodCategory === 'Sneakers';
-                                    const presets = isSneakers 
-                                      ? ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12']
-                                      : ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-                                    
-                                    // Combine presets with existing sizeStock keys, preserving order where possible
-                                    const allChipsSet = new Set([...presets, ...Object.keys(sizeStock)]);
-                                    const chips = Array.from(allChipsSet).filter(c => {
-                                      const isApparelPreset = ['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(c);
-                                      const isSneakerPreset = ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11', 'UK 12'].includes(c);
-                                      if (isSneakers) {
-                                        return !isApparelPreset;
-                                      } else {
-                                        return !isSneakerPreset;
-                                      }
-                                    });
-
-                                    return (
-                                      <>
-                                        {chips.map((sz) => {
-                                          const isActive = !!sizeStock[sz]?.active;
-                                          return (
-                                            <button
-                                              key={sz}
-                                              type="button"
-                                              onClick={() => {
-                                                setSizeStock(prev => ({
-                                                  ...prev,
-                                                  [sz]: { 
-                                                    active: !isActive, 
-                                                    stock: prev[sz]?.stock !== undefined ? prev[sz].stock : 10 
-                                                  }
-                                                }));
-                                              }}
-                                              className={`px-4 py-2 rounded-xl text-xs font-extrabold border transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
-                                                isActive
-                                                  ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/20'
-                                                  : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
-                                              }`}
-                                            >
-                                              {sz}
-                                            </button>
-                                          );
-                                        })}
-                                        
-                                        {/* Add Custom Size Button inside chip list for Clothing */}
-                                        {!isSneakers && (
-                                          <div className="flex gap-1.5 items-center">
-                                            {showCustomSizeForm ? (
-                                              <div className="flex gap-1.5 items-center">
-                                                <input
-                                                  type="text"
-                                                  placeholder="Size (e.g. XXXL)"
-                                                  autoFocus
-                                                  value={customSizeInput}
-                                                  onChange={(e) => setCustomSizeInput(e.target.value)}
-                                                  onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                      e.preventDefault();
-                                                      const sz = customSizeInput.trim();
-                                                      if (sz) {
-                                                        setSizeStock(prev => ({ ...prev, [sz]: { active: true, stock: 10 } }));
-                                                        setCustomSizeInput('');
-                                                        setShowCustomSizeForm(false);
-                                                      }
-                                                    } else if (e.key === 'Escape') {
-                                                      setShowCustomSizeForm(false);
-                                                    }
-                                                  }}
-                                                  className="px-2.5 py-1.5 w-24 bg-white border border-zinc-300 rounded-lg text-xs font-bold focus:outline-none focus:border-[#C6FF00] text-zinc-900"
-                                                />
-                                                <button
-                                                  type="button"
-                                                  onClick={() => {
-                                                    const sz = customSizeInput.trim();
-                                                    if (sz) {
-                                                      setSizeStock(prev => ({ ...prev, [sz]: { active: true, stock: 10 } }));
-                                                      setCustomSizeInput('');
-                                                      setShowCustomSizeForm(false);
-                                                    } else {
-                                                      setShowCustomSizeForm(false);
-                                                    }
-                                                  }}
-                                                  className="px-2 py-1.5 bg-black hover:bg-zinc-800 text-white font-bold rounded-lg text-[10px] uppercase"
-                                                >
-                                                  Add
-                                                </button>
-                                              </div>
-                                            ) : (
-                                              <button
-                                                type="button"
-                                                onClick={() => setShowCustomSizeForm(true)}
-                                                className="px-3 py-2 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 rounded-xl text-xs font-bold cursor-pointer transition-all"
-                                              >
-                                                + Add Custom Size
-                                              </button>
-                                            )}
-                                          </div>
-                                        )}
-                                      </>
-                                    );
-                                  })()}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Stock quantity entry list for selected sizes */}
-                            <div className="space-y-2.5 mt-4">
-                              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">
-                                Inventory & Stock Levels
-                              </p>
-                              
-                              {(() => {
-                                const activeSizes = Object.entries(sizeStock).filter(([_, val]) => val.active);
-                                if (activeSizes.length === 0) {
-                                  return (
-                                    <p className="text-xs text-zinc-400 italic text-center py-4 border border-dashed border-zinc-150 rounded-xl">
-                                      Please select a size above to set its stock quantity.
-                                    </p>
-                                  );
-                                }
-                                
-                                return (
-                                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                                    <AnimatePresence initial={false}>
-                                      {activeSizes.map(([size, item]) => (
-                                        <motion.div
-                                          key={size}
-                                          initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                                          animate={{ opacity: 1, height: 'auto', scale: 1 }}
-                                          exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                                          transition={{ duration: 0.2 }}
-                                          className="flex items-center justify-between p-3 bg-zinc-50 border border-zinc-150 rounded-2xl shadow-xs"
-                                        >
-                                          <div className="flex items-center gap-2">
-                                            <span className="w-8 h-8 rounded-lg bg-zinc-200/50 flex items-center justify-center text-[11px] font-extrabold text-zinc-800">
-                                              {size}
-                                            </span>
-                                            <span className="text-xs font-bold text-zinc-800">Variant Stock</span>
-                                          </div>
-                                          
-                                          <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1">
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setSizeStock(prev => ({
-                                                    ...prev,
-                                                    [size]: { ...prev[size], stock: Math.max(0, prev[size].stock - 1) }
-                                                  }));
-                                                }}
-                                                className="w-7 h-7 bg-white border border-zinc-200 hover:bg-zinc-100 rounded-lg flex items-center justify-center text-xs font-black cursor-pointer text-zinc-800 transition-colors"
-                                              >
-                                                -
-                                              </button>
-                                              <input
-                                                type="number"
-                                                min="0"
-                                                value={item.stock}
-                                                onChange={(e) => {
-                                                  const v = parseInt(e.target.value) || 0;
-                                                  setSizeStock(prev => ({
-                                                    ...prev,
-                                                    [size]: { ...prev[size], stock: v }
-                                                  }));
-                                                }}
-                                                className="w-14 h-8 text-center text-xs font-black bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-lg text-zinc-900 caret-black focus:outline-none"
-                                              />
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setSizeStock(prev => ({
-                                                    ...prev,
-                                                    [size]: { ...prev[size], stock: prev[size].stock + 1 }
-                                                  }));
-                                                }}
-                                                className="w-7 h-7 bg-white border border-zinc-200 hover:bg-zinc-100 rounded-lg flex items-center justify-center text-xs font-black cursor-pointer text-zinc-800 transition-colors"
-                                              >
-                                                +
-                                              </button>
-                                            </div>
-                                            
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                setSizeStock(prev => ({
-                                                  ...prev,
-                                                  [size]: { ...prev[size], active: false }
-                                                }));
-                                              }}
-                                              className="p-1.5 hover:bg-red-50 text-zinc-400 hover:text-red-500 rounded-lg transition-colors cursor-pointer"
-                                              title="Remove variant"
-                                            >
-                                              <X size={14} />
-                                            </button>
-                                          </div>
-                                        </motion.div>
-                                      ))}
-                                    </AnimatePresence>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          </div>
-                        ) : (
+                        {!wizardHasSizes ? (
                           <div className="space-y-3 p-4 bg-zinc-50 border border-zinc-150 rounded-2xl animate-wipe">
                             <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Total Stock Quantity</label>
                             <input
                               type="number"
+                              min="0"
                               value={generalStock}
                               onChange={(e) => setGeneralStock(e.target.value)}
                               placeholder="e.g. 20"
                               className="w-full px-4 h-11 bg-white border border-zinc-200 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/10 rounded-xl text-xs md:text-sm focus:outline-none transition-all text-zinc-950 font-bold shadow-sm placeholder-zinc-500 caret-black"
                             />
                             <p className="text-[11px] text-zinc-500 leading-relaxed font-sans">
-                              Use this if your product does not have size variations.
+                              Since this category does not use standard sizes, please provide your current aggregate inventory count.
                             </p>
                           </div>
+                        ) : (
+                          <div className="space-y-4 animate-wipe">
+                            {/* Horizontally scrollable row of size chips */}
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Available Sizes</label>
+                              
+                              <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
+                                {wizardStandardSizes?.map((sz) => {
+                                  const isAdded = sizeStock[sz]?.active;
+                                  const isSelected = activeSizeEditing === sz;
+
+                                  return (
+                                    <button
+                                      key={`chip-${sz}`}
+                                      type="button"
+                                      onClick={() => {
+                                        if (isAdded) {
+                                          setActiveSizeEditing(sz);
+                                          setTempStockInput(String(sizeStock[sz].stock));
+                                        } else {
+                                          setActiveSizeEditing(sz);
+                                          setTempStockInput('');
+                                        }
+                                      }}
+                                      className={`px-4 py-2 rounded-full border text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
+                                        isSelected
+                                          ? 'bg-black text-white border-black scale-105 shadow-sm'
+                                          : isAdded
+                                          ? 'bg-zinc-100 text-zinc-900 border-zinc-200 hover:bg-zinc-150'
+                                          : 'bg-zinc-50 text-zinc-600 border-zinc-150 hover:border-zinc-200 hover:bg-zinc-100'
+                                      }`}
+                                    >
+                                      {sz} {isAdded && `(${sizeStock[sz].stock})`}
+                                    </button>
+                                  );
+                                })}
+
+                                {/* Add Custom Size Chip at the end */}
+                                {!showCustomSizeInput ? (
+                                  <button
+                                    key="chip-custom"
+                                    type="button"
+                                    onClick={() => setShowCustomSizeInput(true)}
+                                    className="px-4 py-2 rounded-full border border-dashed border-zinc-300 text-zinc-500 hover:text-zinc-800 hover:border-zinc-400 text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 flex items-center gap-1 bg-transparent"
+                                  >
+                                    <span>+ Custom</span>
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
+
+                            {/* Custom Size Name Input Block */}
+                            {showCustomSizeInput && (
+                              <div className="p-4 bg-zinc-50 border border-zinc-150 rounded-2xl space-y-3 animate-fade-in">
+                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Add Custom Size Name</label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="e.g. XXXL or 49"
+                                    value={customSizeName}
+                                    onChange={e => setCustomSizeName(e.target.value)}
+                                    className="flex-1 bg-white border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleAddWizardCustomSizeName();
+                                      } else if (e.key === 'Escape') {
+                                        setShowCustomSizeInput(false);
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={handleAddWizardCustomSizeName}
+                                    className="px-4 py-2 bg-black text-white hover:bg-zinc-800 font-bold rounded-xl text-xs uppercase"
+                                  >
+                                    Next
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowCustomSizeInput(false)}
+                                    className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-xl text-xs uppercase"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Stock Input for selected/activeSizeEditing size */}
+                            {activeSizeEditing && (
+                              <div className="p-4 bg-zinc-50 border border-zinc-150 rounded-2xl space-y-3 animate-fade-in">
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <span className="text-zinc-400 font-mono text-[9px] uppercase tracking-wider">SET STOCK FOR VARIANT</span>
+                                    <h3 className="text-sm font-black text-zinc-950 font-sans">Size Variant: <span className="text-black font-extrabold underline">{activeSizeEditing}</span></h3>
+                                  </div>
+                                  {sizeStock[activeSizeEditing]?.active && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        handleRemoveWizardSize(activeSizeEditing);
+                                        setActiveSizeEditing(null);
+                                      }}
+                                      className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <X size={12} />
+                                      <span>Remove Size</span>
+                                    </button>
+                                  )}
+                                </div>
+
+                                <div className="flex gap-2">
+                                  <input 
+                                    type="number"
+                                    min="1"
+                                    placeholder="Stock quantity (e.g. 10)"
+                                    value={tempStockInput}
+                                    onChange={e => setTempStockInput(e.target.value)}
+                                    className="flex-1 bg-white border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold text-zinc-950"
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleConfirmWizardStock();
+                                      } else if (e.key === 'Escape') {
+                                        setActiveSizeEditing(null);
+                                      }
+                                    }}
+                                    autoFocus
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={handleConfirmWizardStock}
+                                    className="px-5 py-2 bg-black text-white hover:bg-zinc-800 font-bold rounded-xl text-xs uppercase cursor-pointer"
+                                  >
+                                    Apply
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setActiveSizeEditing(null);
+                                      setTempStockInput('');
+                                    }}
+                                    className="px-3 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold rounded-xl text-xs uppercase cursor-pointer"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Configured Sizes Summary grid */}
+                            <div className="space-y-2 mt-4">
+                              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest block font-sans">Configured Sizing Summary</label>
+                              {Object.entries(sizeStock).filter(([_, v]) => v.active).length === 0 ? (
+                                <div className="text-center py-4 px-3 bg-zinc-50 border border-dashed border-zinc-200 rounded-2xl text-[11px] text-zinc-500">
+                                  No sizes active. Click any size chip above to add stock.
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-2 gap-2 max-h-[180px] overflow-y-auto pr-1">
+                                  {Object.entries(sizeStock)
+                                    .filter(([_, v]) => v.active)
+                                    .map(([sz, v]) => (
+                                      <div key={`summary-${sz}`} className="flex items-center justify-between p-2.5 bg-zinc-50 border border-zinc-150 rounded-xl">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="w-6 h-6 rounded bg-zinc-200 text-[10px] font-extrabold text-zinc-800 flex items-center justify-center">{sz}</span>
+                                          <span className="text-[11px] font-bold text-zinc-700">Stock: {v.stock}</span>
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleRemoveWizardSize(sz)}
+                                          className="p-1 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded transition-all cursor-pointer"
+                                        >
+                                          <X size={12} />
+                                        </button>
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         )}
+
+
 
                         {/* Colours management block */}
                         <div className="space-y-2 border-t border-zinc-100 pt-3">
@@ -2650,7 +2622,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                         if (useMultipleSizes) {
                           const activeCount = Object.values(sizeStock).filter(s => s.active).length;
                           if (activeCount === 0) {
-                            toast.error('Please activate at least 1 size checkbox or toggle variants off.');
+                            toast.error('Please configure at least 1 size variant to proceed.');
                             return;
                           }
                         } else {

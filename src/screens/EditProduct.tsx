@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { uploadImage } from '../utils/uploadImage';
 import { getShopUrl } from '../utils/shopUrl';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
+import { getSizesForCategory } from '../utils/sizes';
 
 interface SizeStock {
   active: boolean;
@@ -40,16 +41,13 @@ export const EditProduct: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState('None');
 
   // SCREEN 3: Sizes & Availability
-  const [sizeCategory, setSizeCategory] = useState<'apparel' | 'sneakers' | 'onesize'>('apparel');
-  const [customSizeInput, setCustomSizeInput] = useState('');
-  const [sizeStock, setSizeStock] = useState<Record<string, SizeStock>>({
-    'XS': { active: false, stock: 10 },
-    'S': { active: false, stock: 10 },
-    'M': { active: false, stock: 10 },
-    'L': { active: false, stock: 10 },
-    'XL': { active: false, stock: 10 },
-    'XXL': { active: false, stock: 10 },
-  });
+  const [loadedCategory, setLoadedCategory] = useState<string>('Clothing');
+  const [activeSizeEditing, setActiveSizeEditing] = useState<string | null>(null);
+  const [tempStockInput, setTempStockInput] = useState('');
+  const [showCustomSizeInput, setShowCustomSizeInput] = useState(false);
+  const [customSizeName, setCustomSizeName] = useState('');
+  const [sizeStock, setSizeStock] = useState<Record<string, SizeStock>>({});
+  const [generalStock, setGeneralStock] = useState('10');
 
   // Colors optional State
   const swatches = ['⚫', '⚪', '🟤', '🔴', '🔵', '🟡', '🟢'];
@@ -148,24 +146,15 @@ export const EditProduct: React.FC = () => {
         setIsVisible(product.is_published ?? true);
 
         // Pre-populate sizes
+        const categoryName = product.category || 'Clothing';
+        setLoadedCategory(categoryName);
+        const hasSizes = getSizesForCategory(categoryName) !== null;
+
         if (product.sizes && Array.isArray(product.sizes)) {
           const updatedSizeStock: Record<string, SizeStock> = {};
           
-          let hasApparel = false;
-          let hasSneakers = false;
-          let hasOneSize = false;
-
           product.sizes.forEach((s: any) => {
             if (s && s.size) {
-              const uppercaseSize = s.size.toUpperCase();
-              if (['XS', 'S', 'M', 'L', 'XL', 'XXL'].includes(uppercaseSize)) {
-                hasApparel = true;
-              } else if (['ONE SIZE', 'ONESIZE', 'NO SIZE', 'FREE SIZE', 'UNI', 'STANDARD'].includes(uppercaseSize)) {
-                hasOneSize = true;
-              } else {
-                hasSneakers = true;
-              }
-
               updatedSizeStock[s.size] = {
                 active: true,
                 stock: s.quantity ?? 10
@@ -173,33 +162,15 @@ export const EditProduct: React.FC = () => {
             }
           });
 
-          // Pre-populate inactive standard ones based on category
-          let category: 'apparel' | 'sneakers' | 'onesize' = 'apparel';
-          if (hasOneSize) {
-            category = 'onesize';
-            if (!updatedSizeStock['One Size']) {
-              updatedSizeStock['One Size'] = { active: true, stock: 10 };
-            }
-          } else if (hasSneakers || (!hasApparel && product.sizes.length > 0)) {
-            category = 'sneakers';
-            const defaults = ['EU 40', 'EU 41', 'EU 42', 'EU 43', 'EU 44', 'EU 45', 'US 8', 'US 9', 'US 10', 'US 11'];
-            defaults.forEach(sz => {
-              if (!updatedSizeStock[sz]) {
-                updatedSizeStock[sz] = { active: false, stock: 10 };
-              }
-            });
-          } else {
-            category = 'apparel';
-            const defaults = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-            defaults.forEach(sz => {
-              if (!updatedSizeStock[sz]) {
-                updatedSizeStock[sz] = { active: false, stock: 10 };
-              }
-            });
-          }
-
-          setSizeCategory(category);
           setSizeStock(updatedSizeStock);
+
+          // If it's a non-sized product, pre-populate generalStock with the first quantity found
+          if (!hasSizes) {
+            const firstSize = product.sizes[0];
+            if (firstSize) {
+              setGeneralStock(String(firstSize.quantity ?? 10));
+            }
+          }
         }
 
         // Pre-populate colours swatches selection
@@ -296,77 +267,54 @@ export const EditProduct: React.FC = () => {
     toast.success('Photo removed.');
   };
 
-  // Sizing changes
-  const handleSizeCategoryChange = (val: 'apparel' | 'sneakers' | 'onesize') => {
-    setSizeCategory(val);
-    if (val === 'apparel') {
-      setSizeStock({
-        'XS': { active: false, stock: 10 },
-        'S': { active: false, stock: 10 },
-        'M': { active: false, stock: 10 },
-        'L': { active: false, stock: 10 },
-        'XL': { active: false, stock: 10 },
-        'XXL': { active: false, stock: 10 },
-      });
-    } else if (val === 'sneakers') {
-      setSizeStock({
-        'EU 40': { active: false, stock: 10 },
-        'EU 41': { active: false, stock: 10 },
-        'EU 42': { active: false, stock: 10 },
-        'EU 43': { active: false, stock: 10 },
-        'EU 44': { active: false, stock: 10 },
-        'EU 45': { active: false, stock: 10 },
-        'US 8': { active: false, stock: 10 },
-        'US 9': { active: false, stock: 10 },
-        'US 10': { active: false, stock: 10 },
-        'US 11': { active: false, stock: 10 },
-      });
-    } else if (val === 'onesize') {
-      setSizeStock({
-        'One Size': { active: true, stock: 10 }
-      });
+  // Sizing adjustments
+  const handleConfirmStock = () => {
+    if (!activeSizeEditing) return;
+    const qty = parseInt(tempStockInput);
+    if (!tempStockInput.trim() || isNaN(qty)) {
+      toast.error('Please enter a valid stock quantity.');
+      return;
     }
-  };
+    if (qty <= 0) {
+      toast.error('Stock quantity must be greater than zero.');
+      return;
+    }
 
-  const handleAddCustomSize = () => {
-    if (!customSizeInput.trim()) return;
-    const sizeName = customSizeInput.trim().toUpperCase();
-    setSizeStock(prev => {
-      if (prev[sizeName]) {
-        toast.error('Size option already exists.');
-        return prev;
-      }
-      return {
-        ...prev,
-        [sizeName]: { active: true, stock: 10 }
-      };
-    });
-    setCustomSizeInput('');
-    toast.success(`Size "${sizeName}" added!`);
-  };
-
-  const toggleSizeActive = (sz: string) => {
-    setSizeStock(prev => {
-      const current = prev[sz] || { active: false, stock: 10 };
-      return {
-        ...prev,
-        [sz]: {
-          ...current,
-          active: !current.active,
-          stock: !current.active ? 10 : current.stock
-        }
-      };
-    });
-  };
-
-  const updateSizeStock = (sz: string, val: number) => {
+    // Save the size
     setSizeStock(prev => ({
       ...prev,
-      [sz]: {
-        ...(prev[sz] || { active: true }),
-        stock: Math.max(0, val)
-      }
+      [activeSizeEditing]: { active: true, stock: qty }
     }));
+
+    // Clear and return focus
+    setActiveSizeEditing(null);
+    setTempStockInput('');
+  };
+
+  const handleRemoveSize = (sz: string) => {
+    setSizeStock(prev => {
+      const copy = { ...prev };
+      delete copy[sz];
+      return copy;
+    });
+    toast.success(`Removed size ${sz}.`);
+  };
+
+  const handleAddCustomSizeName = () => {
+    const nameInput = customSizeName.trim();
+    if (!nameInput) return;
+    
+    // Check for duplicates
+    const matchedExisting = Object.keys(sizeStock).find(k => k.toUpperCase() === nameInput.toUpperCase() && sizeStock[k]?.active);
+    if (matchedExisting) {
+      toast.error(`Size "${matchedExisting}" is already added.`);
+      return;
+    }
+
+    setActiveSizeEditing(nameInput);
+    setTempStockInput('');
+    setShowCustomSizeInput(false);
+    setCustomSizeName('');
   };
 
   // Navigation handlers
@@ -375,11 +323,19 @@ export const EditProduct: React.FC = () => {
     if (step === 2 && (!name || !price)) return;
     
     if (step === 3) {
-      const activeSizes = Object.values(sizeStock).filter(s => s.active);
-      const hasStock = activeSizes.some(s => s.stock > 0);
-      if (!hasStock) {
-        toast.error('Please add stock (at least 1 size with stock > 0)');
-        return;
+      const hasSizes = getSizesForCategory(loadedCategory) !== null;
+      if (hasSizes) {
+        const activeSizes = Object.values(sizeStock).filter(s => s.active);
+        const hasStock = activeSizes.some(s => s.stock > 0);
+        if (!hasStock) {
+          toast.error('Please add stock (at least 1 size with stock > 0)');
+          return;
+        }
+      } else {
+        if (!generalStock.trim() || isNaN(parseInt(generalStock)) || parseInt(generalStock) < 0) {
+          toast.error('Please provide a valid stock level.');
+          return;
+        }
       }
     }
 
@@ -402,12 +358,20 @@ export const EditProduct: React.FC = () => {
     setSaving(true);
     const saveToastHandle = toast.loading('Syncing listing modifications to database...');
     try {
-      const configuredSizes = Object.entries(sizeStock)
-        .filter(([_, data]) => data.active)
-        .map(([size, data]) => ({
-          size,
-          quantity: data.stock
-        }));
+      const hasSizes = getSizesForCategory(loadedCategory) !== null;
+      let configuredSizes = [];
+
+      if (hasSizes) {
+        configuredSizes = Object.entries(sizeStock)
+          .filter(([_, data]) => data.active)
+          .map(([size, data]) => ({
+            size,
+            quantity: data.stock
+          }));
+      } else {
+        const qty = parseInt(generalStock) || 10;
+        configuredSizes = [{ size: 'One Size', quantity: qty }];
+      }
 
       const totalStock = configuredSizes.reduce((total, s) => total + s.quantity, 0);
 
@@ -466,7 +430,9 @@ export const EditProduct: React.FC = () => {
   // Validate state
   const isScreen1Valid = images.length > 0;
   const isScreen2Valid = name.trim() !== '' && price.trim() !== '';
-  const isScreen3Valid = Object.values(sizeStock).some(s => s.active && s.stock > 0);
+  const isScreen3Valid = getSizesForCategory(loadedCategory) !== null
+    ? Object.values(sizeStock).some(s => s.active && s.stock > 0)
+    : (generalStock.trim() !== '' && !isNaN(parseInt(generalStock)) && parseInt(generalStock) >= 0);
 
   const slideVariants = {
     enter: (dir: number) => ({
@@ -668,7 +634,7 @@ export const EditProduct: React.FC = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="e.g. Cargo Pants"
-                        className="w-full text-lg font-bold bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] px-4 py-3.5 text-white placeholder-white/25 outline-none focus:outline-none transition-all"
+                        className="w-full text-lg font-bold bg-white border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] px-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
                       />
                     </div>
 
@@ -678,14 +644,14 @@ export const EditProduct: React.FC = () => {
                         Price
                       </label>
                       <div className="relative flex items-center">
-                        <span className="absolute left-4 font-black text-xl text-[#C6FF00] select-none">$</span>
+                        <span className="absolute left-4 font-black text-xl text-zinc-400 select-none">$</span>
                         <input 
                           type="number" 
                           inputMode="decimal"
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
                           placeholder="0"
-                          className="w-full text-xl font-black bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] pl-10 pr-4 py-3.5 text-[#C6FF00] placeholder-white/20 outline-none focus:outline-none transition-all"
+                          className="w-full text-xl font-black bg-white border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] pl-10 pr-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -728,7 +694,6 @@ export const EditProduct: React.FC = () => {
                     <span>Next</span>
                     <ChevronRight size={16} strokeWidth={3} />
                   </button>
-
                 </div>
               )}
 
@@ -737,135 +702,181 @@ export const EditProduct: React.FC = () => {
                 <div className="space-y-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
                     <h1 className="text-3xl font-black tracking-tight text-white">Sizes & stock.</h1>
-                    <p className="text-white/50 text-[13px]">Select colours & tap sizes to activate.</p>
+                    <p className="text-white/50 text-[13px]">Configure quantities for sizes of {loadedCategory}.</p>
                   </div>
 
-                  {/* Size type selection tab */}
-                  <div className="flex gap-2 p-1 bg-white/[0.04] border border-white/[0.08] rounded-xl font-sans">
-                    {(['apparel', 'sneakers', 'onesize'] as const).map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => handleSizeCategoryChange(cat)}
-                        className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all capitalize cursor-pointer ${
-                          sizeCategory === cat 
-                            ? 'bg-[#C6FF00] text-black font-black' 
-                            : 'text-white/60 hover:text-white'
-                        }`}
-                      >
-                        {cat === 'onesize' ? 'No Size' : cat}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Size grid */}
+                  {/* Size selection block */}
                   <div className="space-y-4 flex-1 flex flex-col justify-center">
-                    
-                    {sizeCategory === 'onesize' ? (
+                    {!getSizesForCategory(loadedCategory) ? (
                       <div className="bg-white/[0.03] border border-white/[0.06] p-4 rounded-xl flex flex-col gap-2 relative">
-                        <span className="text-[14px] font-extrabold text-white">Total Stock Quantity</span>
-                        <p className="text-white/40 text-[11px] leading-tight">Caters perfectly to accessories, bags, sunglasses or raw materials that don't have sizing scales.</p>
-                        <div className="flex items-center gap-3 mt-1.5">
+                        <span className="text-[14px] font-extrabold text-white">Stock Quantity</span>
+                        <p className="text-white/45 text-[11px] leading-tight">This is a One-size product. Set the total stock quantity below.</p>
+                        <div className="flex items-center gap-3 mt-1.5 font-sans">
                           <span className="font-mono text-xs text-white/55">Stock Qty:</span>
                           <input
                             type="number"
                             min={0}
-                            value={sizeStock['One Size']?.stock ?? 10}
-                            onChange={(e) => updateSizeStock('One Size', parseInt(e.target.value) || 0)}
-                            className="w-20 h-9 rounded-lg bg-white border border-zinc-200 text-zinc-950 font-extrabold text-[15px] text-center focus:outline-none focus:ring-1 focus:ring-[#C6FF00]"
+                            value={generalStock}
+                            onChange={(e) => setGeneralStock(e.target.value)}
+                            className="w-20 h-9 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[15px] text-center focus:outline-none focus:ring-1 focus:ring-[#C6FF00]"
                           />
                         </div>
-                        <p className="text-[11px] text-white/60 leading-relaxed font-sans mt-2">
-                          Use this if your product does not have size variations.
-                        </p>
                       </div>
                     ) : (
                       <>
-                        {/* Elegant Helper Text and Example */}
-                        <div className="p-4 bg-zinc-950/60 border border-zinc-800 rounded-xl space-y-2.5 mb-2">
-                          <p className="text-xs text-white/90 font-bold font-sans">
-                            Add each size together with its available stock quantity.
-                          </p>
-                          <div className="text-[11px] text-white/50 space-y-1 font-mono">
-                            <p className="font-bold text-[#C6FF00] uppercase tracking-wider text-[9px]">Example:</p>
-                            <div className="grid grid-cols-2 gap-x-4 max-w-xs pt-1 border-t border-white/5">
-                              <div>Small</div><div>Quantity: 5</div>
-                              <div>Medium</div><div>Quantity: 3</div>
-                              <div>Large</div><div>Quantity: 8</div>
-                              <div>XL</div><div>Quantity: 2</div>
+                        {/* Selected variant chips (similar to colors) */}
+                        {Object.entries(sizeStock).filter(([_, v]) => v.active).length > 0 && (
+                          <div className="space-y-1.5">
+                            <span className="text-[10px] uppercase tracking-[1.5px] text-white/40 font-bold block">Configured Sizes:</span>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(sizeStock)
+                                .filter(([_, v]) => v.active)
+                                .map(([sz, v]) => (
+                                  <div
+                                    key={`selected-size-chip-${sz}`}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C6FF00] text-black font-extrabold rounded-full text-xs font-sans shadow-sm"
+                                  >
+                                    <span>{sz} • {v.stock}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveSize(sz)}
+                                      className="text-black/60 hover:text-black font-black cursor-pointer text-[11px] p-0.5"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ))}
                             </div>
+                          </div>
+                        )}
+
+                        {/* Available Sizes title & Horizontally scrollable row of size chips */}
+                        <div className="space-y-2">
+                          <span className="text-[11px] uppercase tracking-[1.5px] text-[#C6FF00] font-bold block">
+                            Available Sizes ({loadedCategory})
+                          </span>
+                          
+                          <div className="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar scroll-smooth">
+                            {getSizesForCategory(loadedCategory)?.map((sz) => {
+                              const isActive = sizeStock[sz]?.active;
+                              const isEditing = activeSizeEditing === sz;
+                              return (
+                                <button
+                                  key={`avail-size-chip-${sz}`}
+                                  type="button"
+                                  onClick={() => {
+                                    setActiveSizeEditing(sz);
+                                    setTempStockInput(sizeStock[sz]?.active ? String(sizeStock[sz].stock) : '15');
+                                  }}
+                                  className={`flex-shrink-0 min-w-12 h-12 rounded-xl border flex items-center justify-center font-extrabold text-sm transition-all relative ${
+                                    isEditing 
+                                      ? 'border-[#C6FF00] bg-[#C6FF00]/10 text-[#C6FF00] scale-95'
+                                      : isActive 
+                                        ? 'border-[#C6FF00] bg-zinc-900 text-[#C6FF00]' 
+                                        : 'border-white/[0.08] bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white'
+                                  }`}
+                                >
+                                  {sz}
+                                </button>
+                              );
+                            })}
+
+                            {/* Trigger Custom Size Input */}
+                            <button
+                              type="button"
+                              onClick={() => setShowCustomSizeInput(true)}
+                              className="flex-shrink-0 px-4 h-12 rounded-xl border border-dashed border-white/20 hover:border-white/40 bg-transparent text-white/60 hover:text-white text-xs font-bold transition-all flex items-center gap-1"
+                            >
+                              <Plus size={13} />
+                              Custom Size
+                            </button>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3 max-h-60 overflow-y-auto p-1">
-                          {Object.entries(sizeStock).map(([sz, value]) => {
-                            return (
-                              <div
-                                key={`size-card-${sz}`}
-                                className={`p-3 rounded-xl border flex flex-col items-center justify-between gap-2.5 relative transition-all min-h-[72px] ${
-                                  value.active
-                                    ? 'bg-[#C6FF00]/8 border-[#C6FF00] text-[#C6FF00]'
-                                    : 'bg-white/[0.04] border-white/[0.08] text-white/30'
-                                }`}
+                        {/* Custom Size Dialog Input inside workflow */}
+                        {showCustomSizeInput && (
+                          <div className="p-4 bg-zinc-950/80 border border-zinc-800 rounded-xl space-y-3 font-sans">
+                            <span className="text-[12px] font-extrabold text-[#C6FF00] uppercase block">Add Custom Size</span>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={customSizeName}
+                                onChange={(e) => setCustomSizeName(e.target.value)}
+                                placeholder="e.g. XXL, US 12, EU 46"
+                                className="flex-1 text-xs bg-black text-white font-bold border border-zinc-800 rounded-lg px-3 py-2 outline-none focus:border-[#C6FF00] placeholder:text-zinc-600"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddCustomSizeName();
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={handleAddCustomSizeName}
+                                className="bg-[#C6FF00] text-black text-xs font-black px-4 py-2 rounded-lg hover:opacity-90"
                               >
-                                <button
-                                  type="button"
-                                  onClick={() => toggleSizeActive(sz)}
-                                  className="w-full h-full absolute inset-0 rounded-xl z-0 cursor-pointer"
-                                />
+                                Add
+                              </button>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowCustomSizeInput(false)}
+                              className="text-[10px] text-white/40 hover:text-white/60 underline uppercase"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )}
 
-                                {/* Stock status indicator dot */}
-                                {value.active && (
-                                  <div 
-                                    className={`w-2 h-2 rounded-full absolute top-2 right-2 ${
-                                      value.stock >= 5 ? 'bg-green-500' : value.stock >= 1 ? 'bg-yellow-500' : 'bg-red-500'
-                                    }`}
-                                  />
-                                )}
-
-                                <span className="font-extrabold text-[15px] relative z-10 leading-none">
-                                  {sz}
-                                </span>
-
-                                {value.active && (
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    value={value.stock}
-                                    onChange={(e) => updateSizeStock(sz, parseInt(e.target.value) || 0)}
-                                    className="w-16 h-8 rounded-[6px] bg-white border border-zinc-200 text-zinc-950 font-extrabold text-[13px] text-center relative z-10 focus:outline-none"
-                                    onClick={(e) => e.stopPropagation()}
-                                  />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {/* Add custom size option */}
-                        <div className="flex gap-2 mt-1">
-                          <input
-                            type="text"
-                            value={customSizeInput}
-                            onChange={(e) => setCustomSizeInput(e.target.value)}
-                            placeholder="Add custom size (e.g. US 12, EU 46)"
-                            className="flex-1 text-xs bg-white text-zinc-950 font-bold border border-zinc-200 rounded-lg px-3 py-2 outline-none focus:border-[#C6FF00] transition-colors placeholder:text-zinc-500"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddCustomSize}
-                            className="bg-[#C6FF00] hover:bg-[#b0e000] text-black text-xs font-bold px-4 py-2 rounded-lg transition-all cursor-pointer"
-                          >
-                            + Add Size
-                          </button>
-                        </div>
+                        {/* Stock Quantity Input for chosen size */}
+                        {activeSizeEditing && (
+                          <div className="p-4 bg-zinc-900 border border-[#C6FF00]/30 rounded-xl space-y-3 font-sans">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[13px] font-black text-white">
+                                Enter Stock Quantity for <span className="text-[#C6FF00] font-black">{activeSizeEditing}</span>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setActiveSizeEditing(null)}
+                                className="text-white/40 hover:text-white text-xs"
+                              >
+                                Close
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <input
+                                type="number"
+                                min={1}
+                                value={tempStockInput}
+                                onChange={(e) => setTempStockInput(e.target.value)}
+                                className="w-24 h-10 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[16px] text-center focus:outline-none focus:border-[#C6FF00]"
+                                placeholder="15"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleConfirmStock();
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={handleConfirmStock}
+                                className="h-10 bg-[#C6FF00] text-black text-xs font-black px-5 rounded-lg hover:opacity-90 flex items-center justify-center gap-1.5"
+                              >
+                                <Check size={14} strokeWidth={3} />
+                                Confirm
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </>
                     )}
 
                     {/* Colors swatches */}
                     <div className="space-y-4 pt-1">
                       <div>
-                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#C6FF00] block mb-2">
+                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#C6FF00] block mb-2 font-sans">
                           Colours selection (Tap to toggle)
                         </label>
                         <div className="flex flex-wrap gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
@@ -912,7 +923,7 @@ export const EditProduct: React.FC = () => {
                             value={customColorText}
                             onChange={(e) => setCustomColorText(e.target.value)}
                             placeholder="Type custom colour name (e.g. Acid Lime)..."
-                            className="flex-grow text-[13px] font-medium bg-white/[0.05] border border-[#C6FF00]/40 focus:border-[#C6FF00] rounded-lg px-3.5 py-2.5 text-white placeholder-white/25 outline-none outline-0"
+                            className="flex-grow text-[13px] font-medium bg-black border border-[#C6FF00]/40 focus:border-[#C6FF00] rounded-lg px-3.5 py-2.5 text-white placeholder-zinc-500 outline-none outline-0"
                           />
                           <button
                             type="button"
@@ -1053,7 +1064,7 @@ export const EditProduct: React.FC = () => {
                       onChange={(e) => setDescription(e.target.value.substring(0, 300))}
                       rows={3}
                       placeholder="Describe the material, fit, or styling tips..."
-                      className="w-full text-sm bg-white/[0.05] border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] p-3.5 text-white placeholder-white/20 outline-none focus:outline-none transition-all leading-normal resize-none"
+                      className="w-full text-sm bg-white border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] p-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all leading-normal resize-none font-semibold"
                     />
                   </div>
 

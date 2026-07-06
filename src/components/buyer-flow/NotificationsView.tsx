@@ -198,7 +198,7 @@ export const NotificationsView: React.FC = () => {
         className="px-6 flex items-center justify-between py-5 sticky top-0 backdrop-blur-xl z-20 border-b bg-black/80 border-[#1a1a1a]"
       >
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate('/profile')} className="p-2 -ml-2 text-white">
+          <button onClick={() => setBuyerFlowState('home')} className="p-2 -ml-2 text-white">
             <ArrowLeft size={22} />
           </button>
           <h1 className="text-[20px] font-bold text-white">Notifications</h1>
