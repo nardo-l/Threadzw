@@ -50,7 +50,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   if (path === '/admin') {
     return { stage: 'admin' };
   }
-  if (path === '/onboarding') {
+  if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
   if (path.startsWith('/dashboard') || path === '/inventory' || path === '/add-product' || path.startsWith('/edit-product') || path === '/settings' || path === '/edit-shop') {
