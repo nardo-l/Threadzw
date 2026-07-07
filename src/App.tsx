@@ -302,7 +302,9 @@ function AppContent() {
     );
   }
 
-  if (session && shopLoading) {
+  const isCurrentlyOnboarding = cleanPath === '/signup' || cleanPath === '/onboarding' || appStage === 'onboarding';
+
+  if (session && shopLoading && !isCurrentlyOnboarding) {
     return <SplashScreen />;
   }
 
