@@ -93,5 +93,7 @@ export const useShop = () => {
     await fetchShop(true);
   };
 
-  return { shop, loading, hasShop, refreshShop, authLoading, setShop, setHasShop, setLoading };
+  const isLoading = loading || (!!user && lastFetchedUserIdRef.current !== user.id);
+
+  return { shop, loading: isLoading, hasShop, refreshShop, authLoading, setShop, setHasShop, setLoading };
 };

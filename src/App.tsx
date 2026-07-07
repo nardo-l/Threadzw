@@ -137,6 +137,7 @@ function AppContent() {
     // Synced path push
     if (stage === 'landing') navigate('/');
     else if (stage === 'building') navigate('/building');
+    else if (stage === 'onboarding') navigate('/signup');
     else if (stage === 'dashboard') {
       await refreshShop();
       navigate('/dashboard');
@@ -202,6 +203,7 @@ function AppContent() {
       path === '/' ||
       path === '/login' ||
       path === '/signup' ||
+      path === '/onboarding' ||
       path.startsWith('/shop/') || 
       path.startsWith('/store/') || 
       path === '/demo' || 
