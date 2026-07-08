@@ -18,6 +18,71 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<{ error: any | null }>
 }
 
+const initializeProfileInDatabase = async (user: any) => {
+  console.log("FORENSIC: AuthContext - Running database profile initialization for user:", user.id);
+  const rawEmail = user.email || '';
+  const emailPrefix = rawEmail.split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase();
+  let baseHandle = emailPrefix || 'merchant';
+  if (baseHandle.length < 3) {
+    baseHandle += '_user';
+  }
+  
+  // Ensure handle is unique by checking if it already exists in profiles
+  let uniqueHandle = baseHandle;
+  let isUnique = false;
+  let suffix = 0;
+  
+  while (!isUnique && suffix < 10) {
+    const testHandle = suffix === 0 ? uniqueHandle : `${uniqueHandle}${suffix}`;
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('handle', testHandle)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error("FORENSIC: Profile handle uniqueness check error:", checkError);
+      throw checkError;
+    }
+
+    if (!existingProfile) {
+      uniqueHandle = testHandle;
+      isUnique = true;
+    } else {
+      suffix++;
+    }
+  }
+  
+  if (!isUnique) {
+    uniqueHandle = `${uniqueHandle}_${Math.floor(1000 + Math.random() * 9000)}`;
+  }
+
+  console.log("FORENSIC: AuthContext - Selected unique handle for new profile:", uniqueHandle);
+
+  const newProfileData = {
+    id: user.id,
+    email: rawEmail.toLowerCase(),
+    display_name: user.user_metadata?.display_name || emailPrefix || 'ThreadZW Merchant',
+    handle: uniqueHandle,
+    onboarding_complete: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  const { data: createdProfile, error: initError } = await supabase
+    .from('profiles')
+    .insert(newProfileData)
+    .select('*')
+    .maybeSingle();
+
+  if (initError) {
+    console.error("FORENSIC: Failed to initialize profile in database:", initError);
+    throw initError;
+  }
+
+  return createdProfile;
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -31,47 +96,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let mounted = true;
 
     const initSession = async () => {
-      // Create a 8.0 second timeout promise
-      const timeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error("Supabase initial response timeout")), 8000)
+      console.log("FORENSIC: AuthContext initSession starting");
+      // Create a generous 30.0 second timeout promise for initial session fetch
+      const sessionTimeoutPromise = new Promise<null>((_, reject) =>
+        setTimeout(() => reject(new Error("Supabase initial response timeout")), 30000)
       );
 
       try {
+        console.log("FORENSIC: AuthContext - Calling supabase.auth.getSession");
         const sessionResult = await Promise.race([
           supabase.auth.getSession(),
-          timeoutPromise
+          sessionTimeoutPromise
         ]) as any;
+        console.log("FORENSIC: AuthContext - getSession completed:", sessionResult);
 
         const initialSession = sessionResult?.data?.session;
 
         if (mounted) {
           if (initialSession) {
+            console.log("FORENSIC: AuthContext - Session found on init. User ID:", initialSession.user?.id);
             setSession(initialSession);
             localStorage.setItem('threadzw_logged_in', 'true');
             if (initialSession.user?.id) {
               localStorage.setItem('supabase_logged_in_user_id', initialSession.user.id);
             }
-            // Fetch profile with timeout protection
+            // Fetch profile with its own 30.0 second timeout protection
+            const profileTimeoutPromise = new Promise<null>((_, reject) =>
+              setTimeout(() => reject(new Error("Supabase profile fetch timeout")), 30000)
+            );
             try {
+              console.log("FORENSIC: AuthContext - Fetching profile for user:", initialSession.user.id);
               const profileResult = await Promise.race([
                 supabase.from('profiles').select('*').eq('id', initialSession.user.id).maybeSingle(),
-                timeoutPromise
+                profileTimeoutPromise
               ]) as any;
+              console.log("FORENSIC: AuthContext - Profile fetch completed:", profileResult);
               
+              if (profileResult?.error) {
+                throw profileResult.error;
+              }
+
               const profileCheck = profileResult?.data;
               if (profileCheck) {
+                console.log("FORENSIC: AuthContext - Profile loaded:", profileCheck);
                 setProfile({
                   ...profileCheck,
                   town: profileCheck.style_preferences?.town || 'Harare'
                 });
               } else {
-                setProfile(initialSession.user);
+                console.warn("FORENSIC: AuthContext - No profile found in database. Running database profile initialization process.");
+                const createdProfile = await initializeProfileInDatabase(initialSession.user);
+                if (createdProfile) {
+                  setProfile({
+                    ...createdProfile,
+                    town: createdProfile.style_preferences?.town || 'Harare'
+                  });
+                } else {
+                  throw new Error("Profile initialization process returned no data");
+                }
               }
             } catch (profileErr) {
-              console.warn("Profile fetch timed out, falling back to basic user info:", profileErr);
-              setProfile(initialSession.user);
+              console.error("FORENSIC: AuthContext - Profile fetch or database initialization failed. No synthetic fallback is set:", profileErr);
+              setProfile(null);
             }
           } else {
+            console.log("FORENSIC: AuthContext - No initial session found");
             setSession(null);
             setProfile(null);
             localStorage.removeItem('threadzw_logged_in');
@@ -79,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } catch (e) {
-        console.warn("Auth initSession error or timeout (falling back gracefully):", e);
+        console.error("FORENSIC: AuthContext - initSession error or timeout (falling back gracefully):", e);
         if (mounted) {
           setSession(null);
           setProfile(null);
@@ -88,6 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } finally {
         if (mounted) {
+          console.log("FORENSIC: AuthContext - Setting loading to false in initSession");
           setLoading(false);
         }
       }
@@ -95,39 +185,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initSession();
 
+    console.log("FORENSIC: AuthContext - Setting up onAuthStateChange listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      console.log("FORENSIC: AuthContext - onAuthStateChange event triggered:", event, "Session exists:", !!currentSession);
       if (mounted) {
         if (currentSession) {
+          console.log("FORENSIC: AuthContext onAuthStateChange - Setting session. User ID:", currentSession.user?.id);
           setSession(currentSession);
           localStorage.setItem('threadzw_logged_in', 'true');
           if (currentSession.user?.id) {
             localStorage.setItem('supabase_logged_in_user_id', currentSession.user.id);
           }
+          
           try {
-            const { data: profileCheck } = await supabase
+            console.log("FORENSIC: AuthContext onAuthStateChange - Querying profiles table for:", currentSession.user.id);
+            
+            // Protect the profiles query with a generous 30-second timeout
+            const profilePromise = supabase
               .from('profiles')
               .select('*')
               .eq('id', currentSession.user.id)
               .maybeSingle();
+
+            const profileResult = await Promise.race([
+              profilePromise,
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Profiles query timed out")), 30000))
+            ]) as any;
+
+            if (profileResult?.error) {
+              console.error("FORENSIC: AuthContext onAuthStateChange - profiles table query error:", profileResult.error);
+              throw profileResult.error;
+            }
+            console.log("FORENSIC: AuthContext onAuthStateChange - profiles table response:", profileResult?.data);
             
-            if (profileCheck) {
+            if (profileResult?.data) {
               setProfile({
-                ...profileCheck,
-                town: profileCheck.style_preferences?.town || 'Harare'
+                ...profileResult.data,
+                town: profileResult.data.style_preferences?.town || 'Harare'
               });
             } else {
-              setProfile(currentSession.user);
+              console.warn("FORENSIC: AuthContext onAuthStateChange - Profile not found in database. Running database profile initialization process.");
+              const createdProfile = await initializeProfileInDatabase(currentSession.user);
+              if (createdProfile) {
+                setProfile({
+                  ...createdProfile,
+                  town: createdProfile.style_preferences?.town || 'Harare'
+                });
+              } else {
+                throw new Error("Profile initialization process returned no data");
+              }
             }
           } catch (profileErr) {
-            console.warn("Profile fetch in auth state change error:", profileErr);
-            setProfile(currentSession.user);
+            console.error("FORENSIC: AuthContext onAuthStateChange - Profile fetch or database initialization failed. No synthetic fallback is set:", profileErr);
+            setProfile(null);
           }
         } else {
+          console.log("FORENSIC: AuthContext onAuthStateChange - No session. Clearing session/profile states");
           setSession(null);
           setProfile(null);
           localStorage.removeItem('threadzw_logged_in');
           localStorage.removeItem('supabase_logged_in_user_id');
         }
+        console.log("FORENSIC: AuthContext onAuthStateChange - Setting loading to false");
         setLoading(false);
       }
     });

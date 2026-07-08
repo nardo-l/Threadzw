@@ -34,33 +34,217 @@ export const Login: React.FC = () => {
     setLoginError(null);
     setShake(false);
     
+    console.log("FORENSIC: handleLogin starting");
+    console.log("FORENSIC: Inputs received - Email/Username:", email, "Password length:", password?.length);
+
+    // Timeout promise for the auth request
+    const authTimeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Authentication request timed out. Please check your network connection.")), 30000)
+    );
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      let resolvedEmail = email.trim();
+      
+      // If the entered email/username doesn't contain '@', it is a handle/username
+      if (!resolvedEmail.includes('@')) {
+        console.log("FORENSIC: Input does not contain '@'. Resolving username/handle:", resolvedEmail);
+        const lowerHandle = resolvedEmail.toLowerCase();
+        
+        // Query profiles table for matching handle
+        console.log("FORENSIC: STEP 0.1 - Querying profiles table for handle:", lowerHandle);
+        const profileLookupPromise = supabase
+          .from('profiles')
+          .select('email, handle')
+          .eq('handle', lowerHandle)
+          .maybeSingle();
+
+        const profileResult = await Promise.race([
+          profileLookupPromise,
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Username lookup timed out")), 30000))
+        ]) as any;
+
+        if (profileResult?.error) {
+          console.error("FORENSIC: STEP 0.1 ERROR - Profile query failed:", profileResult.error);
+        }
+
+        if (profileResult?.data?.email) {
+          resolvedEmail = profileResult.data.email;
+          console.log("FORENSIC: STEP 0.1 SUCCESS - Resolved handle directly in profiles table to email:", resolvedEmail);
+        } else {
+          // If profile not found, search in shops table for matching handle or name
+          console.log("FORENSIC: STEP 0.2 - Profile handle not found. Querying shops table for handle/slug:", lowerHandle);
+          const shopLookupPromise = supabase
+            .from('shops')
+            .select('owner_id, name, handle')
+            .or(`handle.eq.${lowerHandle},slug.eq.${lowerHandle}`)
+            .maybeSingle();
+
+          const shopResult = await Promise.race([
+            shopLookupPromise,
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Shop lookup timed out")), 30000))
+          ]) as any;
+
+          if (shopResult?.error) {
+            console.error("FORENSIC: STEP 0.2 ERROR - Shop query failed:", shopResult.error);
+          }
+
+          if (shopResult?.data?.owner_id) {
+            console.log("FORENSIC: STEP 0.2 SUCCESS - Found shop owner ID. Querying owner's profile:", shopResult.data.owner_id);
+            const ownerLookupPromise = supabase
+              .from('profiles')
+              .select('email')
+              .eq('id', shopResult.data.owner_id)
+              .maybeSingle();
+
+            const ownerResult = await Promise.race([
+              ownerLookupPromise,
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Owner profile lookup timed out")), 30000))
+            ]) as any;
+
+            if (ownerResult?.data?.email) {
+              resolvedEmail = ownerResult.data.email;
+              console.log("FORENSIC: STEP 0.3 SUCCESS - Resolved shop owner's profile email:", resolvedEmail);
+            }
+          }
+        }
+
+        // If we still didn't resolve to a valid email format, throw a clear error
+        if (!resolvedEmail.includes('@')) {
+          throw new Error(`The username "${resolvedEmail}" is not recognized as a registered merchant account. Please sign in with your email address instead.`);
+        }
+      }
+
+      console.log("FORENSIC: STEP 1 - Calling supabase.auth.signInWithPassword for email:", resolvedEmail);
+      const signInPromise = supabase.auth.signInWithPassword({
+        email: resolvedEmail,
         password
       });
 
+      const { data, error } = await Promise.race([
+        signInPromise,
+        authTimeout
+      ]) as any;
+
+      console.log("FORENSIC: STEP 1 COMPLETE - signInWithPassword response:", { data, error });
+
       // Strict validation of the authenticated session
       if (error) {
+        console.error("FORENSIC: STEP 1 ERROR (auth error):", error);
         throw error;
       }
       
       if (!data?.session || !data?.session?.user) {
+        console.error("FORENSIC: STEP 1 ERROR (no session):", data);
         throw new Error('No authenticated user session was returned from the authentication service.');
       }
 
-      toast.success('Signed in successfully');
-      if (data?.user?.id) {
-        localStorage.setItem('supabase_logged_in_user_id', data.user.id);
-        localStorage.setItem('threadzw_owner_email', email.trim().toLowerCase());
+      console.log("FORENSIC: STEP 2 - Session verified. User ID:", data.user.id);
+      
+      // Verify or initialize the profile record in the database before completing login flow
+      console.log("FORENSIC: STEP 2.1 - Fetching or initializing profile for user ID:", data.user.id);
+      const profilePromise = supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      const profileResult = await Promise.race([
+        profilePromise,
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Loading profile from database timed out")), 30000))
+      ]) as any;
+
+      if (profileResult?.error) {
+        console.error("FORENSIC: STEP 2.1 ERROR - Profile query failed:", profileResult.error);
+        throw new Error(`Profile query failed: ${profileResult.error.message || 'Unknown database error'}`);
       }
+
+      const profileCheck = profileResult?.data;
+      if (!profileCheck) {
+        console.warn("FORENSIC: STEP 2.1 - Profile is genuinely missing in database. Creating profile through initialization process.");
+        
+        // Generate a base unique handle from email or user ID
+        const rawEmail = data.user.email || '';
+        const emailPrefix = rawEmail.split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase();
+        let baseHandle = emailPrefix || 'merchant';
+        if (baseHandle.length < 3) {
+          baseHandle += '_user';
+        }
+        
+        // Ensure handle is unique by checking if it already exists in profiles
+        let uniqueHandle = baseHandle;
+        let isUnique = false;
+        let suffix = 0;
+        
+        while (!isUnique && suffix < 10) {
+          const testHandle = suffix === 0 ? uniqueHandle : `${uniqueHandle}${suffix}`;
+          const { data: existingProfile, error: checkError } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('handle', testHandle)
+            .maybeSingle();
+          
+          if (checkError) {
+            console.error("FORENSIC: Profile handle uniqueness check error:", checkError);
+            throw checkError;
+          }
+
+          if (!existingProfile) {
+            uniqueHandle = testHandle;
+            isUnique = true;
+          } else {
+            suffix++;
+          }
+        }
+        if (!isUnique) {
+          uniqueHandle = `${uniqueHandle}_${Math.floor(1000 + Math.random() * 9000)}`;
+        }
+
+        console.log("FORENSIC: STEP 2.1 - Selected unique handle for new profile:", uniqueHandle);
+
+        const newProfileData = {
+          id: data.user.id,
+          email: rawEmail.toLowerCase(),
+          display_name: data.user.user_metadata?.display_name || emailPrefix || 'ThreadZW Merchant',
+          handle: uniqueHandle,
+          onboarding_complete: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        const { data: createdProfile, error: initError } = await supabase
+          .from('profiles')
+          .insert(newProfileData)
+          .select('*')
+          .maybeSingle();
+
+        if (initError) {
+          console.error("FORENSIC: STEP 2.1 ERROR - Failed to initialize profile in database:", initError);
+          throw new Error(`Failed to initialize profile in database: ${initError.message || 'Unknown database error'}`);
+        }
+
+        console.log("FORENSIC: STEP 2.1 SUCCESS - Profile successfully initialized in database:", createdProfile);
+      } else {
+        console.log("FORENSIC: STEP 2.1 SUCCESS - Profile verified in database:", profileCheck);
+      }
+
+      toast.success('Signed in successfully');
+      
+      localStorage.setItem('supabase_logged_in_user_id', data.user.id);
+      localStorage.setItem('threadzw_owner_email', resolvedEmail.toLowerCase());
       localStorage.setItem('threadzw_logged_in', 'true');
+      
+      console.log("FORENSIC: STEP 3 - Navigating to /dashboard");
       navigate('/dashboard');
+      console.log("FORENSIC: STEP 3 COMPLETE - Navigation triggered");
     } catch (err: any) {
-      // Clear password field and do NOT print raw error to developer console or chat
+      console.error("FORENSIC: CATCH BLOCK - Login failed:", err);
+      // Clear password field
       setPassword('');
       setShake(true);
-      setLoginError('The email/username or password you entered is incorrect. Please try again.');
+      
+      // Extract clean error message to show in the UI
+      const displayMessage = err?.message || 'The email/username or password you entered is incorrect. Please try again.';
+      setLoginError(displayMessage);
       
       // Ensure all local storage session state remains cleared on failure
       localStorage.removeItem('threadzw_logged_in');
@@ -68,6 +252,7 @@ export const Login: React.FC = () => {
       localStorage.removeItem('threadzw_owner_email');
       localStorage.removeItem('threadzw_owner_name');
     } finally {
+      console.log("FORENSIC: FINALLY BLOCK - Setting loading to false");
       setLoading(false);
     }
   };

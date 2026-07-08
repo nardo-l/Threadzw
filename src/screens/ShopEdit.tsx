@@ -359,50 +359,31 @@ export const ShopEdit = () => {
       }
 
       const bucket = type === 'logo' ? 'shop-avatars' : 'shop-banners';
+      const folder = type === 'logo' ? 'logo' : 'banner';
 
-      // Build unique file path
-      const ext = file.name.split('.').pop();
-      const filePath = `${activeShopId || user?.id}/${type}_${Date.now()}.${ext}`;
-
-      let publicUrl = '';
-
-      try {
-        // Upload to Supabase storage
-        const { error: uploadError } = await supabase.storage
-          .from(bucket)
-          .upload(filePath, file, { upsert: true });
-
-        if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data } = supabase.storage
-          .from(bucket)
-          .getPublicUrl(filePath);
-
-        publicUrl = data.publicUrl;
-      } catch (uploadErr: any) {
-        console.warn("Storage upload failed, falling back to local preview url. Error:", uploadErr);
-        publicUrl = URL.createObjectURL(file);
-      }
+      // Call the robust centralized uploadImage utility
+      const publicUrl = await uploadImage({
+        supabase,
+        file,
+        bucket,
+        folder,
+        userId: activeShopId || user?.id || ''
+      });
 
       // Bust browser cache
-      const bustUrl = publicUrl.startsWith('blob:') ? publicUrl : `${publicUrl}?t=${Date.now()}`;
+      const bustUrl = `${publicUrl}?t=${Date.now()}`;
 
-      // Save URL to shops table
-      try {
-        const { error: dbError } = await supabase
-          .from('shops')
-          .update(
-            type === 'logo' 
-              ? { logo_url: publicUrl }
-              : { banner_url: publicUrl }
-          )
-          .eq('owner_id', user?.id || '');
+      // Save URL to shops table (scope query correctly by activeShopId)
+      const { error: dbError } = await supabase
+        .from('shops')
+        .update(
+          type === 'logo' 
+            ? { logo_url: publicUrl }
+            : { banner_url: publicUrl }
+        )
+        .eq('id', activeShopId || '');
 
-        if (dbError) throw dbError;
-      } catch (dbErr: any) {
-        console.warn("Database update failed for image path, caching locally. Error:", dbErr);
-      }
+      if (dbError) throw dbError;
 
       // Update local state immediately
       if (type === 'logo') {
@@ -428,27 +409,19 @@ export const ShopEdit = () => {
         console.warn('Cache update warning:', e);
       }
 
-      if (publicUrl.startsWith('blob:')) {
-        toast.error(
-          type === 'logo'
-            ? 'Logo preview active. Configure storage RLS to upload to cloud.'
-            : 'Banner preview active. Configure storage RLS to upload to cloud.'
-        );
-      } else {
-        toast.success(
-          type === 'logo' 
-            ? 'Logo updated!' 
-            : 'Banner updated!'
-        );
-      }
+      toast.success(
+        type === 'logo' 
+          ? 'Logo updated!' 
+          : 'Banner updated!'
+      );
 
       // Trigger active layout rebuild
       await refreshInventory();
       await refreshShop();
 
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload failed:', err);
-      toast.error('Upload failed. Try again.');
+      toast.error(`Upload failed: ${err?.message || err || 'Please try again.'}`);
     } finally {
       if (type === 'logo') {
         setUploadingAvatar(false);

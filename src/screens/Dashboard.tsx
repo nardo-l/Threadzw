@@ -225,193 +225,17 @@ export const Dashboard: React.FC<DashboardProps> = () => {
   // Active general view tab (overview / settings)
   const [activeTab, setActiveTab] = useState<'overview' | 'settings'>('overview');
 
-  // State for analytics events and notifications loaded from Supabase
-  const [analyticsEvents, setAnalyticsEvents] = useState<any[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(true);
-
-  // Filter events to only consider store views and product views as visits
-  const visitEvents = useMemo(() => {
-    return analyticsEvents.filter(e => e.event_type === 'store_view' || e.event_type === 'product_view');
-  }, [analyticsEvents]);
-
-  // Derived KPIs for Website Visits
-  const visitsKPIs = useMemo(() => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay(), 0, 0, 0);
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
-
-    const total = visitEvents.length;
-    const today = visitEvents.filter(e => e.created_at && new Date(e.created_at) >= todayStart).length;
-    const week = visitEvents.filter(e => e.created_at && new Date(e.created_at) >= startOfWeek).length;
-    const month = visitEvents.filter(e => e.created_at && new Date(e.created_at) >= startOfMonth).length;
-
-    const uniqueVisitors = new Set(visitEvents.map(e => e.visitor_id).filter(Boolean)).size;
-
-    return {
-      total,
-      today,
-      week,
-      month,
-      uniqueVisitors
-    };
-  }, [visitEvents]);
-
-  // Products sorted by view counts (i.e. product_view count)
-  const mostViewedProducts = useMemo(() => {
-    if (!products || products.length === 0) return [];
-    const counts: Record<string, number> = {};
-    visitEvents.forEach(e => {
-      if (e.event_type === 'product_view' && e.product_id) {
-        counts[e.product_id] = (counts[e.product_id] || 0) + 1;
-      }
-    });
-
-    return products.map(p => {
-      const views = counts[p.id] || p.view_count || 0;
-      return {
-        ...p,
-        views
-      };
-    }).sort((a, b) => b.views - a.views);
-  }, [products, visitEvents]);
-
-  // Recent Visit Activity
-  const recentVisitActivity = useMemo(() => {
-    return visitEvents.slice(0, 10).map((e, index) => {
-      let label = "Store homepage viewed";
-      if (e.event_type === 'product_view') {
-        const prod = products.find(p => p.id === e.product_id);
-        label = prod ? `Viewed product: ${prod.name}` : "Viewed product listing";
-      }
-      return {
-        id: e.id || `visit-${index}`,
-        label,
-        created_at: e.created_at || new Date().toISOString()
-      };
-    });
-  }, [visitEvents, products]);
-
-  // Filter events for purchase intents
-  const purchaseIntentEvents = useMemo(() => {
-    return analyticsEvents.filter(e => e.event_type === 'purchase_intent');
-  }, [analyticsEvents]);
-
-  // Derived KPIs for Buyer Intent & Estimated Revenue
-  const merchantKPIs = useMemo(() => {
-    const totalIntents = purchaseIntentEvents.length;
-    const totalValue = purchaseIntentEvents.reduce((sum, e) => sum + Number(e.metadata?.price || 0), 0);
-    const conversionRate = Number(localStorage.getItem('threadzw_conversion_rate') || '30') / 100;
-    const estimatedRevenue = totalValue * conversionRate;
-
-    return {
-      totalIntents,
-      totalValue,
-      estimatedRevenue,
-      conversionRatePercent: Number(localStorage.getItem('threadzw_conversion_rate') || '30')
-    };
-  }, [purchaseIntentEvents]);
-
-  // Calculate top traffic sources from referrers
-  const topTrafficSources = useMemo(() => {
-    const counts: Record<string, number> = {};
-    visitEvents.forEach(e => {
-      const ref = e.referrer || e.metadata?.referrer_label || 'Direct';
-      counts[ref] = (counts[ref] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .map(([source, count]) => ({ source, count }))
-      .sort((a, b) => b.count - a.count)
+  const recentProducts = useMemo(() => {
+    if (!products) return [];
+    return [...products]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 5);
-  }, [visitEvents]);
+  }, [products]);
 
-  // Chart timeframes restricted to today, 7days, 30days
-  const [chartTimeframe, setChartTimeframe] = useState<'today' | '7days' | '30days'>('7days');
-
-  // Daily average and trend calculations
-  const dailyVisitsChartData = useMemo(() => {
-    const now = new Date();
-    const points: { label: string; value: number }[] = [];
-
-    const filterVisitsByRange = (start: Date, end: Date) => {
-      return visitEvents.filter(e => {
-        if (!e.created_at) return false;
-        const d = new Date(e.created_at);
-        return d >= start && d <= end;
-      });
-    };
-
-    if (chartTimeframe === 'today') {
-      // 6 blocks of 4 hours
-      for (let i = 5; i >= 0; i--) {
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - (i + 1) * 4);
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() - i * 4);
-        const count = filterVisitsByRange(start, end).length;
-        const label = `${end.getHours()}:00`;
-        points.push({ label, value: count });
-      }
-    } else if (chartTimeframe === '7days') {
-      // Last 7 days
-      for (let i = 6; i >= 0; i--) {
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 0, 0, 0);
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 23, 59, 59);
-        const count = filterVisitsByRange(start, end).length;
-        const label = start.toLocaleDateString('en-US', { weekday: 'short' });
-        points.push({ label, value: count });
-      }
-    } else {
-      // Last 30 days
-      for (let i = 29; i >= 0; i--) {
-        const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 0, 0, 0);
-        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i, 23, 59, 59);
-        const count = filterVisitsByRange(start, end).length;
-        const label = start.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-        points.push({ label, value: count });
-      }
-    }
-
-    return points;
-  }, [visitEvents, chartTimeframe]);
-
-  const maxVisitsValue = useMemo(() => {
-    const vals = dailyVisitsChartData.map(pt => pt.value);
-    return Math.max(...vals, 1);
-  }, [dailyVisitsChartData]);
-
-  const visitsChartPoints = useMemo(() => {
-    if (dailyVisitsChartData.length === 0) return [];
-    const width = 700;
-    const height = 160;
-    const stepX = dailyVisitsChartData.length > 1 ? width / (dailyVisitsChartData.length - 1) : width;
-    
-    return dailyVisitsChartData.map((pt, idx) => {
-      const x = idx * stepX;
-      const valRatio = maxVisitsValue > 0 ? pt.value / maxVisitsValue : 0;
-      const y = 180 - (valRatio * height);
-      return {
-        x,
-        y,
-        label: pt.label,
-        count: pt.value
-      };
-    });
-  }, [dailyVisitsChartData, maxVisitsValue]);
-
-  const visitsPathD = useMemo(() => {
-    if (visitsChartPoints.length === 0) return '';
-    return visitsChartPoints.map((pt, idx) => {
-      if (idx === 0) return `M ${pt.x} ${pt.y}`;
-      return `L ${pt.x} ${pt.y}`;
-    }).join(' ');
-  }, [visitsChartPoints]);
-
-  const visitsFillD = useMemo(() => {
-    if (visitsChartPoints.length === 0) return '';
-    const startPath = `M 0 180`;
-    const linePaths = visitsChartPoints.map(pt => `L ${pt.x} ${pt.y}`).join(' ');
-    const endPath = `L ${visitsChartPoints[visitsChartPoints.length - 1].x} 180 Z`;
-    return `${startPath} ${linePaths} ${endPath}`;
-  }, [visitsChartPoints]);
+  const totalPublishedProducts = useMemo(() => {
+    if (!products) return 0;
+    return products.filter(p => p.is_published).length;
+  }, [products]);
 
   const formatTimeAgo = (isoString: string) => {
     try {
@@ -431,9 +255,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     }
   };
 
-  // Simulated indicators
-  const [followersCount, setFollowersCount] = useState(128);
-
   const fileInputRefLogo = useRef<HTMLInputElement>(null);
   const fileInputRefBanner = useRef<HTMLInputElement>(null);
   const fileInputRefProduct = useRef<HTMLInputElement>(null);
@@ -450,18 +271,6 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     }
   }, [shop]);
 
-  // Load followers tracker
-  useEffect(() => {
-    const savedFollowers = localStorage.getItem('zw_simulated_followers');
-    if (savedFollowers) {
-      setFollowersCount(parseInt(savedFollowers, 10));
-    } else if (shop?.follower_count) {
-      setFollowersCount(shop.follower_count);
-    } else {
-      setFollowersCount(128);
-    }
-  }, [shop]);
-
   // Auto-sync useMultipleSizes with prodCategory in the wizard
   useEffect(() => {
     const hasSizes = getSizesForCategory(prodCategory) !== null;
@@ -472,32 +281,32 @@ export const Dashboard: React.FC<DashboardProps> = () => {
     try {
       setLoadingProds(true);
       setLoadingOrders(true);
-      setLoadingEvents(true);
 
       // 1. Fetch & Auto-seed Products
       const pData = await seedShopProductsIfEmpty(supabase, shopId, user?.id || '');
       const productsList = pData || [];
       setProducts(productsList);
-
-      // 2. Fetch Real Analytics Events
-      const { data: eData, error: eErr } = await supabase
-        .from('analytics_events')
-        .select('*')
-        .eq('shop_id', shopId)
-        .order('created_at', { ascending: false });
-
-      if (eErr || !eData) {
-        console.log('No database events detected or error fetching events.');
-        setAnalyticsEvents([]);
-      } else {
-        setAnalyticsEvents(eData);
-      }
     } catch (err: any) {
       console.error('Dashboard data synch error:', err);
     } finally {
       setLoadingProds(false);
       setLoadingOrders(false);
-      setLoadingEvents(false);
+    }
+  };
+
+  const handleToggleShopLive = async () => {
+    if (!shop) return;
+    try {
+      const newLiveState = !shop.is_live;
+      const { error } = await supabase
+        .from('shops')
+        .update({ is_live: newLiveState })
+        .eq('id', shop.id);
+      if (error) throw error;
+      await refreshShop();
+      toast.success(newLiveState ? 'Your shop is now LIVE!' : 'Your shop is now PAUSED.');
+    } catch (err: any) {
+      toast.error(err?.message || 'Error updating shop status');
     }
   };
 
@@ -1077,6 +886,16 @@ export const Dashboard: React.FC<DashboardProps> = () => {
               >
                 Overview
               </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider transition-all cursor-pointer ${
+                  activeTab === 'settings' 
+                    ? 'bg-zinc-950 text-white shadow-xs font-bold' 
+                    : 'text-zinc-600 hover:text-zinc-900'
+                }`}
+              >
+                Settings
+              </button>
             </div>
           </div>
           
@@ -1109,400 +928,269 @@ export const Dashboard: React.FC<DashboardProps> = () => {
         {activeTab === 'overview' ? (
           <div className="space-y-6">
             
-            {/* Website Visits Control Center Toolbar */}
-            <div id="visits-control-toolbar" className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm">
-              <div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100 mb-1.5">
-                  <Activity size={12} className="animate-pulse" />
-                  Live Store Traffic
-                </span>
-                <h2 className="text-lg font-black tracking-tight text-zinc-950">Boutique Website Visits</h2>
-                <p className="text-xs text-zinc-500">Monitor storefront visitors and product engagement trends in real-time.</p>
-              </div>
-
-              {/* Timeframe Selectors */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center bg-zinc-100 p-1 rounded-2xl border border-zinc-200">
-                  {([
-                    { key: 'today', label: 'Today' },
-                    { key: '7days', label: '7 Days' },
-                    { key: '30days', label: '30 Days' }
-                  ] as const).map((tf) => (
-                    <button
-                      key={tf.key}
-                      onClick={() => setChartTimeframe(tf.key)}
-                      className={`px-3 py-1.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                        chartTimeframe === tf.key 
-                          ? 'bg-zinc-950 text-white shadow-sm' 
-                          : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'
-                      }`}
-                    >
-                      {tf.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Visits KPI Metric Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-              
-              {/* Total Visits Card */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
-                  <Eye size={18} className="text-emerald-600" />
+            {/* 1. Shop Information Card */}
+            <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-zinc-100 border border-zinc-200 overflow-hidden shrink-0 flex items-center justify-center">
+                  {shop?.logo_url ? (
+                    <img src={shop.logo_url} alt="Shop logo" className="w-full h-full object-cover" />
+                  ) : (
+                    <ShoppingBag size={24} className="text-zinc-400" />
+                  )}
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Total Visits</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.total}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-semibold mt-3">All-time store traffic</span>
-              </div>
-
-              {/* Today's Visits Card */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
-                  <Activity size={18} className="text-emerald-600" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Today's Visits</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.today}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Since midnight UTC</span>
-              </div>
-
-              {/* This Week's Visits Card */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
-                  <Calendar size={18} className="text-emerald-600" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">This Week</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.week}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Current calendar week</span>
-              </div>
-
-              {/* This Month's Visits Card */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
-                  <Globe size={18} className="text-emerald-600" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">This Month</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.month}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Current calendar month</span>
-              </div>
-
-              {/* Unique Visitors Card */}
-              <div className="bg-white border border-zinc-150 rounded-3xl col-span-2 lg:col-span-1 p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-emerald-500/10 bg-emerald-500/5 p-2 rounded-xl">
-                  <User size={18} className="text-emerald-600" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Unique Visitors</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{visitsKPIs.uniqueVisitors}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Distinct shopper profiles</span>
-              </div>
-
-            </div>
-
-            {/* Buyer Funnel & Financial Insights Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
-              {/* Buyer Intents Card */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-purple-500/10 bg-purple-500/5 p-2 rounded-xl">
-                  <MessageSquare size={18} className="text-purple-600" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Total Buyer Intents</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">{merchantKPIs.totalIntents}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-semibold mt-3">WhatsApp & Buy Now clicks</span>
-              </div>
-
-              {/* Total Intent Value Card */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-amber-500/10 bg-amber-500/5 p-2 rounded-xl">
-                  <Coins size={18} className="text-amber-600" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Total Funnel Value</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">${merchantKPIs.totalValue.toFixed(2)}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Sum of intent product values</span>
-              </div>
-
-              {/* Estimated Revenue Card */}
-              <div className="bg-white border border-[#C6FF00]/40 bg-[#C6FF00]/5 rounded-3xl p-5 text-left shadow-sm flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-4 right-4 text-zinc-900/10 bg-[#C6FF00]/20 p-2 rounded-xl">
-                  <TrendingUp size={18} className="text-zinc-900" />
-                </div>
-                <div>
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Estimated Revenue</span>
-                  <h3 className="text-2xl font-black text-zinc-950 leading-none">${merchantKPIs.estimatedRevenue.toFixed(2)}</h3>
-                </div>
-                <span className="text-[10px] text-zinc-500 font-semibold mt-3">Funnel Value × {merchantKPIs.conversionRatePercent}% Conversion</span>
-              </div>
-
-            </div>
-
-            {/* Full-fidelity visits visualizations grid */}
-            <div className="space-y-6">
-
-              {/* Visits Trend SVG Line Chart */}
-              <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-sm font-extrabold text-zinc-900">Visits Timeline</h4>
-                    <p className="text-[11px] text-zinc-400">Total visits recorded across the selected timeframe.</p>
-                  </div>
-                  <div className="text-xs font-bold text-zinc-700 bg-zinc-50 border border-zinc-150 px-3 py-1.5 rounded-xl">
-                    Daily Average: <span className="text-emerald-600">{(visitEvents.length / (chartTimeframe === 'today' ? 1 : chartTimeframe === '7days' ? 7 : 30)).toFixed(1)}</span> visits
-                  </div>
-                </div>
-
-                {/* Pure SVG Line Chart Canvas */}
-                <div className="relative pt-4 overflow-hidden">
-                  {visitEvents.length === 0 && (
-                    <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
-                      <span className="text-zinc-400 font-extrabold text-xs uppercase tracking-widest">No data yet</span>
-                      <p className="text-[10px] text-zinc-400 mt-1">Awaiting your first store visits</p>
+                  <h2 className="text-lg font-black tracking-tight text-zinc-950 flex items-center gap-2">
+                    {shop?.name || 'My Shop'}
+                    <span className="text-xs font-mono font-medium text-zinc-400">@{shop?.slug || shop?.handle || 'shop'}</span>
+                  </h2>
+                  <p className="text-xs text-zinc-500 mt-1 max-w-xl line-clamp-2">
+                    {shop?.description || 'No biography or exchange policy description configured.'}
+                  </p>
+                  {shop?.location && (
+                    <div className="flex items-center gap-1 text-[11px] text-zinc-400 mt-2 font-semibold">
+                      <MapPin size={12} />
+                      <span>{shop.location}</span>
                     </div>
                   )}
-                  <div className="w-full h-48 select-none">
-                    <svg viewBox="0 0 700 180" className="w-full h-full overflow-visible">
-                      <defs>
-                        <linearGradient id="visitsGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
-                          <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
+                </div>
+              </div>
 
-                      {/* Grid Lines */}
-                      <line x1="0" y1="20" x2="700" y2="20" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                      <line x1="0" y1="60" x2="700" y2="60" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                      <line x1="0" y1="100" x2="700" y2="100" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                      <line x1="0" y1="140" x2="700" y2="140" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="3 3" />
-                      <line x1="0" y1="180" x2="700" y2="180" stroke="#E2E8F0" strokeWidth="1" />
+              {/* Website URL Block */}
+              <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 shrink-0 flex flex-col justify-center min-w-[240px]">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1 block">Your Storefront URL</span>
+                <div className="flex items-center justify-between gap-2 bg-white border border-zinc-200 p-2 rounded-xl">
+                  <span className="text-xs font-mono text-zinc-600 truncate max-w-[150px]">
+                    {shop ? getAbsoluteShopUrl(shop.slug || shop.handle, shop.id).replace(/^https?:\/\//, '') : ''}
+                  </span>
+                  <button
+                    onClick={handleCopyLink}
+                    className="p-1.5 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 rounded-lg transition-colors cursor-pointer"
+                    title="Copy URL"
+                  >
+                    <Copy size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                      {/* Chart Path and Fill */}
-                      {visitsChartPoints.length > 0 && (
-                        <>
-                          <path d={visitsFillD} fill="url(#visitsGradient)" className="transition-all duration-300" />
-                          <path d={visitsPathD} fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="transition-all duration-300" />
-                          
-                          {/* SVG Interactive Markers */}
-                          {visitsChartPoints.map((pt, idx) => (
-                            <g key={idx} className="group/dot cursor-pointer">
-                              <circle 
-                                cx={pt.x} 
-                                cy={pt.y} 
-                                r="4" 
-                                fill="#FFFFFF" 
-                                stroke="#10B981" 
-                                strokeWidth="2.5" 
-                                className="transition-all duration-200 group-hover/dot:r-6" 
-                              />
-                              <circle 
-                                cx={pt.x} 
-                                cy={pt.y} 
-                                r="10" 
-                                fill="#10B981" 
-                                fillOpacity="0" 
-                                className="hover:fill-opacity-10 transition-all duration-200"
-                              />
-                              {/* Value Tooltip */}
-                              <g className="opacity-0 group-hover/dot:opacity-100 transition-opacity duration-200 pointer-events-none">
-                                <rect 
-                                  x={pt.x - 30} 
-                                  y={pt.y - 32} 
-                                  width="60" 
-                                  height="22" 
-                                  rx="6" 
-                                  fill="#18181B" 
-                                />
-                                <text 
-                                  x={pt.x} 
-                                  y={pt.y - 17} 
-                                  fill="#FFFFFF" 
-                                  fontSize="10" 
-                                  fontWeight="bold" 
-                                  textAnchor="middle"
-                                >
-                                  {pt.count} views
-                                </text>
-                              </g>
-                            </g>
-                          ))}
-                        </>
-                      )}
-                    </svg>
-                  </div>
-
-                  {/* Chart X-Axis Labels */}
-                  <div className="flex justify-between text-[10px] font-bold text-zinc-400 uppercase tracking-wider px-2 mt-2">
-                    {visitsChartPoints.map((pt, idx) => (
-                      <span key={idx}>{pt.label}</span>
-                    ))}
+            {/* 2. Key Metrics Grid (4 columns) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              
+              {/* Shop Status (Live / Paused) */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-xs flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Shop Status</span>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    {shop?.is_live ? (
+                      <>
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-sm font-extrabold text-emerald-600">LIVE</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
+                        <span className="text-sm font-extrabold text-amber-500">PAUSED</span>
+                      </>
+                    )}
                   </div>
                 </div>
+                <button
+                  onClick={handleToggleShopLive}
+                  className="mt-4 w-full py-1.5 px-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 hover:border-zinc-300 text-zinc-700 hover:text-zinc-950 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer text-center"
+                >
+                  {shop?.is_live ? 'Pause Shop' : 'Go Live'}
+                </button>
+              </div>
 
-                {/* Interactive Test Tip */}
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
-                  <p className="text-emerald-800 text-left">
-                    💡 <strong className="font-bold">Want to test live tracking?</strong> Open your storefront in a new tab, click custom items, then return here. The analytics engine registers actions in real-time!
-                  </p>
-                  <button 
-                    onClick={handleOpenStore}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shrink-0 cursor-pointer shadow-sm"
+              {/* Subscription Status */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-xs flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-zinc-300">
+                  <Award size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Subscription Status</span>
+                  <h3 className="text-lg font-black text-zinc-950 leading-none mt-1.5 uppercase tracking-tight">
+                    {shop?.subscription_status === 'trial' ? 'Trial Period' : shop?.subscription_status || 'Free Plan'}
+                  </h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">
+                  {shop?.subscription_status === 'trial' ? 'Accessing all premium traits' : 'Basic digital catalogue'}
+                </span>
+              </div>
+
+              {/* Total Published Products */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-xs flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-zinc-300">
+                  <Layers size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Catalogue Volume</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none mt-1">
+                    {totalPublishedProducts} <span className="text-xs text-zinc-400 font-medium">/ {products.length} products published</span>
+                  </h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Active storefront inventory</span>
+              </div>
+
+              {/* Website Visits (Simple Counter Only) */}
+              <div className="bg-white border border-zinc-150 rounded-3xl p-5 text-left shadow-xs flex flex-col justify-between relative overflow-hidden">
+                <div className="absolute top-4 right-4 text-zinc-300">
+                  <Eye size={18} />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-1">Storefront Visits</span>
+                  <h3 className="text-2xl font-black text-zinc-950 leading-none mt-1">
+                    {shop?.view_count || 0}
+                  </h3>
+                </div>
+                <span className="text-[10px] text-zinc-400 font-semibold mt-3">Total visitor clickthroughs</span>
+              </div>
+
+            </div>
+
+            {/* 3. Quick Actions & Recent Products */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* Quick Actions (Left) */}
+              <div className="lg:col-span-5 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-xs space-y-4">
+                <div>
+                  <h3 className="text-sm font-extrabold text-zinc-900">Quick Operations</h3>
+                  <p className="text-[11px] text-zinc-400">Instant access to vital management features.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => handleOpenProductModal()}
+                    className="p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-150 hover:border-zinc-300 rounded-2xl flex flex-col items-start gap-2.5 transition-all text-zinc-800 hover:text-zinc-950 cursor-pointer group active:scale-95 text-left"
                   >
-                    Test Storefront
+                    <div className="p-2 bg-[#C6FF00]/10 text-[#a9da00] rounded-xl group-hover:bg-[#C6FF00]/20 transition-all">
+                      <Plus size={16} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold block">Add Product</span>
+                      <span className="text-[9px] text-zinc-400 font-medium">New catalog item</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className="p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-150 hover:border-zinc-300 rounded-2xl flex flex-col items-start gap-2.5 transition-all text-zinc-800 hover:text-zinc-950 cursor-pointer group active:scale-95 text-left"
+                  >
+                    <div className="p-2 bg-purple-50 text-purple-600 rounded-xl group-hover:bg-purple-100 transition-all">
+                      <Edit size={16} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold block">Edit Shop</span>
+                      <span className="text-[9px] text-zinc-400 font-medium">Modify shop details</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={handleOpenStore}
+                    className="p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-150 hover:border-zinc-300 rounded-2xl flex flex-col items-start gap-2.5 transition-all text-zinc-800 hover:text-zinc-950 cursor-pointer group active:scale-95 text-left"
+                  >
+                    <div className="p-2 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-all">
+                      <ExternalLink size={16} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold block">Storefront</span>
+                      <span className="text-[9px] text-zinc-400 font-medium">View live boutique</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/inventory')}
+                    className="p-4 bg-zinc-50 hover:bg-zinc-100 border border-zinc-150 hover:border-zinc-300 rounded-2xl flex flex-col items-start gap-2.5 transition-all text-zinc-800 hover:text-zinc-950 cursor-pointer group active:scale-95 text-left"
+                  >
+                    <div className="p-2 bg-amber-50 text-amber-600 rounded-xl group-hover:bg-amber-100 transition-all">
+                      <Layers size={16} />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold block">Inventory</span>
+                      <span className="text-[9px] text-zinc-400 font-medium">Manage stock levels</span>
+                    </div>
                   </button>
                 </div>
               </div>
 
-              {/* Split Grid for Recent Activity & Popular Items */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Recent Products (Right) */}
+              <div className="lg:col-span-7 bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-extrabold text-zinc-900">Recently Added Listings</h3>
+                    <p className="text-[11px] text-zinc-400 font-medium">The newest items inside your digital catalogue.</p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/inventory')}
+                    className="text-[10px] font-bold uppercase tracking-wider text-zinc-600 hover:text-zinc-950 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Full Inventory</span>
+                    <ArrowRight size={12} />
+                  </button>
+                </div>
 
-                {/* Column 1: Recent Visit Activity */}
-                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-extrabold text-zinc-900">Recent Visit Activity</h4>
-                      <p className="text-[11px] text-zinc-400">Chronological history of recent shopper views.</p>
+                <div className="space-y-3">
+                  {recentProducts.length === 0 ? (
+                    <div className="py-8 text-center border border-dashed border-zinc-200 rounded-2xl flex flex-col items-center justify-center gap-2">
+                      <span className="text-xs font-bold text-zinc-500">Your Catalogue is Empty</span>
+                      <p className="text-[10px] text-zinc-400 max-w-xs">
+                        Auto-seeded listings are fetching or you have cleared your catalogue. Create your custom item to go active!
+                      </p>
+                      <button
+                        onClick={() => handleOpenProductModal()}
+                        className="mt-2 px-3 py-1.5 bg-[#C6FF00] hover:bg-opacity-90 text-zinc-950 font-bold text-[10px] uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+                      >
+                        Add Product Now
+                      </button>
                     </div>
-
-                    <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
-                      {recentVisitActivity.length === 0 ? (
-                        <div className="py-8 text-center text-zinc-400 text-xs">
-                          No visits logged yet.
-                        </div>
-                      ) : (
-                        recentVisitActivity.map((activity) => (
-                          <div key={activity.id} className="py-3 flex items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                              <span className="text-zinc-800 font-medium truncate">{activity.label}</span>
+                  ) : (
+                    recentProducts.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex items-center justify-between p-3 border border-zinc-100 rounded-2xl hover:bg-zinc-50/50 transition-colors gap-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-zinc-200 overflow-hidden shrink-0 flex items-center justify-center">
+                            {p.images?.[0] ? (
+                              <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Tag size={16} className="text-zinc-400" />
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-zinc-900 block truncate max-w-[180px] sm:max-w-xs text-left">
+                              {p.name}
+                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[9px] text-zinc-400 font-bold uppercase bg-zinc-100 px-1.5 py-0.5 rounded">
+                                {p.category}
+                              </span>
+                              {p.created_at && (
+                                <span className="text-[9px] text-zinc-400">
+                                  {formatTimeAgo(p.created_at)}
+                                </span>
+                              )}
                             </div>
-                            <span className="text-[10px] text-zinc-400 font-semibold uppercase tracking-wider shrink-0">
-                              {formatTimeAgo(activity.created_at)}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <span className="text-xs font-black text-zinc-950 block">
+                              ${p.price.toFixed(2)}
+                            </span>
+                            <span className={`text-[9px] font-bold uppercase ${p.is_published ? 'text-emerald-600' : 'text-zinc-400'}`}>
+                              {p.is_published ? 'Published' : 'Draft'}
                             </span>
                           </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-zinc-100 mt-4">
-                    <span className="text-[10px] text-zinc-400 font-semibold block text-center">
-                      Total tracked events: {visitEvents.length}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Column 2: Most Viewed Products */}
-                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-extrabold text-zinc-900">Most Viewed Products</h4>
-                      <p className="text-[11px] text-zinc-400">Products sorted by customer view count.</p>
-                    </div>
-
-                    <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
-                      {mostViewedProducts.length === 0 ? (
-                        <div className="py-8 text-center text-zinc-400 text-xs">
-                          No products viewed yet. Add some products and view them on your store!
                         </div>
-                      ) : (
-                        mostViewedProducts.slice(0, 5).map((product) => {
-                          const imgUrl = product.images?.[0] || '';
-                          return (
-                            <div key={product.id} className="py-3 flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className="w-10 h-10 rounded-xl bg-zinc-50 border border-zinc-100 overflow-hidden flex items-center justify-center text-zinc-400 shrink-0">
-                                  {imgUrl ? (
-                                    <img 
-                                      src={imgUrl} 
-                                      className="w-full h-full object-cover" 
-                                      alt=""
-                                      referrerPolicy="no-referrer"
-                                    />
-                                  ) : (
-                                    <ShoppingBag size={16} className="text-zinc-300" />
-                                  )}
-                                </div>
-                                <div className="min-w-0">
-                                  <h5 className="text-xs font-bold text-zinc-900 truncate">
-                                    {product.name}
-                                  </h5>
-                                  <span className="text-[11px] font-semibold text-zinc-400">
-                                    ${Number(product.price).toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-                              <span className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100 uppercase tracking-wider shrink-0">
-                                {product.views || 0} views
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-zinc-100 mt-4 flex items-center justify-between">
-                    <span className="text-[10px] text-zinc-400 font-semibold">
-                      Showing top 5 products
-                    </span>
-                  </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-
-                {/* Column 3: Top Traffic Sources */}
-                <div className="bg-white border border-zinc-150 rounded-3xl p-6 text-left shadow-sm flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-extrabold text-zinc-900">Top Traffic Sources</h4>
-                      <p className="text-[11px] text-zinc-400">Distribution of visitor referrers.</p>
-                    </div>
-
-                    <div className="divide-y divide-zinc-100 max-h-[350px] overflow-y-auto pr-1">
-                      {topTrafficSources.length === 0 ? (
-                        <div className="py-8 text-center text-zinc-400 text-xs">
-                          No traffic sources recorded yet.
-                        </div>
-                      ) : (
-                        topTrafficSources.map(({ source, count }) => {
-                          const percentage = visitEvents.length > 0 ? ((count / visitEvents.length) * 100).toFixed(0) : '0';
-                          return (
-                            <div key={source} className="py-3 flex items-center justify-between gap-3 text-xs">
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <span className="w-2 h-2 rounded-full bg-[#C6FF00] border border-black/10 shrink-0" />
-                                <span className="text-zinc-800 font-bold truncate">{source}</span>
-                              </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-zinc-600 font-medium">{count} visits</span>
-                                <span className="text-[10px] bg-zinc-100 text-zinc-500 font-mono font-bold px-1.5 py-0.5 rounded">
-                                  {percentage}%
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-zinc-100 mt-4">
-                    <span className="text-[10px] text-zinc-400 font-semibold block text-center">
-                      Traffic channels tracked live
-                    </span>
-                  </div>
-                </div>
-
               </div>
 
             </div>

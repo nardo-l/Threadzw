@@ -28,8 +28,8 @@ export const getImageUrl = (
     finalPath = finalPath.replace(/https:\/\/oadahfyoxfbisqqdtttz\.supabase\.co/gi, activeBase);
   }
 
-  // Already a full URL
-  if (finalPath.startsWith('http')) return finalPath;
+  // Already a full URL, blob URL, or base64 data URL
+  if (finalPath.startsWith('http') || finalPath.startsWith('blob:') || finalPath.startsWith('data:')) return finalPath;
   
   // Path with bucket prefix
   const buckets = ['shop-images', 'product-images', 'shop-banners', 'shop-avatars'];

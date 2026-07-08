@@ -106,24 +106,11 @@ export const EditProduct: React.FC = () => {
         }
 
         if (!shop) {
-          const cached = localStorage.getItem(`shop_${session.user.id}`);
-          if (cached) {
-            try {
-              shop = JSON.parse(cached);
-            } catch (_) {}
-          }
-        }
-
-        if (!shop) {
-          // Robust local fallback shop
-          shop = {
-            id: session.user.id,
-            handle: 'kure_streetwear'
-          };
+          throw new Error('Merchant shop not found in Supabase. Please complete your shop setup first.');
         }
 
         setShopId(shop.id);
-        setShopHandle(shop.handle || 'kure');
+        setShopHandle(shop.handle || '');
 
         // Fetch product info matching product ID and shop ID
         const { data: product, error } = await supabase

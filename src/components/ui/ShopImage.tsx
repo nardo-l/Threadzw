@@ -53,10 +53,10 @@ export const resolveImageUrl = (url: string | null | undefined, type?: 'logo' | 
     return null;
   }
 
-  // If URL starts with http://, https://, or blob:, return unchanged (with base domain correction for Supabase URLs if relevant)
-  if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://') || finalUrl.startsWith('blob:')) {
+  // If URL starts with http://, https://, blob:, or data: (base64), return unchanged (with base domain correction for Supabase URLs if relevant)
+  if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://') || finalUrl.startsWith('blob:') || finalUrl.startsWith('data:')) {
     const activeBaseUrl = SUPABASE_URL ? SUPABASE_URL.trim().replace(/\/$/, '') : "https://dxfnoswvuhqvhyofcain.supabase.co";
-    if (finalUrl.includes('.supabase.co/')) {
+    if (finalUrl.includes('.supabase.co/') && !finalUrl.startsWith('data:')) {
       const match = finalUrl.match(/https?:\/\/[a-z0-9-]+\.supabase\.co/i);
       if (match && match[0].toLowerCase() !== activeBaseUrl.toLowerCase()) {
         finalUrl = finalUrl.replace(match[0], activeBaseUrl);
