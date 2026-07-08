@@ -464,7 +464,7 @@ export const StorefrontPage: React.FC = () => {
   // Share shop utility
   const handleShareShop = async () => {
     if (!shop) return;
-    const url = window.location.href;
+    const url = `https://threadzw.vercel.app/shop/${shop.id.trim()}?page=home`;
     const title = `${shop.name} | ThreadZW Storefront`;
     const text = `Check out the latest clothing collections from ${shop.name} on ThreadZW! 🛍️✨`;
 

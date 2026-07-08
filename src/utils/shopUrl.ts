@@ -19,7 +19,7 @@ export const getShopUrl = (slug: string | null | undefined, id?: string | null |
     throw new Error("Cannot generate shop URL: shop.id is missing or invalid");
   }
   console.log("SHOP ID:", id);
-  return `/shop/${id.trim()}`;
+  return `/shop/${id.trim()}?page=home`;
 };
 
 export const getAbsoluteShopUrl = (slug: string | null | undefined, id?: string | null | undefined): string => {
@@ -27,6 +27,6 @@ export const getAbsoluteShopUrl = (slug: string | null | undefined, id?: string 
     throw new Error("Cannot generate shop URL: shop.id is missing or invalid");
   }
   console.log("SHOP ID:", id);
-  return `https://threadzw.vercel.app/shop/${id.trim()}`;
+  return `https://threadzw.vercel.app/shop/${id.trim()}?page=home`;
 };
 

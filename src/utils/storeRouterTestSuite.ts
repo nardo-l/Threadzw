@@ -22,7 +22,7 @@ export async function runStoreRouterTestSuite(): Promise<TestResult[]> {
     const testId = 'clx8n2k9m';
     const relativeUrl = getShopUrl('vintage-vault', testId);
     const absoluteUrl = getAbsoluteShopUrl('vintage-vault', testId);
-    const expectedPrefix = '/shop/clx8n2k9m';
+    const expectedPrefix = '/shop/clx8n2k9m?page=home';
 
     const urlValid = relativeUrl === expectedPrefix;
     const absValid = absoluteUrl.endsWith(expectedPrefix) && absoluteUrl.startsWith('http');

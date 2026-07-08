@@ -12,7 +12,8 @@ import {
   ShoppingBag, 
   ArrowRight,
   Clock,
-  Sparkles
+  Sparkles,
+  Copy
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
@@ -156,6 +157,17 @@ export const Dashboard: React.FC<{ initialLocked?: boolean }> = ({ initialLocked
       window.open(url, '_blank');
     } catch (err: any) {
       toast.error('Could not construct shop URL');
+    }
+  };
+
+  const handleCopyShopLink = async () => {
+    if (!shop) return;
+    try {
+      const url = `https://threadzw.vercel.app/shop/${shop.id.trim()}?page=home`;
+      await navigator.clipboard.writeText(url);
+      toast.success('Shop link copied to clipboard!');
+    } catch (err: any) {
+      toast.error('Could not copy shop link');
     }
   };
 
@@ -337,6 +349,18 @@ export const Dashboard: React.FC<{ initialLocked?: boolean }> = ({ initialLocked
               <div className="space-y-1 pr-4">
                 <h4 className="text-base font-bold text-black transition-colors group-hover:text-black">Customize Shop</h4>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">Update colors, banner, and bio details.</p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-zinc-400 shrink-0 transition-transform group-hover:translate-x-1" />
+            </div>
+
+            {/* Copy Shop Link */}
+            <div 
+              onClick={handleCopyShopLink}
+              className="group bg-zinc-50 border border-zinc-100 rounded-[20px] p-6 text-left cursor-pointer hover:border-zinc-300 transition-all active:scale-[0.99] flex items-center justify-between"
+            >
+              <div className="space-y-1 pr-4">
+                <h4 className="text-base font-bold text-black transition-colors group-hover:text-black">Copy Shop Link</h4>
+                <p className="text-xs text-zinc-500 font-medium leading-relaxed">Get the direct link to share with your customers.</p>
               </div>
               <ChevronRight className="w-5 h-5 text-zinc-400 shrink-0 transition-transform group-hover:translate-x-1" />
             </div>
