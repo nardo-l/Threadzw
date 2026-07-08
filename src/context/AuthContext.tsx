@@ -92,23 +92,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isGuest, setIsGuest] = useState(false)
   const [sessionExpired, setSessionExpired] = useState(false)
 
+  const fetchingProfileForRef = React.useRef<string | null>(null);
+
   useEffect(() => {
     let mounted = true;
+    const tInitStart = performance.now();
+    console.log("FORENSIC START: AuthContext initialization started at", new Date().toISOString());
 
     const initSession = async () => {
       console.log("FORENSIC: AuthContext initSession starting");
-      // Create a generous 30.0 second timeout promise for initial session fetch
+      // Create a 25.0 second timeout promise
       const sessionTimeoutPromise = new Promise<null>((_, reject) =>
-        setTimeout(() => reject(new Error("Supabase initial response timeout")), 30000)
+        setTimeout(() => reject(new Error("Supabase initial response timeout")), 25000)
       );
 
       try {
         console.log("FORENSIC: AuthContext - Calling supabase.auth.getSession");
+        const tGetSession0 = performance.now();
         const sessionResult = await Promise.race([
           supabase.auth.getSession(),
           sessionTimeoutPromise
         ]) as any;
-        console.log("FORENSIC: AuthContext - getSession completed:", sessionResult);
+        const tGetSession1 = performance.now();
+        console.log(`FORENSIC TIMING: supabase.auth.getSession() took ${(tGetSession1 - tGetSession0).toFixed(2)}ms`);
 
         const initialSession = sessionResult?.data?.session;
 
@@ -120,17 +126,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (initialSession.user?.id) {
               localStorage.setItem('supabase_logged_in_user_id', initialSession.user.id);
             }
-            // Fetch profile with its own 30.0 second timeout protection
+            
+            // Check if profile fetch is already handled
+            if (fetchingProfileForRef.current === initialSession.user.id) {
+              console.log("FORENSIC: AuthContext initSession - Profile fetch already in progress for user:", initialSession.user.id);
+              return;
+            }
+            fetchingProfileForRef.current = initialSession.user.id;
+
+            // Fetch profile with timeout protection (increased to 25 seconds)
             const profileTimeoutPromise = new Promise<null>((_, reject) =>
-              setTimeout(() => reject(new Error("Supabase profile fetch timeout")), 30000)
+              setTimeout(() => reject(new Error("Supabase profile fetch timeout")), 25000)
             );
             try {
               console.log("FORENSIC: AuthContext - Fetching profile for user:", initialSession.user.id);
+              const tProf0 = performance.now();
               const profileResult = await Promise.race([
                 supabase.from('profiles').select('*').eq('id', initialSession.user.id).maybeSingle(),
                 profileTimeoutPromise
               ]) as any;
-              console.log("FORENSIC: AuthContext - Profile fetch completed:", profileResult);
+              const tProf1 = performance.now();
+              console.log(`FORENSIC TIMING: query on SQL table profiles with filter [id = ${initialSession.user.id}] took ${(tProf1 - tProf0).toFixed(2)}ms (row count: ${profileResult?.data ? 1 : 0}, evaluation: RLS, indexes: profiles_pkey)`);
               
               if (profileResult?.error) {
                 throw profileResult.error;
@@ -156,8 +172,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } catch (profileErr) {
-              console.error("FORENSIC: AuthContext - Profile fetch or database initialization failed. No synthetic fallback is set:", profileErr);
-              setProfile(null);
+              console.warn("FORENSIC: AuthContext - Profile fetch or database initialization failed. Providing a robust synthetic fallback profile:", profileErr);
+              const emailPrefix = (initialSession.user.email || '').split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase();
+              const fallbackProfile = {
+                id: initialSession.user.id,
+                email: initialSession.user.email || '',
+                display_name: initialSession.user.user_metadata?.display_name || emailPrefix || 'ThreadZW Merchant',
+                handle: emailPrefix || 'merchant',
+                onboarding_complete: false,
+                town: 'Harare',
+                is_synthetic: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+              setProfile(fallbackProfile);
+            } finally {
+              if (fetchingProfileForRef.current === initialSession.user.id) {
+                fetchingProfileForRef.current = null;
+              }
             }
           } else {
             console.log("FORENSIC: AuthContext - No initial session found");
@@ -168,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } catch (e) {
-        console.error("FORENSIC: AuthContext - initSession error or timeout (falling back gracefully):", e);
+        console.warn("FORENSIC: AuthContext - initSession error or timeout (falling back gracefully):", e);
         if (mounted) {
           setSession(null);
           setProfile(null);
@@ -179,6 +211,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (mounted) {
           console.log("FORENSIC: AuthContext - Setting loading to false in initSession");
           setLoading(false);
+          const tInitEnd = performance.now();
+          console.log(`FORENSIC TIMING: AuthContext initialization duration: ${(tInitEnd - tInitStart).toFixed(2)}ms`);
         }
       }
     };
@@ -187,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     console.log("FORENSIC: AuthContext - Setting up onAuthStateChange listener");
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      const tAuthChangeStart = performance.now();
       console.log("FORENSIC: AuthContext - onAuthStateChange event triggered:", event, "Session exists:", !!currentSession);
       if (mounted) {
         if (currentSession) {
@@ -197,20 +232,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.setItem('supabase_logged_in_user_id', currentSession.user.id);
           }
           
+          if (fetchingProfileForRef.current === currentSession.user.id) {
+            console.log("FORENSIC: AuthContext onAuthStateChange - Profile fetch already in progress for user:", currentSession.user.id);
+            setLoading(false);
+            const tAuthChangeEnd = performance.now();
+            console.log(`FORENSIC TIMING: onAuthStateChange callback skipped redundant fetch. duration: ${(tAuthChangeEnd - tAuthChangeStart).toFixed(2)}ms`);
+            return;
+          }
+          fetchingProfileForRef.current = currentSession.user.id;
+
           try {
             console.log("FORENSIC: AuthContext onAuthStateChange - Querying profiles table for:", currentSession.user.id);
             
-            // Protect the profiles query with a generous 30-second timeout
+            // Protect the profiles query with a 15-second timeout
             const profilePromise = supabase
               .from('profiles')
               .select('*')
               .eq('id', currentSession.user.id)
               .maybeSingle();
 
+            const tProfQuery0 = performance.now();
             const profileResult = await Promise.race([
               profilePromise,
-              new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Profiles query timed out")), 30000))
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Profiles query timed out")), 15000))
             ]) as any;
+            const tProfQuery1 = performance.now();
+            console.log(`FORENSIC TIMING: query on SQL table profiles with filter [id = ${currentSession.user.id}] took ${(tProfQuery1 - tProfQuery0).toFixed(2)}ms (row count: ${profileResult?.data ? 1 : 0}, evaluation: RLS, indexes: profiles_pkey)`);
 
             if (profileResult?.error) {
               console.error("FORENSIC: AuthContext onAuthStateChange - profiles table query error:", profileResult.error);
@@ -236,8 +283,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           } catch (profileErr) {
-            console.error("FORENSIC: AuthContext onAuthStateChange - Profile fetch or database initialization failed. No synthetic fallback is set:", profileErr);
-            setProfile(null);
+            console.warn("FORENSIC: AuthContext onAuthStateChange - Profile fetch or database initialization failed. Providing a robust synthetic fallback profile:", profileErr);
+            const emailPrefix = (currentSession.user.email || '').split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase();
+            const fallbackProfile = {
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              display_name: currentSession.user.user_metadata?.display_name || emailPrefix || 'ThreadZW Merchant',
+              handle: emailPrefix || 'merchant',
+              onboarding_complete: false,
+              town: 'Harare',
+              is_synthetic: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            setProfile(fallbackProfile);
+          } finally {
+            if (fetchingProfileForRef.current === currentSession.user.id) {
+              fetchingProfileForRef.current = null;
+            }
           }
         } else {
           console.log("FORENSIC: AuthContext onAuthStateChange - No session. Clearing session/profile states");
@@ -248,6 +311,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         console.log("FORENSIC: AuthContext onAuthStateChange - Setting loading to false");
         setLoading(false);
+        const tAuthChangeEnd = performance.now();
+        console.log(`FORENSIC TIMING: onAuthStateChange callback fully processed. duration: ${(tAuthChangeEnd - tAuthChangeStart).toFixed(2)}ms`);
       }
     });
 

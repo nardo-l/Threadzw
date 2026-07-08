@@ -427,7 +427,7 @@ export const NewListing: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-cream text-charcoal pb-32 overflow-x-hidden font-sans">
       {/* Immersive Background Decor */}
       <div className="fixed inset-0 pointer-events-none opacity-10 z-0">
-          <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-[#C6FF00]/10 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute top-0 right-0 w-[80vw] h-[80vw] bg-[#25D366]/10 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2" />
           <div className="absolute bottom-1/4 left-0 w-[100vw] h-[100vw] bg-lime/10 blur-[200px] rounded-full -translate-x-1/2" />
       </div>
 
@@ -441,7 +441,7 @@ export const NewListing: React.FC = () => {
             <h1 className="text-[10px] font-black uppercase tracking-[0.4em] text-charcoal/30 italic leading-none mb-1">New Intent</h1>
             <span className="text-sm font-display font-black uppercase tracking-tight italic">Curate Unit</span>
           </div>
-          <button onClick={handleSaveDraft} className="text-[10px] font-black uppercase tracking-widest text-charcoal italic border-b-2 border-[#C6FF00] pb-0.5">
+          <button onClick={handleSaveDraft} className="text-[10px] font-black uppercase tracking-widest text-charcoal italic border-b-2 border-[#25D366] pb-0.5">
             Save Draft
           </button>
         </div>
@@ -469,7 +469,7 @@ export const NewListing: React.FC = () => {
             >
               <div className={`h-1.5 w-full rounded-full transition-all ${
                 s.n === step 
-                  ? 'bg-[#C6FF00] shadow-[0_0_8px_#C6FF00]' 
+                  ? 'bg-[#25D366] shadow-[0_0_8px_#25D366]' 
                   : s.n < step 
                     ? 'bg-charcoal' 
                     : 'bg-charcoal/10'
@@ -531,8 +531,8 @@ export const NewListing: React.FC = () => {
               <div className="flex items-center justify-between px-2">
                 <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Product Title</label>
                 <div className="flex items-center gap-2">
-                   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${productName.trim() ? 'bg-[#C6FF00] shadow-[0_0_10px_rgba(244,166,193,0.8)]' : 'bg-charcoal/5'}`} />
-                   <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+                   <div className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${productName.trim() ? 'bg-[#25D366] shadow-[0_0_10px_rgba(244,166,193,0.8)]' : 'bg-charcoal/5'}`} />
+                   <span className="text-[#25D366] text-xs font-black italic">*</span>
                 </div>
               </div>
               <div className="relative group">
@@ -542,7 +542,7 @@ export const NewListing: React.FC = () => {
                   onChange={(e) => setProductName(e.target.value.slice(0, 80))}
                   placeholder="Declare product name..."
                   className={`w-full bg-white border-2 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 ${
-                    publishAttempted && !productName ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
+                    publishAttempted && !productName ? 'border-[#25D366]' : 'border-charcoal/5 focus:border-[#25D366]/40 focus:ring-8 focus:ring-[#25D366]/5'
                   }`}
                 />
                 <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
@@ -556,7 +556,7 @@ export const NewListing: React.FC = () => {
             <div id="error-category" className="flex flex-col gap-6">
               <div className="flex items-center justify-between px-2">
                  <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Classification</label>
-                 <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+                 <span className="text-[#25D366] text-xs font-black italic">*</span>
               </div>
               <div className={`flex gap-4 overflow-x-auto no-scrollbar pb-6 -mx-8 px-8 ${publishAttempted && !category ? 'animate-shake' : ''}`}>
                 {globalCategoriesLoading ? (
@@ -582,7 +582,7 @@ export const NewListing: React.FC = () => {
                           referrerPolicy="no-referrer"
                         />
                       )}
-                      <span className={`text-[10px] font-black uppercase tracking-widest z-20 relative ${category === cat.name ? 'text-[#C6FF00]' : 'text-white'}`}>
+                      <span className={`text-[10px] font-black uppercase tracking-widest z-20 relative ${category === cat.name ? 'text-[#25D366]' : 'text-white'}`}>
                         {cat.name}
                       </span>
                     </button>
@@ -603,7 +603,7 @@ export const NewListing: React.FC = () => {
                   value={collection}
                   onChange={(e) => setCollection(e.target.value.slice(0, 50))}
                   placeholder="e.g. Corteiz RTW, Essentials 2026..."
-                  className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 font-sans"
+                  className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] px-8 py-6 text-xl font-display font-black italic tracking-tight text-charcoal placeholder:text-charcoal/10 focus:outline-none transition-all duration-500 focus:border-[#25D366]/40 focus:ring-8 focus:ring-[#25D366]/5 font-sans"
                 />
                 <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col items-end">
                   <span className="text-[10px] font-black text-charcoal/30 italic leading-none">{collection.length}/50</span>
@@ -615,7 +615,7 @@ export const NewListing: React.FC = () => {
             <div id="error-condition" className="flex flex-col gap-6">
               <div className="flex items-center justify-between px-2">
                 <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Condition State</label>
-                <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+                <span className="text-[#25D366] text-xs font-black italic">*</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {CONDITIONS.map(c => (
@@ -667,7 +667,7 @@ export const NewListing: React.FC = () => {
                 <div id="error-price" className="flex flex-col gap-4">
                   <div className="flex items-center justify-between px-2">
                     <label className="text-[10px] font-black text-charcoal/40 uppercase tracking-[0.4em] italic">Ask Price</label>
-                    <span className="text-[#C6FF00] text-xs font-black italic">*</span>
+                    <span className="text-[#25D366] text-xs font-black italic">*</span>
                   </div>
                   <div className="relative group">
                     <span className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-display font-black text-charcoal/10 italic">$</span>
@@ -677,7 +677,7 @@ export const NewListing: React.FC = () => {
                       onChange={(e) => setPrice(e.target.value)}
                       placeholder="0.00"
                       className={`w-full bg-white border-2 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal focus:outline-none transition-all duration-500 ${
-                        publishAttempted && !price ? 'border-[#C6FF00]' : 'border-charcoal/5 focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5'
+                        publishAttempted && !price ? 'border-[#25D366]' : 'border-charcoal/5 focus:border-[#25D366]/40 focus:ring-8 focus:ring-[#25D366]/5'
                       }`}
                     />
                   </div>
@@ -694,7 +694,7 @@ export const NewListing: React.FC = () => {
                       value={originalPrice}
                       onChange={(e) => setOriginalPrice(e.target.value)}
                       placeholder="0.00"
-                      className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal/20 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700"
+                      className="w-full bg-white border-2 border-charcoal/5 rounded-[32px] p-8 pl-16 text-2xl font-display font-black italic text-charcoal/20 focus:outline-none focus:border-[#25D366]/40 focus:ring-8 focus:ring-[#25D366]/5 transition-all duration-700"
                     />
                   </div>
                 </div>
@@ -715,7 +715,7 @@ export const NewListing: React.FC = () => {
                       </motion.div>
                     )}
                     {discountPercent && (
-                      <div className="px-5 py-2.5 bg-[#C6FF00] text-white text-[10px] font-black italic rounded-full shadow-[0_15px_30px_rgba(244,166,193,0.3)] uppercase tracking-widest">
+                      <div className="px-5 py-2.5 bg-[#25D366] text-white text-[10px] font-black italic rounded-full shadow-[0_15px_30px_rgba(244,166,193,0.3)] uppercase tracking-widest">
                         {discountPercent}% OFF
                       </div>
                     )}
@@ -743,7 +743,7 @@ export const NewListing: React.FC = () => {
                   <div className="flex flex-col gap-4 max-w-[75%]">
                     <div className="flex items-center gap-4">
                       <h4 className={`text-2xl font-display font-black uppercase italic tracking-tighter transition-colors ${isFeatured ? 'text-lime' : 'text-charcoal'}`}>Priority Broadcaster</h4>
-                       <div className={`w-3 h-3 rounded-full ${isFeatured ? 'bg-lime animate-pulse shadow-[0_0_12px_#C6FF00]' : 'bg-charcoal/5'}`} />
+                       <div className={`w-3 h-3 rounded-full ${isFeatured ? 'bg-lime animate-pulse shadow-[0_0_12px_#25D366]' : 'bg-charcoal/5'}`} />
                     </div>
                     <p className={`text-[12px] font-black uppercase italic leading-tight tracking-[0.1em] ${isFeatured ? 'text-white/40' : 'text-charcoal/30'}`}>
                       Amplify acquisition frequency. Elevate listing to the primary discovery layer for global terminal visibility.
@@ -771,7 +771,7 @@ export const NewListing: React.FC = () => {
                  <div className="h-px flex-1 bg-charcoal/10" />
               </div>
               <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8] mb-2">Digital Exhibit</h3>
-              <p className="text-[11px] font-black text-[#C6FF00] uppercase tracking-widest italic">High-fidelity visual verification required</p>
+              <p className="text-[11px] font-black text-[#25D366] uppercase tracking-widest italic">High-fidelity visual verification required</p>
             </div>
 
             <div className="grid grid-cols-2 gap-5">
@@ -836,7 +836,7 @@ export const NewListing: React.FC = () => {
                         <div className="absolute bottom-8 left-8 flex flex-col gap-1">
                           <span className="text-xs font-black text-white uppercase tracking-[0.2em] italic leading-none">{slot.label}</span>
                           <div className="flex items-center gap-2 pt-2">
-                             <div className="w-2.5 h-2.5 rounded-full bg-lime shadow-[0_0_12px_#C6FF00]" />
+                             <div className="w-2.5 h-2.5 rounded-full bg-lime shadow-[0_0_12px_#25D366]" />
                              <span className="text-[10px] font-black text-lime uppercase tracking-widest italic">Verified</span>
                           </div>
                         </div>
@@ -844,7 +844,7 @@ export const NewListing: React.FC = () => {
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center gap-6 relative group cursor-pointer">
                         <div className="absolute top-8 left-8 text-[12px] font-black text-charcoal/5 italic leading-none">0{slot.id}</div>
-                        <div className="w-20 h-20 rounded-full bg-cream-dark flex items-center justify-center text-charcoal/10 group-hover:bg-[#C6FF00]/20 group-hover:text-[#C6FF00] transition-all duration-700 border-2 border-charcoal/5 group-hover:border-[#C6FF00]/20">
+                        <div className="w-20 h-20 rounded-full bg-cream-dark flex items-center justify-center text-charcoal/10 group-hover:bg-[#25D366]/20 group-hover:text-[#25D366] transition-all duration-700 border-2 border-charcoal/5 group-hover:border-[#25D366]/20">
                           <Plus size={isMain ? 40 : 32} strokeWidth={3} />
                         </div>
                         <div className="flex flex-col items-center gap-2">
@@ -866,12 +866,12 @@ export const NewListing: React.FC = () => {
                 </div>
                 <div className="flex gap-2">
                   {[...Array(6)].map((_, i) => (
-                    <div key={`upload-progress-dot-${i}`} className={`w-2.5 h-2.5 rounded-full transition-all duration-700 ${i < filledPhotosCount ? 'bg-[#C6FF00] shadow-[0_0_12px_rgba(244,166,193,0.5)] scale-125' : 'bg-charcoal/10 flex-shrink-0'}`} />
+                    <div key={`upload-progress-dot-${i}`} className={`w-2.5 h-2.5 rounded-full transition-all duration-700 ${i < filledPhotosCount ? 'bg-[#25D366] shadow-[0_0_12px_rgba(244,166,193,0.5)] scale-125' : 'bg-charcoal/10 flex-shrink-0'}`} />
                   ))}
                 </div>
               </div>
               {filledPhotosCount < 6 && (
-                 <p className="text-[10px] font-black text-[#C6FF00] uppercase tracking-widest italic leading-none pt-2 border-t border-charcoal/5">Pending critical visual vectors</p>
+                 <p className="text-[10px] font-black text-[#25D366] uppercase tracking-widest italic leading-none pt-2 border-t border-charcoal/5">Pending critical visual vectors</p>
               )}
             </div>
 
@@ -950,7 +950,7 @@ export const NewListing: React.FC = () => {
                   <button 
                     type="button"
                     onClick={() => setSingleQuantity(singleQuantity + 1)}
-                    className="w-20 h-20 rounded-[28px] bg-charcoal flex items-center justify-center text-lime shadow-[6px_6px_0_#C6FF00] active:scale-90 transition-all"
+                    className="w-20 h-20 rounded-[28px] bg-charcoal flex items-center justify-center text-lime shadow-[6px_6px_0_#25D366] active:scale-90 transition-all"
                   >
                     <Plus size={32} strokeWidth={4} />
                   </button>
@@ -988,7 +988,7 @@ export const NewListing: React.FC = () => {
                         <button 
                           type="button"
                           onClick={() => updateSizeVariant(idx, 'quantity', v.quantity + 1)}
-                          className="w-12 h-12 rounded-full bg-charcoal text-cream flex items-center justify-center active:scale-90 transition-all shadow-[4px_4px_0_#C6FF00]"
+                          className="w-12 h-12 rounded-full bg-charcoal text-cream flex items-center justify-center active:scale-90 transition-all shadow-[4px_4px_0_#25D366]"
                         >
                           <Plus size={18} strokeWidth={4} />
                         </button>
@@ -996,7 +996,7 @@ export const NewListing: React.FC = () => {
                       <button 
                         type="button"
                         onClick={() => removeSizeVariant(idx)} 
-                        className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#C6FF00] transition-all active:scale-90"
+                        className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#25D366] transition-all active:scale-90"
                       >
                         <Trash2 size={24} strokeWidth={3} />
                       </button>
@@ -1007,9 +1007,9 @@ export const NewListing: React.FC = () => {
                 <button 
                   type="button"
                   onClick={addSizeVariant}
-                  className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group mt-4"
+                  className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#25D366]/5 hover:border-[#25D366]/40 transition-all active:scale-[0.98] group mt-4"
                 >
-                  <Plus size={28} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-[#C6FF00]" />
+                  <Plus size={28} strokeWidth={4} className="group-hover:rotate-90 transition-transform duration-700 text-[#25D366]" />
                   <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Register Size Unit</span>
                 </button>
 
@@ -1037,9 +1037,9 @@ export const NewListing: React.FC = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between p-8 bg-charcoal rounded-[48px] shadow-[12px_12px_0_#C6FF00]">
+            <div className="flex items-center justify-between p-8 bg-charcoal rounded-[48px] shadow-[12px_12px_0_#25D366]">
               <div className="flex items-center gap-4">
-                 <div className={`w-3 h-3 rounded-full ${totalStock > 0 ? 'bg-lime animate-pulse shadow-[0_0_12px_#C6FF00]' : 'bg-white/10'}`} />
+                 <div className={`w-3 h-3 rounded-full ${totalStock > 0 ? 'bg-lime animate-pulse shadow-[0_0_12px_#25D366]' : 'bg-white/10'}`} />
                  <span className={`text-[12px] font-black uppercase tracking-widest italic transition-colors ${totalStock > 0 ? 'text-lime' : 'text-white/20'}`}>
                   Inventory Payload: {totalStock} units
                  </span>
@@ -1093,7 +1093,7 @@ export const NewListing: React.FC = () => {
                     <button 
                       type="button"
                       onClick={() => removeColour(idx)} 
-                      className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#C6FF00] transition-all active:scale-90"
+                      className="w-14 h-14 flex items-center justify-center text-charcoal/20 hover:text-[#25D366] transition-all active:scale-90"
                     >
                       <X size={24} strokeWidth={3} />
                     </button>
@@ -1105,9 +1105,9 @@ export const NewListing: React.FC = () => {
                 <button 
                   type="button"
                   onClick={addColour}
-                  className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#C6FF00]/5 hover:border-[#C6FF00]/40 transition-all active:scale-[0.98] group"
+                  className="w-full h-20 rounded-[32px] bg-white border-4 border-dashed border-charcoal/10 flex items-center justify-center gap-5 text-charcoal/40 hover:bg-[#25D366]/5 hover:border-[#25D366]/40 transition-all active:scale-[0.98] group"
                 >
-                  <Plus size={28} strokeWidth={4} className="text-[#C6FF00] group-hover:rotate-180 transition-transform duration-700" />
+                  <Plus size={28} strokeWidth={4} className="text-[#25D366] group-hover:rotate-180 transition-transform duration-700" />
                   <span className="text-[12px] font-black uppercase tracking-[0.3em] italic">Inject Hue Variant</span>
                 </button>
               )}
@@ -1151,7 +1151,7 @@ export const NewListing: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value.slice(0, 400))}
                   placeholder="Write a description that sells... (Sent to buyers on WhatsApp)"
-                  className="w-full bg-white border-2 border-charcoal/5 rounded-[40px] p-8 text-sm font-medium text-charcoal/80 placeholder:text-charcoal/5 focus:outline-none focus:border-[#C6FF00]/40 focus:ring-8 focus:ring-[#C6FF00]/5 transition-all duration-700 h-56 resize-none italic leading-relaxed"
+                  className="w-full bg-white border-2 border-charcoal/5 rounded-[40px] p-8 text-sm font-medium text-charcoal/80 placeholder:text-charcoal/5 focus:outline-none focus:border-[#25D366]/40 focus:ring-8 focus:ring-[#25D366]/5 transition-all duration-700 h-56 resize-none italic leading-relaxed"
                 />
                 <div className="absolute bottom-8 right-10 flex flex-col items-end">
                   <span className="text-[10px] font-black text-charcoal/20 italic">{description.length}/400</span>
@@ -1175,7 +1175,7 @@ export const NewListing: React.FC = () => {
                  <div className="h-px flex-1 bg-charcoal/10" />
               </div>
               <h3 className="text-5xl font-display font-black text-charcoal uppercase italic tracking-tight leading-[0.8]">Review Unit</h3>
-              <p className="text-[11px] font-black text-[#C6FF00] uppercase tracking-widest italic font-mono">Verify all digital fragments before commit</p>
+              <p className="text-[11px] font-black text-[#25D366] uppercase tracking-widest italic font-mono">Verify all digital fragments before commit</p>
             </div>
 
             {/* Premium recap card */}
@@ -1256,7 +1256,7 @@ export const NewListing: React.FC = () => {
 
                 <div className="flex items-center justify-between pt-4 border-t border-charcoal/5">
                   <span className="text-[9px] font-black text-charcoal/25 uppercase tracking-widest font-mono">Priority Broadcaster</span>
-                  <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFeatured ? 'bg-[#C6FF00] text-black shadow-sm' : 'bg-zinc-100 text-zinc-400'}`}>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFeatured ? 'bg-[#25D366] text-black shadow-sm' : 'bg-zinc-100 text-zinc-400'}`}>
                     {isFeatured ? 'Activated' : 'Standard'}
                   </span>
                 </div>
@@ -1277,7 +1277,7 @@ export const NewListing: React.FC = () => {
              </div>
              <div className="flex gap-2">
                 {[...Array(6)].map((_, i) => (
-                  <div key={`validation-bar-${i}`} className={`w-1.5 h-4 rounded-full transition-all duration-500 ${i < filledPhotosCount ? 'bg-lime shadow-[0_0_10px_#C6FF00]' : 'bg-charcoal/5'}`} />
+                  <div key={`validation-bar-${i}`} className={`w-1.5 h-4 rounded-full transition-all duration-500 ${i < filledPhotosCount ? 'bg-lime shadow-[0_0_10px_#25D366]' : 'bg-charcoal/5'}`} />
                 ))}
              </div>
           </div>
@@ -1297,7 +1297,7 @@ export const NewListing: React.FC = () => {
               <button 
                 type="button"
                 onClick={handleNextStep}
-                className="group relative flex-1 h-20 rounded-full bg-charcoal text-cream font-display uppercase font-black italic flex items-center justify-center gap-4 overflow-hidden transition-all duration-500 active:translate-y-1 active:shadow-none shadow-[8px_8px_0_#C6FF00] hover:shadow-[6px_6px_0_#C6FF00]"
+                className="group relative flex-1 h-20 rounded-full bg-charcoal text-cream font-display uppercase font-black italic flex items-center justify-center gap-4 overflow-hidden transition-all duration-500 active:translate-y-1 active:shadow-none shadow-[8px_8px_0_#25D366] hover:shadow-[6px_6px_0_#25D366]"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 <span className="text-xl tracking-tight relative z-10">Next Step</span>
@@ -1311,7 +1311,7 @@ export const NewListing: React.FC = () => {
                 className={`group relative flex-1 h-20 rounded-full flex items-center justify-center overflow-hidden transition-all duration-700 active:translate-y-1 active:shadow-none ${
                   filledPhotosCount < 6 
                     ? 'bg-white border-4 border-charcoal/10 text-charcoal/10 cursor-not-allowed opacity-50' 
-                    : 'bg-charcoal text-cream shadow-[12px_12px_0_#C6FF00] active:shadow-none hover:shadow-[10px_10px_0_#C6FF00]'
+                    : 'bg-charcoal text-cream shadow-[12px_12px_0_#25D366] active:shadow-none hover:shadow-[10px_10px_0_#25D366]'
                 }`}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
@@ -1393,28 +1393,28 @@ export const NewListing: React.FC = () => {
           >
             {/* Immersive Background */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180vw] h-[180vw] bg-[#C6FF00]/5 blur-[200px] rounded-full animate-pulse" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180vw] h-[180vw] bg-[#25D366]/5 blur-[200px] rounded-full animate-pulse" />
             </div>
 
             <motion.div 
               initial={{ scale: 0, rotate: -90 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', damping: 12, stiffness: 80 }}
-              className="w-40 h-40 rounded-[48px] bg-charcoal flex items-center justify-center text-lime shadow-[20px_20px_0_#C6FF00] mb-16 relative z-10 border-4 border-charcoal"
+              className="w-40 h-40 rounded-[48px] bg-charcoal flex items-center justify-center text-lime shadow-[20px_20px_0_#25D366] mb-16 relative z-10 border-4 border-charcoal"
             >
               <Check size={80} strokeWidth={5} />
             </motion.div>
 
             <div className="relative z-10 flex flex-col items-center max-w-sm mb-20">
                <h2 className="text-7xl font-display font-black text-charcoal uppercase italic tracking-tighter leading-[0.8] mb-6">Unit Logged.</h2>
-               <div className="oval-sticker !bg-[#C6FF00] !text-white !text-xl mb-4">{productName}</div>
+               <div className="oval-sticker !bg-[#25D366] !text-white !text-xl mb-4">{productName}</div>
                <p className="text-[12px] font-black text-charcoal/30 tracking-[0.4em] uppercase italic leading-tight text-center px-10">Data committed to global inventory node successfully.</p>
             </div>
 
             <div className="flex flex-col gap-5 w-full max-w-xs relative z-10">
               <button 
                 onClick={() => navigate(`/product/${createdProductId || ''}`)}
-                className="w-full h-20 bg-charcoal text-cream text-lg font-display font-black uppercase italic tracking-[0.2em] rounded-full shadow-[12px_12px_0_#C6FF00] active:translate-y-1 active:shadow-none transition-all"
+                className="w-full h-20 bg-charcoal text-cream text-lg font-display font-black uppercase italic tracking-[0.2em] rounded-full shadow-[12px_12px_0_#25D366] active:translate-y-1 active:shadow-none transition-all"
               >
                 Inspect Listing
               </button>

@@ -780,7 +780,7 @@ export const SalesSystem: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-zinc-800 pb-32 font-sans selection:bg-[#C6FF00]/20 relative sales-system-light text-left">
+    <div className="min-h-screen bg-[#F9FAFB] text-zinc-800 pb-32 font-sans selection:bg-[#25D366]/20 relative sales-system-light text-left">
       
       {/* HEADER SECTION */}
       <div className="px-5 pt-7 pb-4 bg-white sticky top-0 z-40 backdrop-blur-md border-b border-zinc-150">
@@ -835,7 +835,7 @@ export const SalesSystem: React.FC = () => {
               }}
               className={`flex-1 text-center py-2 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap min-w-[100px] ${
                 activeTab === tab.id 
-                  ? 'bg-[#C6FF00] text-black font-extrabold shadow-md scale-[1.02]' 
+                  ? 'bg-[#25D366] text-black font-extrabold shadow-md scale-[1.02]' 
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -868,7 +868,7 @@ export const SalesSystem: React.FC = () => {
                     <h3 className="text-2.5xl font-black text-white tracking-tight leading-none mt-1">{kpi.value}</h3>
                     <p className="text-[10px] text-zinc-500 font-mono mt-1 font-bold uppercase">{kpi.desc}</p>
                   </div>
-                  <div className="absolute right-2.5 bottom-2 bg-[#C6FF00]/5 text-[#C6FF00]/40 text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">
+                  <div className="absolute right-2.5 bottom-2 bg-[#25D366]/5 text-[#25D366]/40 text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">
                     $
                   </div>
                 </div>
@@ -883,7 +883,7 @@ export const SalesSystem: React.FC = () => {
               </div>
               <button 
                 onClick={() => setActiveTab('record')} 
-                className="px-4 py-2.5 bg-[#C6FF00] hover:bg-[#b5e600] text-black font-black text-xs uppercase tracking-widest rounded-full cursor-pointer flex items-center gap-1 shadow-lg"
+                className="px-4 py-2.5 bg-[#25D366] hover:bg-[#b5e600] text-black font-black text-xs uppercase tracking-widest rounded-full cursor-pointer flex items-center gap-1 shadow-lg"
               >
                 + Cashier Sale
               </button>
@@ -899,13 +899,13 @@ export const SalesSystem: React.FC = () => {
                 <div className="flex border border-white/5 bg-black/40 rounded-lg p-0.5 gap-1">
                   <button 
                     onClick={() => setChartPeriod('daily')} 
-                    className={`px-2 py-1 rounded text-[10px] font-black tracking-widest uppercase transition-all ${chartPeriod === 'daily' ? 'bg-[#C6FF00] text-black' : 'text-zinc-500'}`}
+                    className={`px-2 py-1 rounded text-[10px] font-black tracking-widest uppercase transition-all ${chartPeriod === 'daily' ? 'bg-[#25D366] text-black' : 'text-zinc-500'}`}
                   >
                     Daily
                   </button>
                   <button 
                     onClick={() => setChartPeriod('weekly')} 
-                    className={`px-2 py-1 rounded text-[10px] font-black tracking-widest uppercase transition-all ${chartPeriod === 'weekly' ? 'bg-[#C6FF00] text-black' : 'text-zinc-500'}`}
+                    className={`px-2 py-1 rounded text-[10px] font-black tracking-widest uppercase transition-all ${chartPeriod === 'weekly' ? 'bg-[#25D366] text-black' : 'text-zinc-500'}`}
                   >
                     Weekly
                   </button>
@@ -920,7 +920,7 @@ export const SalesSystem: React.FC = () => {
                   return (
                     <div key={idx} className="flex-1 flex flex-col items-center gap-2 group relative">
                       {/* Price popup pill */}
-                      <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black border border-white/15 px-1.5 py-0.5 rounded text-[9px] font-bold text-[#C6FF00] whitespace-nowrap z-50 shadow-lg">
+                      <div className="absolute -top-7 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none bg-black border border-white/15 px-1.5 py-0.5 rounded text-[9px] font-bold text-[#25D366] whitespace-nowrap z-50 shadow-lg">
                         ${data.value}
                       </div>
                       
@@ -930,7 +930,7 @@ export const SalesSystem: React.FC = () => {
                           initial={{ height: 0 }}
                           animate={{ height: `${heightPercent}%` }}
                           transition={{ duration: 0.6, delay: idx * 0.05 }}
-                          className="w-full bg-[#C6FF00] rounded-t-lg hover:brightness-110 cursor-pointer relative"
+                          className="w-full bg-[#25D366] rounded-t-lg hover:brightness-110 cursor-pointer relative"
                         />
                       </div>
 
@@ -947,7 +947,7 @@ export const SalesSystem: React.FC = () => {
               
               <div className="space-y-3.5">
                 {[
-                  { label: "🚶 Walk-in customer", key: "walk-in", color: "bg-[#C6FF00]" },
+                  { label: "🚶 Walk-in customer", key: "walk-in", color: "bg-[#25D366]" },
                   { label: "💬 WhatsApp buyers", key: "whatsapp", color: "bg-[#25D366]" },
                   { label: "📸 Instagram tags", key: "instagram", color: "bg-[#E1306C]" },
                   { label: "📦 Other referrals", key: "other", color: "bg-zinc-400" }
@@ -960,7 +960,7 @@ export const SalesSystem: React.FC = () => {
                     <div key={i} className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs font-bold text-zinc-300">
                         <span>{channel.label}</span>
-                        <span className="font-mono text-[#C6FF00]">${amt} ({pct}%)</span>
+                        <span className="font-mono text-[#25D366]">${amt} ({pct}%)</span>
                       </div>
                       <div className="h-2 w-full bg-[#111] rounded-full overflow-hidden">
                         <div className={`h-full ${channel.color}`} style={{ width: `${pct}%` }} />
@@ -1012,7 +1012,7 @@ export const SalesSystem: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-sm uppercase tracking-wide">Recent Transactions</h3>
-                <button onClick={() => setActiveTab('history')} className="text-[#C6FF00] font-bold text-xs uppercase tracking-wide hover:underline cursor-pointer">
+                <button onClick={() => setActiveTab('history')} className="text-[#25D366] font-bold text-xs uppercase tracking-wide hover:underline cursor-pointer">
                   See all Log
                 </button>
               </div>
@@ -1083,7 +1083,7 @@ export const SalesSystem: React.FC = () => {
                     value={saleSearch}
                     onChange={(e) => setSaleSearch(e.target.value)}
                     placeholder="Search product metadata..."
-                    className="w-full h-11 border border-white/5 bg-white/[0.03] text-white rounded-xl pl-10 pr-4 text-xs font-bold outline-none focus:border-[#C6FF00] transition-colors"
+                    className="w-full h-11 border border-white/5 bg-white/[0.03] text-white rounded-xl pl-10 pr-4 text-xs font-bold outline-none focus:border-[#25D366] transition-colors"
                   />
                 </div>
 
@@ -1109,7 +1109,7 @@ export const SalesSystem: React.FC = () => {
                             </div>
                             <div className="min-w-0">
                               <h4 className="text-xs font-black text-neutral-200 uppercase truncate leading-snug">{prod.name}</h4>
-                              <div className="text-sm font-black text-[#C6FF00] mt-0.5">${prod.price}</div>
+                              <div className="text-sm font-black text-[#25D366] mt-0.5">${prod.price}</div>
                               
                               {/* Stock per sizes tag list */}
                               <div className="flex flex-wrap gap-1 mt-1.5">
@@ -1124,7 +1124,7 @@ export const SalesSystem: React.FC = () => {
 
                           <div className="text-right shrink-0">
                             {totalAvailable > 0 ? (
-                              <div className="flex items-center gap-1 bg-[#C6FF00]/10 border border-[#C6FF00]/25 rounded-xl px-2.5 py-1.5 text-xs text-[#C6FF00] font-black uppercase">
+                              <div className="flex items-center gap-1 bg-[#25D366]/10 border border-[#25D366]/25 rounded-xl px-2.5 py-1.5 text-xs text-[#25D366] font-black uppercase">
                                 <span>${prod.price}</span>
                                 <ChevronRight size={13} className="stroke-[3]" />
                               </div>
@@ -1154,7 +1154,7 @@ export const SalesSystem: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-black text-white uppercase">{selectedProduct.name}</h4>
-                    <p className="text-xs text-[#C6FF00] font-black mt-1">${selectedProduct.price}</p>
+                    <p className="text-xs text-[#25D366] font-black mt-1">${selectedProduct.price}</p>
                   </div>
                 </div>
 
@@ -1178,12 +1178,12 @@ export const SalesSystem: React.FC = () => {
                             isOutOfStock 
                               ? 'border-white/[0.02] bg-white/[0.01] text-zinc-700 pointer-events-none' 
                               : isSelected
-                                ? 'border-[#C6FF00] bg-[#C6FF00]/5 text-[#C6FF00]'
+                                ? 'border-[#25D366] bg-[#25D366]/5 text-[#25D366]'
                                 : 'border-white/10 bg-[#121215] text-zinc-300'
                           }`}
                         >
                           <span className="font-extrabold text-xs">{sz.size}</span>
-                          <span className={`text-[9px] font-mono mt-0.5 tracking-wide uppercase ${isOutOfStock ? 'text-zinc-800' : isSelected ? 'text-[#C6FF00]/65' : 'text-zinc-500'}`}>
+                          <span className={`text-[9px] font-mono mt-0.5 tracking-wide uppercase ${isOutOfStock ? 'text-zinc-800' : isSelected ? 'text-[#25D366]/65' : 'text-zinc-500'}`}>
                             {isOutOfStock ? 'sold out' : `${sz.quantity} left`}
                           </span>
                         </button>
@@ -1199,7 +1199,7 @@ export const SalesSystem: React.FC = () => {
                       <div>
                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block font-mono">Specify Quantity</span>
                         {selectedSizeStock === 1 && (
-                          <span className="text-[10px] text-[#C6FF00] font-black tracking-wide uppercase mt-1 animate-pulse block">★ Last one!</span>
+                          <span className="text-[10px] text-[#25D366] font-black tracking-wide uppercase mt-1 animate-pulse block">★ Last one!</span>
                         )}
                       </div>
                       <span className="text-xs font-mono font-bold text-zinc-400">Inventory limit: {selectedSizeStock}</span>
@@ -1209,7 +1209,7 @@ export const SalesSystem: React.FC = () => {
                       <button 
                         onClick={handleDecreaseQty} 
                         disabled={saleQuantity <= 1}
-                        className="w-11 h-11 border border-white/10 rounded-full bg-white/[0.02] text-white hover:border-[#C6FF00] transition-colors flex items-center justify-center cursor-pointer disabled:opacity-20"
+                        className="w-11 h-11 border border-white/10 rounded-full bg-white/[0.02] text-white hover:border-[#25D366] transition-colors flex items-center justify-center cursor-pointer disabled:opacity-20"
                       >
                         <Minus size={16} />
                       </button>
@@ -1219,7 +1219,7 @@ export const SalesSystem: React.FC = () => {
                       <button 
                         onClick={handleIncreaseQty} 
                         disabled={saleQuantity >= selectedSizeStock}
-                        className="w-11 h-11 border border-white/10 rounded-full bg-white/[0.02] text-white hover:border-[#C6FF00] transition-colors flex items-center justify-center cursor-pointer disabled:opacity-20"
+                        className="w-11 h-11 border border-white/10 rounded-full bg-white/[0.02] text-white hover:border-[#25D366] transition-colors flex items-center justify-center cursor-pointer disabled:opacity-20"
                       >
                         <Plus size={16} />
                       </button>
@@ -1231,7 +1231,7 @@ export const SalesSystem: React.FC = () => {
                 <button
                   disabled={!selectedSize}
                   onClick={() => setSaleStep(3)}
-                  className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5e600] text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-25"
+                  className="w-full h-14 bg-[#25D366] hover:bg-[#b5e600] text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-25"
                 >
                   Confirm Size & Qty <ChevronRight size={14} className="stroke-[3]" />
                 </button>
@@ -1249,7 +1249,7 @@ export const SalesSystem: React.FC = () => {
                   <div className="space-y-0.5">
                     <span className="text-zinc-500 text-[10px] font-bold uppercase block tracking-wider font-mono">Current Selection</span>
                     <h4 className="text-xs font-black uppercase text-white leading-none">{selectedProduct.name}</h4>
-                    <span className="text-[10px] text-[#C6FF00] font-bold uppercase font-mono tracking-wider block mt-1">Size: {selectedSize} · Qty: {saleQuantity}</span>
+                    <span className="text-[10px] text-[#25D366] font-bold uppercase font-mono tracking-wider block mt-1">Size: {selectedSize} · Qty: {saleQuantity}</span>
                   </div>
                   <div className="text-right">
                     <span className="text-xs text-zinc-500 block uppercase font-mono font-bold">Standard price</span>
@@ -1275,7 +1275,7 @@ export const SalesSystem: React.FC = () => {
                         }}
                         className={`py-2 px-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider text-center cursor-pointer transition-colors ${
                           discountType === dis.type 
-                            ? 'border-[#C6FF00] bg-[#C6FF00]/5 text-[#C6FF00]' 
+                            ? 'border-[#25D366] bg-[#25D366]/5 text-[#25D366]' 
                             : 'border-white/5 bg-black/40 text-zinc-500'
                         }`}
                       >
@@ -1293,7 +1293,7 @@ export const SalesSystem: React.FC = () => {
                         value={discountValue || ''}
                         onChange={(e) => setDiscountValue(Math.max(0, parseInt(e.target.value) || 0))}
                         placeholder={discountType === 'fixed' ? 'e.g. 5' : 'e.g. 15'}
-                        className="w-full h-11 border border-white/5 bg-black/40 rounded-xl pl-16 pr-4 text-xs font-bold text-white focus:outline-none focus:border-[#C6FF00]"
+                        className="w-full h-11 border border-white/5 bg-black/40 rounded-xl pl-16 pr-4 text-xs font-bold text-white focus:outline-none focus:border-[#25D366]"
                       />
                     </div>
                   )}
@@ -1315,7 +1315,7 @@ export const SalesSystem: React.FC = () => {
                         onClick={() => setPaymentMethod(pay.id as any)}
                         className={`h-11 rounded-xl border text-xs font-bold transition-all text-center flex items-center justify-center cursor-pointer ${
                           paymentMethod === pay.id 
-                            ? 'border-[#C6FF00] bg-[#C6FF00]/5 text-[#C6FF00]' 
+                            ? 'border-[#25D366] bg-[#25D366]/5 text-[#25D366]' 
                             : 'border-white/5 bg-black/40 text-zinc-400'
                         }`}
                       >
@@ -1341,7 +1341,7 @@ export const SalesSystem: React.FC = () => {
                         onClick={() => setSaleChannel(chn.id as any)}
                         className={`h-11 rounded-xl border text-xs font-bold transition-all text-center flex items-center justify-center cursor-pointer ${
                           saleChannel === chn.id
-                            ? 'border-[#C6FF00] bg-[#C6FF00]/5 text-[#C6FF00]'
+                            ? 'border-[#25D366] bg-[#25D366]/5 text-[#25D366]'
                             : 'border-white/5 bg-black/40 text-zinc-400'
                         }`}
                       >
@@ -1359,7 +1359,7 @@ export const SalesSystem: React.FC = () => {
                     value={saleNotes}
                     onChange={(e) => setSaleNotes(e.target.value)}
                     placeholder="Enter short memorandum updates..."
-                    className="w-full h-11 border border-white/5 bg-white/[0.03] text-white rounded-xl px-4 text-xs font-bold outline-none focus:border-[#C6FF00]"
+                    className="w-full h-11 border border-white/5 bg-white/[0.03] text-white rounded-xl px-4 text-xs font-bold outline-none focus:border-[#25D366]"
                   />
                 </div>
 
@@ -1367,14 +1367,14 @@ export const SalesSystem: React.FC = () => {
                 <div className="bg-[#121215] border border-white/10 rounded-2xl p-4.5 flex items-center justify-between">
                   <span className="text-zinc-500 text-xs font-black uppercase tracking-wide">Final price updating:</span>
                   <div className="text-right">
-                    <span className="text-2xl font-black text-[#C6FF00]">${finalPrice}</span>
+                    <span className="text-2xl font-black text-[#25D366]">${finalPrice}</span>
                     {discountAmount > 0 && <span className="text-[10px] text-zinc-500 block font-mono">applied -$${discountAmount} discount</span>}
                   </div>
                 </div>
 
                 <button
                   onClick={() => setSaleStep(4)}
-                  className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5e600] text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-1 transition-all cursor-pointer"
+                  className="w-full h-14 bg-[#25D366] hover:bg-[#b5e600] text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-1 transition-all cursor-pointer"
                 >
                   Confirm Sale Summary <ChevronRight size={14} className="stroke-[3]" />
                 </button>
@@ -1419,7 +1419,7 @@ export const SalesSystem: React.FC = () => {
                     )}
                     <div className="flex justify-between font-black text-sm text-white pt-1">
                       <span>Total USD Cash:</span>
-                      <span className="text-[#C6FF00]">${finalPrice}</span>
+                      <span className="text-[#25D366]">${finalPrice}</span>
                     </div>
                   </div>
 
@@ -1427,7 +1427,7 @@ export const SalesSystem: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-xs pt-1">
                     <div>
                       <span className="text-zinc-500 text-[9px] font-bold uppercase block tracking-wider font-mono">Payment method</span>
-                      <span className="font-extrabold text-[#C6FF00] block mt-0.5">{paymentMethod.toUpperCase()}</span>
+                      <span className="font-extrabold text-[#25D366] block mt-0.5">{paymentMethod.toUpperCase()}</span>
                     </div>
                     <div>
                       <span className="text-zinc-500 text-[9px] font-bold uppercase block tracking-wider font-mono">Sale Channel</span>
@@ -1445,7 +1445,7 @@ export const SalesSystem: React.FC = () => {
 
                 <button
                   onClick={handleConfirmSale}
-                  className="w-full h-15 bg-[#C6FF00] hover:bg-[#b5e600] text-black rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-[0_8px_32px_rgba(198,255,0,0.15)]"
+                  className="w-full h-15 bg-[#25D366] hover:bg-[#b5e600] text-black rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-[0_8px_32px_rgba(198,255,0,0.15)]"
                 >
                   Confirm Sale ✓
                 </button>
@@ -1459,7 +1459,7 @@ export const SalesSystem: React.FC = () => {
                   initial={{ scale: 0.3, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                  className="w-20 h-20 rounded-full bg-[#C6FF00]/10 border-2 border-[#C6FF00] text-[#C6FF00] flex items-center justify-center text-4xl"
+                  className="w-20 h-20 rounded-full bg-[#25D366]/10 border-2 border-[#25D366] text-[#25D366] flex items-center justify-center text-4xl"
                 >
                   ✓
                 </motion.div>
@@ -1471,14 +1471,14 @@ export const SalesSystem: React.FC = () => {
 
                 <div className="bg-[#121215] border border-white/10 rounded-[20px] p-6 max-w-xs w-full">
                   <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block font-mono">Sales today cumulative total</span>
-                  <p className="text-[#C6FF00] font-black text-3xl mt-1.5">${todayTotalRevenue}</p>
+                  <p className="text-[#25D366] font-black text-3xl mt-1.5">${todayTotalRevenue}</p>
                   <p className="text-zinc-600 text-[9px] font-bold uppercase mt-1">Updates on CRM dashboard feed too</p>
                 </div>
 
                 <div className="space-y-2.5 w-full pt-4">
                   <button
                     onClick={handleResetRecordFlow}
-                    className="w-full h-13 bg-[#C6FF00] text-black rounded-full font-black text-xs uppercase tracking-widest cursor-pointer"
+                    className="w-full h-13 bg-[#25D366] text-black rounded-full font-black text-xs uppercase tracking-widest cursor-pointer"
                   >
                     Record Another Sale
                   </button>
@@ -1509,16 +1509,16 @@ export const SalesSystem: React.FC = () => {
                   <div 
                     key={idx} 
                     onClick={() => handleOpenRestockModal(alert.originalProduct)}
-                    className="bg-[#C6FF00]/5 border border-[#C6FF00]/20 rounded-2xl p-4 flex gap-3.5 items-center justify-between cursor-pointer hover:bg-[#C6FF00]/10 transition-colors animate-pulse resize-none"
+                    className="bg-[#25D366]/5 border border-[#25D366]/20 rounded-2xl p-4 flex gap-3.5 items-center justify-between cursor-pointer hover:bg-[#25D366]/10 transition-colors animate-pulse resize-none"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <AlertCircle className="text-[#C6FF00] w-5 h-5 shrink-0" />
+                      <AlertCircle className="text-[#25D366] w-5 h-5 shrink-0" />
                       <div className="min-w-0">
                         <h4 className="text-xs font-black text-white uppercase leading-none">Only {alert.count} Left in size {alert.size}</h4>
                         <p className="text-[10px] text-zinc-500 truncate uppercase tracking-widest mt-1 block">{alert.name}</p>
                       </div>
                     </div>
-                    <span className="text-[9px] bg-[#C6FF00] text-black font-black uppercase tracking-wide px-2 py-0.5 rounded-full whitespace-nowrap">Restock →</span>
+                    <span className="text-[9px] bg-[#25D366] text-black font-black uppercase tracking-wide px-2 py-0.5 rounded-full whitespace-nowrap">Restock →</span>
                   </div>
                 ))}
               </div>
@@ -1539,7 +1539,7 @@ export const SalesSystem: React.FC = () => {
                   value={inventorySearch}
                   onChange={(e) => setInventorySearch(e.target.value)}
                   placeholder="Filter stock by name..."
-                  className="w-full h-11 border border-white/5 bg-white/[0.03] text-white rounded-xl pl-10 pr-4 text-xs font-bold outline-none focus:border-[#C6FF00]"
+                  className="w-full h-11 border border-white/5 bg-white/[0.03] text-white rounded-xl pl-10 pr-4 text-xs font-bold outline-none focus:border-[#25D366]"
                 />
               </div>
 
@@ -1555,7 +1555,7 @@ export const SalesSystem: React.FC = () => {
                     onClick={() => setStockFilterTab(badge.id as any)}
                     className={`px-3 py-1.5 rounded-lg border text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                       stockFilterTab === badge.id 
-                        ? 'border-[#C6FF00] bg-[#C6FF00]/10 text-[#C6FF00]' 
+                        ? 'border-[#25D366] bg-[#25D366]/10 text-[#25D366]' 
                         : 'border-white/5 bg-black/40 text-zinc-500'
                     }`}
                   >
@@ -1616,7 +1616,7 @@ export const SalesSystem: React.FC = () => {
                           
                           <button 
                             onClick={() => handleOpenRestockModal(prod)}
-                            className="bg-white/[0.04] border border-white/5 hover:border-[#C6FF00] text-zinc-300 hover:text-[#C6FF00] px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer"
+                            className="bg-white/[0.04] border border-white/5 hover:border-[#25D366] text-zinc-300 hover:text-[#25D366] px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider cursor-pointer"
                           >
                             Restock
                           </button>
@@ -1640,7 +1640,7 @@ export const SalesSystem: React.FC = () => {
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="text-[#C6FF00] text-[10px] font-black uppercase tracking-widest italic block">BOX CONTROLS</span>
+                        <span className="text-[#25D366] text-[10px] font-black uppercase tracking-widest italic block">BOX CONTROLS</span>
                         <h3 className="text-lg font-black text-white uppercase mt-0.5">Restock inventory</h3>
                       </div>
                       <button 
@@ -1683,11 +1683,11 @@ export const SalesSystem: React.FC = () => {
                                   <Minus size={13} />
                                 </button>
                                 
-                                <span className="text-sm font-black text-[#C6FF00] w-6 text-center select-none">+{quantityToAdd}</span>
+                                <span className="text-sm font-black text-[#25D366] w-6 text-center select-none">+{quantityToAdd}</span>
 
                                 <button 
                                   onClick={() => handleRestockQuantityChange(sz.size, 1)}
-                                  className="w-8 h-8 rounded-lg bg-[#C6FF00]/10 border border-[#C6FF00]/25 text-[#C6FF00] flex items-center justify-center cursor-pointer hover:bg-[#C6FF00]/20"
+                                  className="w-8 h-8 rounded-lg bg-[#25D366]/10 border border-[#25D366]/25 text-[#25D366] flex items-center justify-center cursor-pointer hover:bg-[#25D366]/20"
                                 >
                                   <Plus size={13} />
                                 </button>
@@ -1700,7 +1700,7 @@ export const SalesSystem: React.FC = () => {
 
                     <button
                       onClick={handleSubmitRestock}
-                      className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5e600] text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-1 transition-all cursor-pointer"
+                      className="w-full h-14 bg-[#25D366] hover:bg-[#b5e600] text-black rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-1 transition-all cursor-pointer"
                     >
                       Update Stock Inventory ✓
                     </button>
@@ -1735,14 +1735,14 @@ export const SalesSystem: React.FC = () => {
                       </div>
 
                       <div className="text-right flex flex-col items-end gap-1 shrink-0">
-                        <span className="text-[10px] text-[#C6FF00] font-black uppercase tracking-wide">Discount? Offer free?</span>
+                        <span className="text-[10px] text-[#25D366] font-black uppercase tracking-wide">Discount? Offer free?</span>
                         <button 
                           onClick={() => {
                             setSelectedProduct(smProd);
                             handleSelectProduct(smProd);
                             setActiveTab('record');
                           }}
-                          className="bg-[#C6FF00]/10 hover:bg-[#C6FF00]/25 text-[#C6FF00] text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded shadow-md cursor-pointer inline-block"
+                          className="bg-[#25D366]/10 hover:bg-[#25D366]/25 text-[#25D366] text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded shadow-md cursor-pointer inline-block"
                         >
                           Clear Sale
                         </button>
@@ -1765,7 +1765,7 @@ export const SalesSystem: React.FC = () => {
                 <h3 className="font-black text-sm uppercase tracking-wide">Receipt CRM History</h3>
                 <button 
                   onClick={handleExportMonthReport}
-                  className="px-3.5 py-2 bg-[#C6FF00]/10 border border-[#C6FF00]/25 text-[#C6FF00] text-[10px] font-black uppercase tracking-wider rounded-full hover:bg-[#C6FF00]/20 transition-all flex items-center gap-1 cursor-pointer"
+                  className="px-3.5 py-2 bg-[#25D366]/10 border border-[#25D366]/25 text-[#25D366] text-[10px] font-black uppercase tracking-wider rounded-full hover:bg-[#25D366]/20 transition-all flex items-center gap-1 cursor-pointer"
                 >
                   <Share2 size={11} className="stroke-[3]" /> Export Month
                 </button>
@@ -1784,7 +1784,7 @@ export const SalesSystem: React.FC = () => {
                   value={historySearch}
                   onChange={(e) => setHistorySearch(e.target.value)}
                   placeholder="Search receipt by product title..."
-                  className="w-full h-11 border border-white/5 bg-black/40 text-white rounded-xl pl-10 pr-4 text-xs font-bold outline-none focus:border-[#C6FF00]"
+                  className="w-full h-11 border border-white/5 bg-black/40 text-white rounded-xl pl-10 pr-4 text-xs font-bold outline-none focus:border-[#25D366]"
                 />
               </div>
 
@@ -1804,7 +1804,7 @@ export const SalesSystem: React.FC = () => {
                       onClick={() => setHistoryPaymentFilter(pType.id as any)}
                       className={`px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                         historyPaymentFilter === pType.id 
-                          ? 'border-[#C6FF00] bg-[#C6FF00]/10 text-[#C6FF00]' 
+                          ? 'border-[#25D366] bg-[#25D366]/10 text-[#25D366]' 
                           : 'border-white/5 bg-black/40 text-zinc-500'
                       }`}
                     >
@@ -1830,7 +1830,7 @@ export const SalesSystem: React.FC = () => {
                       onClick={() => setHistoryChannelFilter(cType.id as any)}
                       className={`px-3 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer ${
                         historyChannelFilter === cType.id 
-                          ? 'border-[#C6FF00] bg-[#C6FF00]/10 text-[#C6FF00]' 
+                          ? 'border-[#25D366] bg-[#25D366]/10 text-[#25D366]' 
                           : 'border-white/5 bg-black/40 text-zinc-500'
                       }`}
                     >
@@ -1871,7 +1871,7 @@ export const SalesSystem: React.FC = () => {
                         {sale.voided ? (
                           <span className="text-[9px] bg-red-600/15 border border-red-600/35 text-red-500 font-extrabold rounded-full px-2 py-0.5 uppercase tracking-wide">Voided</span>
                         ) : (
-                          <span className="text-sm font-black text-[#C6FF00] block">${sale.final_price}</span>
+                          <span className="text-sm font-black text-[#25D366] block">${sale.final_price}</span>
                         )}
                         <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest block mt-0.5">{sale.quantity} units</span>
                       </div>
@@ -1941,14 +1941,14 @@ export const SalesSystem: React.FC = () => {
                   )}
                   <div className="flex justify-between font-black text-white text-sm pt-1 border-t border-white/[0.02]">
                     <span>Amount received (USD):</span>
-                    <span className="text-[#C6FF00]">${historySelectedSaleDetail.final_price}</span>
+                    <span className="text-[#25D366]">${historySelectedSaleDetail.final_price}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-xs pt-2">
                   <div className="bg-black/40 p-3 rounded-xl border border-white/5">
                     <span className="text-zinc-500 text-[9px] font-bold uppercase block tracking-wider font-mono">Paid via</span>
-                    <span className="font-extrabold text-[#C6FF00] block mt-0.5">{historySelectedSaleDetail.payment_method.toUpperCase()}</span>
+                    <span className="font-extrabold text-[#25D366] block mt-0.5">{historySelectedSaleDetail.payment_method.toUpperCase()}</span>
                   </div>
                   <div className="bg-black/40 p-3 rounded-xl border border-white/5">
                     <span className="text-zinc-500 text-[9px] font-bold uppercase block tracking-wider font-mono">Referral Channel</span>
@@ -2035,7 +2035,7 @@ export const SalesSystem: React.FC = () => {
 const NavTab = ({ icon, label, active, onClick }: any) => (
   <button 
     onClick={onClick}
-    className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-5 py-1.5 rounded-xl transition-all cursor-pointer ${active ? 'text-[#C6FF00]' : 'text-zinc-500 hover:text-white'}`}
+    className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-5 py-1.5 rounded-xl transition-all cursor-pointer ${active ? 'text-[#25D366]' : 'text-zinc-500 hover:text-white'}`}
   >
     {icon}
     <span className="text-[9px] font-mono font-bold uppercase tracking-widest">{label}</span>

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, ShoppingBag, Search, Home, Grid, Heart, User, ShieldAlert, ArrowRight, MapPin, Copy, Clock, Truck, MessageSquare, Map, Compass } from 'lucide-react';
+import { Menu, X, ShoppingBag, Search, Home, Grid, Heart, User, ShieldAlert, ArrowRight, MapPin, Copy, Clock, Truck, MessageSquare, Map, Compass, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { DEFAULT_MOCK_CATEGORIES } from '../utils/storefrontData';
@@ -31,6 +31,16 @@ import { StorefrontAbout } from '../components/storefront/StorefrontAbout';
 import { StorefrontContact } from '../components/storefront/StorefrontContact';
 import { CartItem, StorefrontPageType } from '../components/storefront/types';
 import { ShopLogo } from '../components/ui/ShopImage';
+
+const withTimeout = <T,>(promise: any, timeoutMs: number, fallbackValue: T): Promise<T> => {
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise<T>((resolve) => setTimeout(() => {
+      console.warn(`[TIMEOUT WARN] Query timed out after ${timeoutMs}ms. Using fallback.`);
+      resolve(fallbackValue);
+    }, timeoutMs))
+  ]);
+};
 
 export const StorefrontPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -226,30 +236,42 @@ export const StorefrontPage: React.FC = () => {
       }
 
       // Query core Supabase database by slug
-      const { data: dbShop } = await supabase
-        .from('shops')
-        .select('*')
-        .eq('slug', cleanSlug)
-        .maybeSingle();
+      const { data: dbShop } = await withTimeout(
+        supabase
+          .from('shops')
+          .select('*')
+          .eq('slug', cleanSlug)
+          .maybeSingle(),
+        3000,
+        { data: null, error: null }
+      );
 
       let shopResult = dbShop;
       if (!shopResult) {
         // Fallback search handle
-        const { data: altShop } = await supabase
-          .from('shops')
-          .select('*')
-          .ilike('handle', cleanSlug)
-          .maybeSingle();
+        const { data: altShop } = await withTimeout(
+          supabase
+            .from('shops')
+            .select('*')
+            .ilike('handle', cleanSlug)
+            .maybeSingle(),
+          2000,
+          { data: null, error: null }
+        );
         shopResult = altShop;
       }
 
       if (!shopResult) {
         // Fallback search by ID
-        const { data: shopById } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('id', slug)
-          .maybeSingle();
+        const { data: shopById } = await withTimeout(
+          supabase
+            .from('shops')
+            .select('*')
+            .eq('id', slug)
+            .maybeSingle(),
+          2000,
+          { data: null, error: null }
+        );
         shopResult = shopById;
       }
 
@@ -286,20 +308,28 @@ export const StorefrontPage: React.FC = () => {
       document.title = `${shopResult.name} | Storefront`;
 
       // Fetch dynamic categories
-      const { data: dbCats } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('shop_id', shopResult.id)
-        .order('sort_order', { ascending: true });
+      const { data: dbCats } = await withTimeout(
+        supabase
+          .from('categories')
+          .select('*')
+          .eq('shop_id', shopResult.id)
+          .order('sort_order', { ascending: true }),
+        2000,
+        { data: null, error: null }
+      );
 
       setCategories(dbCats && dbCats.length > 0 ? dbCats : DEFAULT_MOCK_CATEGORIES.filter(c => c.id !== 'all'));
 
       // Fetch dynamic products
-      const { data: dbProducts } = await supabase
-        .from('products')
-        .select('*')
-        .eq('shop_id', shopResult.id)
-        .neq('status', 'deleted');
+      const { data: dbProducts } = await withTimeout(
+        supabase
+          .from('products')
+          .select('*')
+          .eq('shop_id', shopResult.id)
+          .neq('status', 'deleted'),
+        2000,
+        { data: null, error: null }
+      );
 
       const mapped = (dbProducts || []).map((p: any) => ({
         ...p,
@@ -429,6 +459,36 @@ export const StorefrontPage: React.FC = () => {
     const updated = cart.filter(item => item.id !== itemId);
     handleSaveCart(updated);
     toast.success('Removed from cart');
+  };
+
+  // Share shop utility
+  const handleShareShop = async () => {
+    if (!shop) return;
+    const url = window.location.href;
+    const title = `${shop.name} | ThreadZW Storefront`;
+    const text = `Check out the latest clothing collections from ${shop.name} on ThreadZW! 🛍️✨`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title,
+          text,
+          url,
+        });
+        toast.success('Shop link shared!');
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+        console.log('Error using navigator.share:', err);
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Shop link copied to clipboard!');
+    } catch (err) {
+      toast.error('Failed to copy. Copy the page URL from the address bar.');
+    }
   };
 
   // Wishlist toggle
@@ -689,6 +749,7 @@ export const StorefrontPage: React.FC = () => {
             onToggleWishlist={handleToggleWishlist}
             onNavigateToPage={navigateToPage}
             onAddToCartDirectly={handleAddToCartDirectly}
+            onShareShop={handleShareShop}
           />
         );
       case 'shop':
@@ -885,6 +946,15 @@ export const StorefrontPage: React.FC = () => {
           </span>
 
           <div className="flex items-center gap-1.5">
+            <button 
+              type="button" 
+              onClick={handleShareShop}
+              className="p-1.5 text-zinc-700 hover:text-green-600 transition-colors cursor-pointer animate-pulse-subtle"
+              title="Share Shop"
+            >
+              <Share2 className="w-5 h-5 stroke-[2.5]" />
+            </button>
+
             <button 
               type="button" 
               onClick={() => navigateToPage('shop')}

@@ -13,7 +13,7 @@ export const useDashboard = () => {
     const followerCount = 185; // Static followers
 
     return [
-      { label: 'Revenue', value: `$${todayRev}`, icon: React.createElement(DollarSign, { size: 16 }), color: 'text-[#C6FF00]' },
+      { label: 'Revenue', value: `$${todayRev}`, icon: React.createElement(DollarSign, { size: 16 }), color: 'text-[#25D366]' },
       { label: 'Orders', value: todayCount, icon: React.createElement(ShoppingBag, { size: 16 }), color: 'text-emerald-400' },
       { label: 'Views', value: totalViews, icon: React.createElement(Eye, { size: 16 }), color: 'text-blue-400' },
       { label: 'Followers', value: followerCount, icon: React.createElement(Users, { size: 16 }), color: 'text-purple-400' }

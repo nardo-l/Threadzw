@@ -1,6 +1,8 @@
 // src/App.tsx
 
 import { useState, useEffect, useRef, useMemo } from 'react';
+
+const appStartTime = performance.now();
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { OnboardingFlow } from './screens/OnboardingFlow';
@@ -30,7 +32,6 @@ import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
-import { SignUp } from './screens/SignUp';
 import { ForgotPassword } from './screens/ForgotPassword';
 import { ResetPassword } from './screens/ResetPassword';
 import { MaintenanceOverlay } from './components/MaintenanceOverlay';
@@ -129,24 +130,14 @@ function AppContent() {
   const [appStage, setAppStageState] = useState<AppStage>(initialData.stage);
   const appStageRef = useRef<AppStage>(initialData.stage);
   
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const authLoadingDoneRef = useRef<number | null>(null);
+  const shopLoadingDoneRef = useRef<number | null>(null);
+  const profileLoadingDoneRef = useRef<number | null>(null);
+  const loggedTimingsRef = useRef(false);
+
+  const { session, loading, profile } = useAuth();
   const { shop, loading: shopLoading, hasShop, refreshShop } = useShopContext();
-
-  const setAppStage = async (stage: AppStage) => {
-    appStageRef.current = stage;
-    setAppStageState(stage);
-    // Synced path push
-    if (stage === 'landing') navigate('/');
-    else if (stage === 'building') navigate('/building');
-    else if (stage === 'onboarding') navigate('/signup');
-    else if (stage === 'dashboard') {
-      await refreshShop();
-      navigate('/dashboard');
-    }
-    else if (stage === 'admin') navigate('/admin');
-    else if (stage === 'setup') navigate('/setup');
-  };
-
-  const { session, loading } = useAuth();
 
   // Handle public routes unconditionally to prevent any auth lag or state conflicts
   const isPublicShopPath = useMemo(() => {
@@ -167,6 +158,100 @@ function AppContent() {
     }
     return false;
   }, [cleanPath]);
+
+  // Track auth loading done time
+  if (!loading && !authLoadingDoneRef.current) {
+    authLoadingDoneRef.current = performance.now();
+  }
+
+  // Track profile loading done time
+  if (profile && !profileLoadingDoneRef.current) {
+    profileLoadingDoneRef.current = performance.now();
+  }
+
+  // Track shop loading done time
+  if (!shopLoading && !shopLoadingDoneRef.current && !loading) {
+    shopLoadingDoneRef.current = performance.now();
+  }
+
+  useEffect(() => {
+    if (hasInitialized) return;
+
+    // Instant bypass for public storefront routes to prevent any lag or splash display
+    if (isPublicShopPath) {
+      console.log("FORENSIC STARTUP: Public path detected. Bypassing startup delays.");
+      setHasInitialized(true);
+      return;
+    }
+
+    // Hard limit of 1 second for splash display
+    const timer = setTimeout(() => {
+      console.log("FORENSIC STARTUP: Hard limit of 1 second reached. Initializing app anyway.");
+      setHasInitialized(true);
+    }, 1000);
+
+    // If auth loading is done
+    if (!loading) {
+      if (!session) {
+        // If not logged in, we can initialize immediately
+        console.log("FORENSIC STARTUP: Auth finished (unauthenticated). Initializing app.");
+        clearTimeout(timer);
+        setHasInitialized(true);
+      } else {
+        // If logged in, wait for shop loading to finish
+        if (!shopLoading) {
+          console.log("FORENSIC STARTUP: Auth & Shop finished (authenticated). Initializing app.");
+          clearTimeout(timer);
+          setHasInitialized(true);
+        }
+      }
+    }
+
+    return () => clearTimeout(timer);
+  }, [loading, session, shopLoading, hasInitialized, isPublicShopPath]);
+
+  useEffect(() => {
+    if (hasInitialized && !loggedTimingsRef.current) {
+      loggedTimingsRef.current = true;
+      const totalStartupTime = performance.now() - appStartTime;
+      const splashDuration = totalStartupTime; // since splash is unmounted when hasInitialized is true
+
+      const authRestorationTime = authLoadingDoneRef.current 
+        ? authLoadingDoneRef.current - appStartTime 
+        : 0;
+
+      const profileLoadingTime = (profileLoadingDoneRef.current && authLoadingDoneRef.current)
+        ? Math.max(0, profileLoadingDoneRef.current - authLoadingDoneRef.current)
+        : 0;
+
+      const shopLoadingTime = (shopLoadingDoneRef.current && authLoadingDoneRef.current)
+        ? Math.max(0, shopLoadingDoneRef.current - authLoadingDoneRef.current)
+        : 0;
+
+      console.log("%c⚡ THREADZW PERFORMANCE REPORT ⚡", "color: #25D366; font-weight: bold; font-size: 14px;");
+      console.log(`- Splash Duration: ${splashDuration.toFixed(2)}ms`);
+      console.log(`- Auth Restoration Time: ${authRestorationTime.toFixed(2)}ms`);
+      console.log(`- Profile Loading Time: ${profileLoadingTime.toFixed(2)}ms`);
+      console.log(`- Shop Loading Time: ${shopLoadingTime.toFixed(2)}ms`);
+      console.log(`- Total Startup Time: ${totalStartupTime.toFixed(2)}ms`);
+      console.log(`- Target: Under 1s warm, Under 2s cold. Result: ${totalStartupTime < 1000 ? "WARM PASS" : totalStartupTime < 2000 ? "COLD PASS" : "FAIL"}`);
+    }
+  }, [hasInitialized]);
+
+  const setAppStage = async (stage: AppStage) => {
+    appStageRef.current = stage;
+    setAppStageState(stage);
+    // Synced path push
+    if (stage === 'landing') navigate('/');
+    else if (stage === 'building') navigate('/building');
+    else if (stage === 'onboarding') navigate('/signup');
+    else if (stage === 'dashboard') {
+      await refreshShop();
+      navigate('/dashboard');
+    }
+    else if (stage === 'admin') navigate('/admin');
+    else if (stage === 'setup') navigate('/setup');
+  };
 
   const isDashboardSubPath = useMemo(() => {
     return (
@@ -237,7 +322,7 @@ function AppContent() {
     }
   }, [loading, session, shopLoading, hasShop, location.pathname, isPublicShopPath]);
 
-  if (loading) {
+  if (!hasInitialized) {
     return <SplashScreen />;
   }
 
@@ -306,10 +391,6 @@ function AppContent() {
 
   const isCurrentlyOnboarding = cleanPath === '/signup' || cleanPath === '/onboarding' || appStage === 'onboarding';
 
-  if (session && shopLoading && !isCurrentlyOnboarding) {
-    return <SplashScreen />;
-  }
-
   if (appStage === 'product') {
     return (
       <Routes>
@@ -376,7 +457,7 @@ function AppContent() {
     );
   }
 
-  return <SplashScreen />;
+  return session ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />;
 }
 
 function App() {

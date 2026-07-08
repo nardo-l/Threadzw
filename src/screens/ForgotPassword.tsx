@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Mail, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -38,25 +38,26 @@ export const ForgotPassword = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-black flex flex-col p-6 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] aspect-square bg-[#C6FF00] opacity-[0.05] blur-[120px] rounded-full pointer-events-none" />
-        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto relative z-10">
+      <div className="fixed inset-0 bg-black text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
+        <div className="flex-1 flex flex-col items-center justify-center text-center max-w-sm mx-auto px-6 space-y-10">
           <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="w-20 h-20 rounded-full bg-[#C6FF00]/10 flex items-center justify-center mb-10 border border-[#C6FF00]/20"
+            className="w-16 h-16 rounded-full bg-[#25D366]/10 flex items-center justify-center border border-[#25D366]/20"
           >
-            <CheckCircle2 size={40} className="text-[#C6FF00]" />
+            <CheckCircle2 className="text-[#25D366] w-8 h-8 stroke-[2.5]" />
           </motion.div>
-          <h1 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-white">Security Protocol</h1>
-          <p className="text-[#888] text-sm leading-relaxed mb-10 font-mono uppercase tracking-widest text-[11px]">
-            Access link transmitted to <span className="text-white font-bold">{email}</span>. 
-          </p>
+          <div className="space-y-3">
+            <h1 className="text-3xl font-black text-white tracking-tight">Email Sent</h1>
+            <p className="text-zinc-500 text-sm leading-relaxed font-medium">
+              We have transmitted secure access coordinates to <span className="text-white font-bold">{email}</span>.
+            </p>
+          </div>
           <button
             onClick={() => navigate('/login')}
-            className="w-full py-5 bg-[#C6FF00] text-black rounded-full font-black uppercase tracking-widest text-lg shadow-xl shadow-[#C6FF00]/20 transition-all active:scale-[0.98]"
+            className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer active:scale-[0.98]"
           >
-            Terminal Login ✓
+            Back to Sign In
           </button>
         </div>
       </div>
@@ -64,55 +65,55 @@ export const ForgotPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black flex flex-col p-6 overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[50%] aspect-square bg-[#C6FF00] opacity-[0.05] blur-[120px] rounded-full pointer-events-none" />
-      <header className="py-4 relative z-10">
-        <button
+    <div className="fixed inset-0 bg-black text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
+      
+      {/* Header with back button */}
+      <header className="h-20 px-6 flex items-center justify-between shrink-0 bg-black">
+        <button 
           onClick={() => navigate('/login')}
-          className="w-12 h-12 rounded-full bg-[#111] border border-[#222] flex items-center justify-center text-white active:scale-90 transition-transform"
+          className="w-12 h-12 rounded-full flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-white active:scale-95 transition-all cursor-pointer"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft className="w-5 h-5 stroke-[2]" />
         </button>
+        
+        <span className="text-sm font-black tracking-tighter text-white">
+          ThreadZW<span className="text-[#25D366]">.</span>
+        </span>
       </header>
 
-      <main className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full relative z-10">
-        <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-4 text-white">Reset Key?</h1>
-        <p className="text-[#888] text-sm leading-relaxed mb-10">
-          Transmit your email address and we'll send a link to securely reset your access key.
-        </p>
-
-        <form onSubmit={handleResetRequest} className="space-y-6">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-mono uppercase tracking-widest text-[#555] ml-1">Business Email</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[#333] w-5 h-5" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="simba@threadzw.com"
-                className="w-full bg-[#111] border border-[#222] rounded-2xl py-4 pl-12 pr-4 text-white outline-none focus:border-[#C6FF00] transition-all"
-                required
-              />
-            </div>
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto flex items-center justify-center px-6 py-8">
+        <div className="w-full max-w-md space-y-10">
+          
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-white tracking-tight font-sans">Reset Password</h1>
+            <p className="text-zinc-500 text-sm font-medium">Enter your registered merchant email to restore access coordinates.</p>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full h-16 bg-[#C6FF00] text-black rounded-full flex items-center justify-center gap-3 font-black uppercase tracking-widest text-lg shadow-xl shadow-[#C6FF00]/20 transition-all active:scale-[0.98] disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 size={24} className="animate-spin" />
-            ) : (
-              <>
-                <span>Transmit Link</span>
-                <Send size={18} />
-              </>
-            )}
-          </button>
-        </form>
+          <form onSubmit={handleResetRequest} className="space-y-6">
+            <div className="space-y-1">
+              <input 
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Email Address"
+                className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
+              />
+            </div>
+
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Transmit Link'}
+            </button>
+          </form>
+
+        </div>
       </main>
+
     </div>
   );
 };

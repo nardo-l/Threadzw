@@ -827,7 +827,7 @@ export const ShopEdit = () => {
             background: 'rgba(198, 255, 0,0.12)',
             border: '1px solid rgba(198, 255, 0,0.25)',
             borderRadius: '10px',
-            color: '#C6FF00',
+            color: '#25D366',
             fontSize: '13px',
             padding: '12px 16px'
           }} className="font-extrabold shadow-[0_4px_24px_rgba(0,0,0,0.9)] flex items-center gap-2 w-full justify-center">
@@ -1669,7 +1669,7 @@ export const ShopEdit = () => {
               ? '#10b981'
               : saving
                 ? '#1f2937'
-                : '#C6FF00',
+                : '#25D366',
             color: saveSuccess || saving
               ? '#ffffff'
               : '#000000',

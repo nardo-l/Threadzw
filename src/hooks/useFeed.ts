@@ -107,7 +107,7 @@ export const useFeed = (activeCategory = 'all') => {
         setLoading(false);
         setError('Request timed out. Please try again.');
       }
-    }, 30000);
+    }, 12000);
 
     try {
       await Promise.all([fetchProducts(), fetchStories(), fetchFeaturedProduct()]);

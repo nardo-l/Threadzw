@@ -12,7 +12,7 @@ export const SplashScreen: React.FC = () => {
       <div className="flex flex-col items-center justify-center text-center px-6">
         {/* Animated Custom Green Hanger SVG */}
         <div className="mb-6 animate-pulse">
-          <svg className="w-16 h-16 text-[#C6FF00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
+          <svg className="w-16 h-16 text-[#25D366]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
             {/* Elegant Hanger hook */}
             <path d="M12 9 C 12 6, 15 5, 14 3.5 C 13.5 2.8, 12.5 2.5, 12 2.5 C 11.2 2.5, 10.5 3, 10.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
             {/* Elegant Hanger body triangle */}
@@ -30,7 +30,7 @@ export const SplashScreen: React.FC = () => {
 
         {/* Circular Indicator spinner */}
         <div 
-          className="mt-12 w-6 h-6 rounded-full border-2 border-[#1A1A1A] border-t-[#C6FF00]" 
+          className="mt-12 w-6 h-6 rounded-full border-2 border-[#1A1A1A] border-t-[#25D366]" 
           style={{ animation: 'customSpin 0.8s linear infinite' }}
         />
       </div>

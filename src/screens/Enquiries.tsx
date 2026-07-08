@@ -82,7 +82,7 @@ export const Enquiries: React.FC = () => {
           <h1 className="text-4xl font-display font-black uppercase italic tracking-tighter">enquiries</h1>
         </header>
         <main className="flex-1 flex flex-col items-center justify-center p-12 text-center gap-8">
-          <div className="w-32 h-32 rounded-[40px] flex items-center justify-center bg-white border-2 border-charcoal text-charcoal shadow-[12px_12px_0_#C6FF00]">
+          <div className="w-32 h-32 rounded-[40px] flex items-center justify-center bg-white border-2 border-charcoal text-charcoal shadow-[12px_12px_0_#25D366]">
             <ShoppingBag size={56} />
           </div>
           <div className="flex flex-col gap-4">
@@ -93,7 +93,7 @@ export const Enquiries: React.FC = () => {
           </div>
           <button 
             onClick={() => navigate('/')}
-            className="w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-[32px] shadow-[10px_10px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all"
+            className="w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-[32px] shadow-[10px_10px_0_#25D366] active:translate-y-[4px] active:shadow-none transition-all"
           >
             Explore Catalog
           </button>
@@ -111,7 +111,7 @@ export const Enquiries: React.FC = () => {
         <div className="flex items-center gap-4">
           <h1 className="text-4xl font-display font-black uppercase italic tracking-tighter">enquiries</h1>
           <div 
-            className="oval-sticker !bg-[#C6FF00] !text-charcoal !shadow-none !text-[9px]"
+            className="oval-sticker !bg-[#25D366] !text-charcoal !shadow-none !text-[9px]"
           >
             {totalItems} {totalItems === 1 ? 'UNIT' : 'UNITS'}
           </div>
@@ -136,13 +136,13 @@ export const Enquiries: React.FC = () => {
               <Navigation size={28} strokeWidth={2.5} />
             </div>
             <div className="flex flex-col gap-4">
-              <h3 className="text-2xl font-display font-black uppercase italic tracking-tighter leading-none">MULTI-STOP <span className="text-[#C6FF00]">ROUTE</span></h3>
+              <h3 className="text-2xl font-display font-black uppercase italic tracking-tighter leading-none">MULTI-STOP <span className="text-[#25D366]">ROUTE</span></h3>
               <div className="flex flex-col gap-3">
                 {shopNames.map((name, idx) => {
                   const shop: any = shops.find(s => s.name === name);
                   return (
                     <div key={name} className="flex gap-4 text-xs font-black uppercase tracking-widest text-charcoal/40 italic leading-none items-center">
-                      <span className="text-[#C6FF00] text-[14px] leading-none">{idx + 1}.</span>
+                      <span className="text-[#25D366] text-[14px] leading-none">{idx + 1}.</span>
                       <span className="truncate">{name} <span className="text-charcoal/10 ml-2">[{shop?.area || 'BASE'}]</span></span>
                     </div>
                   );
@@ -170,7 +170,7 @@ export const Enquiries: React.FC = () => {
                 <div className="flex items-center gap-6">
                   <div 
                     className={`shrink-0 w-16 h-16 rounded-[24px] border-2 flex items-center justify-center text-3xl overflow-hidden bg-cream shadow-inner`}
-                    style={{ borderColor: isOpen ? '#C6FF00' : '#eee' }}
+                    style={{ borderColor: isOpen ? '#25D366' : '#eee' }}
                   >
                     {shop?.logo_url ? <img src={shop.logo_url || undefined} className="w-full h-full object-cover" /> : '🏪'}
                   </div>
@@ -182,7 +182,7 @@ export const Enquiries: React.FC = () => {
                     <div 
                       className="oval-sticker !shadow-none !text-[8.5px] border-none"
                       style={{ 
-                        background: isOpen ? '#C6FF00' : '#ff4e88',
+                        background: isOpen ? '#25D366' : '#ff4e88',
                         color: isOpen ? '#000' : '#fff' 
                       }}
                     >
@@ -227,7 +227,7 @@ export const Enquiries: React.FC = () => {
                       className="overflow-hidden"
                     >
                       <div className="mt-5 p-6 rounded-[24px] flex gap-5 bg-white border-2 border-charcoal shadow-inner">
-                        <MapPin size={24} className="shrink-0 text-[#C6FF00]" />
+                        <MapPin size={24} className="shrink-0 text-[#25D366]" />
                         <div className="flex flex-col gap-2">
                           <span className="text-[9px] font-black uppercase tracking-widest text-charcoal/20 italic font-display">Coordinate Metadata</span>
                           <p className="text-lg italic-accent text-charcoal/60 leading-tight">
@@ -244,14 +244,14 @@ export const Enquiries: React.FC = () => {
               <div className="p-8 flex flex-col gap-6 bg-white border-t-2 border-charcoal/5">
                 <button 
                   onClick={() => handleWhatsAppShop(shopName, items)}
-                  className="w-full h-16 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-xl rounded-full flex items-center justify-center gap-3 shadow-[6px_6px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all"
+                  className="w-full h-16 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-xl rounded-full flex items-center justify-center gap-3 shadow-[6px_6px_0_#25D366] active:translate-y-[4px] active:shadow-none transition-all"
                 >
                   <MessageCircle size={22} strokeWidth={3} />
                   Initiate Secure Sync
                 </button>
                 <div className="flex justify-end">
                   <span className="text-[10px] font-black uppercase tracking-widest text-charcoal/20 italic">
-                    SUBTOTAL: <span className="font-display font-black ml-2 text-[#C6FF00] text-3xl tracking-tighter leading-none italic">${subtotal}</span>
+                    SUBTOTAL: <span className="font-display font-black ml-2 text-[#25D366] text-3xl tracking-tighter leading-none italic">${subtotal}</span>
                   </span>
                 </div>
               </div>
@@ -276,7 +276,7 @@ export const Enquiries: React.FC = () => {
           </div>
           <button 
             onClick={() => toast.info("Execute protocols for each business individually.")}
-            className="w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full flex items-center justify-center gap-4 shadow-[10px_10px_0_#C6FF00] active:translate-y-[4px] active:shadow-none transition-all"
+            className="w-full h-20 bg-charcoal text-cream font-display font-black uppercase italic tracking-tighter text-2xl rounded-full flex items-center justify-center gap-4 shadow-[10px_10px_0_#25D366] active:translate-y-[4px] active:shadow-none transition-all"
           >
             Launch Global Sequence
           </button>
@@ -348,7 +348,7 @@ const ProductRow: React.FC<{
   return (
     <div className="relative overflow-hidden group">
       {/* Delete Background */}
-      <div className="absolute inset-0 bg-[#C6FF00] flex items-center justify-end px-8">
+      <div className="absolute inset-0 bg-[#25D366] flex items-center justify-end px-8">
         <Trash2 size={24} className="text-charcoal" />
       </div>
 
@@ -371,7 +371,7 @@ const ProductRow: React.FC<{
           <h4 className="text-xl font-display font-black uppercase italic tracking-tighter truncate leading-none text-charcoal">{item.name}</h4>
           <span className="text-[9px] font-black uppercase tracking-[0.2em] text-charcoal/30 italic">UNIT SPEC: {item.size}</span>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-2xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none">${item.price}</span>
+            <span className="text-2xl font-display font-black text-[#25D366] italic tracking-tighter leading-none">${item.price}</span>
             <div 
               className="oval-sticker !bg-lime !text-charcoal !shadow-none !text-[7.5px]"
             >
@@ -383,27 +383,27 @@ const ProductRow: React.FC<{
           <div className="flex items-center rounded-full p-1 bg-cream border-2 border-charcoal shadow-[2px_2px_0_rgba(0,0,0,1)]">
             <button 
               onClick={() => onUpdateQuantity(-1)}
-              className="w-8 h-8 flex items-center justify-center transition-colors text-charcoal hover:text-[#C6FF00]"
+              className="w-8 h-8 flex items-center justify-center transition-colors text-charcoal hover:text-[#25D366]"
             >
               <Minus size={14} />
             </button>
             <span className="w-8 text-center text-sm font-display font-black text-charcoal italic tracking-tighter leading-none">{item.quantity}</span>
             <button 
               onClick={() => onUpdateQuantity(1)}
-              className="w-8 h-8 flex items-center justify-center transition-colors text-charcoal hover:text-[#C6FF00]"
+              className="w-8 h-8 flex items-center justify-center transition-colors text-charcoal hover:text-[#25D366]"
             >
               <Plus size={14} />
             </button>
           </div>
           <button 
             onClick={onWhatsApp}
-            className="w-12 h-12 rounded-full transition-all bg-charcoal text-cream flex items-center justify-center shadow-[4px_4px_0_#C6FF00] active:scale-95"
+            className="w-12 h-12 rounded-full transition-all bg-charcoal text-cream flex items-center justify-center shadow-[4px_4px_0_#25D366] active:scale-95"
           >
             <MessageCircle size={20} strokeWidth={3} />
           </button>
           <button 
             onClick={onRemove}
-            className="w-10 h-10 flex items-center justify-center transition-colors text-charcoal/10 hover:text-[#C6FF00]"
+            className="w-10 h-10 flex items-center justify-center transition-colors text-charcoal/10 hover:text-[#25D366]"
           >
             <X size={20} />
           </button>
@@ -442,7 +442,7 @@ const Modal: React.FC<{
         <div className="flex flex-col gap-4">
           <button 
             onClick={onConfirm}
-            className="w-full h-16 bg-[#C6FF00] text-charcoal font-black uppercase tracking-widest italic text-xs rounded-full border-2 border-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[4px] active:shadow-none transition-all"
+            className="w-full h-16 bg-[#25D366] text-charcoal font-black uppercase tracking-widest italic text-xs rounded-full border-2 border-charcoal shadow-[6px_6px_0_rgba(0,0,0,1)] active:translate-y-[4px] active:shadow-none transition-all"
           >
             {confirmLabel}
           </button>

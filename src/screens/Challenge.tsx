@@ -348,7 +348,7 @@ export const Challenge = () => {
             key={`challenge-progress-${i}`} 
             className="h-full flex-1 transition-all duration-500"
             style={{ 
-              background: i < step ? 'linear-gradient(to right, #C6FF00, #C6FF00)' : i === step ? '#C6FF00' : '#e5e7eb',
+              background: i < step ? 'linear-gradient(to right, #25D366, #25D366)' : i === step ? '#25D366' : '#e5e7eb',
               opacity: i <= step ? 1 : 0.3
             }}
           />
@@ -381,8 +381,8 @@ export const Challenge = () => {
   if (screen === 'intro') {
     return (
       <div className="min-h-screen flex flex-col p-6 items-center justify-center text-center bg-[#0d0d0d]">
-        <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-[#C6FF00]/10">
-          <Zap size={40} className="text-[#C6FF00] animate-pulse" />
+        <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-[#25D366]/10">
+          <Zap size={40} className="text-[#25D366] animate-pulse" />
         </div>
         <h1 className="text-3xl font-bold mb-4 font-display text-white">Thread Challenge</h1>
         <p className="text-[15px] mb-8 max-w-sm text-[#888]">
@@ -400,7 +400,7 @@ export const Challenge = () => {
                 navigate('/auth');
               }
             }}
-            className="w-full h-14 rounded-full font-bold text-white shadow-lg bg-[#C6FF00]"
+            className="w-full h-14 rounded-full font-bold text-white shadow-lg bg-[#25D366]"
           >
             Start My Challenge 🎯
           </button>
@@ -419,7 +419,7 @@ export const Challenge = () => {
   if (screen === 'create' && loading && step === 5) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#0d0d0d]">
-        <Loader2 className="animate-spin mb-6 text-[#C6FF00]" size={40} />
+        <Loader2 className="animate-spin mb-6 text-[#25D366]" size={40} />
         <h2 className="text-xl font-bold mb-2 text-white">Building your challenge...</h2>
         <p className="text-[14px] animate-fade-in text-[#888]">
           {ProgressMessages[creatingMessageIndex]}
@@ -453,7 +453,7 @@ export const Challenge = () => {
                     onClick={() => setSelectedOutfit(item)}
                     className="aspect-[3/4] rounded-[16px] overflow-hidden relative cursor-pointer group active:scale-[0.98] transition-all"
                     style={{ 
-                      border: selectedOutfit?.id === item.id ? `2.5px solid #C6FF00` : '2px solid transparent',
+                      border: selectedOutfit?.id === item.id ? `2.5px solid #25D366` : '2px solid transparent',
                       boxShadow: selectedOutfit?.id === item.id ? `0 0 0 3px rgba(255,45,120,0.1)` : 'none'
                     }}
                   >
@@ -462,7 +462,7 @@ export const Challenge = () => {
                       <span className="text-white text-[13px] font-bold">{item.title}</span>
                     </div>
                     {selectedOutfit?.id === item.id && (
-                      <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#C6FF00]">
+                      <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#25D366]">
                         <Check size={14} strokeWidth={3} />
                       </div>
                     )}
@@ -497,7 +497,7 @@ export const Challenge = () => {
                       className="w-full h-12 rounded-xl border transition-all pl-11 pr-10 outline-none bg-[#111] border-[#222] text-white shadow-none"
                     />
                     {searching && (
-                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-[#C6FF00]" size={16} />
+                      <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-[#25D366]" size={16} />
                     )}
                     {searchQuery && !searching && (
                       <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#888]">
@@ -523,10 +523,10 @@ export const Challenge = () => {
                   </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl border flex items-center bg-[#C6FF00]/10 border-[#C6FF00]/20">
+                <div className="p-4 rounded-2xl border flex items-center bg-[#25D366]/10 border-[#25D366]/20">
                   <img src={selectedSong.thumbnail} alt={selectedSong.title} className="w-20 h-14 rounded-lg object-cover" />
                   <div className="ml-4 flex-1 min-w-0">
-                    <span className="text-[11px] uppercase tracking-wider font-bold text-[#C6FF00]">Your Song:</span>
+                    <span className="text-[11px] uppercase tracking-wider font-bold text-[#25D366]">Your Song:</span>
                     <h3 className="text-[15px] font-bold mt-1 truncate text-white">{selectedSong.title}</h3>
                     <p className="text-[12px] mt-0.5 text-[#888]">{selectedSong.channelTitle}</p>
                   </div>
@@ -557,7 +557,7 @@ export const Challenge = () => {
                     onClick={() => setSelectedFood(item)}
                     className="aspect-square rounded-[16px] overflow-hidden relative cursor-pointer active:scale-[0.98] transition-all"
                     style={{ 
-                      border: selectedFood?.id === item.id ? `2.5px solid #C6FF00` : '2px solid transparent',
+                      border: selectedFood?.id === item.id ? `2.5px solid #25D366` : '2px solid transparent',
                       boxShadow: selectedFood?.id === item.id ? `0 0 0 3px rgba(255,45,120,0.1)` : 'none'
                     }}
                   >
@@ -566,7 +566,7 @@ export const Challenge = () => {
                       <span className="text-white text-[13px] font-bold">{item.title}</span>
                     </div>
                     {selectedFood?.id === item.id && (
-                      <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#C6FF00]">
+                      <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#25D366]">
                         <Check size={14} strokeWidth={3} />
                       </div>
                     )}
@@ -595,7 +595,7 @@ export const Challenge = () => {
                     onClick={() => setSelectedActivity(item)}
                     className="aspect-square rounded-[16px] overflow-hidden relative cursor-pointer active:scale-[0.98] transition-all"
                     style={{ 
-                      border: selectedActivity?.id === item.id ? `2.5px solid #C6FF00` : '2px solid transparent',
+                      border: selectedActivity?.id === item.id ? `2.5px solid #25D366` : '2px solid transparent',
                       boxShadow: selectedActivity?.id === item.id ? `0 0 0 3px rgba(255,45,120,0.1)` : 'none'
                     }}
                   >
@@ -693,7 +693,7 @@ export const Challenge = () => {
               if (step < 5) setStep(step + 1);
               else handleCreateChallenge();
             }}
-            className="w-full h-14 rounded-full font-bold text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-[#C6FF00]"
+            className="w-full h-14 rounded-full font-bold text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-[#25D366]"
             style={{ 
               opacity: (
                 (step === 1 && !selectedOutfit) ||
@@ -728,7 +728,7 @@ export const Challenge = () => {
               className="absolute w-2 h-2 rounded-full animate-confetti-fall"
               style={{ 
                 left: `${Math.random() * 100}%`,
-                background: ['#C6FF00', '#A855F7', '#22C55E', '#F59E0B'][Math.floor(Math.random() * 4)],
+                background: ['#25D366', '#A855F7', '#22C55E', '#F59E0B'][Math.floor(Math.random() * 4)],
                 animationDuration: `${2 + Math.random() * 2}s`,
                 animationDelay: `${Math.random() * 1}s`
               }}
@@ -740,7 +740,7 @@ export const Challenge = () => {
           <span className="text-6xl mb-6 block">🎯</span>
         </div>
         <h1 className="text-3xl font-bold font-display mt-4 text-white">Your Challenge is Live!</h1>
-        <p className="text-[14px] font-mono mt-2 text-[#C6FF00]">@{createdChallenge?.slug}</p>
+        <p className="text-[14px] font-mono mt-2 text-[#25D366]">@{createdChallenge?.slug}</p>
 
         <div className="mt-8 w-full max-w-sm bg-[#111] border rounded-[24px] p-6 shadow-xl border-[#222]">
           <p className="text-[12px] font-medium text-left mb-3 text-[#888]">Your challenge link:</p>
@@ -753,7 +753,7 @@ export const Challenge = () => {
                 navigator.clipboard.writeText(`https://threadzw.com/challenge/${createdChallenge?.slug}`);
                 toast.success('Link copied!');
               }}
-              className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 bg-[#C6FF00]/10 text-[#C6FF00]"
+              className="w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 bg-[#25D366]/10 text-[#25D366]"
             >
               <Copy size={16} />
             </button>
@@ -771,7 +771,7 @@ export const Challenge = () => {
                     toast.success('Link copied!');
                   }
                 }}
-                className="w-full h-14 rounded-full font-bold text-white flex items-center justify-center gap-3 bg-[#C6FF00]"
+                className="w-full h-14 rounded-full font-bold text-white flex items-center justify-center gap-3 bg-[#25D366]"
               >
                 <Share2 size={18} />
                 Share Challenge
@@ -827,7 +827,7 @@ export const Challenge = () => {
     return (
       <div className="min-h-screen flex flex-col p-6 items-center justify-center text-center bg-[#0d0d0d]">
         <div className="relative">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#C6FF00]">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-[#25D366]">
             <img 
               src={activeChallenge?.creator_avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeChallenge?.creator_name || 'User')}&background=random`} 
               alt="Creator" 
@@ -861,7 +861,7 @@ export const Challenge = () => {
             value={participantName}
             onChange={(e) => setParticipantName(e.target.value)}
             placeholder="Enter your name..."
-            className="w-full h-14 rounded-2xl px-4 text-base outline-none border focus:border-[#C6FF00] transition-all bg-[#111] border-[#222] text-white"
+            className="w-full h-14 rounded-2xl px-4 text-base outline-none border focus:border-[#25D366] transition-all bg-[#111] border-[#222] text-white"
           />
           
           <button 
@@ -870,7 +870,7 @@ export const Challenge = () => {
               setScreen('friend_flow');
               setStep(1);
             }}
-            className="w-full h-14 rounded-full font-bold text-white mt-6 shadow-xl active:scale-[0.98] transition-all bg-[#C6FF00]"
+            className="w-full h-14 rounded-full font-bold text-white mt-6 shadow-xl active:scale-[0.98] transition-all bg-[#25D366]"
             style={{ opacity: participantName.trim() ? 1 : 0.5 }}
           >
             Start Challenge 🎯
@@ -900,11 +900,11 @@ export const Challenge = () => {
                     key={item.id}
                     onClick={() => setGuessOutfitId(item.id)}
                     className="aspect-[3/4] rounded-[16px] overflow-hidden relative"
-                    style={{ border: guessOutfitId === item.id ? `2.5px solid #C6FF00` : '2px solid transparent' }}
+                    style={{ border: guessOutfitId === item.id ? `2.5px solid #25D366` : '2px solid transparent' }}
                   >
                     <img src={item.image_url} alt="Option" className="w-full h-full object-cover" />
                     {guessOutfitId === item.id && (
-                       <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#C6FF00]">
+                       <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#25D366]">
                         <Check size={14} strokeWidth={3} />
                       </div>
                     )}
@@ -928,7 +928,7 @@ export const Challenge = () => {
                     onClick={() => setGuessSongVideoId(song.videoId)}
                     className="flex items-center p-3 rounded-2xl border cursor-pointer transition-all active:scale-[0.98] bg-[#111]"
                     style={{ 
-                      borderColor: guessSongVideoId === song.videoId ? '#C6FF00' : '#222' 
+                      borderColor: guessSongVideoId === song.videoId ? '#25D366' : '#222' 
                     }}
                   >
                     <img src={song.thumbnail} alt="Thumbnail" className="w-14 h-11 rounded-lg object-cover" />
@@ -937,7 +937,7 @@ export const Challenge = () => {
                       <p className="text-xs mt-0.5 text-[#888]">{song.channelTitle}</p>
                     </div>
                     {guessSongVideoId === song.videoId && (
-                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-white bg-[#C6FF00]">
+                       <div className="w-6 h-6 rounded-full flex items-center justify-center text-white bg-[#25D366]">
                         <Check size={12} strokeWidth={3} />
                       </div>
                     )}
@@ -960,11 +960,11 @@ export const Challenge = () => {
                     key={item.id}
                     onClick={() => setGuessFoodId(item.id)}
                     className="aspect-square rounded-[16px] overflow-hidden relative"
-                    style={{ border: guessFoodId === item.id ? `2.5px solid #C6FF00` : '2px solid transparent' }}
+                    style={{ border: guessFoodId === item.id ? `2.5px solid #25D366` : '2px solid transparent' }}
                   >
                     <img src={item.image_url} alt="Option" className="w-full h-full object-cover" />
                     {guessFoodId === item.id && (
-                       <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#C6FF00]">
+                       <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-white bg-[#25D366]">
                         <Check size={14} strokeWidth={3} />
                       </div>
                     )}
@@ -987,7 +987,7 @@ export const Challenge = () => {
                     key={item.id}
                     onClick={() => setGuessActivityId(item.id)}
                     className="aspect-square rounded-[16px] overflow-hidden relative"
-                    style={{ border: guessActivityId === item.id ? `2.5px solid #C6FF00` : '2px solid transparent' }}
+                    style={{ border: guessActivityId === item.id ? `2.5px solid #25D366` : '2px solid transparent' }}
                   >
                     <img src={item.image_url} alt="Option" className="w-full h-full object-cover" />
                     <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
@@ -1014,7 +1014,7 @@ export const Challenge = () => {
                     className="p-5 rounded-[18px] border text-center transition-all active:scale-[0.98] cursor-pointer"
                     style={{ 
                       background: guessBirthday === option ? 'rgba(255,45,120,0.1)' : '#111', 
-                      borderColor: guessBirthday === option ? '#C6FF00' : '#222' 
+                      borderColor: guessBirthday === option ? '#25D366' : '#222' 
                     }}
                   >
                     <span className="text-[16px] font-bold text-white">{option}</span>
@@ -1039,7 +1039,7 @@ export const Challenge = () => {
               if (step < 5) setStep(step + 1);
               else handleSubmitAttempt();
             }}
-            className="w-full h-14 rounded-full font-bold text-white transition-all active:scale-[0.98] flex items-center justify-center bg-[#C6FF00]"
+            className="w-full h-14 rounded-full font-bold text-white transition-all active:scale-[0.98] flex items-center justify-center bg-[#25D366]"
             style={{ 
               opacity: (
                 (step === 1 && !guessOutfitId) ||
@@ -1063,7 +1063,7 @@ export const Challenge = () => {
     const res = attemptResult;
     const scoreColor = res.percentage === 100 ? '#FFD700' : 
                       res.percentage >= 80 ? '#10b981' :
-                      res.percentage >= 60 ? '#C6FF00' :
+                      res.percentage >= 60 ? '#25D366' :
                       res.percentage >= 40 ? '#f59e0b' : '#ef4444';
     
     const scoreMsg = res.percentage === 100 ? "You know them perfectly! 👑" :
@@ -1127,7 +1127,7 @@ export const Challenge = () => {
                    toast.success('Result copied!');
                 }
               }}
-              className="w-full h-14 rounded-full font-bold text-white shadow-lg active:scale-[0.98] transition-all bg-[#C6FF00]"
+              className="w-full h-14 rounded-full font-bold text-white shadow-lg active:scale-[0.98] transition-all bg-[#25D366]"
             >
               📤 Share My Score
             </button>
@@ -1170,7 +1170,7 @@ export const Challenge = () => {
            </div>
            <div className="p-4 rounded-2xl border text-center bg-[#111] border-[#222]">
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-[#888]">Avg Score</p>
-              <h2 className="text-2xl font-black text-[#C6FF00]">{avgScore}<span className="text-xs font-bold ml-0.5">%</span></h2>
+              <h2 className="text-2xl font-black text-[#25D366]">{avgScore}<span className="text-xs font-bold ml-0.5">%</span></h2>
            </div>
            <div className="p-4 rounded-2xl border text-center bg-[#111] border-[#222]">
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1 text-[#888]">Top Score</p>
@@ -1214,7 +1214,7 @@ export const Challenge = () => {
            ) : (
              <div className="space-y-3">
                 {attempts.map((a, idx) => {
-                   const color = a.percentage === 100 ? '#FFD700' : a.percentage >= 80 ? '#10b981' : a.percentage >= 60 ? '#C6FF00' : a.percentage >= 40 ? '#f59e0b' : '#ef4444';
+                   const color = a.percentage === 100 ? '#FFD700' : a.percentage >= 80 ? '#10b981' : a.percentage >= 60 ? '#25D366' : a.percentage >= 40 ? '#f59e0b' : '#ef4444';
                    return (
                      <div key={a.id} className="overflow-hidden rounded-[20px] border border-[#222] bg-[#111]">
                         <div 
@@ -1252,7 +1252,7 @@ export const Challenge = () => {
         </p>
         <button 
           onClick={() => navigate('/')}
-          className="px-8 py-4 rounded-full font-bold text-white shadow-lg bg-[#C6FF00]"
+          className="px-8 py-4 rounded-full font-bold text-white shadow-lg bg-[#25D366]"
         >
           Back to Thread ZW
         </button>
@@ -1262,7 +1262,7 @@ export const Challenge = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d]">
-      <Loader2 className="animate-spin text-[#C6FF00]" size={32} />
+      <Loader2 className="animate-spin text-[#25D366]" size={32} />
     </div>
   );
 };

@@ -680,9 +680,9 @@ const ProductCard = memo(({ product, onSave, getStockBadge }: { product: any; on
             onSave(product);
           }}
           className="absolute top-3 right-3 p-2.5 rounded-xl backdrop-blur-md transition-all active:scale-90 bg-black/40 hover:bg-black/60 border border-white/10"
-          style={{ color: isSaved ? '#C6FF00' : 'white' }}
+          style={{ color: isSaved ? '#25D366' : 'white' }}
         >
-          <Heart size={14} fill={isSaved ? '#C6FF00' : 'none'} />
+          <Heart size={14} fill={isSaved ? '#25D366' : 'none'} />
         </button>
         <div className="absolute bottom-3 left-3">
           {getStockBadge(product.total_stock)}
@@ -762,7 +762,7 @@ const BuildShopBanner = () => {
   return (
     <div 
       onClick={() => navigate('/seller-onboarding')}
-      className="relative w-full h-40 rounded-[32px] overflow-hidden group cursor-pointer border border-primary/30 shadow-[0_0_30px_#C6FF0033] active:scale-[0.98] transition-all bg-card"
+      className="relative w-full h-40 rounded-[32px] overflow-hidden group cursor-pointer border border-primary/30 shadow-[0_0_30px_#25D36633] active:scale-[0.98] transition-all bg-card"
     >
       {imageUrl ? (
         <img 

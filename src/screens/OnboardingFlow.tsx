@@ -1,31 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  ArrowLeft, Check, Camera, Image as ImageIcon, Search, MessageSquare, 
-  Eye, EyeOff, ShoppingBag, Smartphone, Store, Clock, Flame, Send,
-  ArrowRight, Lock, AlertCircle, TrendingUp, CheckCircle2, Package,
-  DollarSign, BarChart2, MapPin, Tag, Trophy, AlertTriangle, RefreshCw, HelpCircle, Shirt, Briefcase, Gem, Sparkles,
-  X, MessageCircle, Unlock, Share2, PlusCircle, ExternalLink, ShieldCheck
+  ArrowLeft, Check, Camera, Image as ImageIcon, Sparkles, Loader2, Eye, EyeOff
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { mapError } from '../lib/utils';
-import { useGlobalCategories } from '../hooks/useGlobalCategories';
-import { getAppHost, getAbsoluteShopUrl } from '../utils/shopUrl';
 import { useShopContext } from '../context/ShopContext';
-
-// WhatsApp icon SVG
-const WhatsAppIcon: React.FC<{ size?: number; className?: string }> = ({ size = 20, className }) => (
-  <svg 
-    width={size} 
-    height={size} 
-    viewBox="0 0 24 24"
-    fill="currentColor"
-    className={className}
-  >
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-  </svg>
-);
 
 export const generateSlug = (shopName: string): string => {
   if (!shopName) return '';
@@ -64,266 +44,322 @@ export const generateUniqueSlug = async (shopName: string): Promise<string> => {
   return `${baseSlug}${Math.floor(1000 + Math.random() * 9000)}`;
 };
 
-const categoryRecommendations: Record<string, { emoji: string; heading: string; text: string }[]> = {
+type CategoryType = 'Sneakers' | 'Thrift' | 'Streetwear' | 'Formal';
+
+const categoryMockProducts: Record<CategoryType, { name: string; price: string; image: string; description: string }[]> = {
   Sneakers: [
     {
-      emoji: "👟",
-      heading: "🔥 Premium Sneaker Collections",
-      text: "Shop exclusive sneakers, limited releases and stylish streetwear."
+      name: "Air Jordan 4 Retro Pine Green",
+      price: "45",
+      image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80",
+      description: "Authentic retro sneakers featuring premium leather and striking pine green accents."
     },
     {
-      emoji: "🔥",
-      heading: "Drip & Sole Harare 👟🇿🇼",
-      text: "Zimbabwe's premier sneaker plug. Authentic kicks and rare colorways sourced globally."
+      name: "Yeezy Boost 350 V2 Carbon",
+      price: "40",
+      image: "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400&q=80",
+      description: "Ultra-comfortable primeknit upper with signature boost cushioning."
     },
     {
-      emoji: "⚡",
-      heading: "Sneaker Drop ZW 👟💎",
-      text: "High-quality sneaker drops, direct-to-your-door shipping, and 24/7 WhatsApp customer care."
+      name: "Nike Air Force 1 07",
+      price: "25",
+      image: "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&q=80",
+      description: "The legend lives on in this classic street icon with crisp leather edges."
     }
   ],
   Thrift: [
     {
-      emoji: "🧥",
-      heading: "Curated Thrift Finds",
-      text: "Unique vintage and thrift collections sourced for fashion lovers."
+      name: "Vintage Distressed Leather Jacket",
+      price: "35",
+      image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?w=400&q=80",
+      description: "Genuine heavy cowhide leather jacket with perfect worn-in vintage character."
     },
     {
-      emoji: "💎",
-      heading: "Vintage Treasures ZW 🧥✨",
-      text: "One-of-a-kind thrift fits, curated leather jackets, retro denim, and classic style in Harare."
+      name: "90s Retro Corduroy Shirt",
+      price: "20",
+      image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&q=80",
+      description: "Soft heavyweight corduroy in a classic relaxed oversize cut."
     },
     {
-      emoji: "♻️",
-      heading: "Eco-Conscious Thrift 🧥🌿",
-      text: "Affordable premium secondhand style. Bringing you sustainable curated fashion."
+      name: "Classic High-Waist Denim",
+      price: "22",
+      image: "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=400&q=80",
+      description: "Premium vintage Levi's denim. Durable, timeless, and perfectly styled."
     }
   ],
-  Electronics: [
+  Streetwear: [
     {
-      emoji: "📱",
-      heading: "📱 Trusted Electronics Store",
-      text: "Affordable gadgets and accessories from trusted suppliers."
+      name: "Heavyweight Oversized Hoodie",
+      price: "30",
+      image: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&q=80",
+      description: "450GSM loopback cotton hoodie with a dropped shoulder silhouette and custom graphic print."
     },
     {
-      emoji: "⚡",
-      heading: "NextGen Tech ZW 📱🔋",
-      text: "Original apple/android devices, premium phone cases, charger cables and fast Harare courier."
+      name: "Oversized Acid-Wash Tee",
+      price: "15",
+      image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400&q=80",
+      description: "Thick premium cotton washed-black tee with high-density brand chest print."
     },
     {
-      emoji: "🎧",
-      heading: "Gadget Hub Harare 🎧📡",
-      text: "Premium audio gear, smart watches, power banks, and certified electronic accessories."
+      name: "Utility Multi-Pocket Cargo",
+      price: "35",
+      image: "https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=400&q=80",
+      description: "Durable cotton-ripstop trousers with utility webbing and standard streetwear fitting."
     }
   ],
-  Fashion: [
+  Formal: [
     {
-      emoji: "👕",
-      heading: "👕 Modern Fashion Collections",
-      text: "Trendy clothing and accessories for every style."
+      name: "Tailored Slim Double Suit",
+      price: "85",
+      image: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=400&q=80",
+      description: "Bespoke-cut wool blend blazer and tapered trouser set. Sharp style for elites."
     },
     {
-      emoji: "👗",
-      heading: "Zim Designer Closet 👕👑",
-      text: "Premium tailored clothing, trendy accessories, and high-street fashion curated for you."
+      name: "Satin Pleated Midi Dress",
+      price: "45",
+      image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=80",
+      description: "Elegant emerald green satin midi featuring fluid pleats and a draped cowl neckline."
     },
     {
-      emoji: "⚜️",
-      heading: "Classy Fits Harare 👗💎",
-      text: "Premium apparel, custom styling tips, and top-tier streetwear selections."
+      name: "Premium Oxford Leather Brogues",
+      price: "50",
+      image: "https://images.unsplash.com/photo-1533867617858-e7b97e060509?w=400&q=80",
+      description: "Hand-crafted full-grain leather shoes with exquisite wingtip detailing."
     }
   ]
 };
 
-const recommendations = [
-  ...categoryRecommendations.Sneakers,
-  ...categoryRecommendations.Thrift,
-  ...categoryRecommendations.Electronics,
-  ...categoryRecommendations.Fashion
-];
+type ScreenType = 
+  | 'WELCOME' 
+  | 'SIGN_IN'
+  | 'SHOP_NAME' 
+  | 'CATEGORY' 
+  | 'CITY' 
+  | 'WHATSAPP' 
+  | 'INSTAGRAM' 
+  | 'DESCRIPTION' 
+  | 'LOGO_UPLOAD' 
+  | 'BANNER_UPLOAD' 
+  | 'CREATE_ACCOUNT' 
+  | 'BUILDING';
 
 interface OnboardingFlowProps {
-  setAppStage: (stage: 'landing' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product') => void;
-  setPaywallScreen?: (screen: number) => void;
+  setAppStage: (stage: 'landing' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'onboarding') => void;
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ 
-  setAppStage
-}) => {
+const ZIM_CITIES = [
+  "Harare", "Bulawayo", "Chitungwiza", "Mutare", "Gweru", 
+  "Kwekwe", "Masvingo", "Kadoma", "Victoria Falls", "Chinhoyi"
+];
+
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ setAppStage }) => {
   const { setShop, setHasShop, setLoading: setShopLoading, refreshShop } = useShopContext();
-  const { categories: globalCategories } = useGlobalCategories();
-  const [screen, setScreen] = useState(1);
 
-  // Phase 3 & 4 data states
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [signingUp, setSigningUp] = useState(false);
-
-  // Shop setup states
+  const [screen, setScreen] = useState<ScreenType>('WELCOME');
+  
+  // Creation values
   const [shopName, setShopName] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<CategoryType>('Sneakers');
+  const [selectedCity, setSelectedCity] = useState('Harare');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [instagram, setInstagram] = useState('');
+  const [description, setDescription] = useState('');
+
+  // Media files
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [description, setDescription] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [selectedCategoryTab, setSelectedCategoryTab] = useState<'Sneakers' | 'Thrift' | 'Electronics' | 'Fashion'>('Sneakers');
-  const [activeRecommendationIndex, setActiveRecommendationIndex] = useState(0);
-  const [isDraggingRecommendation, setIsDraggingRecommendation] = useState(false);
-  const [textareaKey, setTextareaKey] = useState(0);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
 
-  // Recommendation Carousel Auto-scroll effect
-  useEffect(() => {
-    if (isDraggingRecommendation || screen !== 23) return;
-    const interval = setInterval(() => {
-      setActiveRecommendationIndex((prev) => (prev + 1) % recommendations.length);
-    }, 3500);
-    return () => clearInterval(interval);
-  }, [isDraggingRecommendation, screen]);
+  // Sign up account state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  // First product states
-  const [productName, setProductName] = useState('');
-  const [productPrice, setProductPrice] = useState('');
-  const [productCategory, setProductCategory] = useState('');
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
-
-  // Final success links
-  const [finalShopSlug, setFinalShopSlug] = useState('');
-  const [finalShopId, setFinalShopId] = useState('');
-  const [finalShopUrl, setFinalShopUrl] = useState('');
-
-  // Building screen states
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [visibleChecks, setVisibleChecks] = useState<number[]>([]);
+  // UI helpers
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [creationProgress, setCreationProgress] = useState(0);
+  const [creationStatus, setCreationStatus] = useState('Initiating...');
 
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const productImgInputRef = useRef<HTMLInputElement>(null);
-  const shopRecordRef = useRef<any>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
-  // Back button control
+  // Sequential steps list for creation
+  const CREATION_STEPS: ScreenType[] = [
+    'SHOP_NAME',
+    'CATEGORY',
+    'CITY',
+    'WHATSAPP',
+    'DESCRIPTION',
+    'LOGO_UPLOAD',
+    'BANNER_UPLOAD',
+    'CREATE_ACCOUNT'
+  ];
+
+  const getStepProgress = () => {
+    const idx = CREATION_STEPS.indexOf(screen);
+    if (idx === -1) return 0;
+    return Math.round(((idx + 1) / CREATION_STEPS.length) * 100);
+  };
+
+  const isCreationScreen = CREATION_STEPS.includes(screen);
+
+  const handleNext = () => {
+    if (screen === 'SHOP_NAME') {
+      if (!shopName.trim()) {
+        toast.error('Please enter a shop name.');
+        return;
+      }
+      setScreen('CATEGORY');
+    } else if (screen === 'CATEGORY') {
+      setScreen('CITY');
+    } else if (screen === 'CITY') {
+      setScreen('WHATSAPP');
+    } else if (screen === 'WHATSAPP') {
+      if (!whatsapp || whatsapp.length < 9) {
+        toast.error('Please enter a valid WhatsApp number.');
+        return;
+      }
+      setScreen('DESCRIPTION');
+    } else if (screen === 'DESCRIPTION') {
+      setScreen('LOGO_UPLOAD');
+    } else if (screen === 'LOGO_UPLOAD') {
+      setScreen('BANNER_UPLOAD');
+    } else if (screen === 'BANNER_UPLOAD') {
+      setScreen('CREATE_ACCOUNT');
+    }
+  };
+
   const handleBack = () => {
-    if (screen === 1 || screen === 26) return;
-    setScreen(prev => prev - 1);
-  };
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
+    if (screen === 'SIGN_IN') {
+      setScreen('WELCOME');
+      return;
+    }
+    const idx = CREATION_STEPS.indexOf(screen);
+    if (idx === 0) {
+      setScreen('WELCOME');
+    } else if (idx > 0) {
+      setScreen(CREATION_STEPS[idx - 1]);
     }
   };
 
-  const handleProductImgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProductImageFile(file);
-      setProductImagePreview(URL.createObjectURL(file));
+  // Login handler
+  const handleSignInSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      toast.error('Please fill in all fields.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password
+      });
+
+      if (authErr) throw authErr;
+      if (!authData.user) throw new Error('Could not retrieve credentials.');
+
+      // Fetch potential existing shop
+      const { data: shopData } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('owner_id', authData.user.id)
+        .maybeSingle();
+
+      if (shopData) {
+        localStorage.setItem('threadzw_onboarding_complete', 'true');
+        localStorage.setItem('threadzw_logged_in', 'true');
+        setShop(shopData);
+        setHasShop(true);
+        await refreshShop();
+        toast.success('Signed in successfully.');
+        setAppStage('dashboard');
+      } else {
+        toast.info('Session active. Let\'s build your shop name.');
+        setScreen('SHOP_NAME');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Verification failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Sign up account handler (Screen 19)
-  const handleSignUpSubmit = async () => {
-    if (signingUp) return;
+  // Registration + Creation handler
+  const handleSignUpAndCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!email.trim() || !email.includes('@')) {
-      toast.error('Enter a valid email address.');
+      toast.error('Please enter a valid email.');
       return;
     }
     if (password.length < 6) {
       toast.error('Password must be at least 6 characters.');
       return;
     }
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
 
-    setSigningUp(true);
+    setScreen('BUILDING');
+    setCreationProgress(10);
+    setCreationStatus('Creating profile...');
+
     try {
-      // Create user auth record in Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password: password
       });
 
-      let activeUserId = '';
-      if (authError) {
-        if (authError.message?.toLowerCase().includes('already registered') || authError.message?.toLowerCase().includes('already exists')) {
-          const { data: sData, error: sErr } = await supabase.auth.signInWithPassword({
-            email: email.trim().toLowerCase(),
-            password: password
-          });
-          if (sErr) {
-            throw new Error('This email is already registered. Please check credentials or sign in.');
-          }
-          activeUserId = sData.user?.id || '';
-        } else {
-          throw authError;
+      if (authErr) {
+        if (authErr.message.toLowerCase().includes('already registered') || authErr.message.toLowerCase().includes('already exists')) {
+          throw new Error('This email is already registered. Go back to Sign In.');
         }
-      } else {
-        // Sign in explicitly to establish session
-        try {
-          const { data: sData, error: sErr } = await supabase.auth.signInWithPassword({
-            email: email.trim().toLowerCase(),
-            password: password
-          });
-          if (!sErr && sData.user) {
-            activeUserId = sData.user.id;
-          } else {
-            activeUserId = authData.user?.id || '';
-          }
-        } catch (_) {
-          activeUserId = authData.user?.id || '';
-        }
+        throw authErr;
       }
 
-      if (!activeUserId) {
-        throw new Error('Could not establish secure login session.');
-      }
-
-      // Success, move to Success Account Creation screen
-      localStorage.setItem('supabase_logged_in_user_id', activeUserId);
-      localStorage.setItem('threadzw_owner_email', email.trim().toLowerCase());
-      localStorage.setItem('threadzw_logged_in', 'true');
-      setScreen(20);
-    } catch (err: any) {
-      console.error("SHOP CREATION FAILED");
-      console.error(err);
-      console.error(JSON.stringify(err, null, 2));
-      toast.error(mapError(err));
-    } finally {
-      setSigningUp(false);
-    }
-  };
-
-  // Final database construction (triggered in screen 26 building animation)
-  const executeShopBuilding = async () => {
-    try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      if (!userId) {
-        throw new Error('User session not found.');
-      }
-
-      // 1. Create Profile record
-      await supabase.from('profiles').upsert({
-        id: userId,
-        display_name: shopName || 'ThreadZW Merchant',
+      // Automatically sign in
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
-        whatsapp_number: whatsapp || '0776223144',
+        password: password
+      });
+
+      if (signInErr) throw signInErr;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Retrying active user session.');
+      }
+
+      setCreationProgress(30);
+      setCreationStatus('Configuring profiles...');
+      await supabase.from('profiles').upsert({
+        id: user.id,
+        display_name: shopName || 'ThreadZW Merchant',
+        email: user.email || email,
+        whatsapp_number: whatsapp,
         onboarding_complete: true
       });
 
-      // 2. Create shop record first to get the database store ID (realShopId)
-      const trialEnds = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000);
-      const generatedSlug = await generateUniqueSlug(shopName || 'My Shop');
+      setCreationProgress(50);
+      setCreationStatus('Generating custom brand handle...');
+      const uniqueSlug = await generateUniqueSlug(shopName);
+      const trialEnds = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3-day trial standard
+      const categoryLabel = selectedCategory === 'Formal' ? 'Luxury' : selectedCategory;
 
-      const user = sessionData?.session?.user;
       const storeData = {
-        owner_id: userId,
-        name: shopName || 'My Shop',
-        handle: generatedSlug,
-        slug: generatedSlug,
-        categories: [productCategory || 'Clothing'],
-        location: 'Harare',
-        whatsapp_number: whatsapp || '0776223144',
-        description: description || 'Premium clothing boutique',
+        owner_id: user.id,
+        name: shopName,
+        handle: uniqueSlug,
+        slug: uniqueSlug,
+        categories: [categoryLabel],
+        location: selectedCity,
+        whatsapp_number: whatsapp,
+        description: description.trim() || `Premium curation of ${selectedCategory.toLowerCase()} items sourced in ${selectedCity}.`,
         plan: 'shop',
         subscription_status: 'trial',
         trial_started_at: new Date().toISOString(),
@@ -331,55 +367,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         is_live: true
       };
 
-      console.log("========== SHOP CREATION START ==========");
-      console.log("AUTH USER:", user);
-      console.log("AUTH USER ID:", user?.id);
-      console.log("STORE DATA:", storeData);
-      console.log("========================================");
-
-      const { data, error } = await supabase
+      const { data: shopData, error: shopErr } = await supabase
         .from('shops')
         .upsert(storeData, { onConflict: 'owner_id' })
         .select()
         .single();
 
-      console.log("SHOP UPSERT DATA:", data);
-      console.log("SHOP UPSERT ERROR:", error);
+      if (shopErr) throw shopErr;
+      const realShopId = shopData.id;
 
-      const shopRecord = data;
-      const insertError = error;
+      setCreationProgress(75);
+      setCreationStatus('Uploading assets...');
 
-      if (insertError) {
-        console.error("SHOP INSERT FAILED:", insertError);
-        throw insertError;
-      }
-      if (!shopRecord) throw new Error('Database did not return the inserted shop record.');
-
-      shopRecordRef.current = shopRecord;
-
-      const realShopId = shopRecord.id;
-      const generatedUrl = `/shop/${realShopId}`;
-      const urlId = realShopId;
-
-      // Forensic logging
-      console.log("URL SHOP ID:", realShopId);
-      console.log("DB SHOP ID:", shopRecord.id);
-      console.log("OWNER ID:", shopRecord.owner_id);
-
-      // Debugging logs
-      console.log("Auth User ID:\n" + userId);
-      console.log("Store ID:\n" + realShopId);
-      console.log("Generated URL:\n" + generatedUrl);
-      console.log('Generated URL ID:', urlId);
-      console.log('Database Store ID:', realShopId);
-      console.log('Match Result:', urlId === realShopId ? 'MATCHED' : 'MISMATCH');
-
-      if (urlId !== realShopId) {
-        throw new Error(`Validation failed: URL ID (${urlId}) does not match database store ID (${realShopId})!`);
-      }
-
-      // 3. Upload logo to shop-avatars bucket if selected, using realShopId as folder
-      let finalLogoUrl = null;
+      // Logo Upload
       if (logoFile) {
         try {
           const ext = logoFile.name.split('.').pop();
@@ -390,1442 +390,638 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           
           if (!uploadErr) {
             const { data: logoPub } = supabase.storage.from('shop-avatars').getPublicUrl(filePath);
-            finalLogoUrl = logoPub.publicUrl;
-            
-            // Update shop record with the uploaded logo URL
-            await supabase
-              .from('shops')
-              .update({ logo_url: finalLogoUrl })
-              .eq('id', realShopId);
+            await supabase.from('shops').update({ logo_url: logoPub.publicUrl }).eq('id', realShopId);
           }
         } catch (logoErr) {
-          console.error('Logo upload error:', logoErr);
+          console.error('Logo upload issue (continuing):', logoErr);
         }
       }
 
-      // 4. Upload first product image if selected, using realShopId as folder
-      let finalProductImageUrl = 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400&q=80';
-      if (productImageFile) {
+      // Banner Upload
+      if (bannerFile) {
         try {
-          const ext = productImageFile.name.split('.').pop();
-          const filePath = `${realShopId}/product_${Date.now()}.${ext}`;
+          const ext = bannerFile.name.split('.').pop();
+          const filePath = `${realShopId}/banner_${Date.now()}.${ext}`;
           const { error: uploadErr } = await supabase.storage
-            .from('product-images')
-            .upload(filePath, productImageFile, { upsert: true });
+            .from('shop-avatars')
+            .upload(filePath, bannerFile, { upsert: true });
           
           if (!uploadErr) {
-            const { data: imgPub } = supabase.storage.from('product-images').getPublicUrl(filePath);
-            finalProductImageUrl = imgPub.publicUrl;
+            const { data: bannerPub } = supabase.storage.from('shop-avatars').getPublicUrl(filePath);
+            await supabase.from('shops').update({ banner_url: bannerPub.publicUrl }).eq('id', realShopId);
           }
-        } catch (imgErr) {
-          console.error('Product image upload error:', imgErr);
+        } catch (bannerErr) {
+          console.error('Banner upload issue (continuing):', bannerErr);
         }
       }
 
-      // 5. Create product record
-      if (productName.trim()) {
-        const shopId = realShopId;
-        console.log("PRODUCT SHOP ID:", shopId);
-        console.log("PRODUCT OWNER ID:", user?.id);
+      setCreationProgress(90);
+      setCreationStatus('Launching catalog...');
 
-        if (!realShopId || String(realShopId).startsWith('local-shop-') || realShopId === '55555555-5555-5555-5555-555555555555') {
-          throw new Error("Cannot create product: No active, valid shop found for your profile.");
-        }
-
-        const { error: prodError } = await supabase.from('products').insert({
+      // Inject 3 mock products
+      const itemsToInsert = categoryMockProducts[selectedCategory] || categoryMockProducts['Sneakers'];
+      for (const item of itemsToInsert) {
+        await supabase.from('products').insert({
           shop_id: realShopId,
-          owner_id: userId,
-          name: productName,
-          description: `First release from ${shopName}. Ready for orders.`,
-          price: parseFloat(productPrice) || 15,
-          images: [finalProductImageUrl],
-          category: productCategory || 'Clothing',
+          owner_id: user.id,
+          name: item.name,
+          description: item.description,
+          price: parseFloat(item.price),
+          images: [item.image],
+          category: categoryLabel,
           condition: 'New',
           sizes: [{ size: 'M', quantity: 10 }, { size: 'L', quantity: 10 }],
           is_published: true,
           status: 'active',
           total_stock: 20
         });
-
-        if (prodError) {
-          console.error('Product insert error:', prodError);
-        }
       }
 
-      // Record verified values for state
-      setFinalShopId(realShopId);
-      setFinalShopSlug(generatedSlug);
-      setFinalShopUrl(generatedUrl);
+      setCreationProgress(100);
+      setCreationStatus('Done!');
 
-      // Sync local storage caches with the real database record to make sure IDs match perfectly
-      try {
-        localStorage.setItem(`shop_${userId}`, JSON.stringify(shopRecord));
-      } catch (cacheErr) {
-        console.warn('Error saving shop to localStorage:', cacheErr);
-      }
-
-      // Update the Shop Context immediately with the freshly created shop
-      setShop(shopRecord);
-      setHasShop(true);
-      setShopLoading(false);
-
-      // Complete validation and login state
+      // Onboarding state preservation
       localStorage.setItem('threadzw_onboarding_complete', 'true');
+      localStorage.setItem('threadzw_logged_in', 'true');
       localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
       localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
 
-      // Call refreshShop() and await completion
+      setShop(shopData);
+      setHasShop(true);
+      setShopLoading(false);
       await refreshShop();
 
+      toast.success('Your clothing store is live.');
+      setAppStage('dashboard');
     } catch (err: any) {
-      console.error("SHOP CREATION FAILED");
-      console.error(err);
-      console.error(JSON.stringify(err, null, 2));
-      toast.error(err?.message || 'Failed to create shop');
-      throw err;
+      toast.error(err.message || 'Failed to complete building shop.');
+      setScreen('CREATE_ACCOUNT');
     }
   };
 
-  // Building Progress bar animation
-  useEffect(() => {
-    if (screen === 26) {
-      setLoadProgress(0);
-      setVisibleChecks([]);
-      executeShopBuilding();
-
-      const interval = setInterval(() => {
-        setLoadProgress(p => {
-          if (p >= 100) return 100;
-          return p + 2.5;
-        });
-      }, 100);
-
-      const timers = [
-        setTimeout(() => setVisibleChecks(v => [...v, 0]), 800),
-        setTimeout(() => setVisibleChecks(v => [...v, 1]), 1600),
-        setTimeout(() => setVisibleChecks(v => [...v, 2]), 2400),
-        setTimeout(() => setVisibleChecks(v => [...v, 3]), 3200),
-        setTimeout(() => {
-          console.log("shopRecordRef:", shopRecordRef.current);
-          console.log("finalShopId:", finalShopId);
-          console.log("realShopId:", shopRecordRef.current?.id);
-
-          if (shopRecordRef.current?.id) {
-            setScreen(27); // To final live success screen!
-          } else {
-            toast.error('Shop creation failed');
-          }
-        }, 4200)
-      ];
-
-      return () => {
-        clearInterval(interval);
-        timers.forEach(clearTimeout);
-      };
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
     }
-  }, [screen]);
-
-  // Overall onboarding progress percentage calculated by screen index
-  const progressPercent = Math.round((screen / 27) * 100);
-
-  // Suggestions for categories
-  const displayCategories = globalCategories && globalCategories.length > 0 
-    ? globalCategories 
-    : [
-        { id: '1', name: 'Streetwear' },
-        { id: '2', name: 'Thrift' },
-        { id: '3', name: 'Luxury' },
-        { id: '4', name: 'Sportswear' },
-        { id: '5', name: 'Vintage' },
-        { id: '6', name: 'Accessories' }
-      ];
-
-  // Dynamic onboarding progress tracker
-  const getProgressDetails = (s: number) => {
-    if (s < 19) {
-      const percentage = Math.round((s / 18) * 100);
-      const blocks = Math.round(percentage / 10);
-      const ascii = '█'.repeat(blocks) + '░'.repeat(10 - blocks);
-      return {
-        label: `Intro ${s}/18`,
-        bar: `${ascii} ${percentage}%`,
-        percent: percentage
-      };
-    }
-    
-    // Interactive setup screens mapping to Steps 1 to 5
-    let stepText = "Step 1 of 5";
-    let percent = 20;
-    if (s === 19 || s === 20) {
-      stepText = "Step 1 of 5";
-      percent = 20;
-    } else if (s === 21) {
-      stepText = "Step 2 of 5";
-      percent = 40;
-    } else if (s === 22) {
-      stepText = "Step 2 of 5";
-      percent = 50;
-    } else if (s === 23) {
-      stepText = "Step 3 of 5";
-      percent = 60;
-    } else if (s === 24) {
-      stepText = "Step 4 of 5";
-      percent = 80;
-    } else if (s === 25) {
-      stepText = "Step 5 of 5";
-      percent = 100;
-    } else {
-      stepText = "Step 5 of 5";
-      percent = 100;
-    }
-    const blocks = Math.round(percent / 10);
-    const ascii = '█'.repeat(blocks) + '░'.repeat(10 - blocks);
-    return {
-      label: stepText,
-      bar: `${ascii} ${percent}%`,
-      percent
-    };
   };
 
-  const { label: stepLabel, bar: asciiBar, percent: stepPercent } = getProgressDetails(screen);
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      setBannerPreview(URL.createObjectURL(file));
+    }
+  };
 
   return (
-    <div id="threadzw-onboarding-container" className="fixed inset-0 bg-[#000000] text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
+    <div id="threadzw-onboarding-pure-dark-container" className="fixed inset-0 bg-black text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
       
-      {/* Dynamic Top Progress Bar */}
-      <div className="w-full h-1 bg-[#111111] relative z-50">
-        <div 
-          style={{ width: `${stepPercent}%` }} 
-          className="h-full bg-[#C6FF00] transition-all duration-500 ease-out shadow-sm shadow-[#C6FF00]/50" 
-        />
-      </div>
-
-      {/* Header Bar */}
-      {screen > 1 && screen !== 26 && screen !== 27 && (
-        <div className="h-14 px-4 flex items-center justify-between shrink-0 z-50 border-b border-[rgba(255,255,255,0.08)] bg-[#111111]/90 backdrop-blur-md">
-          <button 
-            onClick={handleBack}
-            className="w-10 h-10 rounded-full flex items-center justify-center bg-[#111111] border border-[rgba(255,255,255,0.08)] text-white hover:bg-[#000000] active:scale-95 transition-all cursor-pointer"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          
-          <div className="flex flex-col items-center justify-center leading-none text-center">
-            <span className="text-[10px] text-zinc-400 font-extrabold uppercase tracking-wider font-mono">{stepLabel}</span>
-            <span className="text-[10px] text-[#C6FF00] font-black font-mono tracking-widest mt-0.5">{asciiBar}</span>
-          </div>
-
-          <span className="text-sm font-black tracking-tight text-white">
-            THREADZW<span className="text-[#C6FF00]">.</span>
-          </span>
+      {/* 2px Neon Green Top Progress Bar */}
+      {isCreationScreen && (
+        <div className="w-full h-[2px] bg-zinc-950 relative z-50">
+          <div 
+            style={{ width: `${getStepProgress()}%` }} 
+            className="h-full bg-[#25D366] transition-all duration-300 ease-out"
+          />
         </div>
       )}
 
-      {/* Content wrapper */}
-      <div className="flex-1 overflow-y-auto no-scrollbar relative flex flex-col justify-center max-w-md mx-auto w-full px-6 py-6">
-        
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={screen}
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.2 }}
-            className="w-full flex-1 flex flex-col justify-between"
+      {/* Modern Back Nav Header */}
+      {screen !== 'WELCOME' && screen !== 'BUILDING' && (
+        <header className="h-20 px-6 flex items-center justify-between shrink-0 z-40 bg-black">
+          <button 
+            onClick={handleBack}
+            className="w-12 h-12 rounded-full flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-white active:scale-95 transition-all cursor-pointer"
           >
-            
-            {/* -------------------- PHASE 1: PROBLEM IDENTIFICATION -------------------- */}
-            
-            {/* Screen 1: WhatsApp Pain point */}
-            {screen === 1 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center pt-6">
-                  <span className="text-xl font-black tracking-tight text-white block mb-6">
-                    THREADZW<span className="text-[#C6FF00]">.</span>
-                  </span>
-                  <h1 className="text-3xl font-bold tracking-tight text-white leading-tight mb-6">
-                    Still selling clothes through <span className="text-[#25D366]">WhatsApp</span> screenshots?
-                  </h1>
-                </div>
+            <ArrowLeft className="w-5 h-5 stroke-[2]" />
+          </button>
+          
+          <span className="text-sm font-black tracking-tighter text-white select-none">
+            ThreadZW<span className="text-[#25D366]">.</span>
+          </span>
+        </header>
+      )}
 
-                <div className="my-8">
-                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 shadow-lg relative overflow-hidden max-w-xs mx-auto">
-                    <div className="absolute top-2.5 right-3 flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse" />
-                      <span className="text-[9px] font-bold text-[#25D366] font-mono">1 NEW ENQUIRY</span>
-                    </div>
-                    <div className="flex items-start gap-3 mt-2 text-left">
-                      <div className="w-10 h-10 rounded-full bg-[#25D366]/10 flex items-center justify-center text-[#25D366] shrink-0 font-bold text-sm">💬</div>
-                      <div>
-                        <h4 className="font-extrabold text-white text-xs leading-none mb-1">Customer Inquiry</h4>
-                        <p className="text-[#9ca3af] text-xs italic leading-tight">"Is this available? Send more pictures please..."</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+      {/* Main Spacious Content */}
+      <main className="flex-1 overflow-y-auto flex items-center justify-center px-6 py-8">
+        <div className="w-full max-w-lg space-y-10">
+          
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={screen}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="w-full"
+            >
 
-                <div className="space-y-4">
-                  <p className="text-center text-[#6b7280] text-xs font-semibold leading-relaxed">
-                    The endless back-and-forth screenshots are costing you time and sales. Let's fix it.
-                  </p>
-                  <button 
-                    onClick={() => setScreen(2)}
-                    className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#C6FF00]/15"
-                  >
-                    <span>Next</span>
-                    <ArrowRight className="w-5 h-5 stroke-[2.5]" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Screen 2: Repetitive questions */}
-            {screen === 2 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-4 text-center">
-                    Customers keep asking questions you've already answered?
-                  </h1>
-                </div>
-
-                <div className="my-6 space-y-3">
-                  {[
-                    { q: "How much?", delay: 0.1 },
-                    { q: "Do you have size M?", delay: 0.3 },
-                    { q: "What is your location?", delay: 0.5 }
-                  ].map((item, idx) => (
-                    <motion.div 
-                      key={idx}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: item.delay }}
-                      className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-4.5 text-left text-sm font-semibold text-white flex items-center gap-3.5 shadow-subtle"
-                    >
-                      <span className="text-[#EF4444] text-lg font-mono">❓</span>
-                      <span>"{item.q}"</span>
-                    </motion.div>
-                  ))}
-                </div>
-
-                <button 
-                  onClick={() => setScreen(3)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                >
-                  <span>Yes, always ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 3: Repeating Questions representation */}
-            {screen === 3 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center space-y-1">
-                  <h1 className="text-3xl font-black tracking-tight leading-none text-white mb-2">
-                    "How much?"
-                  </h1>
-                  <h1 className="text-3xl font-bold tracking-tight leading-none text-[#9ca3af] mb-2">
-                    "Do you have size M?"
-                  </h1>
-                  <h1 className="text-2xl font-medium tracking-tight leading-none text-[#9ca3af]">
-                    "What's your location?"
-                  </h1>
-                </div>
-
-                <div className="my-6 bg-red-500/5 border border-red-500/10 rounded-[28px] p-5 text-center max-w-xs mx-auto">
-                  <AlertTriangle className="w-10 h-10 text-red-500 mx-auto mb-3" />
-                  <p className="text-white text-xs font-semibold leading-relaxed">
-                    Answering the exact same details 20 times a day isn't running a clothing business. It's an unpaid customer support role.
-                  </p>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(4)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue &rarr;</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 4: TikTok dropoff */}
-            {screen === 4 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    You post products on TikTok...
-                  </h1>
-                  <p className="text-center text-[#9ca3af] text-sm font-semibold">But customers have nowhere to browse.</p>
-                </div>
-
-                <div className="my-6 relative bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 max-w-xs mx-auto h-40 flex flex-col justify-center items-center overflow-hidden shadow-subtle">
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-indigo-500/5 blur-xl" />
-                  <Smartphone className="w-12 h-12 text-[#6b7280] mb-2 relative z-10" />
-                  <span className="text-[11px] font-black uppercase text-red-500 relative z-10 tracking-widest">🚫 NO WEBSITE LINK</span>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(5)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>That's true ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 5: Zimbabwean stats */}
-            {screen === 5 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-4">
-                    Most Zimbabwean clothing brands lose sales...
-                  </h1>
-                </div>
-
-                <div className="my-6 bg-[#C6FF00]/10 border border-[rgba(255,255,255,0.08)] rounded-[28px] p-6 text-center max-w-sm mx-auto space-y-4 shadow-subtle">
-                  <TrendingUp className="w-12 h-12 text-[#C6FF00] mx-auto" />
-                  <p className="text-white text-base leading-snug font-bold">
-                    ...because customers cannot browse full collections easily and get prices immediately.
-                  </p>
-                  <p className="text-[#6b7280] text-[11px] font-semibold">
-                    Buyers expect instant catalogs. If they have to DM for a price, 67% will leave.
-                  </p>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(6)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 6: Messy WhatsApp Screenshot Mock */}
-            {screen === 6 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    Messy chat screenshots.
-                  </h1>
-                  <p className="text-center text-[#6b7280] text-xs font-semibold">How orders get lost in the noise.</p>
-                </div>
-
-                <div className="my-4 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 space-y-2.5 max-w-xs mx-auto text-xs font-sans text-left shadow-subtle">
-                  <div className="flex justify-start">
-                    <div className="bg-[#f3f4f6] text-white p-2.5 rounded-[28px] rounded-tl-none max-w-[80%] border border-[rgba(255,255,255,0.08)]">
-                      Is this hoodie still available?
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <div className="bg-[#e8fbf0] text-[#0f5132] p-2.5 rounded-[28px] rounded-tr-none max-w-[80%] border border-[#d1e7dd]">
-                      Yes! Available in Size L & XL. 35 USD.
-                    </div>
-                  </div>
-                  <div className="flex justify-start">
-                    <div className="bg-[#f3f4f6] text-white p-2.5 rounded-[28px] rounded-tl-none max-w-[80%] border border-[rgba(255,255,255,0.08)]">
-                      Can you deliver to Avondale?
-                    </div>
-                  </div>
-                  <div className="text-center text-[10px] text-[#9ca3af] font-semibold my-1">
-                    3 hours later... (no reply)
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(7)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>I've had this happen ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 7: Customer left representation */}
-            {screen === 7 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2">
-                    A customer left.
-                  </h1>
-                  <p className="text-[#6b7280] text-xs font-bold">They didn't have time to wait for a reply.</p>
-                </div>
-
-                <div className="my-6 bg-red-500/5 border border-red-500/10 rounded-[28px] p-6 text-center max-w-xs mx-auto space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mx-auto font-black text-lg">✗</div>
-                  <h4 className="font-extrabold text-white text-sm">Sale Abandoned</h4>
-                  <p className="text-[#9ca3af] text-xs font-medium leading-relaxed">
-                    Zimbabwean shoppers buy on impulse. If you don't answer in 5 minutes, they look elsewhere.
-                  </p>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(8)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>How do we fix this? ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 8: Transition to Solution */}
-            {screen === 8 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center pt-8">
-                  <h1 className="text-3xl font-bold tracking-tight leading-snug text-white mb-4">
-                    Your products deserve a real storefront.
-                  </h1>
-                  <p className="text-[#9ca3af] text-sm font-medium px-4">
-                    Give your clothing brand a premium home. Show prices, stock, and collect inquiries instantly.
-                  </p>
-                </div>
-
-                <div className="my-8 flex justify-center">
-                  <div className="w-24 h-24 bg-[#C6FF00]/10 border-2 border-dashed border-[#C6FF00]/30 rounded-3xl flex items-center justify-center text-[#C6FF00] shadow-subtle">
-                    <Store className="w-12 h-12" />
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(9)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
-                >
-                  <span>Show me how →</span>
-                </button>
-              </div>
-            )}
-
-
-            {/* -------------------- PHASE 2: SOLUTION DEMONSTRATION -------------------- */}
-            
-            {/* Screen 9: Send Link instead */}
-            {screen === 9 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center">
-                  <span className="text-xs font-black uppercase tracking-wider text-[#C6FF00] mb-2 block">
-                    The ThreadZW Solution
-                  </span>
-                  <h1 className="text-3xl font-bold tracking-tight leading-none text-white mb-3">
-                    Imagine sending one link instead.
-                  </h1>
-                </div>
-
-                <div className="my-6">
-                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 text-left font-sans text-xs space-y-2 max-w-xs mx-auto shadow-subtle">
-                    <span className="text-[10px] font-black uppercase text-[#25D366] block">AUTO REPLY</span>
-                    <p className="text-[#9ca3af] leading-relaxed italic">
-                      "Hey! Thanks for inquiring. Check out our full new collection, real-time sizes, and instant pricing here: <span className="text-[#C6FF00] font-black underline">threadzw.co/kure</span> 🚀"
+              {/* WELCOME */}
+              {screen === 'WELCOME' && (
+                <div className="space-y-12">
+                  <div className="space-y-4">
+                    <span className="text-sm font-bold tracking-widest text-[#25D366] uppercase">ThreadZW</span>
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-none text-white">
+                      Zimbabwe's professional clothing store builder.
+                    </h1>
+                    <p className="text-zinc-500 text-base md:text-lg font-medium leading-relaxed max-w-md pt-2">
+                      Build a premium storefront. Share your custom link. Receive verified orders directly on WhatsApp.
                     </p>
                   </div>
-                </div>
 
-                <button 
-                  onClick={() => setScreen(10)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>That's beautiful ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 10: Storefront Mockup */}
-            {screen === 10 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2">
-                    A beautiful storefront mockup.
-                  </h1>
-                  <p className="text-[#6b7280] text-xs font-bold">Your own custom branded digital boutique.</p>
-                </div>
-
-                <div className="my-4 border border-[rgba(255,255,255,0.08)] rounded-[28px] bg-[#111111] p-4.5 text-left space-y-3.5 max-w-xs mx-auto scale-95 shadow-lg relative">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#C6FF00]/10 text-[#C6FF00] font-black flex items-center justify-center text-xs border border-[rgba(255,255,255,0.08)]">
-                      KR
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-white text-xs leading-none">KURE STREETWEAR</h4>
-                      <p className="text-[#6b7280] text-[10px] mt-0.5 leading-none">Harare, ZW</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-2 text-center">
-                      <div className="h-16 bg-zinc-200 rounded-lg mb-1.5" />
-                      <p className="font-extrabold text-white text-[10px] truncate">Graphic Tee</p>
-                      <p className="text-[#C6FF00] font-mono text-[10px] font-black mt-0.5">$15 USD</p>
-                    </div>
-                    <div className="bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-2 text-center">
-                      <div className="h-16 bg-zinc-200 rounded-lg mb-1.5" />
-                      <p className="font-extrabold text-white text-[10px] truncate">Cargo Pants</p>
-                      <p className="text-[#C6FF00] font-mono text-[10px] font-black mt-0.5">$35 USD</p>
-                    </div>
+                  <div className="space-y-4 pt-4">
+                    <button
+                      onClick={() => setScreen('SHOP_NAME')}
+                      className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer shadow-lg shadow-[#25D366]/5 active:scale-[0.98]"
+                    >
+                      Create Store
+                    </button>
+                    <button
+                      onClick={() => setScreen('SIGN_IN')}
+                      className="w-full bg-transparent hover:bg-zinc-900/40 text-white font-bold text-base py-4 rounded-full transition-all cursor-pointer border border-zinc-800"
+                    >
+                      Sign In
+                    </button>
                   </div>
                 </div>
+              )}
 
-                <button 
-                  onClick={() => setScreen(11)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 11: Customer Browses Self */}
-            {screen === 11 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    Customers browse products themselves.
-                  </h1>
-                  <p className="text-center text-[#6b7280] text-xs font-bold">They filter by size, categories, or collections instantly.</p>
-                </div>
-
-                <div className="my-6 space-y-2 max-w-xs mx-auto w-full">
-                  <div className="flex gap-2 justify-center">
-                    <span className="bg-[#C6FF00] text-black text-[10px] font-bold px-3 py-1.5 rounded-full">All Items</span>
-                    <span className="bg-[#111111] border border-[rgba(255,255,255,0.08)] text-[#9ca3af] text-[10px] font-bold px-3 py-1.5 rounded-full">Hoodies</span>
-                    <span className="bg-[#111111] border border-[rgba(255,255,255,0.08)] text-[#9ca3af] text-[10px] font-bold px-3 py-1.5 rounded-full">Tees</span>
-                  </div>
-                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-3.5 flex justify-between items-center text-xs font-bold text-[#9ca3af] shadow-subtle">
-                    <span>Filter: Size M</span>
-                    <span className="text-[#C6FF00]">3 found</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(12)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Nice ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 12: Professional Profile */}
-            {screen === 12 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    Professional brand profile.
-                  </h1>
-                  <p className="text-center text-[#6b7280] text-xs font-bold">Build instant buyer trust in Zimbabwe.</p>
-                </div>
-
-                <div className="my-6 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 space-y-3.5 max-w-xs mx-auto text-left relative overflow-hidden shadow-subtle">
-                  <div className="absolute top-4 right-4 flex items-center gap-1 bg-[#C6FF00]/10 text-[#C6FF00] px-2 py-0.5 rounded text-[9px] font-black uppercase border border-[#C6FF00]/10">
-                    <Check className="w-3 h-3 stroke-[3]" /> VERIFIED
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-zinc-100 border border-[rgba(255,255,255,0.08)] flex items-center justify-center text-[#C6FF00] font-black text-sm shadow-inner">
-                    KURE
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-white text-sm">Kure Streetwear</h4>
-                    <p className="text-[#C6FF00] text-[10px] font-bold mt-0.5">@kure &bull; Harare, Zim</p>
-                    <p className="text-[#9ca3af] text-[10px] mt-1.5 leading-snug font-medium">Curated high-quality vintage streetwear drops every Friday at 12 PM.</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(13)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 13: Product Pages */}
-            {screen === 13 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    Product pages.
-                  </h1>
-                  <p className="text-center text-[#6b7280] text-xs font-bold">Show details, multiple pictures, and sizing scales.</p>
-                </div>
-
-                <div className="my-4 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4.5 max-w-xs mx-auto text-left space-y-3 shadow-subtle">
-                  <div className="h-28 bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] flex items-center justify-center text-[#6b7280]/20">
-                    <ImageIcon className="w-8 h-8" />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-extrabold text-white text-xs">Heavyweight Vintage Hoodie</h4>
-                    <span className="text-[#C6FF00] font-mono text-xs font-black">$35 USD</span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {['S', 'M', 'L', 'XL'].map(s => (
-                      <span key={s} className={`text-[10px] font-bold px-2.5 py-1 rounded border ${s === 'M' ? 'border-[#C6FF00] text-[#C6FF00] bg-[#C6FF00]/10' : 'border-[rgba(255,255,255,0.08)] text-[#6b7280]'}`}>
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(14)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 14: WhatsApp Inquiry Button */}
-            {screen === 14 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    WhatsApp Inquiry Button.
-                  </h1>
-                  <p className="text-center text-[#6b7280] text-xs font-bold">Instantly collects pre-filled orders right to your chat.</p>
-                </div>
-
-                <div className="my-6 space-y-3 max-w-xs mx-auto w-full">
-                  <div className="bg-[#25D366] text-white p-4.5 rounded-[24px] flex items-center justify-center gap-2 font-bold text-sm uppercase shadow-md shadow-[#25D366]/10 animate-pulse">
-                    <WhatsAppIcon size={18} />
-                    <span>Inquire via WhatsApp</span>
-                  </div>
-                  <div className="bg-[#000000] border border-[rgba(255,255,255,0.08)] rounded-[24px] p-3 text-center text-[10px] text-[#9ca3af] font-semibold leading-normal">
-                    Pre-fills in user chat:<br/>
-                    <span className="text-[#C6FF00] font-bold">"Hi! I want to order 'Vintage Tee' (Size M, $15) from your ThreadZW store!"</span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(15)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>That's perfect ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 15: Share on TikTok */}
-            {screen === 15 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    Share on TikTok.
-                  </h1>
-                  <p className="text-center text-[#6b7280] text-xs font-bold">Put your store link directly in your video descriptions or bio.</p>
-                </div>
-
-                <div className="my-6 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4.5 max-w-xs mx-auto text-left flex items-center gap-3 shadow-subtle">
-                  <div className="w-10 h-10 rounded-full bg-[#0a0a0a] flex items-center justify-center text-white font-bold shrink-0 shadow-sm">🎵</div>
-                  <div className="text-xs">
-                    <h5 className="font-extrabold text-white">TikTok Bio Link</h5>
-                    <p className="text-[#C6FF00] mt-0.5 font-bold font-mono">threadzw.co/kure</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(16)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 16: Share on Instagram */}
-            {screen === 16 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2 text-center">
-                    Share on Instagram.
-                  </h1>
-                  <p className="text-center text-[#6b7280] text-xs font-bold">Add the storefront link in your bio or share to stories.</p>
-                </div>
-
-                <div className="my-6 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4.5 max-w-xs mx-auto text-left flex items-center gap-3 shadow-subtle">
-                  <div className="w-10 h-10 rounded-full bg-[#0a0a0a] flex items-center justify-center text-white font-bold shrink-0 shadow-sm">📸</div>
-                  <div className="text-xs">
-                    <h5 className="font-extrabold text-white">Instagram Profile</h5>
-                    <p className="text-[#C6FF00] mt-0.5 font-bold font-mono">🔗 threadzw.co/kure</p>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(17)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 17: Premium on every phone */}
-            {screen === 17 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold tracking-tight text-white leading-tight mb-2">
-                    Looks premium on every phone.
-                  </h1>
-                  <p className="text-[#6b7280] text-xs font-bold">Optimized for lightning-fast speeds in Zimbabwe.</p>
-                </div>
-
-                <div className="my-6 bg-[#C6FF00]/10 border border-[rgba(255,255,255,0.08)] rounded-[28px] p-5 text-center max-w-xs mx-auto shadow-subtle">
-                  <Smartphone className="w-12 h-12 text-[#C6FF00] mx-auto mb-3 animate-pulse" />
-                  <p className="text-white text-xs font-semibold leading-snug">
-                    Designed to use minimal mobile data. Works incredibly fast on Econet and NetOne.
-                  </p>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(18)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Continue ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 18: Ready in minutes */}
-            {screen === 18 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="text-center pt-8">
-                  <h1 className="text-3.5xl font-bold tracking-tight leading-snug text-white mb-4">
-                    Your online shop. Ready in minutes.
-                  </h1>
-                  <p className="text-[#9ca3af] text-sm font-medium px-4">
-                    Launch your clothing brand storefront today. Zero code needed. Built for Zimbabwe.
-                  </p>
-                </div>
-
-                <div className="my-8 flex justify-center">
-                  <div className="w-24 h-24 bg-[#C6FF00]/10 border border-[rgba(255,255,255,0.08)] rounded-full flex items-center justify-center text-[#C6FF00] animate-pulse">
-                    <Sparkles className="w-12 h-12" />
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(19)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
-                >
-                  <span>Create My Shop →</span>
-                </button>
-              </div>
-            )}
-
-
-            {/* -------------------- PHASE 3: SIGN UP (2 SCREENS) -------------------- */}
-            
-            {/* Screen 19: Sign Up fields */}
-            {screen === 19 && (
-              <div className="flex-1 flex flex-col justify-between py-6">
-                <div className="space-y-4">
-                  <div className="text-center mb-6">
-                    <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white">
-                      Create Your Account
-                    </h2>
-                    <p className="text-[#6b7280] text-xs font-semibold mt-1.5">Get active instantly &bull; Free trial</p>
+              {/* SIGN IN */}
+              {screen === 'SIGN_IN' && (
+                <form onSubmit={handleSignInSubmit} className="space-y-8">
+                  <div className="space-y-2">
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">Sign In</h2>
+                    <p className="text-zinc-500 text-sm">Access your active dashboard coordinates.</p>
                   </div>
 
-                  <div className="space-y-4 text-left">
-                    <div>
-                      <label className="text-[#9ca3af] text-[10px] tracking-wider uppercase font-extrabold block mb-1.5">Email address</label>
-                      <input 
+                  <div className="space-y-6 pt-2">
+                    <div className="space-y-1">
+                      <input
                         type="email"
+                        required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="e.g. kurebrand@gmail.com"
-                        className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-4 py-3.5 text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors text-white font-medium"
+                        placeholder="Email Address"
+                        className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
                       />
                     </div>
 
-                    <div>
-                      <label className="text-[#9ca3af] text-[10px] tracking-wider uppercase font-extrabold block mb-1.5">Password</label>
-                      <div className="relative">
-                        <input 
-                          type={showPassword ? 'text' : 'password'}
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Min. 6 characters"
-                          className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] pl-4 pr-11 py-3.5 text-sm focus:border-[#C6FF00] focus:outline-none focus:ring-1 focus:ring-[#C6FF00] transition-colors text-white font-medium"
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-white"
-                        >
-                          {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-                        </button>
-                      </div>
+                    <div className="space-y-1 relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 pr-10 pl-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-0 bottom-4 text-zinc-500 hover:text-white cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
                   </div>
-                </div>
 
-                <button 
-                  disabled={!email.trim() || password.length < 6 || signingUp}
-                  onClick={handleSignUpSubmit}
-                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                    email.trim() && password.length >= 6 && !signingUp
-                      ? 'bg-[#C6FF00] text-black shadow-[#C6FF00]/10'
-                      : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
-                  }`}
-                >
-                  {signingUp ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Creating Account...</span>
-                    </div>
-                  ) : (
-                    <span>Continue &rarr;</span>
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Screen 20: Sign Up Success */}
-            {screen === 20 && (
-              <div className="flex-1 flex flex-col justify-between py-6 text-center">
-                <div className="pt-10 space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-green-50 border border-green-100 flex items-center justify-center text-green-500 mx-auto animate-bounce">
-                    <CheckCircle2 className="w-10 h-10 stroke-[2]" />
-                  </div>
-                  <h1 className="text-3xl font-bold tracking-tight leading-none text-white">
-                    Success!
-                  </h1>
-                  <p className="text-[#9ca3af] text-sm font-semibold px-6 leading-relaxed">
-                    Account created successfully. Let's customize your live brand storefront.
-                  </p>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(21)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/15"
-                >
-                  <span>Let's build your shop →</span>
-                </button>
-              </div>
-            )}
-
-
-            {/* -------------------- PHASE 4: SHOP BUILDING (7 SCREENS) -------------------- */}
-            
-            {/* Screen 21: Shop Name */}
-            {screen === 21 && (
-              <div className="flex-1 flex flex-col justify-between py-6 text-left">
-                <div className="space-y-4 pt-4">
-                  <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 1 OF 5</span>
-                  <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
-                    What is your Shop Name?
-                  </h2>
-                  <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Choose a clean brand name (e.g. Kure, Threadz, HeavyWeight).</p>
-                  
-                  <input 
-                    type="text"
-                    value={shopName}
-                    onChange={(e) => setShopName(e.target.value)}
-                    placeholder="e.g. Kure Streetwear"
-                    maxLength={30}
-                    className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-4 py-3.5 text-base font-bold text-white focus:border-[#C6FF00] focus:outline-none transition-colors"
-                  />
-                </div>
-
-                <button 
-                  disabled={!shopName.trim()}
-                  onClick={() => setScreen(22)}
-                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    shopName.trim() ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
-                  }`}
-                >
-                  <span>Next Step ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 22: Upload Logo */}
-            {screen === 22 && (
-              <div className="flex-1 flex flex-col justify-between py-6 text-left">
-                <div className="space-y-5 pt-4 flex flex-col items-center text-center">
-                  <div className="w-full">
-                    <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block mb-1">STEP 2 OF 5</span>
-                    <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
-                      Upload Logo
-                    </h2>
-                    <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Add your brand's avatar or profile icon.</p>
-                  </div>
-
-                  <input 
-                    type="file"
-                    ref={logoInputRef}
-                    onChange={handleLogoUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-
-                  <button 
-                    onClick={() => logoInputRef.current?.click()}
-                    className="w-32 h-32 rounded-full border-2 border-dashed border-[rgba(255,255,255,0.08)] hover:border-[#C6FF00]/40 bg-[#111111] flex flex-col items-center justify-center overflow-hidden transition-colors cursor-pointer group relative shadow-subtle"
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#25D366] hover:bg-[#20ba5a] disabled:opacity-50 text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
                   >
-                    {logoPreview ? (
-                      <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover animate-fade-in" />
-                    ) : (
-                      <div className="flex flex-col items-center gap-1.5 text-[#6b7280]/60 group-hover:text-[#C6FF00] transition-colors">
-                        <Camera className="w-8 h-8" />
-                        <span className="text-[9px] font-black uppercase">Click to Select</span>
-                      </div>
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+                  </button>
+                </form>
+              )}
+
+              {/* SHOP_NAME */}
+              {screen === 'SHOP_NAME' && (
+                <div className="space-y-8">
+                  <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                    What is your shop called?
+                  </h2>
+                  
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      autoFocus
+                      required
+                      value={shopName}
+                      onChange={(e) => setShopName(e.target.value)}
+                      placeholder="e.g. Harare Sneaker Hub"
+                      className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-2xl md:text-3xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-800"
+                    />
+                    {shopName && (
+                      <p className="text-sm text-zinc-500 font-medium">
+                        URL preview: <span className="text-[#25D366] font-bold">threadzw.com/{generateSlug(shopName)}</span>
+                      </p>
                     )}
+                  </div>
+
+                  <button
+                    onClick={handleNext}
+                    className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
+                  >
+                    Continue
                   </button>
                 </div>
+              )}
 
-                <button 
-                  onClick={() => setScreen(23)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10"
-                >
-                  <span>{logoPreview ? 'Next Step ➔' : 'Skip & Continue ➔'}</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 23: Description */}
-            {screen === 23 && (
-              <div className="flex-1 flex flex-col justify-between py-6 text-left">
-                <div className="space-y-4 pt-4">
-                  <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 3 OF 5</span>
-                  <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
-                    Write Description
+              {/* CATEGORY */}
+              {screen === 'CATEGORY' && (
+                <div className="space-y-8">
+                  <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                    What do you sell?
                   </h2>
-                  <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Tell customers what makes your shop premium.</p>
 
-                  <motion.div
-                    key={textareaKey}
-                    initial={{ opacity: 0.85, y: 3, scale: 0.995 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="relative"
-                  >
-                    <textarea 
-                      value={description}
-                      onChange={(e) => {
-                        if (e.target.value.length <= 120) {
-                          setDescription(e.target.value);
-                        }
-                      }}
-                      placeholder="e.g. Harare's premium clothing store. Weekly drops of curated vintage and streetwear fits."
-                      rows={3}
-                      className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] p-4 text-white text-sm focus:border-[#C6FF00] focus:outline-none transition-colors resize-none mb-1.5 font-medium"
-                    />
-                    <span className="absolute bottom-3.5 right-3 text-[10px] font-bold text-[#6b7280]/60 font-mono">
-                      {description.length}/120
-                    </span>
-                  </motion.div>
-
-                  {/* Scrolling Recommendations Carousel */}
-                  <div className="space-y-3 pt-1">
-                    <style>{`
-                      @keyframes onboardingMarquee {
-                        0% { transform: translate3d(0, 0, 0); }
-                        100% { transform: translate3d(-33.333%, 0, 0); }
-                      }
-                      .onboarding-marquee-track {
-                        display: flex;
-                        width: max-content;
-                        animation: onboardingMarquee 16s linear infinite;
-                      }
-                      .onboarding-marquee-track:hover {
-                        animation-play-state: paused;
-                      }
-                    `}</style>
-
-                    <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-wider block">TAP CARD TO AUTO-FILL BY CATEGORY</span>
-                    
-                    {/* Category Tabs Selector */}
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 select-none">
-                      {(['Sneakers', 'Thrift', 'Electronics', 'Fashion'] as const).map((tab) => {
-                        const isActive = selectedCategoryTab === tab;
-                        const label = tab === 'Sneakers' ? '👟 Sneakers' : tab === 'Thrift' ? '🧥 Thrift' : tab === 'Electronics' ? '📱 Tech' : '👕 Fashion';
-                        return (
-                          <button
-                            key={tab}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategoryTab(tab);
-                              const firstRec = categoryRecommendations[tab]?.[0];
-                              if (firstRec) {
-                                setDescription(firstRec.text);
-                                setTextareaKey(prev => prev + 1);
-                              }
-                            }}
-                            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer border ${
-                              isActive 
-                                ? 'bg-[#C6FF00] text-black border-[#C6FF00]' 
-                                : 'bg-[#111111] text-zinc-400 border-zinc-800 hover:text-white'
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="relative w-full overflow-hidden py-1">
-                      {/* Left and right fade gradients */}
-                      <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#000000] to-transparent z-10 pointer-events-none" />
-                      <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#000000] to-transparent z-10 pointer-events-none" />
-
-                      <div className="w-full overflow-hidden">
-                        <div className="onboarding-marquee-track gap-3.5">
-                          {(() => {
-                            const currentRecs = categoryRecommendations[selectedCategoryTab] || categoryRecommendations.Sneakers;
-                            // Triplicated set to guarantee perfect continuous loop translation
-                            const triplicatedRecs = [...currentRecs, ...currentRecs, ...currentRecs];
-                            return triplicatedRecs.map((rec, idx) => {
-                              const isSelected = description === rec.text;
-                              return (
-                                <div 
-                                  key={`${rec.heading}-${idx}`} 
-                                  className="shrink-0"
-                                >
-                                  <div 
-                                    onClick={() => {
-                                      setDescription(rec.text);
-                                      setTextareaKey(prev => prev + 1);
-                                    }}
-                                    className={`w-[200px] h-[135px] bg-[#111111] hover:bg-[#151515] rounded-[20px] p-4 flex flex-col justify-between text-left transition-all duration-300 cursor-pointer select-none relative shadow-xl border-2 ${
-                                      isSelected ? 'border-[#C6FF00]' : 'border-[rgba(255,255,255,0.06)] hover:border-[rgba(255,255,255,0.2)]'
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-xl">
-                                        {rec.emoji}
-                                      </span>
-                                      {isSelected && (
-                                        <span className="w-2 h-2 rounded-full bg-[#C6FF00]" />
-                                      )}
-                                    </div>
-                                    <div className="space-y-0.5">
-                                      <h4 className="text-[#C6FF00] font-black text-[10px] uppercase tracking-wider leading-snug line-clamp-1">
-                                        {rec.heading}
-                                      </h4>
-                                      <p className="text-white text-[10px] leading-relaxed font-semibold line-clamp-2">
-                                        {rec.text}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      </div>
-
-                      {/* Elegant ━━━ ━ ━ ━ Line pagination indicators */}
-                      <div className="flex justify-center gap-1.5 mt-3 select-none">
-                        {(() => {
-                          const currentRecs = categoryRecommendations[selectedCategoryTab] || categoryRecommendations.Sneakers;
-                          return currentRecs.map((rec, idx) => {
-                            const isSelected = description === rec.text;
-                            return (
-                              <button
-                                key={idx}
-                                onClick={() => {
-                                  setDescription(rec.text);
-                                  setTextareaKey(prev => prev + 1);
-                                }}
-                                className={`h-1 rounded-full transition-all duration-300 cursor-pointer ${
-                                  isSelected ? 'w-8 bg-[#C6FF00]' : 'w-2 bg-zinc-800'
-                                }`}
-                                aria-label={`Select recommendation ${idx + 1}`}
-                              />
-                            );
-                          });
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={() => setScreen(24)}
-                  className="w-full h-14 bg-[#C6FF00] text-black font-bold text-base rounded-[24px] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-[#C6FF00]/10 mt-4"
-                >
-                  <span>Next Step ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 24: WhatsApp Number */}
-            {screen === 24 && (
-              <div className="flex-1 flex flex-col justify-between py-6 text-left">
-                <div className="space-y-4 pt-4">
-                  <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 4 OF 5</span>
-                  <h2 className="text-2.5xl font-bold tracking-tight leading-none text-white mb-2">
-                    WhatsApp Number
-                  </h2>
-                  <p className="text-[#9ca3af] text-xs font-semibold leading-relaxed">Where should buyers send their instant order inquiries?</p>
-
-                  <div className="flex rounded-[24px] overflow-hidden border-2 border-[rgba(255,255,255,0.08)] bg-[#111111] focus-within:border-[#C6FF00] transition-colors">
-                    <span className="font-mono text-base font-black px-4 bg-[#0a0a0a] text-[#6b7280] flex items-center border-r border-[rgba(255,255,255,0.08)] select-none text-[15px]">
-                      +263
-                    </span>
-                    <input 
-                      type="tel"
-                      value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value.replace(/[^0-9]/g, ''))}
-                      placeholder="776223144"
-                      className="flex-1 px-4 py-3.5 bg-transparent border-none text-white text-base font-bold font-mono focus:outline-none"
-                    />
-                  </div>
-
-                  {whatsapp.length >= 8 && (
-                    <div className="bg-[#e8fbf0] border border-[#d1e7dd] text-[#0f5132] p-3 rounded-[24px] flex items-center justify-center gap-2 font-bold text-xs uppercase animate-fade-in shadow-subtle">
-                      <WhatsAppIcon size={14} /> 
-                      <span>Inquiries directed to: +263 {whatsapp}</span>
-                    </div>
-                  )}
-                </div>
-
-                <button 
-                  disabled={whatsapp.length < 8}
-                  onClick={() => setScreen(25)}
-                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer ${
-                    whatsapp.length >= 8 ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
-                  }`}
-                >
-                  <span>Next Step ➔</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 25: Upload First Product */}
-            {screen === 25 && (
-              <div className="flex-1 flex flex-col justify-between py-2 text-left">
-                <div className="space-y-3 pt-3 overflow-y-auto no-scrollbar max-h-[460px]">
-                  <span className="text-[10px] font-black tracking-widest text-[#C6FF00] uppercase block">STEP 5 OF 5</span>
-                  <h2 className="text-2xl font-bold tracking-tight leading-none text-white">
-                    Upload First Product
-                  </h2>
-                  <p className="text-[#9ca3af] text-xs font-semibold leading-none mb-2">Launch your shop with an active item ready to sell.</p>
-
-                  <div className="space-y-2.5 text-xs">
-                    {/* Image picker */}
-                    <input 
-                      type="file"
-                      ref={productImgInputRef}
-                      onChange={handleProductImgUpload}
-                      accept="image/*"
-                      className="hidden"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={() => productImgInputRef.current?.click()}
-                      className="w-full h-24 bg-[#111111] border-2 border-dashed border-[rgba(255,255,255,0.08)] rounded-[24px] flex flex-col items-center justify-center transition-all cursor-pointer overflow-hidden group hover:border-[#C6FF00]/30 shadow-subtle"
-                    >
-                      {productImagePreview ? (
-                        <img src={productImagePreview} alt="Product Preview" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="flex flex-col items-center gap-1.5 text-[#6b7280]/60 group-hover:text-[#C6FF00] transition-colors">
-                          <ImageIcon className="w-6 h-6" />
-                          <span className="text-[9px] font-black uppercase">Upload Product Photo</span>
-                        </div>
-                      )}
-                    </button>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      {/* Name */}
-                      <div>
-                        <label className="text-[#9ca3af] text-[9px] font-extrabold uppercase tracking-wider block mb-1">Product Name</label>
-                        <input 
-                          type="text"
-                          value={productName}
-                          onChange={(e) => setProductName(e.target.value)}
-                          placeholder="e.g. Heavyweight Tee"
-                          className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-3 py-2.5 text-xs font-semibold focus:border-[#C6FF00] focus:outline-none text-white"
-                        />
-                      </div>
-
-                      {/* Price */}
-                      <div>
-                        <label className="text-[#9ca3af] text-[9px] font-extrabold uppercase tracking-wider block mb-1">Price (USD)</label>
-                        <input 
-                          type="number"
-                          value={productPrice}
-                          onChange={(e) => setProductPrice(e.target.value)}
-                          placeholder="e.g. 15"
-                          className="w-full bg-[#111111] border-2 border-[rgba(255,255,255,0.08)] rounded-[24px] px-3 py-2.5 text-xs font-semibold font-mono focus:border-[#C6FF00] focus:outline-none text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Category Selection */}
-                    <div>
-                      <label className="text-[#9ca3af] text-[9px] font-extrabold uppercase tracking-wider block mb-1.5">Category</label>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {displayCategories.map(cat => {
-                          const isSelected = productCategory === cat.name;
-                          return (
-                            <button
-                              type="button"
-                              key={cat.id || cat.name}
-                              onClick={() => setProductCategory(cat.name)}
-                              className={`py-1.5 px-2 rounded-lg text-[10px] font-bold text-center border transition-colors cursor-pointer truncate ${
-                                isSelected 
-                                  ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00]' 
-                                  : 'bg-[#111111] border-[rgba(255,255,255,0.08)] text-[#9ca3af] hover:bg-[#000000]'
-                              }`}
-                            >
-                              {cat.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <button 
-                  disabled={!productName.trim() || !productPrice.trim() || !productCategory || !productImagePreview}
-                  onClick={() => setScreen(26)}
-                  className={`w-full h-14 font-bold text-base rounded-[24px] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg mt-2 ${
-                    productName.trim() && productPrice.trim() && productCategory && productImagePreview
-                      ? 'bg-[#C6FF00] text-black shadow-[#C6FF00]/10'
-                      : 'bg-[#e5e7eb] text-[#9ca3af] pointer-events-none'
-                  }`}
-                >
-                  <span>Launch Live Store 🚀</span>
-                </button>
-              </div>
-            )}
-
-            {/* Screen 26: Building shop countdown */}
-            {screen === 26 && (
-              <div className="flex-1 flex flex-col justify-between fixed inset-0 bg-[#000000] z-50 text-center select-none overflow-hidden pb-8 pt-8 px-6 font-sans">
-                <div className="flex justify-center pt-8">
-                  <span className="text-xl font-extrabold tracking-tight text-white">
-                    THREADZW<span className="text-[#C6FF00]">.</span>
-                  </span>
-                </div>
-
-                <div className="flex-1 flex flex-col items-center justify-center space-y-12 shrink-0">
-                  <div className="relative">
-                    <motion.div 
-                      animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.45, 0.15] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="absolute w-36 h-36 rounded-full bg-[#C6FF00] -left-6 -top-6"
-                    />
-                    <motion.div 
-                      animate={{ rotate: 360 }}
-                      transition={{ repeat: Infinity, duration: 3.5, ease: "linear" }}
-                      className="absolute w-32 h-32 rounded-full border-2 border-dashed border-[#C6FF00] -left-4 -top-4"
-                    />
-                    <div className="relative w-24 h-24 bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-full flex items-center justify-center text-[#C6FF00] shadow-xl">
-                      <Store className="w-11 h-11" />
-                    </div>
-                  </div>
-
-                  <div className="w-full max-w-[280px] space-y-3.5 text-left pl-3 text-sm">
-                    {[
-                      "Registering your merchant profile...",
-                      "Uploading and preparing your logo...",
-                      "Creating first product listing...",
-                      "Launching your live storefront URL..."
-                    ].map((item, idx) => {
-                      const complete = visibleChecks.includes(idx);
+                  <div className="grid grid-cols-1 gap-3 pt-2">
+                    {([
+                      { id: 'Sneakers', label: 'Sneakers' },
+                      { id: 'Thrift', label: 'Thrift Store' },
+                      { id: 'Streetwear', label: 'Streetwear' },
+                      { id: 'Formal', label: 'Luxury & Formal' }
+                    ] as const).map((cat) => {
+                      const isSel = selectedCategory === cat.id;
                       return (
-                        <div key={item} className="h-6">
-                          {complete && (
-                            <motion.div 
-                              initial={{ opacity: 0, x: -8 }} 
-                              animate={{ opacity: 1, x: 0 }}
-                              className="flex items-center gap-3"
-                            >
-                              <span className="text-[#C6FF00] font-black text-base">✓</span>
-                              <span className="text-white font-extrabold text-sm">{item}</span>
-                            </motion.div>
-                          )}
-                        </div>
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setSelectedCategory(cat.id)}
+                          className={`py-4 px-5 rounded-2xl border text-sm font-bold text-left transition-all flex items-center justify-between cursor-pointer ${
+                            isSel 
+                              ? 'bg-zinc-950 border-[#25D366] text-[#25D366]' 
+                              : 'bg-transparent border-zinc-900 text-zinc-400 hover:border-zinc-800'
+                          }`}
+                        >
+                          <span>{cat.label}</span>
+                          {isSel && <Check className="w-4 h-4 text-[#25D366] stroke-[3]" />}
+                        </button>
                       );
                     })}
                   </div>
 
-                  <p className="text-[#6b7280] text-xs font-semibold leading-none">Assembling your digital boutique...</p>
+                  <button
+                    onClick={handleNext}
+                    className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
+                  >
+                    Continue
+                  </button>
                 </div>
+              )}
 
-                <div className="w-full h-1 bg-[#e5e7eb] relative mt-auto">
-                  <div style={{ width: `${loadProgress}%` }} className="h-full bg-[#C6FF00] transition-all" />
+              {/* CITY */}
+              {screen === 'CITY' && (
+                <div className="space-y-8">
+                  <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                    Where is your store based?
+                  </h2>
+
+                  <div className="relative pt-2">
+                    <select
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-2xl py-4 px-0 outline-none appearance-none cursor-pointer transition-colors"
+                    >
+                      {ZIM_CITIES.map((city) => (
+                        <option key={city} value={city} className="bg-black text-white">{city}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleNext}
+                    className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
+                  >
+                    Continue
+                  </button>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Screen 27: Success live shop! */}
-            {screen === 27 && (
-              <div className="flex-1 flex flex-col justify-between py-6 text-center">
-                <div className="pt-6 space-y-4">
-                  <div className="w-20 h-20 rounded-full bg-[#C6FF00]/10 border border-[#C6FF00]/20 flex items-center justify-center text-[#C6FF00] mx-auto animate-bounce">
-                    <CheckCircle2 className="w-12 h-12 stroke-[1.5]" />
-                  </div>
-                  
-                  <div>
-                    <h1 className="text-3xl font-bold tracking-tight leading-none text-white">
-                      🎉 Your shop is live!
-                    </h1>
-                    <p className="text-[#6b7280] text-xs font-semibold mt-1.5">You are officially ready for digital business</p>
+              {/* WHATSAPP */}
+              {screen === 'WHATSAPP' && (
+                <div className="space-y-8">
+                  <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                    What is your WhatsApp number?
+                  </h2>
+
+                  <div className="space-y-4">
+                    <input
+                      type="tel"
+                      autoFocus
+                      required
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="e.g. 0776223144"
+                      className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-2xl md:text-3xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-800 font-mono"
+                    />
                   </div>
 
-                  {/* URL display card */}
-                  <div className="bg-[#111111] border border-[rgba(255,255,255,0.08)] rounded-[28px] p-4 max-w-sm mx-auto space-y-2 shadow-subtle">
-                    <span className="text-[#6b7280] text-[9px] font-black uppercase tracking-wider block">YOUR STORE LINK</span>
-                    <div className="flex items-center gap-2 bg-[#C6FF00]/10 rounded-[24px] px-3.5 py-3 border border-[#C6FF00]/10 select-all">
-                      <span className="text-[#C6FF00] font-mono text-xs font-bold truncate flex-1 text-left">
-                        {finalShopUrl || `https://threadzw.co/shop/${finalShopId}`}
-                      </span>
+                  <button
+                    onClick={handleNext}
+                    className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
+                  >
+                    Continue
+                  </button>
+                </div>
+              )}
+
+              {/* INSTAGRAM */}
+              {screen === 'INSTAGRAM' && (
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold tracking-widest text-zinc-500 uppercase">Optional</span>
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                      What is your Instagram handle?
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={instagram}
+                      onChange={(e) => setInstagram(e.target.value)}
+                      placeholder="e.g. harare_sneakers"
+                      className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-2xl md:text-3xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-800"
+                    />
+                  </div>
+
+                  <div className="space-y-3 mt-6">
+                    <button
+                      onClick={handleNext}
+                      className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => {
+                        setInstagram('');
+                        setScreen('DESCRIPTION');
+                      }}
+                      className="w-full text-zinc-500 hover:text-white font-bold text-sm py-2 transition-all cursor-pointer text-center"
+                    >
+                      Skip Step
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* DESCRIPTION */}
+              {screen === 'DESCRIPTION' && (
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold tracking-widest text-zinc-500 uppercase">Optional</span>
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                      Write a short description of your shop
+                    </h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="e.g. Premium streetwear sourced globally."
+                      className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-800"
+                    />
+                  </div>
+
+                  <div className="space-y-3 mt-6">
+                    <button
+                      onClick={handleNext}
+                      className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDescription('');
+                        setScreen('LOGO_UPLOAD');
+                      }}
+                      className="w-full text-zinc-500 hover:text-white font-bold text-sm py-2 transition-all cursor-pointer text-center"
+                    >
+                      Skip Step
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* LOGO_UPLOAD */}
+              {screen === 'LOGO_UPLOAD' && (
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold tracking-widest text-zinc-500 uppercase">Optional</span>
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                      Upload your shop logo
+                    </h2>
+                  </div>
+
+                  <div className="flex flex-col items-center justify-center pt-2">
+                    <div 
+                      onClick={() => logoInputRef.current?.click()}
+                      className="w-28 h-28 rounded-full border border-dashed border-zinc-800 hover:border-[#25D366] bg-transparent flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group"
+                    >
+                      {logoPreview ? (
+                        <>
+                          <img src={logoPreview} alt="Logo preview" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                            <Camera className="w-5 h-5 text-white" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-zinc-500 gap-1">
+                          <Camera className="w-5 h-5" />
+                          <span className="text-[10px] font-black uppercase tracking-wider">Browse</span>
+                        </div>
+                      )}
+                    </div>
+                    <input 
+                      type="file" 
+                      ref={logoInputRef} 
+                      onChange={handleLogoChange} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+                  </div>
+
+                  <div className="space-y-3 mt-6">
+                    <button
+                      onClick={handleNext}
+                      className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLogoFile(null);
+                        setLogoPreview(null);
+                        setScreen('BANNER_UPLOAD');
+                      }}
+                      className="w-full text-zinc-500 hover:text-white font-bold text-sm py-2 transition-all cursor-pointer text-center"
+                    >
+                      Skip Step
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* BANNER_UPLOAD */}
+              {screen === 'BANNER_UPLOAD' && (
+                <div className="space-y-8">
+                  <div className="space-y-2">
+                    <span className="text-xs font-bold tracking-widest text-zinc-500 uppercase">Optional</span>
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+                      Upload your store cover
+                    </h2>
+                  </div>
+
+                  <div className="pt-2">
+                    <div 
+                      onClick={() => bannerInputRef.current?.click()}
+                      className="w-full h-32 rounded-2xl border border-dashed border-zinc-800 hover:border-[#25D366] bg-transparent flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden relative group"
+                    >
+                      {bannerPreview ? (
+                        <>
+                          <img src={bannerPreview} alt="Banner preview" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                            <ImageIcon className="w-5 h-5 text-white" />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center text-zinc-500 gap-1.5">
+                          <ImageIcon className="w-5 h-5" />
+                          <span className="text-[10px] font-black uppercase tracking-wider">Browse Cover Banner</span>
+                        </div>
+                      )}
+                    </div>
+                    <input 
+                      type="file" 
+                      ref={bannerInputRef} 
+                      onChange={handleBannerChange} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+                  </div>
+
+                  <div className="space-y-3 mt-6">
+                    <button
+                      onClick={handleNext}
+                      className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98]"
+                    >
+                      Continue
+                    </button>
+                    <button
+                      onClick={() => {
+                        setBannerFile(null);
+                        setBannerPreview(null);
+                        setScreen('CREATE_ACCOUNT');
+                      }}
+                      className="w-full text-zinc-500 hover:text-white font-bold text-sm py-2 transition-all cursor-pointer text-center"
+                    >
+                      Skip Step
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* CREATE_ACCOUNT */}
+              {screen === 'CREATE_ACCOUNT' && (
+                <form onSubmit={handleSignUpAndCreate} className="space-y-8">
+                  <div className="space-y-2">
+                    <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">Secure your store</h2>
+                    <p className="text-zinc-500 text-sm">Enter credentials to establish your private shop login access.</p>
+                  </div>
+
+                  <div className="space-y-6 pt-2">
+                    <div className="space-y-1">
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Email Address"
+                        className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
+                      />
+                    </div>
+
+                    <div className="space-y-1 relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Create Password"
+                        className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 pr-10 pl-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-0 bottom-4 text-zinc-500 hover:text-white cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
+                    </div>
+
+                    <div className="space-y-1 relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Repeat Password"
+                        className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 pr-10 pl-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-0 bottom-4 text-zinc-500 hover:text-white cursor-pointer"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                      </button>
                     </div>
                   </div>
-                </div>
 
-                {/* Bottom button choices */}
-                <div className="space-y-3 pt-6 shrink-0">
-                  <a 
-                    href={`/shop/${finalShopId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full h-13 bg-[#C6FF00] text-black font-bold text-sm uppercase rounded-[24px] flex items-center justify-center gap-2 cursor-pointer shadow-md hover:opacity-95 transition-all"
+                  <button
+                    type="submit"
+                    className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
                   >
-                    <ExternalLink className="w-4.5 h-4.5" />
-                    <span>View Shop</span>
-                  </a>
-
-                  <button 
-                    onClick={() => {
-                      const url = finalShopUrl || `https://threadzw.co/shop/${finalShopId}`;
-                      if (navigator.share) {
-                        navigator.share({
-                          title: shopName,
-                          text: `Check out our digital storefront collection on ThreadZW!`,
-                          url: url
-                        }).catch(() => {});
-                      } else {
-                        navigator.clipboard.writeText(url);
-                        toast.success('Store link copied to clipboard!');
-                      }
-                    }}
-                    className="w-full h-13 bg-[#111111] border border-[rgba(255,255,255,0.08)] text-white font-bold text-sm uppercase rounded-[24px] flex items-center justify-center gap-2 cursor-pointer hover:bg-[#000000] transition-all"
-                  >
-                    <Share2 className="w-4.5 h-4.5" />
-                    <span>Share Shop</span>
+                    Build My Shop
                   </button>
+                </form>
+              )}
 
-                  <button 
-                    onClick={() => {
-                      toast.success("Welcome to your Merchant Workspace!");
-                      setAppStage('dashboard');
-                    }}
-                    className="w-full h-13 bg-[#0a0a0a] border border-[rgba(255,255,255,0.08)] text-[#9ca3af] font-bold text-sm uppercase rounded-[24px] flex items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-all"
-                  >
-                    <PlusCircle className="w-4.5 h-4.5" />
-                    <span>Add More Products</span>
-                  </button>
+              {/* BUILDING */}
+              {screen === 'BUILDING' && (
+                <div className="space-y-8 text-center py-10">
+                  <div className="flex justify-center">
+                    <div className="relative">
+                      <div className="w-16 h-16 rounded-full border-4 border-zinc-900 border-t-[#25D366] animate-spin" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-black text-white tracking-tight">Launching your shop</h3>
+                    <p className="text-zinc-500 text-sm font-medium animate-pulse">{creationStatus}</p>
+                  </div>
+
+                  <div className="w-full bg-zinc-950 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      style={{ width: `${creationProgress}%` }}
+                      className="h-full bg-[#25D366] transition-all duration-300 ease-out"
+                    />
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-          </motion.div>
-        </AnimatePresence>
-
-      </div>
+            </motion.div>
+          </AnimatePresence>
+          
+        </div>
+      </main>
 
     </div>
   );

@@ -12,12 +12,12 @@
   --color-card-bg: #151515;
   --color-ele-bg: #1A1A1A;
   --color-border: #2A2A2A;
-  --color-neon: #C6FF00;
+  --color-neon: #25D366;
   --color-neon-text: #000000;
   --color-secondary-text: #A0A0A0;
-  --color-success: #C6FF00;
+  --color-success: #25D366;
   --color-error: #EF4444;
-  --color-warm: #C6FF00;
+  --color-warm: #25D366;
 }
 
 :root {
@@ -25,7 +25,7 @@
   --card-radius: 14px;
   --chip-radius: 8px;
   --input-radius: 10px;
-  --color-lime: #C6FF00;
+  --color-lime: #25D366;
   --color-bg: #0a0a0a;
   --color-text: #ffffff;
   --color-subtext: rgba(255,255,255,0.5);
@@ -35,14 +35,14 @@
 
 /* Custom Global Typography Overrides for Lime Green Text */
 .threadzw-wordmark,
-[class*="text-[#C6FF00]"],
-[class*="text-[#C6FF00]"],
+[class*="text-[#25D366]"],
+[class*="text-[#25D366]"],
 [class*="text-neon"],
 [class*="text-lime"],
-[style*="color: rgb(198, 255, 0)"],
-[style*="color: rgb(198, 255, 0)"],
-[style*="color:#C6FF00"],
-[style*="color:#C6FF00"] {
+[style*="color: rgb(37, 211, 102)"],
+[style*="color: rgb(37, 211, 102)"],
+[style*="color:#25D366"],
+[style*="color:#25D366"] {
   font-family: var(--font-wordmark) !important;
   font-weight: 950 !important;
   letter-spacing: -0.05em !important;
@@ -60,8 +60,8 @@ button {
 }
 
 /* Primary Button Style (lime green background) */
-button[class*="bg-[#C6FF00]"],
-button[class*="bg-[#C6FF00]"],
+button[class*="bg-[#25D366]"],
+button[class*="bg-[#25D366]"],
 button[class*="bg-neon"],
 button[class*="bg-lime"],
 button.bg-neon,
@@ -233,7 +233,7 @@ div.rounded-full, img.rounded-full {
     font-family: Courier, 'Courier New', monospace !important;
     font-weight: 950 !important;
     letter-spacing: -0.05em !important;
-    color: #C6FF00 !important;
+    color: #25D366 !important;
     text-transform: none !important;
   }
 
@@ -508,7 +508,7 @@ img.loaded {
   border: 1px solid #e4e4e7 !important;
 }
 
-.sales-system-light .text-\[\#C6FF00\] {
+.sales-system-light .text-\[\#25D366\] {
   color: #18181b !important;
 }
 

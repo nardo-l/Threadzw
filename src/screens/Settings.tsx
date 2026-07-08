@@ -120,7 +120,7 @@ export const Settings: React.FC = () => {
             onClick={togglePublishState}
             className="group active:opacity-80 transition-all flex items-center gap-3.5 py-3 cursor-pointer border-b border-zinc-100 last:border-none select-none"
           >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border ${shop?.is_live ? 'bg-[#C6FF00]/15 border-[#C6FF00]/40 text-zinc-900' : 'bg-red-50 border-red-100 text-red-500'}`}>
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border ${shop?.is_live ? 'bg-[#25D366]/15 border-[#25D366]/40 text-zinc-900' : 'bg-red-50 border-red-100 text-red-500'}`}>
               <Globe size={18} />
             </div>
             <div className="flex-1">
@@ -129,7 +129,7 @@ export const Settings: React.FC = () => {
                 Status: <span className={shop?.is_live ? 'text-zinc-900 font-black' : 'text-red-500 font-bold'}>{shop?.is_live ? 'LIVE' : 'PAUSED'}</span>
               </p>
             </div>
-            <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 ${shop?.is_live ? 'bg-[#C6FF00]' : 'bg-zinc-200'}`}>
+            <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 ${shop?.is_live ? 'bg-[#25D366]' : 'bg-zinc-200'}`}>
               <div className="w-5 h-5 rounded-full bg-white transition-transform duration-200 shadow-sm" style={{ transform: shop?.is_live ? 'translateX(16px)' : 'translateX(0px)' }} />
             </div>
           </div>
@@ -190,7 +190,7 @@ export const Settings: React.FC = () => {
               <label className="text-zinc-800 text-[11px] font-black uppercase tracking-wider">
                 Estimated Buyer Intent → Sale Conversion %
               </label>
-              <span className="bg-[#C6FF00]/15 text-zinc-900 px-3 py-1 rounded-xl text-xs font-mono font-black border border-[#C6FF00]/30">
+              <span className="bg-[#25D366]/15 text-zinc-900 px-3 py-1 rounded-xl text-xs font-mono font-black border border-[#25D366]/30">
                 {conversionRate}%
               </span>
             </div>

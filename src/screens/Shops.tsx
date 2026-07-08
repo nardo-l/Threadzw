@@ -21,7 +21,7 @@ export const Shops: React.FC = () => {
         <header 
           className="sticky top-0 backdrop-blur-md z-40 py-4 -mx-6 px-6 flex justify-between items-center border-b bg-[#0d0d0d]/80 border-[#222]"
         >
-          <h1 className="text-3xl font-pacifico text-[#C6FF00]">Shops</h1>
+          <h1 className="text-3xl font-pacifico text-[#25D366]">Shops</h1>
         </header>
         <div className="flex flex-col gap-4">
           {Array.from({ length: 5 }).map((_, i) => <ShopCardShimmer key={`shop-shimmer-${i}`} />)}
@@ -36,7 +36,7 @@ export const Shops: React.FC = () => {
         <header 
           className="sticky top-0 backdrop-blur-md z-40 py-4 px-6 flex justify-between items-center border-b bg-[#0d0d0d]/80 border-[#222]"
         >
-          <h1 className="text-3xl font-pacifico text-[#C6FF00]">Shops</h1>
+          <h1 className="text-3xl font-pacifico text-[#25D366]">Shops</h1>
         </header>
         <ScreenError 
           icon={<Radio size={32} />}
@@ -53,8 +53,8 @@ export const Shops: React.FC = () => {
       <header 
         className="sticky top-0 backdrop-blur-md z-40 py-4 -mx-6 px-6 flex justify-between items-center border-b bg-[#0d0d0d]/80 border-[#222]"
       >
-        <h1 className="text-3xl font-pacifico text-[#C6FF00]">Shops</h1>
-        <button className="p-2 rounded-full bg-[#111] text-[#C6FF00]"><Search size={20} /></button>
+        <h1 className="text-3xl font-pacifico text-[#25D366]">Shops</h1>
+        <button className="p-2 rounded-full bg-[#111] text-[#25D366]"><Search size={20} /></button>
       </header>
 
       {/* Search Bar */}
@@ -64,13 +64,13 @@ export const Shops: React.FC = () => {
           placeholder="Search for shops..." 
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full border rounded-pill py-4 pl-14 pr-6 placeholder:text-muted focus:ring-2 transition-all outline-none bg-[#111] border-[#222] text-white focus:ring-[#C6FF00]"
+          className="w-full border rounded-pill py-4 pl-14 pr-6 placeholder:text-muted focus:ring-2 transition-all outline-none bg-[#111] border-[#222] text-white focus:ring-[#25D366]"
         />
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#C6FF00]" size={20} />
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-[#25D366]" size={20} />
       </div>
 
       {/* Affiliate Banner */}
-      <div className="rounded-card p-6 flex flex-col gap-4 relative overflow-hidden bg-gradient-to-br from-[#C6FF00] to-[#C6FF00]">
+      <div className="rounded-card p-6 flex flex-col gap-4 relative overflow-hidden bg-gradient-to-br from-[#25D366] to-[#25D366]">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-white/20 rounded-lg">
             <Users size={24} className="text-white" />
@@ -83,7 +83,7 @@ export const Shops: React.FC = () => {
           onClick={() => toast.info("Coming soon....", {
             style: { background: '#0d0d0d', color: 'white', border: '1px solid #222' }
           })}
-          className="bg-white font-bold py-3 rounded-pill text-sm hover:bg-opacity-90 transition-all active:scale-[0.98] text-[#C6FF00]"
+          className="bg-white font-bold py-3 rounded-pill text-sm hover:bg-opacity-90 transition-all active:scale-[0.98] text-[#25D366]"
         >
           Start Earning
         </button>

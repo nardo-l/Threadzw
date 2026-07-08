@@ -455,7 +455,7 @@ export const EditProduct: React.FC = () => {
       {/* 3px Neon Progress Bar at topmost */}
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-zinc-250 z-50">
         <div 
-          className="h-full bg-[#C6FF00] transition-all duration-300"
+          className="h-full bg-[#25D366] transition-all duration-300"
           style={{ width: `${(step / 4) * 100}%` }}
         />
       </div>
@@ -536,12 +536,12 @@ export const EditProduct: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => handleRemovePhoto(index)}
-                                className="absolute top-1 right-1 w-6 h-6 rounded-[6px] bg-black/75 hover:bg-black text-white hover:text-[#C6FF00] transition-colors flex items-center justify-center text-[11px] font-bold z-10 cursor-pointer"
+                                className="absolute top-1 right-1 w-6 h-6 rounded-[6px] bg-black/75 hover:bg-black text-white hover:text-[#25D366] transition-colors flex items-center justify-center text-[11px] font-bold z-10 cursor-pointer"
                               >
                                 ×
                               </button>
                               {isCover && (
-                                <div className="absolute bottom-1 left-1.5 right-1.5 bg-black/80 backdrop-blur-xs py-0.5 rounded text-center text-[8px] uppercase tracking-wider text-[#C6FF00] font-black pointer-events-none">
+                                <div className="absolute bottom-1 left-1.5 right-1.5 bg-black/80 backdrop-blur-xs py-0.5 rounded text-center text-[8px] uppercase tracking-wider text-[#25D366] font-black pointer-events-none">
                                   Cover
                                 </div>
                               )}
@@ -551,7 +551,7 @@ export const EditProduct: React.FC = () => {
                               type="button"
                               onClick={triggerFilePicker}
                               disabled={uploading}
-                              className="w-full h-full bg-white/[0.04] border-[1.5px] border-dashed border-white/[0.15] hover:border-[#C6FF00]/40 rounded-xl flex items-center justify-center transition-all cursor-pointer hover:bg-white/[0.06] active:scale-[0.97]"
+                              className="w-full h-full bg-white/[0.04] border-[1.5px] border-dashed border-white/[0.15] hover:border-[#25D366]/40 rounded-xl flex items-center justify-center transition-all cursor-pointer hover:bg-white/[0.06] active:scale-[0.97]"
                             >
                               <Plus size={24} className="text-white/30" />
                             </button>
@@ -582,7 +582,7 @@ export const EditProduct: React.FC = () => {
                       type="button"
                       disabled={!isScreen1Valid || uploading}
                       onClick={goNext}
-                      className="w-full h-12 rounded-[10px] bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                      className="w-full h-12 rounded-[10px] bg-[#25D366] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
                     >
                       {uploading ? (
                         <>
@@ -621,7 +621,7 @@ export const EditProduct: React.FC = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="e.g. Cargo Pants"
-                        className="w-full text-lg font-bold bg-white border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] px-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
+                        className="w-full text-lg font-bold bg-white border-[1.5px] border-white/10 focus:border-[#25D366] rounded-[10px] px-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
                       />
                     </div>
 
@@ -638,7 +638,7 @@ export const EditProduct: React.FC = () => {
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
                           placeholder="0"
-                          className="w-full text-xl font-black bg-white border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] pl-10 pr-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
+                          className="w-full text-xl font-black bg-white border-[1.5px] border-white/10 focus:border-[#25D366] rounded-[10px] pl-10 pr-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -658,7 +658,7 @@ export const EditProduct: React.FC = () => {
                               onClick={() => setSelectedTag(tg)}
                               className={`flex-1 text-[13px] font-bold py-2 border rounded-[8px] text-center transition-all cursor-pointer ${
                                 isSelected 
-                                  ? 'bg-[#C6FF00]/10 border-[#C6FF00] text-[#C6FF00]' 
+                                  ? 'bg-[#25D366]/10 border-[#25D366] text-[#25D366]' 
                                   : 'bg-white/[0.05] border-white/10 text-white/50 hover:text-white'
                               }`}
                             >
@@ -676,7 +676,7 @@ export const EditProduct: React.FC = () => {
                     type="button"
                     disabled={!isScreen2Valid}
                     onClick={goNext}
-                    className="w-full h-12 rounded-[10px] bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                    className="w-full h-12 rounded-[10px] bg-[#25D366] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
                   >
                     <span>Next</span>
                     <ChevronRight size={16} strokeWidth={3} />
@@ -705,7 +705,7 @@ export const EditProduct: React.FC = () => {
                             min={0}
                             value={generalStock}
                             onChange={(e) => setGeneralStock(e.target.value)}
-                            className="w-20 h-9 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[15px] text-center focus:outline-none focus:ring-1 focus:ring-[#C6FF00]"
+                            className="w-20 h-9 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[15px] text-center focus:outline-none focus:ring-1 focus:ring-[#25D366]"
                           />
                         </div>
                       </div>
@@ -721,7 +721,7 @@ export const EditProduct: React.FC = () => {
                                 .map(([sz, v]) => (
                                   <div
                                     key={`selected-size-chip-${sz}`}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#C6FF00] text-black font-extrabold rounded-full text-xs font-sans shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-black font-extrabold rounded-full text-xs font-sans shadow-sm"
                                   >
                                     <span>{sz} • {v.stock}</span>
                                     <button
@@ -739,7 +739,7 @@ export const EditProduct: React.FC = () => {
 
                         {/* Available Sizes title & Horizontally scrollable row of size chips */}
                         <div className="space-y-2">
-                          <span className="text-[11px] uppercase tracking-[1.5px] text-[#C6FF00] font-bold block">
+                          <span className="text-[11px] uppercase tracking-[1.5px] text-[#25D366] font-bold block">
                             Available Sizes ({loadedCategory})
                           </span>
                           
@@ -757,9 +757,9 @@ export const EditProduct: React.FC = () => {
                                   }}
                                   className={`flex-shrink-0 min-w-12 h-12 rounded-xl border flex items-center justify-center font-extrabold text-sm transition-all relative ${
                                     isEditing 
-                                      ? 'border-[#C6FF00] bg-[#C6FF00]/10 text-[#C6FF00] scale-95'
+                                      ? 'border-[#25D366] bg-[#25D366]/10 text-[#25D366] scale-95'
                                       : isActive 
-                                        ? 'border-[#C6FF00] bg-zinc-900 text-[#C6FF00]' 
+                                        ? 'border-[#25D366] bg-zinc-900 text-[#25D366]' 
                                         : 'border-white/[0.08] bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white'
                                   }`}
                                 >
@@ -783,14 +783,14 @@ export const EditProduct: React.FC = () => {
                         {/* Custom Size Dialog Input inside workflow */}
                         {showCustomSizeInput && (
                           <div className="p-4 bg-zinc-950/80 border border-zinc-800 rounded-xl space-y-3 font-sans">
-                            <span className="text-[12px] font-extrabold text-[#C6FF00] uppercase block">Add Custom Size</span>
+                            <span className="text-[12px] font-extrabold text-[#25D366] uppercase block">Add Custom Size</span>
                             <div className="flex gap-2">
                               <input
                                 type="text"
                                 value={customSizeName}
                                 onChange={(e) => setCustomSizeName(e.target.value)}
                                 placeholder="e.g. XXL, US 12, EU 46"
-                                className="flex-1 text-xs bg-black text-white font-bold border border-zinc-800 rounded-lg px-3 py-2 outline-none focus:border-[#C6FF00] placeholder:text-zinc-600"
+                                className="flex-1 text-xs bg-black text-white font-bold border border-zinc-800 rounded-lg px-3 py-2 outline-none focus:border-[#25D366] placeholder:text-zinc-600"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault();
@@ -801,7 +801,7 @@ export const EditProduct: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={handleAddCustomSizeName}
-                                className="bg-[#C6FF00] text-black text-xs font-black px-4 py-2 rounded-lg hover:opacity-90"
+                                className="bg-[#25D366] text-black text-xs font-black px-4 py-2 rounded-lg hover:opacity-90"
                               >
                                 Add
                               </button>
@@ -818,10 +818,10 @@ export const EditProduct: React.FC = () => {
 
                         {/* Stock Quantity Input for chosen size */}
                         {activeSizeEditing && (
-                          <div className="p-4 bg-zinc-900 border border-[#C6FF00]/30 rounded-xl space-y-3 font-sans">
+                          <div className="p-4 bg-zinc-900 border border-[#25D366]/30 rounded-xl space-y-3 font-sans">
                             <div className="flex justify-between items-center">
                               <span className="text-[13px] font-black text-white">
-                                Enter Stock Quantity for <span className="text-[#C6FF00] font-black">{activeSizeEditing}</span>
+                                Enter Stock Quantity for <span className="text-[#25D366] font-black">{activeSizeEditing}</span>
                               </span>
                               <button
                                 type="button"
@@ -837,7 +837,7 @@ export const EditProduct: React.FC = () => {
                                 min={1}
                                 value={tempStockInput}
                                 onChange={(e) => setTempStockInput(e.target.value)}
-                                className="w-24 h-10 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[16px] text-center focus:outline-none focus:border-[#C6FF00]"
+                                className="w-24 h-10 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[16px] text-center focus:outline-none focus:border-[#25D366]"
                                 placeholder="15"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
@@ -849,7 +849,7 @@ export const EditProduct: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={handleConfirmStock}
-                                className="h-10 bg-[#C6FF00] text-black text-xs font-black px-5 rounded-lg hover:opacity-90 flex items-center justify-center gap-1.5"
+                                className="h-10 bg-[#25D366] text-black text-xs font-black px-5 rounded-lg hover:opacity-90 flex items-center justify-center gap-1.5"
                               >
                                 <Check size={14} strokeWidth={3} />
                                 Confirm
@@ -863,7 +863,7 @@ export const EditProduct: React.FC = () => {
                     {/* Colors swatches */}
                     <div className="space-y-4 pt-1">
                       <div>
-                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#C6FF00] block mb-2 font-sans">
+                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#25D366] block mb-2 font-sans">
                           Colours selection (Tap to toggle)
                         </label>
                         <div className="flex flex-wrap gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
@@ -910,12 +910,12 @@ export const EditProduct: React.FC = () => {
                             value={customColorText}
                             onChange={(e) => setCustomColorText(e.target.value)}
                             placeholder="Type custom colour name (e.g. Acid Lime)..."
-                            className="flex-grow text-[13px] font-medium bg-black border border-[#C6FF00]/40 focus:border-[#C6FF00] rounded-lg px-3.5 py-2.5 text-white placeholder-zinc-500 outline-none outline-0"
+                            className="flex-grow text-[13px] font-medium bg-black border border-[#25D366]/40 focus:border-[#25D366] rounded-lg px-3.5 py-2.5 text-white placeholder-zinc-500 outline-none outline-0"
                           />
                           <button
                             type="button"
                             onClick={handleAddCustomColor}
-                            className="px-4 bg-[#C6FF00] text-black font-extrabold text-xs uppercase rounded-lg hover:opacity-90 cursor-pointer font-sans"
+                            className="px-4 bg-[#25D366] text-black font-extrabold text-xs uppercase rounded-lg hover:opacity-90 cursor-pointer font-sans"
                           >
                             Add
                           </button>
@@ -930,7 +930,7 @@ export const EditProduct: React.FC = () => {
                             {selectedColors.map((colName) => (
                               <div
                                 key={`active-col-${colName}`}
-                                className="flex items-center gap-1.5 px-2.5 py-1 bg-[#C6FF00]/10 border border-[#C6FF00]/20 text-[#C6FF00] rounded-full text-xs font-semibold"
+                                className="flex items-center gap-1.5 px-2.5 py-1 bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] rounded-full text-xs font-semibold"
                               >
                                 <span>{colName}</span>
                                 <button
@@ -957,7 +957,7 @@ export const EditProduct: React.FC = () => {
                         type="button"
                         onClick={() => setIsVisible(!isVisible)}
                         className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                          isVisible ? 'bg-[#C6FF00] border-[#C6FF00]' : 'bg-white/5 border-white/10'
+                          isVisible ? 'bg-[#25D366] border-[#25D366]' : 'bg-white/5 border-white/10'
                         }`}
                       >
                         <div 
@@ -975,7 +975,7 @@ export const EditProduct: React.FC = () => {
                     type="button"
                     disabled={!isScreen3Valid}
                     onClick={goNext}
-                    className="w-full h-12 rounded-[10px] bg-[#C6FF00] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                    className="w-full h-12 rounded-[10px] bg-[#25D366] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
                   >
                     <span>Next</span>
                     <ChevronRight size={16} strokeWidth={3} />
@@ -1003,7 +1003,7 @@ export const EditProduct: React.FC = () => {
                       )}
                       
                       {selectedTag !== 'None' && (
-                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/85 border border-white/10 rounded text-[7px] font-black uppercase tracking-wider text-[#C6FF00]">
+                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/85 border border-white/10 rounded text-[7px] font-black uppercase tracking-wider text-[#25D366]">
                           {selectedTag}
                         </div>
                       )}
@@ -1016,7 +1016,7 @@ export const EditProduct: React.FC = () => {
                             {name || 'Product name'}
                           </h4>
                         </div>
-                        <p className="text-[#C6FF00] font-black text-[16px] leading-none">
+                        <p className="text-[#25D366] font-black text-[16px] leading-none">
                           ${parseFloat(price) ? parseFloat(price) : '0'}
                         </p>
                       </div>
@@ -1051,7 +1051,7 @@ export const EditProduct: React.FC = () => {
                       onChange={(e) => setDescription(e.target.value.substring(0, 300))}
                       rows={3}
                       placeholder="Describe the material, fit, or styling tips..."
-                      className="w-full text-sm bg-white border-[1.5px] border-white/10 focus:border-[#C6FF00] rounded-[10px] p-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all leading-normal resize-none font-semibold"
+                      className="w-full text-sm bg-white border-[1.5px] border-white/10 focus:border-[#25D366] rounded-[10px] p-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all leading-normal resize-none font-semibold"
                     />
                   </div>
 
@@ -1065,7 +1065,7 @@ export const EditProduct: React.FC = () => {
                       type="button"
                       onClick={() => setIsFeatured(!isFeatured)}
                       className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                        isFeatured ? 'bg-[#C6FF00] border-[#C6FF00]' : 'bg-white/5 border-white/10'
+                        isFeatured ? 'bg-[#25D366] border-[#25D366]' : 'bg-white/5 border-white/10'
                       }`}
                     >
                       <div 
@@ -1081,7 +1081,7 @@ export const EditProduct: React.FC = () => {
                     type="button"
                     disabled={saving}
                     onClick={handleSaveChanges}
-                    className="w-full min-h-[52px] h-[52px] rounded-[10px] bg-[#C6FF00] text-black font-extrabold text-[16px] uppercase tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-[0_8px_24px_rgba(198, 255, 0,0.25)] pt-1"
+                    className="w-full min-h-[52px] h-[52px] rounded-[10px] bg-[#25D366] text-black font-extrabold text-[16px] uppercase tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-[0_8px_24px_rgba(198, 255, 0,0.25)] pt-1"
                   >
                     {saving ? (
                       <>
@@ -1115,7 +1115,7 @@ export const EditProduct: React.FC = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: [0, 1.1, 1] }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="w-[100px] h-[100px] rounded-full border-2 border-[#C6FF00] bg-[#C6FF00]/10 flex items-center justify-center text-[#C6FF00]"
+                  className="w-[100px] h-[100px] rounded-full border-2 border-[#25D366] bg-[#25D366]/10 flex items-center justify-center text-[#25D366]"
                 >
                   <Check size={48} className="stroke-[3]" />
                 </motion.div>
@@ -1141,7 +1141,7 @@ export const EditProduct: React.FC = () => {
                     <h4 className="font-extrabold text-[15px] leading-tight line-clamp-1 text-white">
                       {name}
                     </h4>
-                    <p className="text-[#C6FF00] font-black text-[18px] leading-none">
+                    <p className="text-[#25D366] font-black text-[18px] leading-none">
                       ${price}
                     </p>
 
@@ -1166,7 +1166,7 @@ export const EditProduct: React.FC = () => {
                       navigate('/inventory');
                     }
                   }}
-                  className="w-full h-12 rounded-[10px] bg-[#C6FF00] text-black font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center transition-all cursor-pointer active:scale-[0.98]"
+                  className="w-full h-12 rounded-[10px] bg-[#25D366] text-black font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center transition-all cursor-pointer active:scale-[0.98]"
                 >
                   View on storefront
                 </button>
@@ -1210,7 +1210,7 @@ export const EditProduct: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowDiscardModal(false)}
-                className="flex-1 h-10 rounded-[10px] bg-[#C6FF00] text-black font-bold leading-none cursor-pointer transition-all"
+                className="flex-1 h-10 rounded-[10px] bg-[#25D366] text-black font-bold leading-none cursor-pointer transition-all"
               >
                 Keep editing
               </button>

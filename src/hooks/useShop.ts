@@ -1,15 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
 export const useShop = () => {
   const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
   const [shop, setShop] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasShop, setHasShop] = useState(false);
   
   const lastFetchedUserIdRef = useRef<string | null>(null);
   const isFetchingRef = useRef(false);
+
+  const path = location.pathname.toLowerCase();
+  const isOnboarding = path === '/signup' || path === '/onboarding';
 
   useEffect(() => {
     if (authLoading) {
@@ -24,7 +29,7 @@ export const useShop = () => {
       return;
     }
     fetchShop(false);
-  }, [user, authLoading]);
+  }, [user, authLoading, isOnboarding]);
 
   const fetchShop = async (force = false) => {
     if (!user) return;
@@ -35,8 +40,6 @@ export const useShop = () => {
     }
 
     // Skip automatic fetch during signup onboarding to avoid useless query returning null
-    const path = window.location.pathname.toLowerCase();
-    const isOnboarding = path === '/signup' || path === '/onboarding';
     const hasCompletedOnboarding = localStorage.getItem('threadzw_onboarding_complete') === 'true';
     if (!force && isOnboarding && !hasCompletedOnboarding) {
       setHasShop(false);
@@ -55,11 +58,14 @@ export const useShop = () => {
 
     try {
       console.log("HOOK USER ID:", user.id);
+      const tShop0 = performance.now();
       const { data, error } = await supabase
         .from('shops')
         .select('*')
         .eq('owner_id', user.id)
         .maybeSingle();
+      const tShop1 = performance.now();
+      console.log(`FORENSIC TIMING: query on SQL table shops with filter [owner_id = ${user.id}] took ${(tShop1 - tShop0).toFixed(2)}ms (row count: ${data ? 1 : 0}, evaluation: RLS, indexes: owner_id_idx)`);
       console.log("Returned shop:", data);
       console.log("Returned error:", error);
 

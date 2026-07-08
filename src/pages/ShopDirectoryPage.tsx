@@ -66,8 +66,8 @@ const getStableShopImages = (shopId: string, customLogo: string | null, customBa
 
   // If no custom logo, we create a gorgeous brand typographic style
   const colors = [
-    { bg: 'bg-[#C6FF00]', text: 'text-black', brand: 'border-white/10' },
-    { bg: 'bg-zinc-900', text: 'text-[#C6FF00]', brand: 'border-[#C6FF00]/40' },
+    { bg: 'bg-[#25D366]', text: 'text-black', brand: 'border-white/10' },
+    { bg: 'bg-zinc-900', text: 'text-[#25D366]', brand: 'border-[#25D366]/40' },
     { bg: 'bg-white', text: 'text-black', brand: 'border-zinc-805' },
     { bg: 'bg-[#1a1a1a]', text: 'text-white', brand: 'border-white/20' }
   ];
@@ -174,7 +174,7 @@ export const ShopDirectoryPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-zinc-100 text-zinc-900 flex justify-center items-start selection:bg-black selection:text-[#C6FF00] antialiased font-sans">
+    <div className="min-h-screen bg-zinc-100 text-zinc-900 flex justify-center items-start selection:bg-black selection:text-[#25D366] antialiased font-sans">
       
       {/* Immersive Phone Outer Frame Wrapper on Desktop Viewports */}
       <div className="w-full max-w-[420px] min-h-screen bg-white flex flex-col justify-between relative shadow-2xl border-x border-zinc-200 overflow-hidden">
@@ -266,7 +266,7 @@ export const ShopDirectoryPage: React.FC = () => {
                     onClick={() => setSelectedCategory(category)}
                     className={`flex-shrink-0 px-4 py-2 rounded-full text-[11px] font-extrabold tracking-wide transition-all ${
                       isActive 
-                        ? 'bg-zinc-950 text-[#C6FF00] shadow-sm font-black' 
+                        ? 'bg-zinc-950 text-[#25D366] shadow-sm font-black' 
                         : 'bg-zinc-100 border border-zinc-200/60 text-zinc-700 hover:bg-zinc-200/50'
                     }`}
                   >
@@ -318,7 +318,7 @@ export const ShopDirectoryPage: React.FC = () => {
 
                 <button
                   onClick={() => navigate('/signup')}
-                  className="px-6 py-3 bg-zinc-950 text-[#C6FF00] hover:text-white text-xs font-extrabold rounded-full hover:bg-black transition-all active:scale-95 inline-flex items-center gap-1.5"
+                  className="px-6 py-3 bg-zinc-950 text-[#25D366] hover:text-white text-xs font-extrabold rounded-full hover:bg-black transition-all active:scale-95 inline-flex items-center gap-1.5"
                 >
                   Create Store
                   <Plus size={14} className="stroke-[3]" />
@@ -416,7 +416,7 @@ export const ShopDirectoryPage: React.FC = () => {
                         </div>
 
                         {/* Full Width CTA Button */}
-                        <button className="w-full mt-4 bg-zinc-950 hover:bg-black text-[#C6FF00] py-3.5 px-6 rounded-full text-xs font-black tracking-wide shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
+                        <button className="w-full mt-4 bg-zinc-950 hover:bg-black text-[#25D366] py-3.5 px-6 rounded-full text-xs font-black tracking-wide shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
                           <span>Visit Store</span>
                           <ArrowRight size={13} className="stroke-[3] group-hover:translate-x-1 transition-transform" />
                         </button>
@@ -445,7 +445,7 @@ export const ShopDirectoryPage: React.FC = () => {
           {/* Accent Create Button Circle */}
           <button 
             onClick={() => navigate('/signup')} 
-            className="w-10 h-10 rounded-full bg-zinc-950 text-[#C6FF00] -translate-y-3 shadow-lg flex items-center justify-center hover:bg-black hover:text-[#C6FF00] active:scale-95 transition-all outline-none"
+            className="w-10 h-10 rounded-full bg-zinc-950 text-[#25D366] -translate-y-3 shadow-lg flex items-center justify-center hover:bg-black hover:text-[#25D366] active:scale-95 transition-all outline-none"
           >
             <Plus size={18} className="stroke-[3]" />
           </button>

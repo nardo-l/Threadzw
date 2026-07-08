@@ -490,7 +490,7 @@ export const AddProduct: React.FC = () => {
       {/* 3px Neon Progress Bar */}
       <div className="fixed top-0 left-0 right-0 h-[3px] bg-white/10 z-50 max-w-[430px] mx-auto">
         <div 
-          className="h-full bg-[#C6FF00] transition-all duration-300"
+          className="h-full bg-[#25D366] transition-all duration-300"
           style={{ width: `${(step / 6) * 100}%` }}
         />
       </div>
@@ -507,7 +507,7 @@ export const AddProduct: React.FC = () => {
               <ArrowLeft size={20} />
             </button>
           )}
-          <span className="text-[#C6FF00] text-[11px] font-black tracking-[2px] uppercase font-mono">
+          <span className="text-[#25D366] text-[11px] font-black tracking-[2px] uppercase font-mono">
             ADD PRODUCT
           </span>
         </div>
@@ -562,7 +562,7 @@ export const AddProduct: React.FC = () => {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="e.g. Vintage Heavyweight Tee"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
                       />
                     </div>
 
@@ -576,7 +576,7 @@ export const AddProduct: React.FC = () => {
                           value={price}
                           onChange={e => setPrice(e.target.value)}
                           placeholder="25.00"
-                          className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 pl-8 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
+                          className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-4 pl-8 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
                         />
                       </div>
                     </div>
@@ -597,7 +597,7 @@ export const AddProduct: React.FC = () => {
                               onClick={() => setSelectedCategory(cat.name)}
                               className={`p-3.5 rounded-xl border text-xs font-bold font-sans transition-all cursor-pointer ${
                                 selectedCategory === cat.name
-                                  ? 'bg-[#C6FF00] text-black border-[#C6FF00] shadow-md shadow-[#C6FF00]/10'
+                                  ? 'bg-[#25D366] text-black border-[#25D366] shadow-md shadow-[#25D366]/10'
                                   : 'bg-white/[0.02] text-white/75 border-white/[0.08] hover:border-white/15'
                               }`}
                             >
@@ -614,7 +614,7 @@ export const AddProduct: React.FC = () => {
                     <button
                       type="button"
                       onClick={goNext}
-                      className="w-full h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000] active:scale-[0.98]"
+                      className="w-full h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000] active:scale-[0.98]"
                     >
                       <span>Continue to Photos</span>
                       <ChevronRight size={14} />
@@ -642,13 +642,13 @@ export const AddProduct: React.FC = () => {
                       onDrop={handleDrop}
                       onClick={triggerFilePicker}
                       className={`h-40 w-full bg-white/[0.01] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 text-center transition-all cursor-pointer group relative overflow-hidden ${
-                        isDragOver ? 'border-[#C6FF00] bg-[#C6FF00]/5' : 'border-white/10 hover:border-white/20'
+                        isDragOver ? 'border-[#25D366] bg-[#25D366]/5' : 'border-white/10 hover:border-white/20'
                       }`}
                     >
-                      <div className="w-12 h-12 rounded-full bg-white/[0.03] group-hover:bg-[#C6FF00]/10 flex items-center justify-center text-white/40 group-hover:text-[#C6FF00] transition-all mb-2 border border-white/5">
+                      <div className="w-12 h-12 rounded-full bg-white/[0.03] group-hover:bg-[#25D366]/10 flex items-center justify-center text-white/40 group-hover:text-[#25D366] transition-all mb-2 border border-white/5">
                         <Camera size={20} />
                       </div>
-                      <span className="text-xs font-bold text-white group-hover:text-[#C6FF00] transition-colors">
+                      <span className="text-xs font-bold text-white group-hover:text-[#25D366] transition-colors">
                         Drag & Drop or Click to Upload
                       </span>
                       <p className="text-[10px] text-white/40 mt-1">PNG, JPG, or WebP up to 5MB (Max 6)</p>
@@ -740,7 +740,7 @@ export const AddProduct: React.FC = () => {
                     <button
                       type="button"
                       onClick={goNext}
-                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                      className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
                     >
                       <span>Continue</span>
                       <ChevronRight size={14} />
@@ -779,7 +779,7 @@ export const AddProduct: React.FC = () => {
                             value={generalStock}
                             onChange={e => setGeneralStock(e.target.value)}
                             placeholder="e.g. 10"
-                            className="w-full bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-4 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-bold shadow-sm"
+                            className="w-full bg-white text-zinc-950 border border-zinc-200 focus:border-[#25D366] rounded-xl p-4 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-bold shadow-sm"
                           />
                           <p className="text-[11px] text-white/40 leading-relaxed font-sans">
                             Since this category does not use standard sizes, please provide your current aggregate inventory count.
@@ -812,7 +812,7 @@ export const AddProduct: React.FC = () => {
                                     }}
                                     className={`px-4 py-2 rounded-full border text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
                                       isSelected
-                                        ? 'bg-[#C6FF00] text-black border-[#C6FF00] scale-105 shadow-md shadow-[#C6FF00]/15'
+                                        ? 'bg-[#25D366] text-black border-[#25D366] scale-105 shadow-md shadow-[#25D366]/15'
                                         : isAdded
                                         ? 'bg-white/10 text-white border-white/20 hover:bg-white/15'
                                         : 'bg-white/5 text-white/70 border-white/10 hover:border-white/20 hover:bg-white/10'
@@ -847,7 +847,7 @@ export const AddProduct: React.FC = () => {
                                   placeholder="e.g. XXXL or 49"
                                   value={customSizeName}
                                   onChange={e => setCustomSizeName(e.target.value)}
-                                  className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
+                                  className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#25D366] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
@@ -859,7 +859,7 @@ export const AddProduct: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={handleAddCustomSizeName}
-                                  className="px-4 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
+                                  className="px-4 bg-[#25D366] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
                                 >
                                   Next
                                 </button>
@@ -881,7 +881,7 @@ export const AddProduct: React.FC = () => {
                           {activeSizeEditing && !showCustomSizeInput && (
                             <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl space-y-3 animate-fade-in">
                               <div className="flex justify-between items-center">
-                                <label className="text-[10px] font-mono uppercase tracking-wider text-[#C6FF00] block">
+                                <label className="text-[10px] font-mono uppercase tracking-wider text-[#25D366] block">
                                   Stock Quantity for Size: <span className="font-sans font-black text-white text-sm ml-1">{activeSizeEditing}</span>
                                 </label>
                                 <span className="text-[9px] font-mono text-white/40 uppercase">Press Enter to save</span>
@@ -893,7 +893,7 @@ export const AddProduct: React.FC = () => {
                                   value={tempStockInput}
                                   onChange={e => setTempStockInput(e.target.value)}
                                   placeholder="e.g. 15"
-                                  className="flex-1 bg-white text-zinc-950 border border-[#C6FF00] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
+                                  className="flex-1 bg-white text-zinc-950 border border-[#25D366] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
                                   autoFocus
                                   onKeyDown={e => {
                                     if (e.key === 'Enter') {
@@ -905,7 +905,7 @@ export const AddProduct: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={handleConfirmStock}
-                                  className="px-5 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
+                                  className="px-5 bg-[#25D366] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
                                 >
                                   Save Quantity
                                 </button>
@@ -979,7 +979,7 @@ export const AddProduct: React.FC = () => {
                       <button
                         type="button"
                         onClick={goNext}
-                        className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                        className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
                       >
                         <span>Continue</span>
                         <ChevronRight size={14} />
@@ -1008,12 +1008,12 @@ export const AddProduct: React.FC = () => {
                         value={customColorInput}
                         onChange={e => setCustomColorInput(e.target.value)}
                         placeholder="Add colour (e.g. Sage Green)"
-                        className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#C6FF00] rounded-xl p-3.5 font-sans focus:outline-none transition-all placeholder:text-zinc-500 text-sm font-bold shadow-sm"
+                        className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#25D366] rounded-xl p-3.5 font-sans focus:outline-none transition-all placeholder:text-zinc-500 text-sm font-bold shadow-sm"
                       />
                       <button
                         type="button"
                         onClick={handleAddCustomColor}
-                        className="px-5 bg-[#C6FF00] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer shrink-0"
+                        className="px-5 bg-[#25D366] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer shrink-0"
                       >
                         Add
                       </button>
@@ -1077,7 +1077,7 @@ export const AddProduct: React.FC = () => {
                     <button
                       type="button"
                       onClick={goNext}
-                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                      className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
                     >
                       <span>Continue</span>
                       <ChevronRight size={14} />
@@ -1106,7 +1106,7 @@ export const AddProduct: React.FC = () => {
                         onChange={e => setDescription(e.target.value)}
                         rows={3}
                         placeholder="Detail materials, fitment notes, model reference, or drop context..."
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none resize-none transition-all placeholder:text-zinc-400 text-xs leading-relaxed font-semibold"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none resize-none transition-all placeholder:text-zinc-400 text-xs leading-relaxed font-semibold"
                       />
                     </div>
 
@@ -1118,7 +1118,7 @@ export const AddProduct: React.FC = () => {
                         value={material}
                         onChange={e => setMaterial(e.target.value)}
                         placeholder="e.g. 100% Cotton, 360gsm French Terry"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1130,7 +1130,7 @@ export const AddProduct: React.FC = () => {
                         value={brand}
                         onChange={e => setBrand(e.target.value)}
                         placeholder="e.g. Custom Boutique or Own Label"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1142,7 +1142,7 @@ export const AddProduct: React.FC = () => {
                         value={features}
                         onChange={e => setFeatures(e.target.value)}
                         placeholder="e.g. Heavyweight feel, Drop shoulder, Distressed hem"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1154,7 +1154,7 @@ export const AddProduct: React.FC = () => {
                         value={careInstructions}
                         onChange={e => setCareInstructions(e.target.value)}
                         placeholder="e.g. Machine wash cold, lay flat to dry"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
+                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
                       />
                     </div>
 
@@ -1165,7 +1165,7 @@ export const AddProduct: React.FC = () => {
                         <select
                           value={gender}
                           onChange={e => setGender(e.target.value)}
-                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
+                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
                         >
                           <option value="Unisex">Unisex</option>
                           <option value="Men">Men</option>
@@ -1179,7 +1179,7 @@ export const AddProduct: React.FC = () => {
                         <select
                           value={condition}
                           onChange={e => setCondition(e.target.value)}
-                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#C6FF00] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
+                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
                         >
                           <option value="New">New</option>
                           <option value="Like New">Like New</option>
@@ -1202,7 +1202,7 @@ export const AddProduct: React.FC = () => {
                     <button
                       type="button"
                       onClick={goNext}
-                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000]"
+                      className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
                     >
                       <span>Continue</span>
                       <ChevronRight size={14} />
@@ -1227,7 +1227,7 @@ export const AddProduct: React.FC = () => {
                     <div className="bg-[#121212] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl p-4 flex flex-col gap-3 font-sans">
                       <div className="aspect-[4/5] rounded-xl overflow-hidden bg-neutral-900 relative">
                         <img src={images[0]} className="w-full h-full object-cover" alt="" />
-                        <span className="absolute top-3 left-3 bg-[#C6FF00] text-black text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md">
+                        <span className="absolute top-3 left-3 bg-[#25D366] text-black text-[9px] font-black uppercase tracking-wider px-2.5 py-1 rounded-md">
                           {selectedCategory}
                         </span>
                       </div>
@@ -1235,7 +1235,7 @@ export const AddProduct: React.FC = () => {
                       <div className="space-y-1 text-left">
                         <div className="flex justify-between items-start gap-2">
                           <h3 className="text-base font-extrabold tracking-tight text-white leading-tight">{name}</h3>
-                          <span className="text-base font-black text-[#C6FF00] shrink-0">${parseFloat(price || '0').toFixed(2)}</span>
+                          <span className="text-base font-black text-[#25D366] shrink-0">${parseFloat(price || '0').toFixed(2)}</span>
                         </div>
 
                         {/* Specs overview line */}
@@ -1255,7 +1255,7 @@ export const AddProduct: React.FC = () => {
                           </span>
 
                           {material && (
-                            <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-[#C6FF00]/20 px-2 py-0.5 rounded">
+                            <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-[#25D366]/20 px-2 py-0.5 rounded">
                               {material}
                             </span>
                           )}
@@ -1266,7 +1266,7 @@ export const AddProduct: React.FC = () => {
                     {/* Featured Product Toggle */}
                     <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#C6FF00]/10 flex items-center justify-center text-[#C6FF00]">
+                        <div className="w-8 h-8 rounded-full bg-[#25D366]/10 flex items-center justify-center text-[#25D366]">
                           <Sparkles size={16} />
                         </div>
                         <div className="text-left">
@@ -1278,7 +1278,7 @@ export const AddProduct: React.FC = () => {
                         type="button"
                         onClick={() => setIsFeatured(!isFeatured)}
                         className={`w-12 h-6 rounded-full relative transition-all ${
-                          isFeatured ? 'bg-[#C6FF00]' : 'bg-white/10'
+                          isFeatured ? 'bg-[#25D366]' : 'bg-white/10'
                         }`}
                       >
                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-black transition-all ${
@@ -1302,7 +1302,7 @@ export const AddProduct: React.FC = () => {
                       type="button"
                       disabled={publishing}
                       onClick={handlePublishProduct}
-                      className="flex-1 h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-[#C6FF00]/10 cursor-pointer hover:bg-[#b0e000] disabled:opacity-50"
+                      className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000] disabled:opacity-50"
                     >
                       {publishing ? (
                         <>
@@ -1337,7 +1337,7 @@ export const AddProduct: React.FC = () => {
                   initial={{ scale: 0.5, opacity: 0 }}
                   animate={{ scale: [0.5, 1.2, 1], opacity: 1 }}
                   transition={{ delay: 0.1, duration: 0.4 }}
-                  className="w-20 h-20 rounded-full bg-[#C6FF00]/10 border border-[#C6FF00]/30 flex items-center justify-center text-[#C6FF00] mx-auto shadow-lg shadow-[#C6FF00]/10"
+                  className="w-20 h-20 rounded-full bg-[#25D366]/10 border border-[#25D366]/30 flex items-center justify-center text-[#25D366] mx-auto shadow-lg shadow-[#25D366]/10"
                 >
                   <Check size={36} className="stroke-[3]" />
                 </motion.div>
@@ -1362,7 +1362,7 @@ export const AddProduct: React.FC = () => {
                     <h4 className="font-extrabold text-sm leading-tight line-clamp-1 text-white">
                       {name}
                     </h4>
-                    <p className="text-[#C6FF00] font-black text-base leading-none">
+                    <p className="text-[#25D366] font-black text-base leading-none">
                       ${parseFloat(price).toFixed(2)}
                     </p>
                     <span className="text-[9px] text-white/30 uppercase font-mono tracking-wider">{selectedCategory}</span>
@@ -1375,7 +1375,7 @@ export const AddProduct: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="w-full h-12 rounded-xl bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] hover:bg-[#b0e000]"
+                  className="w-full h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] hover:bg-[#b0e000]"
                 >
                   Add another product
                 </button>
@@ -1419,7 +1419,7 @@ export const AddProduct: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowDiscardModal(false)}
-                className="flex-1 h-10 rounded-xl bg-[#C6FF00] text-black text-xs font-bold leading-none cursor-pointer transition-colors"
+                className="flex-1 h-10 rounded-xl bg-[#25D366] text-black text-xs font-bold leading-none cursor-pointer transition-colors"
               >
                 Keep editing
               </button>

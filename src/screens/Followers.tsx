@@ -26,13 +26,13 @@ export const Followers: React.FC = () => {
         className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl border-b px-6 py-4 flex items-center justify-between max-w-[430px] mx-auto bg-[#0d0d0d]/80 border-[#222]"
       >
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-[#C6FF00]">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-[#25D366]">
             <ArrowLeft size={24} />
           </button>
           <h1 className="text-2xl font-pacifico text-white">Followers</h1>
         </div>
         <span 
-          className="px-3 py-1 text-[10px] font-mono font-bold rounded-pill uppercase tracking-wider bg-[#C6FF00]/20 text-[#C6FF00]"
+          className="px-3 py-1 text-[10px] font-mono font-bold rounded-pill uppercase tracking-wider bg-[#25D366]/20 text-[#25D366]"
         >
           {shopFollowers.length}
         </span>

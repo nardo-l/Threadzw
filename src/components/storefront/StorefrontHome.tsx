@@ -1,7 +1,7 @@
 // src/components/storefront/StorefrontHome.tsx
 import React, { useMemo } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, MessageCircle, Heart, Sparkles, Grid } from 'lucide-react';
+import { ArrowRight, MessageCircle, Heart, Sparkles, Grid, Share2 } from 'lucide-react';
 import { ProductImage, ShopLogo, ShopBanner } from '../ui/ShopImage';
 import { parseShopConfig } from '../../utils/configHelper';
 import { useInventory } from '../../context/InventoryContext';
@@ -14,6 +14,7 @@ interface StorefrontHomeProps {
   onToggleWishlist: (productId: string) => void;
   onNavigateToPage: (page: any, params?: any) => void;
   onAddToCartDirectly: (product: any) => void;
+  onShareShop?: () => void;
 }
 
 export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
@@ -22,6 +23,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
   wishlist,
   onToggleWishlist,
   onNavigateToPage,
+  onShareShop,
 }) => {
   // Parse merchant settings
   const shopConfig = useMemo(() => {
@@ -161,22 +163,33 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
           )}
 
           {/* Action Call-to-Actions */}
-          <div className="flex gap-2.5 mt-5 w-full max-w-[290px]">
-            <button
-              onClick={() => onNavigateToPage('shop')}
-              className="flex-grow py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              Browse Catalog <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-            {shop.whatsapp && (
-              <a
-                href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center border border-zinc-200/30 text-center"
+          <div className="flex flex-col gap-2.5 mt-5 w-full max-w-[290px]">
+            <div className="flex gap-2.5 w-full">
+              <button
+                onClick={() => onNavigateToPage('shop')}
+                className="flex-grow py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
-                Message Us
-              </a>
+                Browse Catalog <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              {shop.whatsapp && (
+                <a
+                  href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center border border-zinc-200/30 text-center"
+                >
+                  Message Us
+                </a>
+              )}
+            </div>
+
+            {onShareShop && (
+              <button
+                onClick={onShareShop}
+                className="w-full py-2.5 bg-white hover:bg-zinc-50 text-zinc-700 font-semibold text-xs rounded-xl border border-zinc-200/60 shadow-2xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Share2 className="w-3.5 h-3.5 text-zinc-500" /> Share Shop Link
+              </button>
             )}
           </div>
         </div>

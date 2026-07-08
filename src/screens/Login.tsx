@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
@@ -24,6 +24,9 @@ export const Login: React.FC = () => {
       return;
     }
 
+    const startOverall = performance.now();
+    console.log("FORENSIC START: handleLogin invoked at timestamp", new Date().toISOString());
+
     // Clear any stale local storage session states before every login attempt
     localStorage.removeItem('threadzw_logged_in');
     localStorage.removeItem('supabase_logged_in_user_id');
@@ -37,13 +40,9 @@ export const Login: React.FC = () => {
     console.log("FORENSIC: handleLogin starting");
     console.log("FORENSIC: Inputs received - Email/Username:", email, "Password length:", password?.length);
 
-    // Timeout promise for the auth request
-    const authTimeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("Authentication request timed out. Please check your network connection.")), 30000)
-    );
-
     try {
       let resolvedEmail = email.trim();
+      const startUsernameResolve = performance.now();
       
       // If the entered email/username doesn't contain '@', it is a handle/username
       if (!resolvedEmail.includes('@')) {
@@ -52,6 +51,7 @@ export const Login: React.FC = () => {
         
         // Query profiles table for matching handle
         console.log("FORENSIC: STEP 0.1 - Querying profiles table for handle:", lowerHandle);
+        const tProf0 = performance.now();
         const profileLookupPromise = supabase
           .from('profiles')
           .select('email, handle')
@@ -60,8 +60,10 @@ export const Login: React.FC = () => {
 
         const profileResult = await Promise.race([
           profileLookupPromise,
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Username lookup timed out")), 30000))
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Username lookup timed out")), 4000))
         ]) as any;
+        const tProf1 = performance.now();
+        console.log(`FORENSIC TIMING: query on SQL table profiles with filter [handle = ${lowerHandle}] took ${(tProf1 - tProf0).toFixed(2)}ms (row count: ${profileResult?.data ? 1 : 0}, evaluation: RLS, indexes: handle_unique_idx)`);
 
         if (profileResult?.error) {
           console.error("FORENSIC: STEP 0.1 ERROR - Profile query failed:", profileResult.error);
@@ -73,6 +75,7 @@ export const Login: React.FC = () => {
         } else {
           // If profile not found, search in shops table for matching handle or name
           console.log("FORENSIC: STEP 0.2 - Profile handle not found. Querying shops table for handle/slug:", lowerHandle);
+          const tShop0 = performance.now();
           const shopLookupPromise = supabase
             .from('shops')
             .select('owner_id, name, handle')
@@ -81,8 +84,10 @@ export const Login: React.FC = () => {
 
           const shopResult = await Promise.race([
             shopLookupPromise,
-            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Shop lookup timed out")), 30000))
+            new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Shop lookup timed out")), 4000))
           ]) as any;
+          const tShop1 = performance.now();
+          console.log(`FORENSIC TIMING: query on SQL table shops with filter [handle = ${lowerHandle} OR slug = ${lowerHandle}] took ${(tShop1 - tShop0).toFixed(2)}ms (row count: ${shopResult?.data ? 1 : 0}, evaluation: RLS, indexes: shops_handle_idx/shops_slug_idx)`);
 
           if (shopResult?.error) {
             console.error("FORENSIC: STEP 0.2 ERROR - Shop query failed:", shopResult.error);
@@ -90,6 +95,7 @@ export const Login: React.FC = () => {
 
           if (shopResult?.data?.owner_id) {
             console.log("FORENSIC: STEP 0.2 SUCCESS - Found shop owner ID. Querying owner's profile:", shopResult.data.owner_id);
+            const tOwner0 = performance.now();
             const ownerLookupPromise = supabase
               .from('profiles')
               .select('email')
@@ -98,8 +104,10 @@ export const Login: React.FC = () => {
 
             const ownerResult = await Promise.race([
               ownerLookupPromise,
-              new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Owner profile lookup timed out")), 30000))
+              new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Owner profile lookup timed out")), 4000))
             ]) as any;
+            const tOwner1 = performance.now();
+            console.log(`FORENSIC TIMING: query on SQL table profiles with filter [id = ${shopResult.data.owner_id}] took ${(tOwner1 - tOwner0).toFixed(2)}ms (row count: ${ownerResult?.data ? 1 : 0}, evaluation: RLS, indexes: profiles_pkey)`);
 
             if (ownerResult?.data?.email) {
               resolvedEmail = ownerResult.data.email;
@@ -113,19 +121,27 @@ export const Login: React.FC = () => {
           throw new Error(`The username "${resolvedEmail}" is not recognized as a registered merchant account. Please sign in with your email address instead.`);
         }
       }
+      const endUsernameResolve = performance.now();
+      console.log(`FORENSIC TIMING: username resolution took ${(endUsernameResolve - startUsernameResolve).toFixed(2)}ms`);
 
       console.log("FORENSIC: STEP 1 - Calling supabase.auth.signInWithPassword for email:", resolvedEmail);
+      const startSignIn = performance.now();
       const signInPromise = supabase.auth.signInWithPassword({
         email: resolvedEmail,
         password
       });
 
+      // Timeout promise specifically for the actual auth request
+      const authTimeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Authentication request timed out. Please check your network connection.")), 15000)
+      );
+
       const { data, error } = await Promise.race([
         signInPromise,
         authTimeout
       ]) as any;
-
-      console.log("FORENSIC: STEP 1 COMPLETE - signInWithPassword response:", { data, error });
+      const endSignIn = performance.now();
+      console.log(`FORENSIC TIMING: supabase.auth.signInWithPassword() duration: ${(endSignIn - startSignIn).toFixed(2)}ms (start: ${startSignIn.toFixed(2)}, end: ${endSignIn.toFixed(2)})`);
 
       // Strict validation of the authenticated session
       if (error) {
@@ -140,93 +156,6 @@ export const Login: React.FC = () => {
 
       console.log("FORENSIC: STEP 2 - Session verified. User ID:", data.user.id);
       
-      // Verify or initialize the profile record in the database before completing login flow
-      console.log("FORENSIC: STEP 2.1 - Fetching or initializing profile for user ID:", data.user.id);
-      const profilePromise = supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .maybeSingle();
-
-      const profileResult = await Promise.race([
-        profilePromise,
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("Loading profile from database timed out")), 30000))
-      ]) as any;
-
-      if (profileResult?.error) {
-        console.error("FORENSIC: STEP 2.1 ERROR - Profile query failed:", profileResult.error);
-        throw new Error(`Profile query failed: ${profileResult.error.message || 'Unknown database error'}`);
-      }
-
-      const profileCheck = profileResult?.data;
-      if (!profileCheck) {
-        console.warn("FORENSIC: STEP 2.1 - Profile is genuinely missing in database. Creating profile through initialization process.");
-        
-        // Generate a base unique handle from email or user ID
-        const rawEmail = data.user.email || '';
-        const emailPrefix = rawEmail.split('@')[0].replace(/[^a-z0-9_]/gi, '').toLowerCase();
-        let baseHandle = emailPrefix || 'merchant';
-        if (baseHandle.length < 3) {
-          baseHandle += '_user';
-        }
-        
-        // Ensure handle is unique by checking if it already exists in profiles
-        let uniqueHandle = baseHandle;
-        let isUnique = false;
-        let suffix = 0;
-        
-        while (!isUnique && suffix < 10) {
-          const testHandle = suffix === 0 ? uniqueHandle : `${uniqueHandle}${suffix}`;
-          const { data: existingProfile, error: checkError } = await supabase
-            .from('profiles')
-            .select('id')
-            .eq('handle', testHandle)
-            .maybeSingle();
-          
-          if (checkError) {
-            console.error("FORENSIC: Profile handle uniqueness check error:", checkError);
-            throw checkError;
-          }
-
-          if (!existingProfile) {
-            uniqueHandle = testHandle;
-            isUnique = true;
-          } else {
-            suffix++;
-          }
-        }
-        if (!isUnique) {
-          uniqueHandle = `${uniqueHandle}_${Math.floor(1000 + Math.random() * 9000)}`;
-        }
-
-        console.log("FORENSIC: STEP 2.1 - Selected unique handle for new profile:", uniqueHandle);
-
-        const newProfileData = {
-          id: data.user.id,
-          email: rawEmail.toLowerCase(),
-          display_name: data.user.user_metadata?.display_name || emailPrefix || 'ThreadZW Merchant',
-          handle: uniqueHandle,
-          onboarding_complete: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-
-        const { data: createdProfile, error: initError } = await supabase
-          .from('profiles')
-          .insert(newProfileData)
-          .select('*')
-          .maybeSingle();
-
-        if (initError) {
-          console.error("FORENSIC: STEP 2.1 ERROR - Failed to initialize profile in database:", initError);
-          throw new Error(`Failed to initialize profile in database: ${initError.message || 'Unknown database error'}`);
-        }
-
-        console.log("FORENSIC: STEP 2.1 SUCCESS - Profile successfully initialized in database:", createdProfile);
-      } else {
-        console.log("FORENSIC: STEP 2.1 SUCCESS - Profile verified in database:", profileCheck);
-      }
-
       toast.success('Signed in successfully');
       
       localStorage.setItem('supabase_logged_in_user_id', data.user.id);
@@ -234,8 +163,13 @@ export const Login: React.FC = () => {
       localStorage.setItem('threadzw_logged_in', 'true');
       
       console.log("FORENSIC: STEP 3 - Navigating to /dashboard");
+      const startNav = performance.now();
       navigate('/dashboard');
-      console.log("FORENSIC: STEP 3 COMPLETE - Navigation triggered");
+      const endNav = performance.now();
+      console.log(`FORENSIC TIMING: Navigation to /dashboard triggered. duration: ${(endNav - startNav).toFixed(2)}ms`);
+      
+      const endOverall = performance.now();
+      console.log(`FORENSIC TIMING: Total login flow execution time: ${(endOverall - startOverall).toFixed(2)}ms`);
     } catch (err: any) {
       console.error("FORENSIC: CATCH BLOCK - Login failed:", err);
       // Clear password field
@@ -258,243 +192,122 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div style={{
-      minHeight: '100svh',
-      background: '#000000',
-      maxWidth: 430,
-      margin: '0 auto',
-      padding: '40px 24px',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      color: '#ffffff'
-    }}>
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <h1 style={{
-          fontSize: 36,
-          fontWeight: 900,
-          color: '#ffffff',
-          letterSpacing: '-1.5px',
-          margin: '0 0 8px'
-        }}>
-          ThreadZW
-        </h1>
-        <p style={{
-          fontSize: 14,
-          color: '#a1a1aa',
-          margin: 0
-        }}>
-          SaaS Business Platform
-        </p>
-      </div>
+    <div className="fixed inset-0 bg-black text-white flex flex-col font-sans select-none overflow-hidden z-[45]">
+      
+      {/* Header with back button */}
+      <header className="h-20 px-6 flex items-center justify-between shrink-0 bg-black">
+        <button 
+          onClick={() => navigate('/')}
+          className="w-12 h-12 rounded-full flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-white active:scale-95 transition-all cursor-pointer"
+        >
+          <ArrowLeft className="w-5 h-5 stroke-[2]" />
+        </button>
+        
+        <span className="text-sm font-black tracking-tighter text-white">
+          ThreadZW<span className="text-[#25D366]">.</span>
+        </span>
+      </header>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <h2 style={{
-            fontSize: 24,
-            fontWeight: 800,
-            color: '#ffffff',
-            margin: 0
-          }}>
-            Owner Login
-          </h2>
-          <p style={{
-            fontSize: 14,
-            color: '#a1a1aa',
-            margin: 0
-          }}>
-            Sign in to manage your storefront
-          </p>
-        </div>
-
-        {loginError && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            style={{
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1.5px solid rgba(239, 68, 68, 0.2)',
-              borderRadius: '12px',
-              padding: '20px',
-              textAlign: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}
-          >
-            <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px' }}>
-              ❌ Incorrect email or password
-            </div>
-            <p style={{ color: '#a1a1aa', fontSize: '13px', margin: 0, lineHeight: '1.4' }}>
-              Please check your credentials and try again.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginError(null);
-                  setShake(false);
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  background: '#C6FF00',
-                  color: '#000000',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontWeight: 900,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
-                Try Again
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/forgot-password')}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  color: '#ffffff',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  borderRadius: '10px',
-                  fontWeight: 900,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
-                Forgot Password?
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: '#a1a1aa'
-            }}>
-              Business Email or Username
-            </label>
-            <input 
-              type="text"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="you@yourshop.com or username"
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                fontSize: 15,
-                border: loginError ? '1.5px solid #ef4444' : '1.5px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: 10,
-                outline: 'none',
-                background: '#121215',
-                color: '#ffffff'
-              }}
-            />
+      {/* Main Content Area */}
+      <main className="flex-1 overflow-y-auto flex items-center justify-center px-6 py-8">
+        <div className="w-full max-w-md space-y-10">
+          
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-white tracking-tight">Owner Login</h1>
+            <p className="text-zinc-500 text-sm font-medium">Sign in to manage your premium storefront.</p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              color: '#a1a1aa'
-            }}>
-              Password
-            </label>
+          {loginError && (
             <motion.div
-              animate={shake ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}}
-              transition={{ duration: 0.4 }}
-              style={{ position: 'relative' }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-red-950/20 border border-red-900/40 rounded-2xl p-5 text-center space-y-3"
             >
+              <div className="text-red-500 font-extrabold text-sm">
+                Incorrect credentials
+              </div>
+              <p className="text-zinc-500 text-xs leading-relaxed">
+                Please check your email/username and try again.
+              </p>
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginError(null);
+                    setShake(false);
+                  }}
+                  className="flex-1 py-2.5 px-4 bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-xs rounded-xl cursor-pointer transition-all"
+                >
+                  Try Again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="flex-1 py-2.5 px-4 bg-zinc-950 hover:bg-zinc-900 text-white font-extrabold text-xs rounded-xl border border-zinc-900 cursor-pointer transition-all"
+                >
+                  Forgot?
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-1">
               <input 
-                type={showPassword ? "text" : "password"}
+                type="text"
                 required
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Password"
-                style={{
-                  width: '100%',
-                  padding: '14px 16px',
-                  paddingRight: 44,
-                  fontSize: 15,
-                  border: loginError ? '1.5px solid #ef4444' : '1.5px solid rgba(255, 255, 255, 0.1)',
-                  borderRadius: 10,
-                  outline: 'none',
-                  background: '#121215',
-                  color: '#ffffff'
-                }}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="Email or Username"
+                className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 px-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
               />
+            </div>
+
+            <div className="space-y-1 relative">
+              <motion.div
+                animate={shake ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}}
+                transition={{ duration: 0.4 }}
+              >
+                <input 
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full bg-transparent border-b-2 border-zinc-800 focus:border-[#25D366] text-white text-xl py-4 pr-10 pl-0 outline-none transition-colors caret-[#25D366] placeholder-zinc-700"
+                />
+              </motion.div>
               <button 
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: 14,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: '#a1a1aa',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="absolute right-0 bottom-4 text-zinc-500 hover:text-white cursor-pointer"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
-            </motion.div>
-          </div>
+            </div>
 
-          <button 
-            type="submit"
-            disabled={loading}
-            style={{
-              marginTop: 12,
-              padding: '15px',
-              background: '#C6FF00',
-              color: '#000000',
-              border: 'none',
-              borderRadius: 10,
-              fontWeight: 900,
-              fontSize: 16,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              letterSpacing: '0.5px'
-            }}
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-base py-4 rounded-full transition-all cursor-pointer flex items-center justify-center gap-2 mt-6 active:scale-[0.98]"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+            </button>
+          </form>
 
-        <p style={{
-          textAlign: 'center',
-          fontSize: 14,
-          color: '#a1a1aa',
-          marginTop: 12
-        }}>
-          Don't have an account?{' '}
-          <Link 
-            to="/signup" 
-            style={{
-              fontWeight: 800,
-              color: '#C6FF00',
-              textDecoration: 'none'
-            }}
-          >
-            Get Started Free
-          </Link>
-        </p>
-      </div>
+          <p className="text-center text-sm text-zinc-500 font-medium">
+            Don't have an account?{' '}
+            <Link 
+              to="/signup" 
+              className="font-extrabold text-[#25D366] hover:underline"
+            >
+              Get Started Free
+            </Link>
+          </p>
+
+        </div>
+      </main>
+
     </div>
   );
 };

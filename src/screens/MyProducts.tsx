@@ -152,14 +152,14 @@ export const MyProducts: React.FC = () => {
               <ArrowLeft size={24} />
             </button>
             <h1 className="text-4xl md:text-5xl font-display font-black uppercase italic tracking-tighter leading-none">
-               the <span className="text-[#C6FF00]">vault</span>
+               the <span className="text-[#25D366]">vault</span>
             </h1>
           </div>
           <p className="italic-accent text-lg mt-1">Inventory Management Protocol</p>
         </div>
         <button 
           onClick={() => navigate('/new-listing')}
-          className="w-14 h-14 rounded-full bg-charcoal text-cream flex items-center justify-center shadow-[6px_6px_0_#C6FF00] hover:translate-y-[-2px] transition-all active:scale-95"
+          className="w-14 h-14 rounded-full bg-charcoal text-cream flex items-center justify-center shadow-[6px_6px_0_#25D366] hover:translate-y-[-2px] transition-all active:scale-95"
         >
           <Plus size={28} strokeWidth={3} />
         </button>
@@ -174,9 +174,9 @@ export const MyProducts: React.FC = () => {
               placeholder="Query catalog..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-16 pr-8 text-charcoal placeholder:text-charcoal/20 focus:shadow-[8px_8px_0_#C6FF00] transition-all outline-none italic font-display font-black text-xl uppercase tracking-tighter"
+              className="w-full bg-white border-2 border-charcoal rounded-[24px] py-5 pl-16 pr-8 text-charcoal placeholder:text-charcoal/20 focus:shadow-[8px_8px_0_#25D366] transition-all outline-none italic font-display font-black text-xl uppercase tracking-tighter"
             />
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/30 group-focus-within:text-[#C6FF00] transition-colors" size={24} />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-charcoal/30 group-focus-within:text-[#25D366] transition-colors" size={24} />
           </div>
 
           <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -185,7 +185,7 @@ export const MyProducts: React.FC = () => {
                 key={f}
                 onClick={() => setFilter(f)}
                 className={`px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 ${
-                  filter === f ? 'bg-charcoal text-white border-charcoal shadow-[4px_4px_0_#C6FF00]' : 'bg-transparent border-charcoal/10 text-charcoal/40'
+                  filter === f ? 'bg-charcoal text-white border-charcoal shadow-[4px_4px_0_#25D366]' : 'bg-transparent border-charcoal/10 text-charcoal/40'
                 }`}
               >
                 {f.replace('_', ' ')}
@@ -203,7 +203,7 @@ export const MyProducts: React.FC = () => {
               return (
                 <div 
                   key={product.id}
-                  className={`bg-white rounded-[32px] overflow-hidden border-2 border-charcoal group relative transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[12px_12px_0_#C6FF00] hover:translate-y-[-4px] ${isSoldOut ? 'grayscale' : ''}`}
+                  className={`bg-white rounded-[32px] overflow-hidden border-2 border-charcoal group relative transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[12px_12px_0_#25D366] hover:translate-y-[-4px] ${isSoldOut ? 'grayscale' : ''}`}
                 >
                   <div className="aspect-square bg-cream relative flex items-center justify-center text-4xl overflow-hidden border-b-2 border-charcoal">
                     {product.images?.[0] ? (
@@ -215,7 +215,7 @@ export const MyProducts: React.FC = () => {
                     <div className="absolute top-4 left-4 flex flex-col gap-2">
                       <div className={`oval-sticker !text-[8.5px] border-none !shadow-none ${
                         product.status === 'active' ? '!bg-lime !text-charcoal' : 
-                        product.status === 'paused' ? '!bg-amber-100 !text-amber-700' : '!bg-[#C6FF00] !text-charcoal'
+                        product.status === 'paused' ? '!bg-amber-100 !text-amber-700' : '!bg-[#25D366] !text-charcoal'
                       }`}>
                          {product.status}
                       </div>
@@ -224,7 +224,7 @@ export const MyProducts: React.FC = () => {
                     <div className="absolute inset-0 bg-charcoal/80 flex items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
                       <button 
                         onClick={() => navigate(`/edit-product/${product.id}`)}
-                        className="w-12 h-12 rounded-full bg-cream text-charcoal flex items-center justify-center shadow-[4px_4px_0_#C6FF00] active:scale-95 transition-all"
+                        className="w-12 h-12 rounded-full bg-cream text-charcoal flex items-center justify-center shadow-[4px_4px_0_#25D366] active:scale-95 transition-all"
                       >
                         <Edit2 size={20} />
                       </button>
@@ -233,7 +233,7 @@ export const MyProducts: React.FC = () => {
                           e.stopPropagation();
                           handleDelete(product.id, product.name);
                         }}
-                        className="w-12 h-12 rounded-full bg-[#C6FF00] text-charcoal flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] active:scale-95 transition-all"
+                        className="w-12 h-12 rounded-full bg-[#25D366] text-charcoal flex items-center justify-center shadow-[4px_4px_0_rgba(0,0,0,1)] active:scale-95 transition-all"
                       >
                         <Trash2 size={20} />
                       </button>
@@ -244,7 +244,7 @@ export const MyProducts: React.FC = () => {
                     <div>
                       <h4 className="text-xl font-display font-black uppercase italic tracking-tighter truncate leading-none">{product.name}</h4>
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-2xl font-display font-black text-[#C6FF00] italic tracking-tighter leading-none">${product.price}</span>
+                        <span className="text-2xl font-display font-black text-[#25D366] italic tracking-tighter leading-none">${product.price}</span>
                         <span className="text-[9px] font-black uppercase tracking-widest text-charcoal/30 italic">{totalStock} in base</span>
                       </div>
                     </div>
@@ -267,7 +267,7 @@ export const MyProducts: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-32 h-32 rounded-[40px] bg-white border-2 border-charcoal flex items-center justify-center text-7xl mb-8 shadow-[12px_12px_0_#C6FF00] -rotate-3">
+            <div className="w-32 h-32 rounded-[40px] bg-white border-2 border-charcoal flex items-center justify-center text-7xl mb-8 shadow-[12px_12px_0_#25D366] -rotate-3">
                 📦
             </div>
             <h3 className="text-4xl font-display font-black uppercase italic tracking-tighter leading-none mb-4">Zero Units Found</h3>
@@ -276,7 +276,7 @@ export const MyProducts: React.FC = () => {
             </p>
             <button 
               onClick={() => navigate('/new-listing')}
-              className="h-16 px-12 bg-charcoal text-cream rounded-full font-black uppercase tracking-widest italic shadow-[8px_8px_0_#C6FF00] active:scale-95 transition-all"
+              className="h-16 px-12 bg-charcoal text-cream rounded-full font-black uppercase tracking-widest italic shadow-[8px_8px_0_#25D366] active:scale-95 transition-all"
             >
               Add Product Listing <Plus size={20} className="inline ml-2" />
             </button>

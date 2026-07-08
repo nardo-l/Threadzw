@@ -81,7 +81,7 @@ export const Notifications: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#070709] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-[#C6FF00] border-t-transparent animate-spin" />
+        <div className="w-8 h-8 rounded-full border-2 border-[#25D366] border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -100,7 +100,7 @@ export const Notifications: React.FC = () => {
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono tracking-widest text-[#C6FF00] uppercase font-black uppercase">Live Updates</span>
+              <span className="text-[10px] font-mono tracking-widest text-[#25D366] uppercase font-black uppercase">Live Updates</span>
               {unreadCount > 0 && (
                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
               )}
@@ -113,7 +113,7 @@ export const Notifications: React.FC = () => {
           <div className="flex gap-2">
             <button 
               onClick={handleMarkAllRead} 
-              className="text-[10px] font-black uppercase tracking-wider text-[#C6FF00] hover:underline"
+              className="text-[10px] font-black uppercase tracking-wider text-[#25D366] hover:underline"
             >
               Read All
             </button>
@@ -164,7 +164,7 @@ export const Notifications: React.FC = () => {
                   case 'request':
                     return {
                       icon: <MessageCircle size={15} />,
-                      color: 'bg-amber-500/10 text-[#C6FF00] border-[#C6FF00]/10'
+                      color: 'bg-amber-500/10 text-[#25D366] border-[#25D366]/10'
                     };
                   default:
                     return {
@@ -180,7 +180,7 @@ export const Notifications: React.FC = () => {
                 <div 
                   key={item.id} 
                   className={`bg-white/[0.02] border rounded-2xl p-4 flex gap-4 transition-all ${
-                    item.read ? 'border-white/[0.04]' : 'border-[#C6FF00]/20 bg-[#C6FF00]/[0.01]'
+                    item.read ? 'border-white/[0.04]' : 'border-[#25D366]/20 bg-[#25D366]/[0.01]'
                   }`}
                 >
                   <div className={`w-8 h-8 rounded-lg ${details.color} border flex items-center justify-center shrink-0`}>
@@ -189,11 +189,11 @@ export const Notifications: React.FC = () => {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <h4 className={`text-[13px] font-extrabold text-white leading-tight ${!item.read ? 'text-[#C6FF00]' : ''}`}>
+                      <h4 className={`text-[13px] font-extrabold text-white leading-tight ${!item.read ? 'text-[#25D366]' : ''}`}>
                         {item.title}
                       </h4>
                       {!item.read && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF00] shrink-0" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#25D366] shrink-0" />
                       )}
                     </div>
                     
@@ -211,7 +211,7 @@ export const Notifications: React.FC = () => {
                           onClick={() => {
                             setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, read: true } : n));
                           }}
-                          className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-[#C6FF00] uppercase tracking-widest hover:underline"
+                          className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-[#25D366] uppercase tracking-widest hover:underline"
                         >
                           <Check size={10} />
                           <span>Mark Read</span>

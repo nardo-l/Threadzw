@@ -129,7 +129,7 @@ export const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-[#C6FF00]/30 flex flex-col relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-black text-white selection:bg-[#25D366]/30 flex flex-col relative overflow-hidden font-sans">
       {/* Background Decor */}
       <div className="absolute top-10 right-10 text-white/5 -rotate-12 pointer-events-none"><Star size={120} fill="currentColor" /></div>
       <div className="absolute bottom-10 left-10 text-white/5 rotate-12 pointer-events-none"><Sparkles size={80} fill="currentColor" /></div>
@@ -151,7 +151,7 @@ export const Auth: React.FC = () => {
                 className="relative text-center"
               >
                 <h1 className="text-7xl md:text-8xl font-display font-black tracking-tighter relative text-white uppercase leading-[0.8]">
-                   thread<span className="text-[#C6FF00]">ZW</span>
+                   thread<span className="text-[#25D366]">ZW</span>
                 </h1>
                 <div className="mt-4 text-stone-400 text-sm tracking-wider uppercase font-mono">The Collective Protocol.</div>
               </motion.div>
@@ -160,7 +160,7 @@ export const Auth: React.FC = () => {
             <div className="flex flex-col gap-4 max-w-sm mx-auto w-full mb-12">
               <button 
                 onClick={() => setView('signup')}
-                className="w-full bg-[#C6FF00] hover:bg-[#b5e600] text-black py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition-all active:scale-[0.98]"
+                className="w-full bg-[#25D366] hover:bg-[#b5e600] text-black py-4 rounded-xl font-bold uppercase tracking-wider text-sm transition-all active:scale-[0.98]"
               >
                 Deploy Storefront
               </button>
@@ -174,7 +174,7 @@ export const Auth: React.FC = () => {
               <div className="mt-6 flex flex-col items-center gap-4 text-center">
                 <button 
                   onClick={() => setIsGuest(true)}
-                  className="text-stone-400 hover:text-[#C6FF00] text-xs uppercase tracking-widest font-bold transition-colors"
+                  className="text-stone-400 hover:text-[#25D366] text-xs uppercase tracking-widest font-bold transition-colors"
                 >
                   Guest Access
                 </button>
@@ -207,7 +207,7 @@ export const Auth: React.FC = () => {
                 <h2 className="text-5xl font-display font-black uppercase tracking-tighter mb-2 leading-[0.8] text-white">
                   {view === 'signin' ? 'entry.' : 'setup.'}
                 </h2>
-                <div className="text-xs font-mono tracking-widest text-[#C6FF00] uppercase">Protocol Engagement</div>
+                <div className="text-xs font-mono tracking-widest text-[#25D366] uppercase">Protocol Engagement</div>
               </div>
 
               <form onSubmit={view === 'signin' ? handleSignIn : handleSignUp} className="space-y-5">
@@ -228,7 +228,7 @@ export const Auth: React.FC = () => {
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
                             placeholder="Store Owner"
-                            className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
+                            className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#25D366] transition-all text-white placeholder:text-stone-600 text-sm"
                           />
                         </div>
                       </motion.div>
@@ -246,7 +246,7 @@ export const Auth: React.FC = () => {
                             value={handle}
                             onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
                             placeholder="handle"
-                            className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
+                            className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#25D366] transition-all text-white placeholder:text-stone-600 text-sm"
                           />
                         </div>
                       </motion.div>
@@ -264,7 +264,7 @@ export const Auth: React.FC = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Username or email address"
-                      className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
+                      className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-4 outline-none focus:border-[#25D366] transition-all text-white placeholder:text-stone-600 text-sm"
                     />
                   </div>
                 </div>
@@ -273,7 +273,7 @@ export const Auth: React.FC = () => {
                   <div className="flex justify-between items-center px-1">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-stone-500">Key Phrase</label>
                     {view === 'signin' && (
-                      <Link to="/forgot-password" disable-navigation="true" className="text-[10px] text-stone-400 hover:text-[#C6FF00] transition-colors uppercase font-mono tracking-wider">Reset?</Link>
+                      <Link to="/forgot-password" disable-navigation="true" className="text-[10px] text-stone-400 hover:text-[#25D366] transition-colors uppercase font-mono tracking-wider">Reset?</Link>
                     )}
                   </div>
                   <div className="relative">
@@ -284,12 +284,12 @@ export const Auth: React.FC = () => {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-10 outline-none focus:border-[#C6FF00] transition-all text-white placeholder:text-stone-600 text-sm"
+                      className="w-full bg-[#111] border border-stone-800 rounded-xl py-3.5 pl-11 pr-10 outline-none focus:border-[#25D366] transition-all text-white placeholder:text-stone-600 text-sm"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 hover:text-[#C6FF00] transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-500 hover:text-[#25D366] transition-colors"
                     >
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -310,7 +310,7 @@ export const Auth: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#C6FF00] hover:bg-[#b5e600] text-black py-4 rounded-xl font-bold uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 mt-8 text-sm"
+                  className="w-full bg-[#25D366] hover:bg-[#b5e600] text-black py-4 rounded-xl font-bold uppercase tracking-wider transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 mt-8 text-sm"
                 >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
@@ -325,7 +325,7 @@ export const Auth: React.FC = () => {
                   {view === 'signin' ? 'Zero Account?' : 'Identity Established?'}
                   <button 
                     onClick={() => setView(view === 'signin' ? 'signup' : 'signin')}
-                    className="ml-2 text-white border-b border-[#C6FF00] hover:text-[#C6FF00] transition-colors"
+                    className="ml-2 text-white border-b border-[#25D366] hover:text-[#25D366] transition-colors"
                   >
                     {view === 'signin' ? 'Sign Up' : 'Sign In'}
                   </button>
