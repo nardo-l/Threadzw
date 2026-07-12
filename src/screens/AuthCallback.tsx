@@ -14,51 +14,214 @@ export const AuthCallback: React.FC = () => {
   const { session, loading: authLoading } = useAuth();
   const { hasShop, loading: shopLoading } = useShopContext();
 
-  const token_hash = searchParams.get('token_hash');
-  const type = searchParams.get('type');
-
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [detectedType, setDetectedType] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
     const verifyToken = async () => {
-      if (!token_hash || !type) {
-        console.warn("[AUTH-CALLBACK] URL is missing token_hash or type params.");
+      const currentUrl = window.location.href;
+      const currentSearch = window.location.search;
+      const currentHash = window.location.hash;
+
+      console.log("[AUTH-CALLBACK] Full URL:", currentUrl);
+      console.log("[AUTH-CALLBACK] Search params:", currentSearch);
+      console.log("[AUTH-CALLBACK] Hash fragment:", currentHash);
+
+      const searchParamsObj = new URLSearchParams(currentSearch);
+      const hashParamsObj = new URLSearchParams(currentHash.substring(1));
+
+      // 1. Check for errors forwarded by Supabase to redirect_to
+      const errorParam = searchParamsObj.get('error') || hashParamsObj.get('error');
+      const errorCodeParam = searchParamsObj.get('error_code') || hashParamsObj.get('error_code');
+      const errorDescParam = searchParamsObj.get('error_description') || hashParamsObj.get('error_description');
+
+      if (errorParam || errorDescParam) {
+        const fullErrorMessage = errorDescParam || errorParam || "Verification failed";
+        console.error("[AUTH-CALLBACK] Returned error from Supabase:", {
+          error: errorParam,
+          code: errorCodeParam,
+          description: errorDescParam
+        });
         if (active) {
           setStatus('error');
-          setErrorMessage("This confirmation link is invalid or has expired.");
+          setErrorMessage(fullErrorMessage);
         }
         return;
       }
 
-      try {
-        console.log(`[AUTH-CALLBACK] Verifying OTP. Type: ${type}, Hash: ${token_hash.substring(0, 8)}...`);
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash,
-          type: type as any,
-        });
+      const tokenHashParam = searchParamsObj.get('token_hash');
+      const tokenParam = searchParamsObj.get('token');
+      const typeParam = searchParamsObj.get('type') || hashParamsObj.get('type') || searchParamsObj.get('type_hint');
+      const codeParam = searchParamsObj.get('code');
+      const accessTokenParam = hashParamsObj.get('access_token');
 
-        if (error) {
-          console.error("[AUTH-CALLBACK] verifyOtp call returned an error:", error);
+      console.log("[AUTH-CALLBACK] Extracted params:", {
+        type: typeParam,
+        token_hash: tokenHashParam ? `${tokenHashParam.substring(0, 8)}...` : null,
+        token: tokenParam ? `${tokenParam.substring(0, 8)}...` : null,
+        code: codeParam ? "PRESENT" : null,
+        access_token: accessTokenParam ? "PRESENT" : null
+      });
+
+      if (typeParam) {
+        if (active) {
+          setDetectedType(typeParam);
+        }
+      }
+
+      // CASE A: PKCE flow (Authorization Code Flow) where 'code' parameter is in URL
+      if (codeParam) {
+        console.log("[AUTH-CALLBACK] Detected flow: PKCE auth code exchange");
+        console.log("[AUTH-CALLBACK] Verification method chosen: exchangeCodeForSession");
+        try {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(codeParam);
+          if (error) {
+            console.error("[AUTH-CALLBACK] exchangeCodeForSession returned an error:", error);
+            if (active) {
+              setStatus('error');
+              setErrorMessage(error.message || "Failed to exchange verification code.");
+            }
+            return;
+          }
+          console.log("[AUTH-CALLBACK] exchangeCodeForSession successful. Session acquired:", !!data.session);
+          if (active) {
+            setStatus('success');
+          }
+          return;
+        } catch (err: any) {
+          console.error("[AUTH-CALLBACK] Exception in exchangeCodeForSession:", err);
           if (active) {
             setStatus('error');
-            setErrorMessage(error.message || "This confirmation link is invalid or has expired.");
+            setErrorMessage(err?.message || "An unexpected error occurred during auth code exchange.");
+          }
+          return;
+        }
+      }
+
+      // CASE B: Standard token_hash verification
+      if (tokenHashParam && typeParam) {
+        console.log("[AUTH-CALLBACK] Detected flow: token_hash email confirmation");
+        console.log("[AUTH-CALLBACK] Verification method chosen: verifyOtp with token_hash");
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHashParam,
+            type: typeParam as any,
+          });
+
+          if (error) {
+            console.error("[AUTH-CALLBACK] verifyOtp (token_hash) returned an error:", error);
+            if (active) {
+              setStatus('error');
+              setErrorMessage(error.message || "This confirmation link is invalid or has expired.");
+            }
+            return;
+          }
+
+          console.log("[AUTH-CALLBACK] verifyOtp (token_hash) successful. Returned session:", !!data?.session);
+          if (active) {
+            setStatus('success');
+          }
+          return;
+        } catch (err: any) {
+          console.error("[AUTH-CALLBACK] Exception in verifyOtp (token_hash):", err);
+          if (active) {
+            setStatus('error');
+            setErrorMessage(err?.message || "An unexpected error occurred during confirmation.");
+          }
+          return;
+        }
+      }
+
+      // CASE C: Direct token parameter verification (sometimes used instead of token_hash)
+      if (tokenParam && typeParam) {
+        console.log("[AUTH-CALLBACK] Detected flow: token parameter email confirmation");
+        console.log("[AUTH-CALLBACK] Verification method chosen: verifyOtp with token");
+        try {
+          const { data, error } = await supabase.auth.verifyOtp({
+            token_hash: tokenParam,
+            type: typeParam as any,
+          });
+
+          if (error) {
+            console.error("[AUTH-CALLBACK] verifyOtp (token) returned an error:", error);
+            if (active) {
+              setStatus('error');
+              setErrorMessage(error.message || "This confirmation link is invalid or has expired.");
+            }
+            return;
+          }
+
+          console.log("[AUTH-CALLBACK] verifyOtp (token) successful. Returned session:", !!data?.session);
+          if (active) {
+            setStatus('success');
+          }
+          return;
+        } catch (err: any) {
+          console.error("[AUTH-CALLBACK] Exception in verifyOtp (token):", err);
+          if (active) {
+            setStatus('error');
+            setErrorMessage(err?.message || "An unexpected error occurred during confirmation.");
+          }
+          return;
+        }
+      }
+
+      // CASE D: Implicit Grant (hash fragment containing access_token)
+      if (accessTokenParam) {
+        console.log("[AUTH-CALLBACK] Detected flow: Hash fragment implicit session grant");
+        console.log("[AUTH-CALLBACK] Verification method chosen: wait for session resolution");
+        
+        const { data: { session: checkSession } } = await supabase.auth.getSession();
+        if (checkSession) {
+          console.log("[AUTH-CALLBACK] Session already populated from hash fragment. Returned session: true");
+          if (active) {
+            setStatus('success');
           }
           return;
         }
 
-        console.log("[AUTH-CALLBACK] verifyOtp successful.");
+        // Give it up to 1 second to parse or we can try manually getting it or wait
+        let attempts = 0;
+        const interval = setInterval(async () => {
+          attempts++;
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          if (currentSession) {
+            console.log(`[AUTH-CALLBACK] Session found on attempt ${attempts}. Returned session: true`);
+            clearInterval(interval);
+            if (active) {
+              setStatus('success');
+            }
+          } else if (attempts >= 10) {
+            console.warn("[AUTH-CALLBACK] Access token present but failed to restore session after 1s.");
+            clearInterval(interval);
+            if (active) {
+              setStatus('error');
+              setErrorMessage("Failed to establish session from email confirmation.");
+            }
+          }
+        }, 100);
+        return;
+      }
+
+      // CASE E: Already authenticated
+      const { data: { session: checkSession } } = await supabase.auth.getSession();
+      if (checkSession) {
+        console.log("[AUTH-CALLBACK] Detected flow: Already authenticated session active");
+        console.log("[AUTH-CALLBACK] Verification method chosen: proceed directly");
         if (active) {
           setStatus('success');
         }
-      } catch (err: any) {
-        console.error("[AUTH-CALLBACK] Exception caught in verifyToken:", err);
-        if (active) {
-          setStatus('error');
-          setErrorMessage(err?.message || "An unexpected verification error occurred.");
-        }
+        return;
+      }
+
+      // CASE F: None of the above matching
+      console.warn("[AUTH-CALLBACK] No verification parameters found in URL.");
+      if (active) {
+        setStatus('error');
+        setErrorMessage("Verification link is missing required parameters.");
       }
     };
 
@@ -67,7 +230,7 @@ export const AuthCallback: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [token_hash, type]);
+  }, []);
 
   // Navigate once verification is successful and loading states are settled
   useEffect(() => {
@@ -75,9 +238,9 @@ export const AuthCallback: React.FC = () => {
       return;
     }
 
-    console.log(`[AUTH-CALLBACK] Verification successful, session active: ${!!session}, hasShop: ${hasShop}, type: ${type}`);
+    console.log(`[AUTH-CALLBACK] Verification successful, session active: ${!!session}, hasShop: ${hasShop}, detectedType: ${detectedType}`);
 
-    if (type === 'recovery') {
+    if (detectedType === 'recovery') {
       console.log("[AUTH-CALLBACK] Password recovery detected. Redirecting to /reset-password");
       navigate('/reset-password');
       return;
@@ -93,7 +256,7 @@ export const AuthCallback: React.FC = () => {
       console.log("[AUTH-CALLBACK] Shop found. Redirecting to /dashboard");
       navigate('/dashboard');
     }
-  }, [status, authLoading, shopLoading, session, hasShop, type, navigate]);
+  }, [status, authLoading, shopLoading, session, hasShop, detectedType, navigate]);
 
   return (
     <div className="fixed inset-0 bg-white text-zinc-900 flex flex-col items-center justify-center font-sans select-none overflow-hidden z-[100] selection:bg-[#bef715] selection:text-black">
