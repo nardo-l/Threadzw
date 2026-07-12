@@ -108,8 +108,28 @@ export const SignUp: React.FC = () => {
       }
     } catch (err: any) {
       isSigningUpRef.current = false;
-      console.error("SIGNUP FLOW: Exception caught during sign up:", err);
-      setSignUpError(err?.message || 'Failed to create account. Please try again.');
+      console.error("SIGNUP FLOW: Complete error object caught during sign up:", err);
+      
+      if (err) {
+        if (err.code) {
+          console.error("SIGNUP FLOW: Error code detected:", err.code);
+        }
+        if (err.status) {
+          console.error("SIGNUP FLOW: Error HTTP status code detected:", err.status);
+        }
+        // Log HTTP response body if available on the error object
+        const responseBody = err.response || err.body || (err.headers ? err : null);
+        if (responseBody) {
+          console.error("SIGNUP FLOW: HTTP response/body detected:", responseBody);
+        }
+      }
+
+      const errorMessage = err?.message || 'Failed to create account. Please try again.';
+      setSignUpError(errorMessage);
+      
+      // Toast the precise error message with double line break
+      toast.error(`Sign up failed\n\n${errorMessage}`);
+      
       setLoading(false);
     }
   };

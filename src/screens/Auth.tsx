@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { mapError } from '../lib/utils';
+import { toast } from 'sonner';
 
 export const Auth: React.FC = () => {
   const navigate = useNavigate();
@@ -130,7 +131,22 @@ export const Auth: React.FC = () => {
         });
       }
     } catch (err: any) {
+      console.error("[AUTH-SIGNUP-DEBUG] Complete error object caught:", err);
+      if (err) {
+        if (err.code) {
+          console.error("[AUTH-SIGNUP-DEBUG] Error code:", err.code);
+        }
+        if (err.status) {
+          console.error("[AUTH-SIGNUP-DEBUG] Error HTTP status code:", err.status);
+        }
+        const responseBody = err.response || err.body || (err.headers ? err : null);
+        if (responseBody) {
+          console.error("[AUTH-SIGNUP-DEBUG] HTTP response/body:", responseBody);
+        }
+      }
+      const errorMessage = err?.message || 'Failed to create account. Please try again.';
       setError(mapError(err));
+      toast.error(`Sign up failed\n\n${errorMessage}`);
     } finally {
       if (mounted.current) setLoading(false);
     }
