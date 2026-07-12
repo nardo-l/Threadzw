@@ -3,6 +3,8 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
+import billingRouter from './server/routes/billing';
 
 dotenv.config();
 
@@ -203,6 +205,9 @@ async function startServer() {
       res.json({ success: true, playlistId: playlist.id });
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
+
+  // --- SECURE SERVER-SIDE BILLING (NARDOPAY INTEGRATION) ---
+  app.use('/api/billing', billingRouter);
 
   // --- VITE MIDDLEWARE ---
   if (process.env.NODE_ENV !== 'production') {

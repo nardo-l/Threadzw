@@ -75,7 +75,7 @@ export const ShopProfileView: React.FC = () => {
 
   const followerCount = useMemo(() => {
     if (!shop) return 0;
-    return Math.max(0, (shop.product_count !== undefined ? 2 : 0) + localFollowerAdjust); // Mocked starting with 2 to match mockup
+    return Math.max(0, (shop.follower_count || 0) + localFollowerAdjust);
   }, [shop, localFollowerAdjust]);
 
   const handleFollowToggle = async () => {

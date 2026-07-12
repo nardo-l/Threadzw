@@ -19,6 +19,7 @@ export const AddProduct: React.FC = () => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const replaceFileInputRef = useRef<HTMLInputElement>(null);
 
   const triggerFilePicker = () => {
     fileInputRef.current?.click();
@@ -32,6 +33,9 @@ export const AddProduct: React.FC = () => {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
+  const [productStatus, setProductStatus] = useState<'active' | 'sold_out'>('active');
   const [shopId, setShopId] = useState<string | null>(null);
   const [shopHandle, setShopHandle] = useState<string | null>(null);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
@@ -113,6 +117,14 @@ export const AddProduct: React.FC = () => {
     }
 
     setUploading(true);
+    setUploadProgress(10);
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
+
     const toastId = toast.loading('Uploading photo to secure storage...');
     try {
       for (const file of files) {
@@ -136,14 +148,71 @@ export const AddProduct: React.FC = () => {
 
         setImages(prev => [...prev, publicUrl]);
       }
+      clearInterval(progressInterval);
+      setUploadProgress(100);
       toast.success('Uploaded successfully!', { id: toastId });
     } catch (err: any) {
       console.error('Error uploading image:', err);
       toast.error('Upload failed: ' + err.message, { id: toastId });
     } finally {
+      clearInterval(progressInterval);
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (cameraInputRef.current) cameraInputRef.current.value = '';
+    }
+  };
+
+  const handleReplacePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || replacingIndex === null) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image exceeds maximum size of 5MB.');
+      return;
+    }
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Format not supported. Please use JPG, PNG, or WebP.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(10);
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
+
+    const toastId = toast.loading('Replacing photo in secure storage...');
+    try {
+      const publicUrl = await uploadImage({
+        supabase,
+        file,
+        bucket: 'product-images',
+        folder: 'product',
+        userId: shopId || 'unknown'
+      });
+
+      setImages(prev => {
+        const copy = [...prev];
+        copy[replacingIndex] = publicUrl;
+        return copy;
+      });
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      toast.success('Photo replaced successfully!', { id: toastId });
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Replacement failed: ' + err.message, { id: toastId });
+    } finally {
+      clearInterval(progressInterval);
+      setUploading(false);
+      setUploadProgress(0);
+      setReplacingIndex(null);
+      if (replaceFileInputRef.current) replaceFileInputRef.current.value = '';
     }
   };
 
@@ -403,7 +472,7 @@ export const AddProduct: React.FC = () => {
         total_stock: totalStock,
         is_published: true,
         is_featured: isFeatured,
-        status: totalStock === 0 ? 'sold_out' : 'active',
+        status: productStatus === 'sold_out' ? 'sold_out' : (totalStock === 0 ? 'sold_out' : 'active'),
         created_at: new Date().toISOString()
       };
 
@@ -645,13 +714,26 @@ export const AddProduct: React.FC = () => {
                         isDragOver ? 'border-[#25D366] bg-[#25D366]/5' : 'border-white/10 hover:border-white/20'
                       }`}
                     >
-                      <div className="w-12 h-12 rounded-full bg-white/[0.03] group-hover:bg-[#25D366]/10 flex items-center justify-center text-white/40 group-hover:text-[#25D366] transition-all mb-2 border border-white/5">
-                        <Camera size={20} />
-                      </div>
-                      <span className="text-xs font-bold text-white group-hover:text-[#25D366] transition-colors">
-                        Drag & Drop or Click to Upload
-                      </span>
-                      <p className="text-[10px] text-white/40 mt-1">PNG, JPG, or WebP up to 5MB (Max 6)</p>
+                      {uploading ? (
+                        <div className="w-full max-w-[240px] space-y-3 flex flex-col items-center">
+                          <Loader2 size={24} className="text-[#25D366] animate-spin" />
+                          <span className="text-[11px] font-bold text-white uppercase tracking-wider animate-pulse">Uploading to ThreadZW...</span>
+                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-[#25D366] h-full transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                          <span className="text-[10px] text-[#25D366] font-mono font-black">{uploadProgress}%</span>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="w-12 h-12 rounded-full bg-white/[0.03] group-hover:bg-[#25D366]/10 flex items-center justify-center text-white/40 group-hover:text-[#25D366] transition-all mb-2 border border-white/5">
+                            <Camera size={20} />
+                          </div>
+                          <span className="text-xs font-bold text-white group-hover:text-[#25D366] transition-colors">
+                            Drag & Drop or Click to Upload
+                          </span>
+                          <p className="text-[10px] text-white/40 mt-1">PNG, JPG, or WebP up to 5MB (Max 6)</p>
+                        </>
+                      )}
                     </div>
 
                     <input 
@@ -659,6 +741,14 @@ export const AddProduct: React.FC = () => {
                       ref={fileInputRef}
                       onChange={handleFilesSelected}
                       multiple
+                      className="hidden"
+                      accept="image/*"
+                    />
+
+                    <input 
+                      type="file"
+                      ref={replaceFileInputRef}
+                      onChange={handleReplacePhotoSelected}
                       className="hidden"
                       accept="image/*"
                     />
@@ -676,7 +766,7 @@ export const AddProduct: React.FC = () => {
                               <img src={img} className="w-full h-full object-cover" alt="" />
                               
                               {/* Label badge */}
-                              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-3xs border border-white/10 text-[9px] font-mono text-white/90">
+                              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-3xs border border-white/10 text-[9px] font-mono text-white/90 font-black">
                                 {idx === 0 ? '🏆 Cover' : `#${idx + 1}`}
                               </div>
 
@@ -695,8 +785,22 @@ export const AddProduct: React.FC = () => {
                                   )}
                                   <button
                                     type="button"
+                                    onClick={() => {
+                                      setReplacingIndex(idx);
+                                      setTimeout(() => {
+                                        replaceFileInputRef.current?.click();
+                                      }, 50);
+                                    }}
+                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-[#25D366] hover:text-black text-white flex items-center justify-center border border-white/10 cursor-pointer"
+                                    title="Replace Image"
+                                  >
+                                    <RefreshCw size={11} />
+                                  </button>
+                                  <button
+                                    type="button"
                                     onClick={() => handleRemovePhoto(idx)}
                                     className="w-6 h-6 rounded-md bg-black/80 hover:bg-red-700 text-white flex items-center justify-center border border-white/10 cursor-pointer"
+                                    title="Remove Image"
                                   >
                                     <Trash2 size={12} />
                                   </button>
@@ -1283,6 +1387,30 @@ export const AddProduct: React.FC = () => {
                       >
                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-black transition-all ${
                           isFeatured ? 'left-7 bg-black' : 'left-1 bg-white/60'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* Product Availability Toggle */}
+                    <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#25D366]/10 flex items-center justify-center text-[#25D366]">
+                          <Check size={16} />
+                        </div>
+                        <div className="text-left">
+                          <span className="text-xs font-bold text-white block">Mark as Available</span>
+                          <span className="text-[10px] text-white/40">Disable this to set item as Sold Out.</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProductStatus(productStatus === 'active' ? 'sold_out' : 'active')}
+                        className={`w-12 h-6 rounded-full relative transition-all ${
+                          productStatus === 'active' ? 'bg-[#25D366]' : 'bg-white/10'
+                        }`}
+                      >
+                        <div className={`absolute top-1 w-4 h-4 rounded-full bg-black transition-all ${
+                          productStatus === 'active' ? 'left-7 bg-black' : 'left-1 bg-white/60'
                         }`} />
                       </button>
                     </div>

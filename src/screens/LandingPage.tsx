@@ -45,19 +45,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
   const steps = [
     {
       step: 'Step 1',
-      icon: <Store className="text-[#25D366] w-6 h-6" />,
+      icon: <Store className="text-[#bef715] w-6 h-6" />,
       title: '🏪 Create Your Shop',
       desc: 'Upload your logo and business details in less than 60 seconds.'
     },
     {
       step: 'Step 2',
-      icon: <ShoppingBag className="text-[#25D366] w-6 h-6" />,
+      icon: <ShoppingBag className="text-[#bef715] w-6 h-6" />,
       title: '📦 Add Products',
       desc: 'Upload products, set pricing, and write selling descriptions.'
     },
     {
       step: 'Step 3',
-      icon: <Share2 className="text-[#25D366] w-6 h-6" />,
+      icon: <Share2 className="text-[#bef715] w-6 h-6" />,
       title: '🔗 Share Your Link',
       desc: 'Share your professional ThreadZW shop link on WhatsApp Status, Instagram Bio, or flyers.'
     }
@@ -78,7 +78,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
   const infiniteBrands = [...localBrands, ...localBrands, ...localBrands, ...localBrands];
 
   return (
-    <div className="min-h-screen bg-[#000000] text-[#ffffff] flex flex-col selection:bg-[#25D366] selection:text-black font-sans antialiased overflow-x-hidden">
+    <div className="min-h-screen bg-[#000000] text-[#ffffff] flex flex-col selection:bg-[#bef715] selection:text-black font-sans antialiased overflow-x-hidden">
       
       {/* Dynamic Keyframes for seamless train scroll */}
       <style>{`
@@ -111,9 +111,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
           {/* Logo */}
           <span 
             onClick={() => navigate('/')} 
-            className="text-xl font-black tracking-tighter text-[#25D366] hover:opacity-90 transition-opacity cursor-pointer select-none flex items-center gap-1.5"
+            className="text-xl font-black tracking-tighter text-[#bef715] hover:opacity-90 transition-opacity cursor-pointer select-none flex items-center gap-1.5"
           >
-            <span className="w-2.5 h-2.5 bg-[#25D366] rounded-sm inline-block animate-pulse" />
+            <span className="w-2.5 h-2.5 bg-[#bef715] rounded-sm inline-block animate-pulse" />
             ThreadZW
           </span>
 
@@ -127,7 +127,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             </button>
             <button
               onClick={onStartFree}
-              className="bg-[#25D366] hover:opacity-90 active:scale-[0.98] text-black text-xs font-black px-4.5 py-2.5 rounded-full transition-all cursor-pointer shadow-md shadow-[#25D366]/10 tracking-wide uppercase"
+              className="bg-[#bef715] hover:opacity-90 active:scale-[0.98] text-black text-xs font-black px-4.5 py-2.5 rounded-full transition-all cursor-pointer shadow-md shadow-[#bef715]/10 tracking-wide uppercase"
             >
               Start Free
             </button>
@@ -155,7 +155,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="text-[34px] sm:text-[38px] font-black tracking-tight text-white text-center leading-[1.12] mb-5 select-none"
         >
-          Turn your WhatsApp business into a <span className="text-[#25D366] font-black">real online shop</span> in 5 minutes.
+          Turn your WhatsApp business into a <span className="text-[#bef715] font-black">real online shop</span> in 5 minutes.
         </motion.h1>
 
         {/* Hero Subheadline */}
@@ -177,7 +177,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
         >
           <button
             onClick={onStartFree}
-            className="w-full py-4.5 bg-[#25D366] hover:bg-[#b0e300] active:scale-[0.98] text-black font-black text-sm uppercase rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/15 cursor-pointer font-sans"
+            className="w-full py-4.5 bg-[#bef715] hover:bg-[#b0e300] active:scale-[0.98] text-black font-black text-sm uppercase rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#bef715]/15 cursor-pointer font-sans"
           >
             <span>Start Free</span>
             <ArrowRight size={16} strokeWidth={2.5} />
@@ -190,7 +190,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
       {/* SECTION A — WHO IS THREADZW FOR? */}
       <section className="bg-zinc-950/40 border-y border-zinc-900/50 py-12 overflow-hidden">
         <div className="max-w-[480px] mx-auto px-4 mb-6">
-          <span className="font-mono text-[9px] text-[#25D366] uppercase tracking-[0.25em] font-bold block mb-1">AUDIENCE</span>
+          <span className="font-mono text-[9px] text-[#bef715] uppercase tracking-[0.25em] font-bold block mb-1">AUDIENCE</span>
           <h2 className="text-xl font-black text-white tracking-tight">Who is ThreadZW for?</h2>
           <p className="text-xs text-zinc-500 mt-1">Built specifically for Zimbabwean social sellers & local creators.</p>
         </div>
@@ -221,7 +221,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
       {/* SECTION B — HOW IT WORKS */}
       <section className="px-4 py-16 max-w-[480px] mx-auto w-full">
         <div className="mb-10 text-center">
-          <span className="font-mono text-[9px] text-[#25D366] uppercase tracking-[0.25em] font-bold block mb-1.5">PROCESS</span>
+          <span className="font-mono text-[9px] text-[#bef715] uppercase tracking-[0.25em] font-bold block mb-1.5">PROCESS</span>
           <h2 className="text-2xl font-black text-white tracking-tight">Setup in 3 simple steps</h2>
           <p className="text-xs text-zinc-400 mt-1">Everything you need to launch a beautiful online brand storefront.</p>
         </div>
@@ -240,7 +240,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                 {st.icon}
               </div>
               <div className="space-y-1">
-                <span className="font-mono text-[9px] text-[#25D366] uppercase tracking-wider font-bold block">{st.step}</span>
+                <span className="font-mono text-[9px] text-[#bef715] uppercase tracking-wider font-bold block">{st.step}</span>
                 <h3 className="text-sm font-black text-white">{st.title}</h3>
                 <p className="text-xs text-zinc-400 leading-relaxed font-medium">{st.desc}</p>
               </div>
@@ -253,7 +253,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
       <section className="bg-zinc-950/40 border-y border-zinc-900/50 py-16 px-4">
         <div className="max-w-[480px] mx-auto w-full">
           <div className="text-center mb-10">
-            <span className="font-mono text-[9px] text-[#25D366] uppercase tracking-[0.25em] font-bold block mb-1.5">PRICING</span>
+            <span className="font-mono text-[9px] text-[#bef715] uppercase tracking-[0.25em] font-bold block mb-1.5">PRICING</span>
             <h2 className="text-2xl font-black text-white tracking-tight">Simple Pricing</h2>
             <p className="text-xs text-zinc-400 mt-1">Free to try, budget-friendly to grow.</p>
           </div>
@@ -262,21 +262,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             initial={{ opacity: 0, scale: 0.98 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="bg-zinc-900/60 border-2 border-[#25D366]/20 rounded-3xl p-6 shadow-2xl relative overflow-hidden"
+            className="bg-zinc-900/60 border-2 border-[#bef715]/20 rounded-3xl p-6 shadow-2xl relative overflow-hidden"
           >
             {/* Pop badge */}
-            <div className="absolute top-0 right-0 bg-[#25D366] text-black text-[9px] font-black uppercase px-3.5 py-1.5 rounded-bl-xl tracking-wider select-none">
+            <div className="absolute top-0 right-0 bg-[#bef715] text-black text-[9px] font-black uppercase px-3.5 py-1.5 rounded-bl-xl tracking-wider select-none">
               Most Popular
             </div>
 
-            <span className="font-mono text-[10px] text-[#25D366] uppercase tracking-wider font-black block mb-1">PRO PLAN</span>
+            <span className="font-mono text-[10px] text-[#bef715] uppercase tracking-wider font-black block mb-1">PRO PLAN</span>
             
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-[34px] font-black text-white tracking-tight">$6</span>
               <span className="text-zinc-400 text-sm">/month</span>
             </div>
 
-            <div className="inline-block bg-[#25D366]/10 border border-[#25D366]/15 rounded-lg px-3 py-1 text-[11px] font-bold text-[#25D366] mb-6">
+            <div className="inline-block bg-[#bef715]/10 border border-[#bef715]/15 rounded-lg px-3 py-1 text-[11px] font-bold text-[#bef715] mb-6">
               🎉 7-Day Free Trial
             </div>
 
@@ -289,7 +289,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                 'Featured collections storefront'
               ].map((feat) => (
                 <div key={feat} className="flex items-start gap-3">
-                  <CheckCircle2 size={16} className="text-[#25D366] shrink-0 mt-0.5" />
+                  <CheckCircle2 size={16} className="text-[#bef715] shrink-0 mt-0.5" />
                   <span className="text-xs text-zinc-300 font-semibold">{feat}</span>
                 </div>
               ))}
@@ -297,7 +297,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
 
             <button
               onClick={onStartFree}
-              className="w-full py-4 bg-[#25D366] hover:opacity-95 active:scale-[0.98] text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#25D366]/10"
+              className="w-full py-4 bg-[#bef715] hover:opacity-95 active:scale-[0.98] text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#bef715]/10"
             >
               Start Free Trial
             </button>
@@ -309,7 +309,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
       {/* SECTION D — SOCIAL PROOF */}
       <section className="py-16 overflow-hidden">
         <div className="max-w-[480px] mx-auto px-4 mb-8 text-center">
-          <span className="font-mono text-[9px] text-[#25D366] uppercase tracking-[0.25em] font-bold block mb-1.5">MOMENTUM</span>
+          <span className="font-mono text-[9px] text-[#bef715] uppercase tracking-[0.25em] font-bold block mb-1.5">MOMENTUM</span>
           <h2 className="text-lg font-black text-white tracking-tight">50+ Zimbabwean shops already live 🇿🇼</h2>
         </div>
 
@@ -336,7 +336,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
 
       {/* SECTION E — FINAL CTA */}
       <section className="px-4 py-20 max-w-[480px] mx-auto w-full text-center relative">
-        <div className="absolute inset-0 bg-radial-gradient from-[#25D366]/5 via-transparent to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-radial-gradient from-[#bef715]/5 via-transparent to-transparent pointer-events-none" />
         
         <div className="relative z-10 space-y-6">
           <h2 className="text-[28px] sm:text-[32px] font-black text-white tracking-tight leading-none">
@@ -348,7 +348,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
 
           <button
             onClick={onStartFree}
-            className="w-full max-w-[280px] mx-auto py-4.5 bg-[#25D366] hover:opacity-95 active:scale-[0.98] text-black font-black text-sm uppercase rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-[#25D366]/15"
+            className="w-full max-w-[280px] mx-auto py-4.5 bg-[#bef715] hover:opacity-95 active:scale-[0.98] text-black font-black text-sm uppercase rounded-xl transition-all flex items-center justify-center gap-2 shadow-xl shadow-[#bef715]/15"
           >
             <span>Start Free</span>
             <ArrowRight size={16} strokeWidth={2.5} />

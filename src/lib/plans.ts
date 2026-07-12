@@ -1,4 +1,4 @@
-// THREADZW PRICING: $7/month | 28-day trial — do not change without updating all instances
+// THREADZW PRICING: $7/month | 7-day trial — do not change without updating all instances
 export interface PlanDetails {
   name: string;
   monthly: {
@@ -22,7 +22,7 @@ export const PLANS: Record<string, PlanDetails> = {
 };
 
 export const getPlanAmount = (plan: string, billingCycle: string, isFirstPeriod: boolean) => {
-  // THREADZW PRICING: $7/month | 28-day trial — do not change without updating all instances
+  // THREADZW PRICING: $7/month | 7-day trial — do not change without updating all instances
   return 7.00;
 };
 

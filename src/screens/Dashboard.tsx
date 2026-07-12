@@ -22,11 +22,12 @@ import { getAbsoluteShopUrl } from '../utils/shopUrl';
 import { seedShopProductsIfEmpty } from '../utils/seedData';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { toast } from 'sonner';
+import { Paywall } from './Paywall';
 
 export const Dashboard: React.FC<{ initialLocked?: boolean }> = ({ initialLocked }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { shop, refreshShop, loading: shopLoading, authLoading } = useShopContext();
+  const { user, session, loading: authLoading, subscription } = useAuth();
+  const { shop, refreshShop, loading: shopLoading } = useShopContext();
 
   const [products, setProducts] = useState<any[]>([]);
   const [loadingProds, setLoadingProds] = useState(true);
@@ -174,15 +175,94 @@ export const Dashboard: React.FC<{ initialLocked?: boolean }> = ({ initialLocked
   const defaultAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
   const defaultBanner = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1200&q=80';
 
+  // 1. Session check redirect
+  useEffect(() => {
+    console.log("[FORENSIC-DASHBOARD] Session verification check. authLoading:", authLoading, "hasSession:", !!session);
+    if (!authLoading && !session) {
+      console.log("[FORENSIC-DASHBOARD] Unauthenticated user on dashboard. Redirecting to /login...");
+      navigate('/login');
+    }
+  }, [session, authLoading, navigate]);
+
+  // Handle payment redirect success and refresh state
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    console.log("[FORENSIC-DASHBOARD] URL search params check:", params.toString());
+    if (params.get('payment') === 'success') {
+      toast.success('Your subscription is now active! Welcome back.');
+      setTimeout(() => {
+        window.location.replace('/dashboard');
+      }, 1000);
+    }
+  }, []);
+
+  // 2. Load and verify user subscription/trial
+  const isSubscriptionOrTrialActive = useMemo(() => {
+    console.log("[FORENSIC-DASHBOARD] isSubscriptionOrTrialActive evaluation triggered. hasSession:", !!session, "hasUser:", !!user, "subscriptionData:", subscription);
+    if (!session || !user) {
+      console.log("[FORENSIC-DASHBOARD] Subscription check: false (no session or user).");
+      return false;
+    }
+    if (!subscription) {
+      console.log("[FORENSIC-DASHBOARD] Subscription check: false (subscription object is null or undefined).");
+      return false;
+    }
+
+    const now = new Date();
+    console.log("[FORENSIC-DASHBOARD] Comparing subscription status with current time:", now.toISOString());
+
+    if (subscription.status === 'trial') {
+      const trialEndsAt = subscription.trial_ends_at;
+      console.log("[FORENSIC-DASHBOARD] Subscription is 'trial'. trial_ends_at:", trialEndsAt);
+      if (trialEndsAt) {
+        const parsedTrialEnd = new Date(trialEndsAt);
+        const isValid = !isNaN(parsedTrialEnd.getTime()) && parsedTrialEnd > now;
+        console.log(`[FORENSIC-DASHBOARD] Trial parsed end: ${parsedTrialEnd.toISOString()}, is greater than now: ${isValid}`);
+        if (isValid) {
+          return true;
+        }
+      }
+    }
+
+    if (subscription.status === 'active') {
+      const subEndsAt = subscription.subscription_ends_at;
+      console.log("[FORENSIC-DASHBOARD] Subscription is 'active'. subscription_ends_at:", subEndsAt);
+      if (subEndsAt) {
+        const parsedSubEnd = new Date(subEndsAt);
+        const isValid = !isNaN(parsedSubEnd.getTime()) && parsedSubEnd > now;
+        console.log(`[FORENSIC-DASHBOARD] Subscription parsed end: ${parsedSubEnd.toISOString()}, is greater than now: ${isValid}`);
+        if (isValid) {
+          return true;
+        }
+      }
+    }
+
+    console.log("[FORENSIC-DASHBOARD] Subscription check: false (status is not active trial/sub, or has expired). Status:", subscription.status);
+    return false;
+  }, [subscription, session, user]);
+
+  console.log("[FORENSIC-DASHBOARD] Render checks. shopLoading:", shopLoading, "authLoading:", authLoading, "shopExist:", !!shop, "isSubscriptionOrTrialActive:", isSubscriptionOrTrialActive);
+
   if (shopLoading || authLoading) {
+    console.log(`[FORENSIC-DASHBOARD] Rendering Loading Spinner (Loader2). shopLoading: ${shopLoading}, authLoading: ${authLoading}`);
     return (
       <div className="min-h-screen bg-white text-black flex flex-col items-center justify-center font-sans">
         <Loader2 className="animate-spin text-black w-8 h-8" />
+        <span className="text-xs text-zinc-500 mt-4 font-mono">
+          Loading brand data (shop: {shopLoading ? "loading" : "done"}, auth: {authLoading ? "loading" : "done"})...
+        </span>
       </div>
     );
   }
 
+  // 3. Gatekeeper redirects based on subscription and shop state
+  if (!isSubscriptionOrTrialActive) {
+    console.log("[FORENSIC-DASHBOARD] Redirecting layout to Paywall...");
+    return <Paywall />;
+  }
+
   if (!shop) {
+    console.log("[FORENSIC-DASHBOARD] No shop registered. Displaying Initialize Brand Slot UI.");
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center text-zinc-950 p-8 space-y-8 text-center font-sans">
         <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400">

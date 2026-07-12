@@ -95,10 +95,18 @@ export const Auth: React.FC = () => {
         return;
       }
       
+      const redirectUrl =
+        window.location.hostname === 'localhost'
+          ? 'http://localhost:5173/auth/confirm'
+          : 'https://threadzw.vercel.app/auth/confirm';
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password: password,
-        options: { data: { display_name: displayName.trim(), handle: cleanHandle } }
+        options: { 
+          data: { display_name: displayName.trim(), handle: cleanHandle },
+          emailRedirectTo: redirectUrl
+        }
       });
       
       if (signUpError) {

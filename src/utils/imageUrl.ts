@@ -4,7 +4,7 @@ import { SUPABASE_URL } from '../lib/supabase';
 const getBaseSupabaseUrl = (): string => {
   let val = SUPABASE_URL || '';
   if (!val) {
-    val = (import.meta.env?.VITE_SUPABASE_URL) || "https://dxfnoswvuhqvhyofcain.supabase.co";
+    val = (import.meta.env?.VITE_SUPABASE_URL) || "https://placeholder-please-configure-supabase-url.supabase.co";
   }
   if (val.endsWith('/')) {
     val = val.slice(0, -1);
@@ -21,12 +21,6 @@ export const getImageUrl = (
   if (!path) return null;
   
   let finalPath = path.trim();
-
-  // Rewrite legacy project references if they occur
-  if (finalPath.includes('oadahfyoxfbisqqdtttz.supabase.co')) {
-    const activeBase = getBaseSupabaseUrl();
-    finalPath = finalPath.replace(/https:\/\/oadahfyoxfbisqqdtttz\.supabase\.co/gi, activeBase);
-  }
 
   // Already a full URL, blob URL, or base64 data URL
   if (finalPath.startsWith('http') || finalPath.startsWith('blob:') || finalPath.startsWith('data:')) return finalPath;

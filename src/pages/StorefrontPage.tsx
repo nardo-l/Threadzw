@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, ShoppingBag, Search, Home, Grid, Heart, User, ShieldAlert, ArrowRight, MapPin, Copy, Clock, Truck, MessageSquare, Map, Compass, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
-import { DEFAULT_MOCK_CATEGORIES } from '../utils/storefrontData';
 import { parseShopConfig } from '../utils/configHelper';
 import { 
   trackStoreView, 
@@ -31,16 +30,6 @@ import { StorefrontAbout } from '../components/storefront/StorefrontAbout';
 import { StorefrontContact } from '../components/storefront/StorefrontContact';
 import { CartItem, StorefrontPageType } from '../components/storefront/types';
 import { ShopLogo } from '../components/ui/ShopImage';
-
-const withTimeout = <T,>(promise: any, timeoutMs: number, fallbackValue: T): Promise<T> => {
-  return Promise.race([
-    Promise.resolve(promise),
-    new Promise<T>((resolve) => setTimeout(() => {
-      console.warn(`[TIMEOUT WARN] Query timed out after ${timeoutMs}ms. Using fallback.`);
-      resolve(fallbackValue);
-    }, timeoutMs))
-  ]);
-};
 
 export const StorefrontPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -236,63 +225,52 @@ export const StorefrontPage: React.FC = () => {
       }
 
       // Query core Supabase database by slug
-      const { data: dbShop } = await withTimeout(
-        supabase
-          .from('shops')
-          .select('*')
-          .eq('slug', cleanSlug)
-          .maybeSingle(),
-        3000,
-        { data: null, error: null }
-      );
+      let { data: dbShop, error: shopErr1 } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('slug', cleanSlug)
+        .maybeSingle();
+
+      if (shopErr1) {
+        console.error("Supabase Error querying shops by slug:", shopErr1);
+        throw shopErr1;
+      }
 
       let shopResult = dbShop;
       if (!shopResult) {
         // Fallback search handle
-        const { data: altShop } = await withTimeout(
-          supabase
-            .from('shops')
-            .select('*')
-            .ilike('handle', cleanSlug)
-            .maybeSingle(),
-          2000,
-          { data: null, error: null }
-        );
+        const { data: altShop, error: shopErr2 } = await supabase
+          .from('shops')
+          .select('*')
+          .ilike('handle', cleanSlug)
+          .maybeSingle();
+        
+        if (shopErr2) {
+          console.error("Supabase Error querying shops by handle:", shopErr2);
+          throw shopErr2;
+        }
         shopResult = altShop;
       }
 
       if (!shopResult) {
         // Fallback search by ID
-        const { data: shopById } = await withTimeout(
-          supabase
-            .from('shops')
-            .select('*')
-            .eq('id', slug)
-            .maybeSingle(),
-          2000,
-          { data: null, error: null }
-        );
+        const { data: shopById, error: shopErr3 } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('id', slug)
+          .maybeSingle();
+
+        if (shopErr3) {
+          console.error("Supabase Error querying shops by ID:", shopErr3);
+          throw shopErr3;
+        }
         shopResult = shopById;
       }
 
       if (!shopResult) {
-        // Safe fallbacks to keep live URL functional with realistic mock properties
-        const nameWord = cleanSlug.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        shopResult = {
-          id: 'shop-' + cleanSlug,
-          name: nameWord.includes('Shop') || nameWord.includes('Brand') ? nameWord : `${nameWord} Streetwear`,
-          slug: cleanSlug,
-          handle: cleanSlug,
-          location: "Available Online Across Zimbabwe",
-          description: `Premium Zimbabwe boutique ${nameWord}. Beautiful modern clothes, styled local accents. Built from ethically sourced materials.`,
-          whatsapp: "263776223144",
-          logo_url: null,
-          banner_url: null,
-          hours: "Mon-Sat 8:30am - 6:00pm",
-          landmark: "",
-          directions: "",
-          online_only: false
-        };
+        setError('not_found');
+        setLoading(false);
+        return;
       }
 
       if (shopResult) {
@@ -308,28 +286,30 @@ export const StorefrontPage: React.FC = () => {
       document.title = `${shopResult.name} | Storefront`;
 
       // Fetch dynamic categories
-      const { data: dbCats } = await withTimeout(
-        supabase
-          .from('categories')
-          .select('*')
-          .eq('shop_id', shopResult.id)
-          .order('sort_order', { ascending: true }),
-        2000,
-        { data: null, error: null }
-      );
+      const { data: dbCats, error: catsErr } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('shop_id', shopResult.id)
+        .order('sort_order', { ascending: true });
 
-      setCategories(dbCats && dbCats.length > 0 ? dbCats : DEFAULT_MOCK_CATEGORIES.filter(c => c.id !== 'all'));
+      if (catsErr) {
+        console.error("Supabase Error querying categories:", catsErr);
+        throw catsErr;
+      }
+
+      setCategories(dbCats || []);
 
       // Fetch dynamic products
-      const { data: dbProducts } = await withTimeout(
-        supabase
-          .from('products')
-          .select('*')
-          .eq('shop_id', shopResult.id)
-          .neq('status', 'deleted'),
-        2000,
-        { data: null, error: null }
-      );
+      const { data: dbProducts, error: prodsErr } = await supabase
+        .from('products')
+        .select('*')
+        .eq('shop_id', shopResult.id)
+        .neq('status', 'deleted');
+
+      if (prodsErr) {
+        console.error("Supabase Error querying products:", prodsErr);
+        throw prodsErr;
+      }
 
       const mapped = (dbProducts || []).map((p: any) => ({
         ...p,
@@ -915,14 +895,14 @@ export const StorefrontPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-100 text-zinc-900 flex justify-center font-sans antialiased overflow-x-hidden selection:bg-green-100 selection:text-green-800">
+    <div className="storefront-root min-h-screen bg-zinc-50 text-zinc-900 flex justify-center font-sans antialiased overflow-x-hidden selection:bg-[#bef715] selection:text-black">
       {/* Centered Mobile Frame container on desktop */}
       <div className="w-full max-w-[480px] bg-white min-h-screen flex flex-col relative border-x border-zinc-200/60 shadow-xl relative select-none">
         
         {/* THREADZW BRAND GREEN BANNER */}
         <div 
           onClick={() => navigate('/')}
-          className="bg-green-600 hover:bg-green-700 text-white py-1.5 px-4 text-[10px] font-bold tracking-wider uppercase text-center cursor-pointer transition-all flex items-center justify-center gap-1 select-none font-sans"
+          className="bg-[#bef715] hover:opacity-90 text-black py-1.5 px-4 text-[10px] font-bold tracking-wider uppercase text-center cursor-pointer transition-all flex items-center justify-center gap-1 select-none font-sans"
         >
           <span>Powered by ThreadZW 💚</span>
         </div>
@@ -940,7 +920,7 @@ export const StorefrontPage: React.FC = () => {
 
           <span 
             onClick={() => navigateToPage('home')}
-            className="font-bold text-base tracking-tight font-sans text-zinc-900 hover:text-green-600 cursor-pointer"
+            className="font-bold text-base tracking-tight font-sans text-zinc-900 hover:text-zinc-700 cursor-pointer"
           >
             {shop.name}
           </span>
@@ -949,7 +929,7 @@ export const StorefrontPage: React.FC = () => {
             <button 
               type="button" 
               onClick={handleShareShop}
-              className="p-1.5 text-zinc-700 hover:text-green-600 transition-colors cursor-pointer animate-pulse-subtle"
+              className="p-1.5 text-zinc-700 hover:text-zinc-900 transition-colors cursor-pointer"
               title="Share Shop"
             >
               <Share2 className="w-5 h-5 stroke-[2.5]" />
@@ -958,7 +938,7 @@ export const StorefrontPage: React.FC = () => {
             <button 
               type="button" 
               onClick={() => navigateToPage('shop')}
-              className="p-1.5 text-zinc-700 hover:text-green-600 transition-colors cursor-pointer"
+              className="p-1.5 text-zinc-700 hover:text-zinc-900 transition-colors cursor-pointer"
               title="Search catalog"
             >
               <Search className="w-5 h-5 stroke-[2.5]" />
@@ -967,12 +947,12 @@ export const StorefrontPage: React.FC = () => {
             <button 
               type="button" 
               onClick={() => navigateToPage('cart')}
-              className="p-1.5 text-zinc-700 hover:text-green-600 transition-colors cursor-pointer relative"
+              className="p-1.5 text-zinc-700 hover:text-zinc-900 transition-colors cursor-pointer relative"
               title="View Cart"
             >
               <ShoppingBag className="w-5 h-5 stroke-[2.5]" />
               {cart.length > 0 && (
-                <div className="absolute top-0 right-0 bg-green-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                <div className="absolute -top-1 -right-1 bg-[#bef715] text-black text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                   {cart.reduce((s, i) => s + i.quantity, 0)}
                 </div>
               )}
@@ -1031,47 +1011,51 @@ export const StorefrontPage: React.FC = () => {
         <nav className="fixed bottom-4 left-4 right-4 max-w-[448px] mx-auto bg-white/95 backdrop-blur-md border border-zinc-150/80 h-16 rounded-2xl z-40 flex justify-between items-center px-3 select-none shadow-lg">
           <button
             onClick={() => navigateToPage('home')}
-            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer ${
-              activePage === 'home' ? 'text-green-600 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
+            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer transition-colors ${
+              activePage === 'home' ? 'text-zinc-900 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
             }`}
           >
             <Home className="w-5 h-5" />
             <span className="text-[10px]">Home</span>
+            {activePage === 'home' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
           </button>
 
           <button
             onClick={() => navigateToPage('shop')}
-            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer ${
-              activePage === 'shop' ? 'text-green-600 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
+            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer transition-colors ${
+              activePage === 'shop' ? 'text-zinc-900 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
             }`}
           >
             <Grid className="w-5 h-5" />
             <span className="text-[10px]">Shop</span>
+            {activePage === 'shop' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
           </button>
 
           <button
             onClick={() => navigateToPage('cart')}
-            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer relative ${
-              activePage === 'cart' ? 'text-green-600 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
+            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer relative transition-colors ${
+              activePage === 'cart' ? 'text-zinc-900 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
             }`}
           >
             <ShoppingBag className="w-5 h-5" />
             {cart.length > 0 && (
-              <div className="absolute top-1 right-5 bg-green-600 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+              <div className="absolute top-1 right-5 bg-[#bef715] text-black text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                 {cart.reduce((s, i) => s + i.quantity, 0)}
               </div>
             )}
             <span className="text-[10px]">Cart</span>
+            {activePage === 'cart' && <div className="w-1 h-1 rounded-full bg-[#bef715] mt-0.5" />}
           </button>
 
           <button
             onClick={() => navigateToPage('account')}
-            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer ${
-              activePage === 'account' ? 'text-green-600 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
+            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer transition-colors ${
+              activePage === 'account' ? 'text-zinc-900 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
             }`}
           >
             <User className="w-5 h-5" />
             <span className="text-[10px]">Account</span>
+            {activePage === 'account' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
           </button>
         </nav>
 

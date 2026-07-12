@@ -525,9 +525,8 @@ export const Inventory: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    if (confirm(`Are you sure you want to delete ${selectedProduct.name}?`)) {
-                      handleDeleteProduct(selectedProduct.id);
-                    }
+                    setShowDeleteModal(selectedProduct.id);
+                    setSelectedProduct(null);
                   }}
                   className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors"
                 >
@@ -540,6 +539,57 @@ export const Inventory: React.FC = () => {
                 </button>
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center px-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteModal(null)}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            />
+            
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-sm bg-zinc-950 border border-zinc-800 rounded-3xl p-6 z-10 shadow-2xl text-center"
+            >
+              <div className="w-12 h-12 bg-red-950/40 border border-red-900/50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={24} />
+              </div>
+              
+              <h3 className="font-sans font-bold text-base text-white uppercase tracking-tight italic">Delete Listing?</h3>
+              <p className="text-zinc-400 text-xs mt-2 leading-relaxed font-medium">
+                Are you sure you want to delete this listing? This action is permanent and cannot be undone.
+              </p>
+              
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowDeleteModal(null)}
+                  className="flex-1 py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 font-bold text-[11px] uppercase tracking-wider rounded-xl cursor-pointer transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteProduct(showDeleteModal)}
+                  disabled={deletingId === showDeleteModal}
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-[11px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-55"
+                >
+                  {deletingId === showDeleteModal ? (
+                    <Loader2 className="animate-spin" size={13} />
+                  ) : (
+                    <span>Delete</span>
+                  )}
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

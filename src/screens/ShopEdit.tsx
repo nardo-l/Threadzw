@@ -622,6 +622,7 @@ export const ShopEdit = () => {
         slug: slugify(handle),
         description: serializedDescription,
         categories,
+        category: categories[0] || 'Other',
         location: onlineOnly ? null : area,
         whatsapp_number: `+263${cleanWhatsapp}`,
         banner_url: cleanBanner,
@@ -747,11 +748,24 @@ export const ShopEdit = () => {
   const handleDeleteShop = async () => {
     try {
       setSaving(true);
-      // Cancel subscription
-      await supabase.from('subscriptions')
-        .update({ status: 'cancelled' })
-        .eq('shop_id', shopId)
-        .eq('owner_id', user.id);
+      
+      // Cancel subscription securely on the backend
+      try {
+        const { data: { session: activeSession } } = await supabase.auth.getSession();
+        const token = activeSession?.access_token;
+        if (token) {
+          await fetch('/api/billing/cancel-subscription', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ shopId })
+          });
+        }
+      } catch (subCancelErr) {
+        console.error('Failed to cancel subscription during shop deletion:', subCancelErr);
+      }
 
       // Mark products as deleted
       await supabase.from('products')
@@ -824,10 +838,10 @@ export const ShopEdit = () => {
       {showCustomOverlayToast && (
         <div id="custom-overlay-toast" className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce cursor-pointer flex items-center justify-center w-[calc(100%-32px)] max-w-[398px]">
           <div style={{
-            background: 'rgba(198, 255, 0,0.12)',
-            border: '1px solid rgba(198, 255, 0,0.25)',
+            background: 'rgba(190, 247, 21,0.12)',
+            border: '1px solid rgba(190, 247, 21,0.25)',
             borderRadius: '10px',
-            color: '#25D366',
+            color: '#bef715',
             fontSize: '13px',
             padding: '12px 16px'
           }} className="font-extrabold shadow-[0_4px_24px_rgba(0,0,0,0.9)] flex items-center gap-2 w-full justify-center">
@@ -1669,7 +1683,7 @@ export const ShopEdit = () => {
               ? '#10b981'
               : saving
                 ? '#1f2937'
-                : '#25D366',
+                : '#bef715',
             color: saveSuccess || saving
               ? '#ffffff'
               : '#000000',

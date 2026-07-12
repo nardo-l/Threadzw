@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  X, ArrowLeft, Plus, Trash2, Camera, Sparkles, Check, ChevronRight, Loader2, ChevronDown, Search
+  X, ArrowLeft, Plus, Trash2, Camera, Sparkles, Check, ChevronRight, Loader2, ChevronDown, Search, RefreshCw
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
@@ -17,9 +17,14 @@ interface SizeStock {
 }
 
 export const EditProduct: React.FC = () => {
-  const { productId } = useParams<{ productId: string }>();
+  const { id } = useParams<{ id: string }>();
+  const productId = id;
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch Global Categories
+  const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
 
   // States
   const [loading, setLoading] = useState(true);
@@ -29,6 +34,9 @@ export const EditProduct: React.FC = () => {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
+  const [productStatus, setProductStatus] = useState<'active' | 'sold_out'>('active');
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -131,6 +139,7 @@ export const EditProduct: React.FC = () => {
         setImages(product.images || []);
         setIsFeatured(product.is_featured || false);
         setIsVisible(product.is_published ?? true);
+        setProductStatus(product.status || 'active');
 
         // Pre-populate sizes
         const categoryName = product.category || 'Clothing';
@@ -197,6 +206,14 @@ export const EditProduct: React.FC = () => {
     }
 
     setUploading(true);
+    setUploadProgress(10);
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
+
     const toastId = toast.loading('Uploading catalog photo drop...');
     try {
       for (const file of files) {
@@ -220,13 +237,70 @@ export const EditProduct: React.FC = () => {
 
         setImages(prev => [...prev, publicUrl]);
       }
+      clearInterval(progressInterval);
+      setUploadProgress(100);
       toast.success('Photos added!', { id: toastId });
     } catch (err: any) {
       console.error(err);
       toast.error('Upload failed: ' + err.message, { id: toastId });
     } finally {
+      clearInterval(progressInterval);
       setUploading(false);
+      setUploadProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleReplacePhotoSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || replacingIndex === null) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image exceeds maximum size of 5MB.');
+      return;
+    }
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Format not supported. Please use JPG, PNG, or WebP.');
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(10);
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
+
+    const toastId = toast.loading('Replacing photo in secure storage...');
+    try {
+      const publicUrl = await uploadImage({
+        supabase,
+        file,
+        bucket: 'product-images',
+        folder: 'product',
+        userId: shopId || 'unknown'
+      });
+
+      setImages(prev => {
+        const copy = [...prev];
+        copy[replacingIndex] = publicUrl;
+        return copy;
+      });
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      toast.success('Photo replaced successfully!', { id: toastId });
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Replacement failed: ' + err.message, { id: toastId });
+    } finally {
+      clearInterval(progressInterval);
+      setUploading(false);
+      setUploadProgress(0);
+      setReplacingIndex(null);
+      if (replaceFileInputRef.current) replaceFileInputRef.current.value = '';
     }
   };
 
@@ -368,7 +442,7 @@ export const EditProduct: React.FC = () => {
       const updatePayload = {
         name: name.trim(),
         price: parseFloat(price),
-        category: null,
+        category: loadedCategory || null,
         description: description.trim() || null,
         images,
         sizes: configuredSizes,
@@ -376,7 +450,7 @@ export const EditProduct: React.FC = () => {
         total_stock: totalStock,
         is_published: isVisible,
         is_featured: isFeatured,
-        status: totalStock === 0 ? 'sold_out' : 'active',
+        status: productStatus === 'sold_out' ? 'sold_out' : (totalStock === 0 ? 'sold_out' : 'active'),
         updated_at: new Date().toISOString(),
         ...(ownerId ? { owner_id: ownerId } : {})
       };
@@ -440,9 +514,9 @@ export const EditProduct: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center justify-center p-6 gap-3">
-        <Loader2 className="w-10 h-10 text-zinc-800 animate-spin" />
-        <span className="text-xs font-mono tracking-widest text-zinc-600 uppercase animate-pulse font-black">
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center p-6 gap-3">
+        <Loader2 className="w-10 h-10 text-[#bef715] animate-spin" />
+        <span className="text-xs font-mono tracking-widest text-zinc-400 uppercase animate-pulse font-black">
           Fetching listing context...
         </span>
       </div>
@@ -450,29 +524,29 @@ export const EditProduct: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-zinc-800 font-sans overflow-hidden select-none relative flex flex-col justify-between edit-product-light">
+    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-y-auto select-none relative flex flex-col justify-between">
       
       {/* 3px Neon Progress Bar at topmost */}
-      <div className="fixed top-0 left-0 right-0 h-[3px] bg-zinc-250 z-50">
+      <div className="fixed top-0 left-0 right-0 h-[3px] bg-white/10 z-50">
         <div 
-          className="h-full bg-[#25D366] transition-all duration-300"
+          className="h-full bg-[#bef715] transition-all duration-300"
           style={{ width: `${(step / 4) * 100}%` }}
         />
       </div>
 
       {/* CORE HEADER */}
-      <div className="h-16 px-5 flex items-center justify-between border-b border-zinc-150 bg-white z-40 relative font-sans">
+      <div className="h-16 px-5 flex items-center justify-between border-b border-white/[0.08] bg-[#0a0a0a] z-40 relative font-sans">
         <div className="flex items-center gap-3">
           {step > 1 && (
             <button 
               type="button"
               onClick={goBack}
-              className="p-2 -ml-2 text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer"
+              className="p-2 -ml-2 text-white/60 hover:text-white transition-colors cursor-pointer"
             >
               <ArrowLeft size={20} />
             </button>
           )}
-          <span className="text-zinc-850 text-[11px] font-extrabold tracking-[2px] uppercase font-mono">
+          <span className="text-white text-[11px] font-extrabold tracking-[2px] uppercase font-mono">
             EDITING PRODUCT
           </span>
         </div>
@@ -481,12 +555,12 @@ export const EditProduct: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowDiscardModal(true)}
-            className="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-zinc-950 transition-colors cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center text-white/60 hover:text-white transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         ) : (
-          <span className="text-zinc-400 text-[10px] font-mono tracking-widest font-black uppercase">
+          <span className="text-white/60 text-[10px] font-mono tracking-widest font-black uppercase">
             Step {step} of 4
           </span>
         )}
@@ -533,15 +607,31 @@ export const EditProduct: React.FC = () => {
                           {img ? (
                             <div className="w-full h-full relative rounded-xl overflow-hidden border border-white/10">
                               <img src={img} className="w-full h-full object-cover" alt="" />
-                              <button
-                                type="button"
-                                onClick={() => handleRemovePhoto(index)}
-                                className="absolute top-1 right-1 w-6 h-6 rounded-[6px] bg-black/75 hover:bg-black text-white hover:text-[#25D366] transition-colors flex items-center justify-center text-[11px] font-bold z-10 cursor-pointer"
-                              >
-                                ×
-                              </button>
+                              <div className="absolute top-1 right-1 flex gap-1 z-10">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setReplacingIndex(index);
+                                    setTimeout(() => {
+                                      replaceFileInputRef.current?.click();
+                                    }, 50);
+                                  }}
+                                  className="w-5 h-5 rounded-[4px] bg-black/85 hover:bg-[#bef715] text-white hover:text-black transition-colors flex items-center justify-center cursor-pointer"
+                                  title="Replace photo"
+                                >
+                                  <RefreshCw size={10} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemovePhoto(index)}
+                                  className="w-5 h-5 rounded-[4px] bg-black/85 hover:bg-red-600 text-white transition-colors flex items-center justify-center text-[10px] font-bold cursor-pointer"
+                                  title="Remove photo"
+                                >
+                                  ×
+                                </button>
+                              </div>
                               {isCover && (
-                                <div className="absolute bottom-1 left-1.5 right-1.5 bg-black/80 backdrop-blur-xs py-0.5 rounded text-center text-[8px] uppercase tracking-wider text-[#25D366] font-black pointer-events-none">
+                                <div className="absolute bottom-1 left-1.5 right-1.5 bg-black/80 backdrop-blur-xs py-0.5 rounded text-center text-[8px] uppercase tracking-wider text-[#bef715] font-black pointer-events-none">
                                   Cover
                                 </div>
                               )}
@@ -551,7 +641,7 @@ export const EditProduct: React.FC = () => {
                               type="button"
                               onClick={triggerFilePicker}
                               disabled={uploading}
-                              className="w-full h-full bg-white/[0.04] border-[1.5px] border-dashed border-white/[0.15] hover:border-[#25D366]/40 rounded-xl flex items-center justify-center transition-all cursor-pointer hover:bg-white/[0.06] active:scale-[0.97]"
+                              className="w-full h-full bg-white/[0.04] border-[1.5px] border-dashed border-white/[0.15] hover:border-[#bef715]/40 rounded-xl flex items-center justify-center transition-all cursor-pointer hover:bg-white/[0.06] active:scale-[0.97]"
                             >
                               <Plus size={24} className="text-white/30" />
                             </button>
@@ -560,6 +650,18 @@ export const EditProduct: React.FC = () => {
                       );
                     })}
                   </div>
+
+                  {uploading && (
+                    <div className="bg-white/[0.02] border border-white/[0.08] rounded-xl p-4 space-y-2 font-mono">
+                      <div className="flex justify-between text-[10px] font-black text-[#bef715]">
+                        <span className="uppercase tracking-wider">Syncing secure assets...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-[#bef715] h-full transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+                      </div>
+                    </div>
+                  )}
 
                   <div className="text-center">
                     <span className="text-[12px] text-white/35 font-medium leading-none inline-flex items-center gap-1.5 justify-center">
@@ -576,13 +678,21 @@ export const EditProduct: React.FC = () => {
                     className="hidden" 
                   />
 
+                  <input 
+                    type="file" 
+                    ref={replaceFileInputRef} 
+                    accept="image/jpeg,image/png,image/webp" 
+                    onChange={handleReplacePhotoSelected} 
+                    className="hidden" 
+                  />
+
                   {/* BOTTOM ACTION CTA */}
                   <div className="pt-2">
                     <button
                       type="button"
                       disabled={!isScreen1Valid || uploading}
                       onClick={goNext}
-                      className="w-full h-12 rounded-[10px] bg-[#25D366] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                      className="w-full h-12 rounded-[10px] bg-[#bef715] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] hover:bg-[#a9db10]"
                     >
                       {uploading ? (
                         <>
@@ -621,7 +731,7 @@ export const EditProduct: React.FC = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="e.g. Cargo Pants"
-                        className="w-full text-lg font-bold bg-white border-[1.5px] border-white/10 focus:border-[#25D366] rounded-[10px] px-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
+                        className="w-full text-lg font-bold bg-white border-[1.5px] border-white/10 focus:border-[#bef715] rounded-[10px] px-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
                       />
                     </div>
 
@@ -638,7 +748,7 @@ export const EditProduct: React.FC = () => {
                           value={price}
                           onChange={(e) => setPrice(e.target.value)}
                           placeholder="0"
-                          className="w-full text-xl font-black bg-white border-[1.5px] border-white/10 focus:border-[#25D366] rounded-[10px] pl-10 pr-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
+                          className="w-full text-xl font-black bg-white border-[1.5px] border-white/10 focus:border-[#bef715] rounded-[10px] pl-10 pr-4 py-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all"
                         />
                       </div>
                     </div>
@@ -658,7 +768,7 @@ export const EditProduct: React.FC = () => {
                               onClick={() => setSelectedTag(tg)}
                               className={`flex-1 text-[13px] font-bold py-2 border rounded-[8px] text-center transition-all cursor-pointer ${
                                 isSelected 
-                                  ? 'bg-[#25D366]/10 border-[#25D366] text-[#25D366]' 
+                                  ? 'bg-[#bef715]/10 border-[#bef715] text-[#bef715]' 
                                   : 'bg-white/[0.05] border-white/10 text-white/50 hover:text-white'
                               }`}
                             >
@@ -676,7 +786,7 @@ export const EditProduct: React.FC = () => {
                     type="button"
                     disabled={!isScreen2Valid}
                     onClick={goNext}
-                    className="w-full h-12 rounded-[10px] bg-[#25D366] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                    className="w-full h-12 rounded-[10px] bg-[#bef715] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] hover:bg-[#a9db10]"
                   >
                     <span>Next</span>
                     <ChevronRight size={16} strokeWidth={3} />
@@ -705,7 +815,7 @@ export const EditProduct: React.FC = () => {
                             min={0}
                             value={generalStock}
                             onChange={(e) => setGeneralStock(e.target.value)}
-                            className="w-20 h-9 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[15px] text-center focus:outline-none focus:ring-1 focus:ring-[#25D366]"
+                            className="w-20 h-9 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[15px] text-center focus:outline-none focus:ring-1 focus:ring-[#bef715]"
                           />
                         </div>
                       </div>
@@ -721,7 +831,7 @@ export const EditProduct: React.FC = () => {
                                 .map(([sz, v]) => (
                                   <div
                                     key={`selected-size-chip-${sz}`}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] text-black font-extrabold rounded-full text-xs font-sans shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#bef715] text-black font-extrabold rounded-full text-xs font-sans shadow-sm"
                                   >
                                     <span>{sz} • {v.stock}</span>
                                     <button
@@ -739,7 +849,7 @@ export const EditProduct: React.FC = () => {
 
                         {/* Available Sizes title & Horizontally scrollable row of size chips */}
                         <div className="space-y-2">
-                          <span className="text-[11px] uppercase tracking-[1.5px] text-[#25D366] font-bold block">
+                          <span className="text-[11px] uppercase tracking-[1.5px] text-[#bef715] font-bold block">
                             Available Sizes ({loadedCategory})
                           </span>
                           
@@ -757,9 +867,9 @@ export const EditProduct: React.FC = () => {
                                   }}
                                   className={`flex-shrink-0 min-w-12 h-12 rounded-xl border flex items-center justify-center font-extrabold text-sm transition-all relative ${
                                     isEditing 
-                                      ? 'border-[#25D366] bg-[#25D366]/10 text-[#25D366] scale-95'
+                                      ? 'border-[#bef715] bg-[#bef715]/10 text-[#bef715] scale-95'
                                       : isActive 
-                                        ? 'border-[#25D366] bg-zinc-900 text-[#25D366]' 
+                                        ? 'border-[#bef715] bg-zinc-900 text-[#bef715]' 
                                         : 'border-white/[0.08] bg-white/[0.03] text-white/70 hover:bg-white/[0.06] hover:text-white'
                                   }`}
                                 >
@@ -783,14 +893,14 @@ export const EditProduct: React.FC = () => {
                         {/* Custom Size Dialog Input inside workflow */}
                         {showCustomSizeInput && (
                           <div className="p-4 bg-zinc-950/80 border border-zinc-800 rounded-xl space-y-3 font-sans">
-                            <span className="text-[12px] font-extrabold text-[#25D366] uppercase block">Add Custom Size</span>
+                            <span className="text-[12px] font-extrabold text-[#bef715] uppercase block">Add Custom Size</span>
                             <div className="flex gap-2">
                               <input
                                 type="text"
                                 value={customSizeName}
                                 onChange={(e) => setCustomSizeName(e.target.value)}
                                 placeholder="e.g. XXL, US 12, EU 46"
-                                className="flex-1 text-xs bg-black text-white font-bold border border-zinc-800 rounded-lg px-3 py-2 outline-none focus:border-[#25D366] placeholder:text-zinc-600"
+                                className="flex-1 text-xs bg-black text-white font-bold border border-zinc-800 rounded-lg px-3 py-2 outline-none focus:border-[#bef715] placeholder:text-zinc-600"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     e.preventDefault();
@@ -801,7 +911,7 @@ export const EditProduct: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={handleAddCustomSizeName}
-                                className="bg-[#25D366] text-black text-xs font-black px-4 py-2 rounded-lg hover:opacity-90"
+                                className="bg-[#bef715] text-black text-xs font-black px-4 py-2 rounded-lg hover:opacity-90"
                               >
                                 Add
                               </button>
@@ -818,10 +928,10 @@ export const EditProduct: React.FC = () => {
 
                         {/* Stock Quantity Input for chosen size */}
                         {activeSizeEditing && (
-                          <div className="p-4 bg-zinc-900 border border-[#25D366]/30 rounded-xl space-y-3 font-sans">
+                          <div className="p-4 bg-zinc-900 border border-[#bef715]/30 rounded-xl space-y-3 font-sans">
                             <div className="flex justify-between items-center">
                               <span className="text-[13px] font-black text-white">
-                                Enter Stock Quantity for <span className="text-[#25D366] font-black">{activeSizeEditing}</span>
+                                Enter Stock Quantity for <span className="text-[#bef715] font-black">{activeSizeEditing}</span>
                               </span>
                               <button
                                 type="button"
@@ -837,7 +947,7 @@ export const EditProduct: React.FC = () => {
                                 min={1}
                                 value={tempStockInput}
                                 onChange={(e) => setTempStockInput(e.target.value)}
-                                className="w-24 h-10 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[16px] text-center focus:outline-none focus:border-[#25D366]"
+                                className="w-24 h-10 rounded-lg bg-black border border-zinc-800 text-white font-extrabold text-[16px] text-center focus:outline-none focus:border-[#bef715]"
                                 placeholder="15"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
@@ -849,7 +959,7 @@ export const EditProduct: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={handleConfirmStock}
-                                className="h-10 bg-[#25D366] text-black text-xs font-black px-5 rounded-lg hover:opacity-90 flex items-center justify-center gap-1.5"
+                                className="h-10 bg-[#bef715] text-black text-xs font-black px-5 rounded-lg hover:opacity-90 flex items-center justify-center gap-1.5"
                               >
                                 <Check size={14} strokeWidth={3} />
                                 Confirm
@@ -863,7 +973,7 @@ export const EditProduct: React.FC = () => {
                     {/* Colors swatches */}
                     <div className="space-y-4 pt-1">
                       <div>
-                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#25D366] block mb-2 font-sans">
+                        <label className="text-[11.5px] font-bold uppercase tracking-[1.5px] text-[#bef715] block mb-2 font-sans">
                           Colours selection (Tap to toggle)
                         </label>
                         <div className="flex flex-wrap gap-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
@@ -910,12 +1020,12 @@ export const EditProduct: React.FC = () => {
                             value={customColorText}
                             onChange={(e) => setCustomColorText(e.target.value)}
                             placeholder="Type custom colour name (e.g. Acid Lime)..."
-                            className="flex-grow text-[13px] font-medium bg-black border border-[#25D366]/40 focus:border-[#25D366] rounded-lg px-3.5 py-2.5 text-white placeholder-zinc-500 outline-none outline-0"
+                            className="flex-grow text-[13px] font-medium bg-black border border-[#bef715]/40 focus:border-[#bef715] rounded-lg px-3.5 py-2.5 text-white placeholder-zinc-500 outline-none outline-0"
                           />
                           <button
                             type="button"
                             onClick={handleAddCustomColor}
-                            className="px-4 bg-[#25D366] text-black font-extrabold text-xs uppercase rounded-lg hover:opacity-90 cursor-pointer font-sans"
+                            className="px-4 bg-[#bef715] text-black font-extrabold text-xs uppercase rounded-lg hover:opacity-90 cursor-pointer font-sans"
                           >
                             Add
                           </button>
@@ -930,7 +1040,7 @@ export const EditProduct: React.FC = () => {
                             {selectedColors.map((colName) => (
                               <div
                                 key={`active-col-${colName}`}
-                                className="flex items-center gap-1.5 px-2.5 py-1 bg-[#25D366]/10 border border-[#25D366]/20 text-[#25D366] rounded-full text-xs font-semibold"
+                                className="flex items-center gap-1.5 px-2.5 py-1 bg-[#bef715]/10 border border-[#bef715]/20 text-[#bef715] rounded-full text-xs font-semibold"
                               >
                                 <span>{colName}</span>
                                 <button
@@ -957,7 +1067,7 @@ export const EditProduct: React.FC = () => {
                         type="button"
                         onClick={() => setIsVisible(!isVisible)}
                         className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                          isVisible ? 'bg-[#25D366] border-[#25D366]' : 'bg-white/5 border-white/10'
+                          isVisible ? 'bg-[#bef715] border-[#bef715]' : 'bg-white/5 border-white/10'
                         }`}
                       >
                         <div 
@@ -975,7 +1085,7 @@ export const EditProduct: React.FC = () => {
                     type="button"
                     disabled={!isScreen3Valid}
                     onClick={goNext}
-                    className="w-full h-12 rounded-[10px] bg-[#25D366] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98]"
+                    className="w-full h-12 rounded-[10px] bg-[#bef715] disabled:bg-neutral-800 text-black disabled:text-zinc-500 font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-[0.98] hover:bg-[#a9db10]"
                   >
                     <span>Next</span>
                     <ChevronRight size={16} strokeWidth={3} />
@@ -1003,7 +1113,7 @@ export const EditProduct: React.FC = () => {
                       )}
                       
                       {selectedTag !== 'None' && (
-                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/85 border border-white/10 rounded text-[7px] font-black uppercase tracking-wider text-[#25D366]">
+                        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/85 border border-white/10 rounded text-[7px] font-black uppercase tracking-wider text-[#bef715]">
                           {selectedTag}
                         </div>
                       )}
@@ -1016,7 +1126,7 @@ export const EditProduct: React.FC = () => {
                             {name || 'Product name'}
                           </h4>
                         </div>
-                        <p className="text-[#25D366] font-black text-[16px] leading-none">
+                        <p className="text-[#bef715] font-black text-[16px] leading-none">
                           ${parseFloat(price) ? parseFloat(price) : '0'}
                         </p>
                       </div>
@@ -1051,7 +1161,7 @@ export const EditProduct: React.FC = () => {
                       onChange={(e) => setDescription(e.target.value.substring(0, 300))}
                       rows={3}
                       placeholder="Describe the material, fit, or styling tips..."
-                      className="w-full text-sm bg-white border-[1.5px] border-white/10 focus:border-[#25D366] rounded-[10px] p-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all leading-normal resize-none font-semibold"
+                      className="w-full text-sm bg-white border-[1.5px] border-white/10 focus:border-[#bef715] rounded-[10px] p-3.5 text-zinc-950 placeholder-zinc-400 outline-none focus:outline-none transition-all leading-normal resize-none font-semibold"
                     />
                   </div>
 
@@ -1065,7 +1175,7 @@ export const EditProduct: React.FC = () => {
                       type="button"
                       onClick={() => setIsFeatured(!isFeatured)}
                       className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                        isFeatured ? 'bg-[#25D366] border-[#25D366]' : 'bg-white/5 border-white/10'
+                        isFeatured ? 'bg-[#bef715] border-[#bef715]' : 'bg-white/5 border-white/10'
                       }`}
                     >
                       <div 
@@ -1076,12 +1186,33 @@ export const EditProduct: React.FC = () => {
                     </button>
                   </div>
 
+                  {/* Product Availability Toggle */}
+                  <div className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl pb-3.5 font-sans">
+                    <div className="space-y-0.5">
+                      <span className="text-[13px] font-bold text-white block">✅ Mark as Available</span>
+                      <p className="text-white/35 text-[11px] leading-tight">Disable this to set item as Sold Out</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProductStatus(productStatus === 'active' ? 'sold_out' : 'active')}
+                      className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
+                        productStatus === 'active' ? 'bg-[#bef715] border-[#bef715]' : 'bg-white/5 border-white/10'
+                      }`}
+                    >
+                      <div 
+                        className={`w-5.5 h-5 rounded-[6px] transition-all bg-black ${
+                          productStatus === 'active' ? 'translate-x-5.5' : 'translate-x-0 bg-white/20'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
                   {/* ACTION CTA BLOCK */}
                   <button
                     type="button"
                     disabled={saving}
                     onClick={handleSaveChanges}
-                    className="w-full min-h-[52px] h-[52px] rounded-[10px] bg-[#25D366] text-black font-extrabold text-[16px] uppercase tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-[0_8px_24px_rgba(198, 255, 0,0.25)] pt-1"
+                    className="w-full min-h-[52px] h-[52px] rounded-[10px] bg-[#bef715] text-black font-extrabold text-[16px] uppercase tracking-wide flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-[0_8px_24px_rgba(190, 247, 21,0.25)] pt-1 hover:bg-[#a9db10]"
                   >
                     {saving ? (
                       <>
@@ -1115,7 +1246,7 @@ export const EditProduct: React.FC = () => {
                   initial={{ scale: 0 }}
                   animate={{ scale: [0, 1.1, 1] }}
                   transition={{ duration: 0.5, ease: 'easeOut' }}
-                  className="w-[100px] h-[100px] rounded-full border-2 border-[#25D366] bg-[#25D366]/10 flex items-center justify-center text-[#25D366]"
+                  className="w-[100px] h-[100px] rounded-full border-2 border-[#bef715] bg-[#bef715]/10 flex items-center justify-center text-[#bef715]"
                 >
                   <Check size={48} className="stroke-[3]" />
                 </motion.div>
@@ -1141,7 +1272,7 @@ export const EditProduct: React.FC = () => {
                     <h4 className="font-extrabold text-[15px] leading-tight line-clamp-1 text-white">
                       {name}
                     </h4>
-                    <p className="text-[#25D366] font-black text-[18px] leading-none">
+                    <p className="text-[#bef715] font-black text-[18px] leading-none">
                       ${price}
                     </p>
 
@@ -1166,7 +1297,7 @@ export const EditProduct: React.FC = () => {
                       navigate('/inventory');
                     }
                   }}
-                  className="w-full h-12 rounded-[10px] bg-[#25D366] text-black font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center transition-all cursor-pointer active:scale-[0.98]"
+                  className="w-full h-12 rounded-[10px] bg-[#bef715] text-black font-extrabold text-[15px] uppercase tracking-wide flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] hover:bg-[#a9db10]"
                 >
                   View on storefront
                 </button>
@@ -1210,7 +1341,7 @@ export const EditProduct: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowDiscardModal(false)}
-                className="flex-1 h-10 rounded-[10px] bg-[#25D366] text-black font-bold leading-none cursor-pointer transition-all"
+                className="flex-1 h-10 rounded-[10px] bg-[#bef715] text-black font-bold leading-none cursor-pointer transition-all"
               >
                 Keep editing
               </button>

@@ -62,6 +62,11 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
     return '';
   }, [shop, shopConfig]);
 
+  // Filter out unpublished products
+  const visibleProducts = useMemo(() => {
+    return products.filter(p => p.is_published !== false);
+  }, [products]);
+
   // Highlights Carousel Info matching redesign specifications
   const highlightCards = useMemo(() => {
     const cards: { icon: string; title: string; desc: string; bg: string; visible: boolean }[] = [];
@@ -237,14 +242,15 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
           </button>
         </div>
 
-        {products.length === 0 ? (
+        {visibleProducts.length === 0 ? (
           <div className="py-12 text-center bg-zinc-50 rounded-2xl border border-dashed border-zinc-200">
             <p className="text-zinc-400 text-xs">No active catalog items available.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3.5">
-            {products.slice(0, 12).map((p, pIdx) => {
+            {visibleProducts.slice(0, 12).map((p, pIdx) => {
               const isWishlisted = wishlist.includes(p.id);
+              const isSoldOut = p.status === 'sold_out' || p.total_stock <= 0;
               return (
                 <motion.div 
                   key={p.id}
@@ -271,6 +277,13 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                       <span className="absolute bottom-2 left-2 bg-red-500 text-white text-[8px] font-extrabold px-1.5 py-0.5 rounded-md">
                         SALE
                       </span>
+                    )}
+                    {isSoldOut && (
+                      <div className="absolute inset-0 bg-white/75 backdrop-blur-xs flex items-center justify-center">
+                        <span className="text-[9px] font-bold tracking-wider text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-md shadow-2xs">
+                          SOLD OUT
+                        </span>
+                      </div>
                     )}
                   </div>
 

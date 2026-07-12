@@ -6,12 +6,14 @@ import {
   FileText, Globe, Percent
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 import { getShopStatus } from '../utils/shopStatus';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [shop, setShop] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [conversionRate, setConversionRate] = useState<number>(() => {
@@ -48,7 +50,7 @@ export const Settings: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       navigate('/');
       toast.success('Logged out successfully');
     } catch (err) {

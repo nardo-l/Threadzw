@@ -26,6 +26,7 @@ export interface Shop {
   monthly_price: number;
   is_live: boolean;
   product_count: number;
+  follower_count?: number;
   total_sales: number;
   view_count: number;
   created_at: string;

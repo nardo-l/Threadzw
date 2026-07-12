@@ -101,7 +101,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
 
   // Process & Filter Products
   const filteredProducts = useMemo(() => {
-    let result = [...products];
+    let result = products.filter(p => p.is_published !== false);
 
     // 1. Filter by search query
     if (searchQuery.trim()) {

@@ -305,56 +305,41 @@ export const AdminLeads: React.FC = () => {
 
   const handleApproveClaim = async (claim: any) => {
     try {
-      const nowStr = new Date().toISOString();
-      const endRenewal = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString();
-
-      // 1. Get associated shop details
+      // Get associated shop details
       const targetShop = shops.find(s => s.id === claim.shop_id);
       if (!targetShop) {
         toast.error("Associated shop not found.");
         return;
       }
 
-      // 2. Update Shop in database
-      const { error: shopErr } = await supabase
-        .from('shops')
-        .update({
-          subscription_status: 'active',
-          trial_ends_at: endRenewal,
-          subscription_start: nowStr,
-          subscription_end: endRenewal,
-          is_live: true,
-          manual_lock: false,
-          payment_overdue_flagged: false
-        })
-        .eq('id', claim.shop_id);
-
-      if (shopErr) {
-        console.warn("DB Update failed, using fallback:", shopErr);
+      const { data: { session: activeSession } } = await supabase.auth.getSession();
+      const token = activeSession?.access_token;
+      
+      if (!token) {
+        toast.error("Authentication session expired.");
+        return;
       }
 
-      // 3. Try to update payment_claims in DB
-      try {
-        await supabase
-          .from('payment_claims')
-          .update({ status: 'verified' })
-          .eq('shop_id', claim.shop_id);
-      } catch (e) {
-        console.warn("Could not update payment_claims status");
-      }
+      // Call secure backend endpoint
+      const response = await fetch('/api/billing/admin/approve-claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ claim })
+      });
 
-      // 4. Try to update payments in DB
-      try {
-        await supabase
-          .from('payments')
-          .update({ status: 'verified' })
-          .eq('shop_id', claim.shop_id);
-      } catch (e) {
-        console.warn("Could not update payments status");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Server rejected claim approval');
       }
 
       // Update local storage representation for any user simulation compatibility
       try {
+        const nowStr = new Date().toISOString();
+        const endRenewal = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString();
         const syncedShop = {
           ...targetShop,
           subscription_status: 'active',
@@ -384,29 +369,37 @@ export const AdminLeads: React.FC = () => {
       fetchShopsAndClaims();
     } catch (err: any) {
       console.error(err);
-      toast.error("Failed to approve claim");
+      toast.error(err.message || "Failed to approve claim");
     }
   };
 
   const handleRejectClaim = async (claim: any) => {
     try {
       const targetShop = shops.find(s => s.id === claim.shop_id);
-      
-      // Update payment_claims
-      try {
-        await supabase
-          .from('payment_claims')
-          .update({ status: 'rejected' })
-          .eq('id', claim.id);
-      } catch (e) {}
 
-      // Update payments
-      try {
-        await supabase
-          .from('payments')
-          .update({ status: 'rejected' })
-          .eq('id', claim.id);
-      } catch (e) {}
+      const { data: { session: activeSession } } = await supabase.auth.getSession();
+      const token = activeSession?.access_token;
+      
+      if (!token) {
+        toast.error("Authentication session expired.");
+        return;
+      }
+
+      // Call secure backend endpoint
+      const response = await fetch('/api/billing/admin/reject-claim', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ claim })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Server rejected claim rejection request');
+      }
 
       // Update local storage
       try {
@@ -424,7 +417,7 @@ export const AdminLeads: React.FC = () => {
       fetchShopsAndClaims();
     } catch (err: any) {
       console.error(err);
-      toast.error("Failed to reject claim");
+      toast.error(err.message || "Failed to reject claim");
     }
   };
   
@@ -665,7 +658,7 @@ export const AdminLeads: React.FC = () => {
                           <button
                             onClick={() => {
                               const whatsappPhone = shop.whatsapp?.replace(/\D/g, '') || '';
-                              const prefilledMsg = `Hi ${shop.name}! Your ThreadZW shop trial has ended. Keep your shop live for $7/month — send $7 to EcoCash 0776 223 144 and tap 'I've Paid' in your dashboard. — ThreadZW 🇿🇼`;
+                              const prefilledMsg = `Hi ${shop.name}! Your ThreadZW shop subscription has ended. Keep your shop live for $7/month — pay $7 USD via NardoPay in your dashboard. — ThreadZW 🇿🇼`;
                               window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(prefilledMsg)}`, '_blank');
                             }}
                             className="w-full h-11 bg-[#C6FF00] text-black hover:bg-[#b5e600] rounded-xl text-xs uppercase tracking-wider font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-md shadow-[#C6FF00]/10"

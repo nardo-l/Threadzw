@@ -5,8 +5,10 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 const appStartTime = performance.now();
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
-import { OnboardingFlow } from './screens/OnboardingFlow';
+import { SignUp } from './screens/SignUp';
 import { BuildingScreen } from './screens/BuildingScreen';
+import { AuthCallback } from './screens/AuthCallback';
+import { ResetPassword } from './screens/ResetPassword';
 import { Dashboard } from './screens/Dashboard';
 import { AddProduct } from './screens/AddProduct';
 import { EditProduct } from './screens/EditProduct';
@@ -32,12 +34,11 @@ import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
-import { ForgotPassword } from './screens/ForgotPassword';
-import { ResetPassword } from './screens/ResetPassword';
 import { MaintenanceOverlay } from './components/MaintenanceOverlay';
+import { NardoPayCheckout } from './screens/NardoPayCheckout';
 
 
-type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory';
+type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout';
 
 const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
@@ -60,6 +61,9 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   if (path === '/setup') {
     return { stage: 'setup' };
   }
+  if (path.startsWith('/checkout')) {
+    return { stage: 'checkout' };
+  }
   
   // Match /product/:id
   const productMatch = pathname.match(/^\/product\/([a-z0-9_-]+)$/i);
@@ -74,7 +78,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 's', 'shop', 'store'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -151,7 +155,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -239,18 +243,43 @@ function AppContent() {
   }, [hasInitialized]);
 
   const setAppStage = async (stage: AppStage) => {
+    console.log(`[FORENSIC-ROUTE-STAGE] setAppStage called. Target stage: "${stage}", current stage: "${appStageRef.current}"`);
     appStageRef.current = stage;
     setAppStageState(stage);
+    
     // Synced path push
-    if (stage === 'landing') navigate('/');
-    else if (stage === 'building') navigate('/building');
-    else if (stage === 'onboarding') navigate('/signup');
+    if (stage === 'landing') {
+      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to landing page: /");
+      navigate('/');
+    }
+    else if (stage === 'building') {
+      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to building: /building");
+      navigate('/building');
+    }
+    else if (stage === 'onboarding') {
+      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to onboarding signup: /signup");
+      navigate('/signup');
+    }
     else if (stage === 'dashboard') {
+      console.log("[FORENSIC-ROUTE-STAGE] Preparing dashboard stage. Calling refreshShop()...");
+      const t0 = performance.now();
       await refreshShop();
+      const t1 = performance.now();
+      console.log(`[FORENSIC-ROUTE-STAGE] refreshShop() finished in ${(t1 - t0).toFixed(2)}ms. Navigating to /dashboard...`);
       navigate('/dashboard');
     }
-    else if (stage === 'admin') navigate('/admin');
-    else if (stage === 'setup') navigate('/setup');
+    else if (stage === 'admin') {
+      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to admin: /admin");
+      navigate('/admin');
+    }
+    else if (stage === 'setup') {
+      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to setup: /setup");
+      navigate('/setup');
+    }
+    else if (stage === 'checkout') {
+      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to checkout: /checkout/nardopay");
+      navigate('/checkout/nardopay');
+    }
   };
 
   const isDashboardSubPath = useMemo(() => {
@@ -275,14 +304,20 @@ function AppContent() {
 
   // Route protection and syncing
   useEffect(() => {
-    if (loading) return;
+    const path = location.pathname.toLowerCase();
+    console.log("[FORENSIC-ROUTE-GUARD] Route Sync Effect triggered. Path:", path, "authLoading:", loading, "shopLoading:", shopLoading, "hasShop:", hasShop, "isPublicShopPath:", isPublicShopPath, "loggedIn:", !!session, "appStage:", appStageRef.current);
+
+    if (loading) {
+      console.log("[FORENSIC-ROUTE-GUARD] Auth loading in progress, returning.");
+      return;
+    }
     
     // Allow public routes
     if (isPublicShopPath) {
+      console.log("[FORENSIC-ROUTE-GUARD] Public shop path. Sync bypassed.");
       return;
     }
 
-    const path = location.pathname.toLowerCase();
     if (
       path === '' ||
       path === '/' ||
@@ -294,29 +329,42 @@ function AppContent() {
       path === '/demo' || 
       path === '/demo/' || 
       path === '/admin' || 
-      path.startsWith('/product/')
+      path.startsWith('/product/') ||
+      path.startsWith('/checkout') ||
+      path.startsWith('/auth') ||
+      path === '/reset-password'
     ) {
+      console.log("[FORENSIC-ROUTE-GUARD] Special/Public/Form route, returning.");
       return;
     }
 
     const loggedIn = !!session;
 
     if (!loggedIn) {
+      console.log("[FORENSIC-ROUTE-GUARD] User is not logged in on protected route. Current stage:", appStageRef.current);
       if (
         appStageRef.current !== 'landing' && 
         appStageRef.current !== 'onboarding' &&
         appStageRef.current !== 'building'
       ) {
+        console.log("[FORENSIC-ROUTE-GUARD] Changing stage to 'landing' due to unauthenticated state.");
         setAppStage('landing');
       }
     } else {
-      if (shopLoading) return;
+      console.log("[FORENSIC-ROUTE-GUARD] User is logged in on protected route. Checking shopLoading...");
+      if (shopLoading) {
+        console.log("[FORENSIC-ROUTE-GUARD] shopLoading is true, delaying stage adjustment.");
+        return;
+      }
 
+      console.log("[FORENSIC-ROUTE-GUARD] User is logged in and shop is done loading. Current stage:", appStageRef.current);
       if (
         appStageRef.current !== 'dashboard' &&
         appStageRef.current !== 'onboarding' &&
-        appStageRef.current !== 'building'
+        appStageRef.current !== 'building' &&
+        appStageRef.current !== 'setup'
       ) {
+        console.log("[FORENSIC-ROUTE-GUARD] Transitioning stage to 'dashboard'.");
         setAppStage('dashboard');
       }
     }
@@ -331,20 +379,16 @@ function AppContent() {
     return <Login />;
   }
 
-  if (cleanPath === '/forgot-password') {
-    return <ForgotPassword />;
+  if (cleanPath === '/signup') {
+    return <SignUp />;
+  }
+
+  if (cleanPath === '/auth/confirm') {
+    return <AuthCallback />;
   }
 
   if (cleanPath === '/reset-password') {
     return <ResetPassword />;
-  }
-
-  if (cleanPath === '/signup') {
-    return (
-      <OnboardingFlow 
-        setAppStage={setAppStage}
-      />
-    );
   }
 
   if (isPublicShopPath || appStage === 'shop' || appStage === 'shop-directory') {
@@ -389,8 +433,6 @@ function AppContent() {
     );
   }
 
-  const isCurrentlyOnboarding = cleanPath === '/signup' || cleanPath === '/onboarding' || appStage === 'onboarding';
-
   if (appStage === 'product') {
     return (
       <Routes>
@@ -424,9 +466,7 @@ function AppContent() {
 
   if (appStage === 'onboarding') {
     return (
-      <OnboardingFlow 
-        setAppStage={setAppStage}
-      />
+      <SignUp />
     );
   }
 
@@ -440,6 +480,10 @@ function AppContent() {
 
   if (appStage === 'setup') {
     return <SetupShop onSetupComplete={refreshShop} />;
+  }
+
+  if (appStage === 'checkout') {
+    return <NardoPayCheckout />;
   }
 
   if (isDashboardSubPath) {

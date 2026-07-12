@@ -13,7 +13,7 @@ interface FAQItem {
 }
 
 const FAQS: FAQItem[] = [
-  { q: 'How long does the free trial last?', a: 'All ThreadZW stores receive a 3-day full-access trial period when created. After the trial, you can subscribe to our Pro Merchant Plan for just $5/month to continue selling.' },
+  { q: 'How long does the free trial last?', a: 'All ThreadZW stores receive a 7-day full-access trial period when created. After the trial, you can subscribe to our Pro Merchant Plan for just $7 to continue selling.' },
   { q: 'How do customers contact me from my storefront?', a: 'When a customer browses and selects products on your storefront, they click "Checkout." ThreadZW automates their cart draft and instantly redirects them to your configured WhatsApp number to complete payment.' },
   { q: 'Can I upload custom banners and logos?', a: 'Yes! Go to Settings -> Shop Settings to upload your custom store brand logo and banner images, or modify them under the Branding section.' },
   { q: 'How is product stock handled?', a: 'Under the Products list, when recording a sale or manual checkout, our inventory system automatically decrements physical stock count sizes. If an item total stock hits zero, it shows as Sold Out.' },
@@ -57,7 +57,7 @@ export const Support: React.FC = () => {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-[#25D366] uppercase font-black font-mono">Merchant Resource</span>
+          <span className="text-[10px] font-mono tracking-widest text-[#bef715] uppercase font-black font-mono">Merchant Resource</span>
           <h1 className="text-xl font-black italic tracking-tighter uppercase">Help & Support</h1>
         </div>
       </div>
@@ -66,8 +66,8 @@ export const Support: React.FC = () => {
 
         {/* WHATSAPP SUPPORT GATEWAY */}
         <div className="bg-gradient-to-br from-zinc-900 to-[#111115] border border-white/[0.05] rounded-2xl p-5 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-28 h-28 bg-[#25D366]/5 rounded-bl-full filter blur-xl opacity-40" />
-          <div className="w-10 h-10 rounded-xl bg-[#25D366]/10 text-[#25D366] flex items-center justify-center mb-3.5">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-[#bef715]/5 rounded-bl-full filter blur-xl opacity-40" />
+          <div className="w-10 h-10 rounded-xl bg-[#bef715]/10 text-[#bef715] flex items-center justify-center mb-3.5">
             <MessageCircle size={20} />
           </div>
           <h3 className="font-extrabold text-base text-white">Direct WhatsApp Assistance</h3>
@@ -78,7 +78,7 @@ export const Support: React.FC = () => {
             href="https://wa.me/263776223144?text=Hi%20ThreadZW%20Support!%20I%20am%20a%20merchant%20and%20I%20need%20help%20with%20my%20store%20dashboard..."
             target="_blank"
             rel="noreferrer"
-            className="mt-4 w-full h-11 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            className="mt-4 w-full h-11 bg-[#bef715] hover:bg-[#a9db10] text-black rounded-xl flex items-center justify-center gap-2 font-black text-xs uppercase tracking-wider transition-colors cursor-pointer"
           >
             <MessageCircle size={15} />
             <span>Chat support (Zimbabwe)</span>
@@ -135,7 +135,7 @@ export const Support: React.FC = () => {
                 onClick={() => setType('bug')}
                 className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
                   type === 'bug' 
-                    ? 'bg-[#25D366] text-black font-extrabold' 
+                    ? 'bg-[#bef715] text-black font-extrabold' 
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -146,7 +146,7 @@ export const Support: React.FC = () => {
                 onClick={() => setType('feature')}
                 className={`py-2 text-[10px] font-black uppercase tracking-wider rounded-lg transition-all ${
                   type === 'feature' 
-                    ? 'bg-[#25D366] text-black font-extrabold' 
+                    ? 'bg-[#bef715] text-black font-extrabold' 
                     : 'text-zinc-400 hover:text-white'
                 }`}
               >
@@ -162,7 +162,7 @@ export const Support: React.FC = () => {
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
                 rows={4}
-                className="w-full bg-black/25 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#25D366] placeholder-zinc-700"
+                className="w-full bg-black/25 border border-white/10 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-[#bef715] placeholder-zinc-700"
                 placeholder={type === 'bug' ? 'e.g., The analytics page shows $0.00 even though I recorded sales...' : 'e.g., I would love to be able to sort categories by rank drag-and-drop...'}
               />
             </div>

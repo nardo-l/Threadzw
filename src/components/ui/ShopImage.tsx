@@ -34,7 +34,7 @@ export const isStaleBlobUrl = (url: string | null | undefined): boolean => {
 const getBaseStorageUrl = (): string => {
   let val = SUPABASE_URL || '';
   if (!val) {
-    val = (import.meta.env?.VITE_SUPABASE_URL) || "https://dxfnoswvuhqvhyofcain.supabase.co";
+    val = (import.meta.env?.VITE_SUPABASE_URL) || "https://placeholder-please-configure-supabase-url.supabase.co";
   }
   if (val.endsWith('/')) {
     val = val.slice(0, -1);
@@ -55,7 +55,7 @@ export const resolveImageUrl = (url: string | null | undefined, type?: 'logo' | 
 
   // If URL starts with http://, https://, blob:, or data: (base64), return unchanged (with base domain correction for Supabase URLs if relevant)
   if (finalUrl.startsWith('http://') || finalUrl.startsWith('https://') || finalUrl.startsWith('blob:') || finalUrl.startsWith('data:')) {
-    const activeBaseUrl = SUPABASE_URL ? SUPABASE_URL.trim().replace(/\/$/, '') : "https://dxfnoswvuhqvhyofcain.supabase.co";
+    const activeBaseUrl = SUPABASE_URL ? SUPABASE_URL.trim().replace(/\/$/, '') : "https://placeholder-please-configure-supabase-url.supabase.co";
     if (finalUrl.includes('.supabase.co/') && !finalUrl.startsWith('data:')) {
       const match = finalUrl.match(/https?:\/\/[a-z0-9-]+\.supabase\.co/i);
       if (match && match[0].toLowerCase() !== activeBaseUrl.toLowerCase()) {

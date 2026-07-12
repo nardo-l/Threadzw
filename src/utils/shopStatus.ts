@@ -1,6 +1,6 @@
 /*
  * THREADZW SUBSCRIPTION CONSTANTS
- * Free trial: 28 days
+ * Free trial: 7 days
  * Subscription: 28 days per period
  * Price: $7/month
  * 
@@ -10,7 +10,7 @@
  * to find every reference.
  */
 
-export const TRIAL_DAYS = 28;
+export const TRIAL_DAYS = 7;
 export const SUBSCRIPTION_DAYS = 28;
 export const SUBSCRIPTION_PRICE = 7;
 
