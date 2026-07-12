@@ -130,6 +130,10 @@ export const Auth: React.FC = () => {
           created_at: new Date().toISOString()
         });
       }
+      
+      sessionStorage.setItem('pending_verification_email', email.trim().toLowerCase());
+      toast.success('Account created. Verification email sent.');
+      navigate('/check-email');
     } catch (err: any) {
       console.error("[AUTH-SIGNUP-DEBUG] Complete error object caught:", err);
       if (err) {

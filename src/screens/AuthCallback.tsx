@@ -25,7 +25,7 @@ export const AuthCallback: React.FC = () => {
 
     const verifyToken = async () => {
       if (!token_hash || !type) {
-        console.warn("[AuthCallback] URL is missing token_hash or type params.");
+        console.warn("[AUTH-CALLBACK] URL is missing token_hash or type params.");
         if (active) {
           setStatus('error');
           setErrorMessage("This confirmation link is invalid or has expired.");
@@ -34,27 +34,27 @@ export const AuthCallback: React.FC = () => {
       }
 
       try {
-        console.log(`[AuthCallback] Verifying OTP. Type: ${type}, Hash: ${token_hash.substring(0, 8)}...`);
+        console.log(`[AUTH-CALLBACK] Verifying OTP. Type: ${type}, Hash: ${token_hash.substring(0, 8)}...`);
         const { error } = await supabase.auth.verifyOtp({
           token_hash,
           type: type as any,
         });
 
         if (error) {
-          console.error("[AuthCallback] verifyOtp call returned an error:", error);
+          console.error("[AUTH-CALLBACK] verifyOtp call returned an error:", error);
           if (active) {
             setStatus('error');
-            setErrorMessage("This confirmation link is invalid or has expired.");
+            setErrorMessage(error.message || "This confirmation link is invalid or has expired.");
           }
           return;
         }
 
-        console.log("[AuthCallback] verifyOtp successful.");
+        console.log("[AUTH-CALLBACK] verifyOtp successful.");
         if (active) {
           setStatus('success');
         }
       } catch (err: any) {
-        console.error("[AuthCallback] Exception caught in verifyToken:", err);
+        console.error("[AUTH-CALLBACK] Exception caught in verifyToken:", err);
         if (active) {
           setStatus('error');
           setErrorMessage(err?.message || "An unexpected verification error occurred.");
@@ -75,22 +75,22 @@ export const AuthCallback: React.FC = () => {
       return;
     }
 
-    console.log(`[AuthCallback] Verification successful, session active: ${!!session}, hasShop: ${hasShop}, type: ${type}`);
+    console.log(`[AUTH-CALLBACK] Verification successful, session active: ${!!session}, hasShop: ${hasShop}, type: ${type}`);
 
     if (type === 'recovery') {
-      console.log("[AuthCallback] Password recovery detected. Redirecting to /reset-password");
+      console.log("[AUTH-CALLBACK] Password recovery detected. Redirecting to /reset-password");
       navigate('/reset-password');
       return;
     }
 
     if (!session) {
-      console.log("[AuthCallback] No session established. Redirecting to /login");
+      console.log("[AUTH-CALLBACK] No session established. Redirecting to /login");
       navigate('/login');
     } else if (!hasShop) {
-      console.log("[AuthCallback] No shop found for authenticated merchant. Redirecting to /setup");
+      console.log("[AUTH-CALLBACK] No shop found for authenticated merchant. Redirecting to /setup");
       navigate('/setup');
     } else {
-      console.log("[AuthCallback] Shop found. Redirecting to /dashboard");
+      console.log("[AUTH-CALLBACK] Shop found. Redirecting to /dashboard");
       navigate('/dashboard');
     }
   }, [status, authLoading, shopLoading, session, hasShop, type, navigate]);

@@ -6,6 +6,7 @@ const appStartTime = performance.now();
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { SignUp } from './screens/SignUp';
+import { CheckEmail } from './screens/CheckEmail';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
@@ -78,7 +79,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'check-email'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -155,7 +156,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'check-email'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -323,6 +324,7 @@ function AppContent() {
       path === '/' ||
       path === '/login' ||
       path === '/signup' ||
+      path === '/check-email' ||
       path === '/onboarding' ||
       path.startsWith('/shop/') || 
       path.startsWith('/store/') || 
@@ -381,6 +383,10 @@ function AppContent() {
 
   if (cleanPath === '/signup') {
     return <SignUp />;
+  }
+
+  if (cleanPath === '/check-email') {
+    return <CheckEmail />;
   }
 
   if (cleanPath === '/auth/confirm') {

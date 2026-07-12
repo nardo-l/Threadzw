@@ -40,14 +40,6 @@ export const SignUp: React.FC = () => {
   const hasMinLength = password.length >= 8;
   const hasNumOrSymbol = /[0-9!@#$%^&*(),.?":{}|<>_+\-\[\]\\\/]/.test(password);
 
-  useEffect(() => {
-    if (session && isSigningUpRef.current) {
-      console.log("SIGNUP FLOW: Session is now fully active in AuthContext. Navigating to setup...");
-      isSigningUpRef.current = false;
-      navigate('/setup');
-    }
-  }, [session, navigate]);
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !email.trim() || !password) {
@@ -93,19 +85,11 @@ export const SignUp: React.FC = () => {
         throw error;
       }
 
-      const sessionUser = data?.user;
-      console.log("SIGNUP FLOW: User details from signUp data:", sessionUser);
-
-      if (sessionUser) {
-        console.log("STEP 3 - Sign up successful. Navigating to setup...");
-        toast.success('Account created successfully');
-        navigate('/setup');
-      } else {
-        isSigningUpRef.current = false;
-        console.log("SIGNUP FLOW: signUp completed but user session is not available yet (email confirmation required?).");
-        toast.success('Account created. Please check your email.');
-        setLoading(false);
-      }
+      console.log("SIGNUP FLOW: signUp completed successfully. Redirecting to check-email...");
+      isSigningUpRef.current = false;
+      sessionStorage.setItem('pending_verification_email', email.trim().toLowerCase());
+      toast.success('Account created. Verification email sent.');
+      navigate('/check-email');
     } catch (err: any) {
       isSigningUpRef.current = false;
       console.error("SIGNUP FLOW: Complete error object caught during sign up:", err);
