@@ -44,7 +44,7 @@ type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' 
 const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
 
-  if (path === '/shop' || path === '/store') {
+  if (path === '/shop' || path === '/store' || path === '/shops') {
     return { stage: 'shop-directory' };
   }
   if (path === '/demo' || path === '/shop/demo' || path === '/store/demo') {
@@ -147,7 +147,7 @@ function AppContent() {
   // Handle public routes unconditionally to prevent any auth lag or state conflicts
   const isPublicShopPath = useMemo(() => {
     const segments = cleanPath.split('/').filter(Boolean);
-    if (cleanPath === '/demo' || cleanPath === '/shop' || cleanPath === '/store' || cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/') || cleanPath.startsWith('/s/')) {
+    if (cleanPath === '/demo' || cleanPath === '/shop' || cleanPath === '/store' || cleanPath === '/shops' || cleanPath.startsWith('/shop/') || cleanPath.startsWith('/store/') || cleanPath.startsWith('/s/')) {
       return true;
     }
     if (segments.length > 0) {
@@ -403,8 +403,9 @@ function AppContent() {
         <Route path="/demo" element={<StorefrontPage />} />
         
         {/* Marketplace Directory Routes */}
-        <Route path="/shop" element={<ShopDirectoryPage />} />
-        <Route path="/store" element={<Navigate to="/shop" replace />} />
+        <Route path="/shops" element={<ShopDirectoryPage />} />
+        <Route path="/shop" element={<Navigate to="/shops" replace />} />
+        <Route path="/store" element={<Navigate to="/shops" replace />} />
         
         {/* Support formatting in /s/:slug */}
         <Route path="/s/:slug" element={<StorefrontPage />} />

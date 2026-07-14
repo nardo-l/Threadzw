@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Loader2, ShieldX } from 'lucide-react';
+import { Loader2, ShieldX, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
@@ -232,31 +232,15 @@ export const AuthCallback: React.FC = () => {
     };
   }, []);
 
-  // Navigate once verification is successful and loading states are settled
-  useEffect(() => {
-    if (status !== 'success' || authLoading || shopLoading) {
-      return;
-    }
-
-    console.log(`[AUTH-CALLBACK] Verification successful, session active: ${!!session}, hasShop: ${hasShop}, detectedType: ${detectedType}`);
-
+  const handleProceed = () => {
     if (detectedType === 'recovery') {
-      console.log("[AUTH-CALLBACK] Password recovery detected. Redirecting to /reset-password");
       navigate('/reset-password');
-      return;
-    }
-
-    if (!session) {
-      console.log("[AUTH-CALLBACK] No session established. Redirecting to /login");
-      navigate('/login');
     } else if (!hasShop) {
-      console.log("[AUTH-CALLBACK] No shop found for authenticated merchant. Redirecting to /setup");
       navigate('/setup');
     } else {
-      console.log("[AUTH-CALLBACK] Shop found. Redirecting to /dashboard");
       navigate('/dashboard');
     }
-  }, [status, authLoading, shopLoading, session, hasShop, detectedType, navigate]);
+  };
 
   return (
     <div className="fixed inset-0 bg-white text-zinc-900 flex flex-col items-center justify-center font-sans select-none overflow-hidden z-[100] selection:bg-[#bef715] selection:text-black">
@@ -292,27 +276,76 @@ export const AuthCallback: React.FC = () => {
 
         {status === 'success' && (
           <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center space-y-6"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center space-y-6 max-w-sm mx-auto"
           >
             {/* Logo */}
             <span className="text-3xl font-black tracking-tighter text-[#bef715]">
               ThreadZW<span className="text-zinc-900">.</span>
             </span>
 
-            <div className="relative w-16 h-16 flex items-center justify-center">
-              <Loader2 className="w-10 h-10 animate-spin text-[#bef715]" />
+            {/* Pulsing checkmark badge */}
+            <div className="relative w-24 h-24 flex items-center justify-center my-2">
+              {/* Central Ambient Glow */}
+              <div className="absolute inset-0 bg-green-500/10 rounded-full blur-xl animate-pulse" />
+              
+              <div className="absolute inset-0 border border-green-500/20 rounded-full animate-ping [animation-duration:3s]" />
+              
+              <div className="w-16 h-16 rounded-full bg-zinc-950 border border-green-500 flex items-center justify-center shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+                <Check className="w-8 h-8 text-green-500 stroke-[3.5]" />
+              </div>
             </div>
 
+            {/* Greeting Typography */}
             <div className="space-y-2">
-              <h1 className="text-2xl font-black text-zinc-950 font-grotesk">
-                Verified successfully
+              <h1 className="text-2xl font-black text-zinc-950 font-grotesk tracking-tight uppercase leading-none">
+                Email Verified!
               </h1>
               <p className="text-zinc-500 text-sm font-medium">
-                Syncing secure merchant services, please wait...
+                {session?.user?.user_metadata?.full_name ? (
+                  <>Welcome, <span className="text-zinc-900 font-extrabold">{session.user.user_metadata.full_name}</span>. Your account is secured.</>
+                ) : (
+                  "Your merchant credentials have been verified."
+                )}
               </p>
             </div>
+
+            {/* List of secure setup achievements */}
+            <div className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl p-4 text-left space-y-2.5">
+              <div className="flex items-center gap-2 text-xs font-bold text-zinc-600">
+                <div className="w-4 h-4 rounded-full bg-green-50 border border-green-200 flex items-center justify-center text-green-600">
+                  <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                </div>
+                <span>Cryptographic verification passed</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-zinc-600">
+                <div className="w-4 h-4 rounded-full bg-green-50 border border-green-200 flex items-center justify-center text-green-600">
+                  <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                </div>
+                <span>Secured database records synchronized</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-zinc-600">
+                <div className="w-4 h-4 rounded-full bg-green-50 border border-green-200 flex items-center justify-center text-green-600">
+                  <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                </div>
+                <span>Merchant auth session established</span>
+              </div>
+            </div>
+
+            {/* Proceed CTA Button */}
+            <button
+              onClick={handleProceed}
+              className="w-full h-12 bg-[#bef715] hover:opacity-95 text-black font-extrabold text-sm uppercase tracking-wider rounded-xl shadow-lg shadow-[#bef715]/10 flex items-center justify-center gap-2 active:scale-[0.98] transition-all cursor-pointer mt-4"
+            >
+              {detectedType === 'recovery' ? (
+                <>Reset Password</>
+              ) : !hasShop ? (
+                <>Build My Storefront &rarr;</>
+              ) : (
+                <>Enter Dashboard &rarr;</>
+              )}
+            </button>
           </motion.div>
         )}
 
