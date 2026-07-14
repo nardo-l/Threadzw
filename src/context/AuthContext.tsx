@@ -30,10 +30,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleProfileAndSubscriptionLoading = async (activeSession: any) => {
     const userId = activeSession.user.id;
-    console.log("[FORENSIC-AUTH] handleProfileAndSubscriptionLoading START for user ID:", userId);
+    console.log("[LOGIN] [FORENSIC-AUTH] handleProfileAndSubscriptionLoading START for user ID:", userId);
     try {
       // 1. Fetch Profile
-      console.log("[FORENSIC-AUTH] STEP 1 PROFILE: Querying profiles table for user ID:", userId);
+      console.log("[LOGIN] [FORENSIC-AUTH] STEP 1 PROFILE: Querying profiles table for user ID:", userId);
       const tProfile0 = performance.now();
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -41,18 +41,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('id', userId)
         .maybeSingle();
       const tProfile1 = performance.now();
-      console.log(`[FORENSIC-AUTH] STEP 1 PROFILE Response received in ${(tProfile1 - tProfile0).toFixed(2)}ms. Data:`, profileData, "Error:", profileError);
+      console.log(`[LOGIN] [FORENSIC-AUTH] STEP 1 PROFILE Response received in ${(tProfile1 - tProfile0).toFixed(2)}ms. Data:`, profileData, "Error:", profileError);
 
       if (profileError) {
-        console.error("[FORENSIC-AUTH] Error loading profile:", profileError);
+        console.error("[LOGIN] [FORENSIC-AUTH] Error loading profile:", profileError);
       } else if (profileData) {
-        console.log("[FORENSIC-AUTH] Setting profile state with data:", profileData);
+        console.log("[LOGIN] [FORENSIC-AUTH] Setting profile state with data:", profileData);
         setProfile({
           ...profileData,
           town: profileData.style_preferences?.town || 'Harare'
         });
       } else {
-        console.log("[FORENSIC-AUTH] Profiles table returned null. Using fallback basic profile state.");
+        console.log("[LOGIN] [FORENSIC-AUTH] Profiles table returned null. Using fallback basic profile state.");
         // Fallback basic profile creation state if user is logged in but table row isn't ready
         setProfile({
           id: userId,
@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // 2. Fetch Subscription
-      console.log("[FORENSIC-AUTH] STEP 2 SUB: Querying subscriptions table for user ID:", userId);
+      console.log("[LOGIN] [FORENSIC-AUTH] STEP 2 SUB: Querying subscriptions table for user ID:", userId);
       const tSub0 = performance.now();
       const { data: subData, error: subError } = await supabase
         .from('subscriptions')
@@ -71,56 +71,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('profile_id', userId)
         .maybeSingle();
       const tSub1 = performance.now();
-      console.log(`[FORENSIC-AUTH] STEP 2 SUB Response received in ${(tSub1 - tSub0).toFixed(2)}ms. Data:`, subData, "Error:", subError);
+      console.log(`[LOGIN] [FORENSIC-AUTH] STEP 2 SUB Response received in ${(tSub1 - tSub0).toFixed(2)}ms. Data:`, subData, "Error:", subError);
 
       if (subError) {
-        console.error("[FORENSIC-AUTH] Supabase error loading subscription:", subError);
+        console.error("[LOGIN] [FORENSIC-AUTH] Supabase error loading subscription:", subError);
         setSubscription(null);
       } else {
-        console.log("[FORENSIC-AUTH] Setting subscription state with data:", subData);
+        console.log("[LOGIN] [FORENSIC-AUTH] Setting subscription state with data:", subData);
         setSubscription(subData);
       }
 
     } catch (err) {
-      console.error("[FORENSIC-AUTH] Exception caught during profile/subscription loading:", err);
+      console.error("[LOGIN] [FORENSIC-AUTH] Exception caught during profile/subscription loading:", err);
       setProfile(null);
       setSubscription(null);
     } finally {
-      console.log("[FORENSIC-AUTH] handleProfileAndSubscriptionLoading FINALLY block reached.");
+      console.log("[LOGIN] [FORENSIC-AUTH] handleProfileAndSubscriptionLoading FINALLY block reached.");
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    console.log("[FORENSIC-AUTH] AuthProvider mounted. Setting up session listeners.");
+    console.log("[LOGIN] [FORENSIC-AUTH] AuthProvider mounted. Setting up session listeners.");
 
     // Initial session fetch
     const initSession = async () => {
-      console.log("[FORENSIC-AUTH] initSession starting...");
+      console.log("[LOGIN] [FORENSIC-AUTH] initSession starting...");
       try {
-        console.log("[FORENSIC-AUTH] Calling supabase.auth.getSession...");
+        console.log("[LOGIN] [FORENSIC-AUTH] Calling supabase.auth.getSession...");
         const t0 = performance.now();
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         const t1 = performance.now();
-        console.log(`[FORENSIC-AUTH] supabase.auth.getSession returned in ${(t1 - t0).toFixed(2)}ms. Session:`, !!initialSession);
+        console.log(`[LOGIN] [FORENSIC-AUTH] supabase.auth.getSession returned in ${(t1 - t0).toFixed(2)}ms. Session:`, !!initialSession);
         
         if (!mounted) {
-          console.log("[FORENSIC-AUTH] initSession returned but component is unmounted.");
+          console.log("[LOGIN] [FORENSIC-AUTH] initSession returned but component is unmounted.");
           return;
         }
 
         if (initialSession) {
-          console.log("[FORENSIC-AUTH] Initial session active. Setting session and loading profile/subscription...");
+          console.log("[LOGIN] [FORENSIC-AUTH] Initial session active. Setting session and loading profile/subscription...");
           setSession(initialSession);
           await handleProfileAndSubscriptionLoading(initialSession);
         } else {
-          console.log("[FORENSIC-AUTH] No initial session found.");
+          console.log("[LOGIN] [FORENSIC-AUTH] No initial session found.");
           setSession(null);
           setProfile(null);
           setSubscription(null);
         }
       } catch (err) {
-        console.error("[FORENSIC-AUTH] initSession error:", err);
+        console.error("[LOGIN] [FORENSIC-AUTH] initSession error:", err);
         if (mounted) {
           setSession(null);
           setProfile(null);
@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } finally {
         if (mounted) {
-          console.log("[FORENSIC-AUTH] initSession finished. Setting loading state to false.");
+          console.log("[LOGIN] [FORENSIC-AUTH] initSession finished. Setting loading state to false.");
           setLoading(false);
         }
       }
@@ -136,31 +136,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initSession();
 
-    console.log("[FORENSIC-AUTH] Subscribing to supabase.auth.onAuthStateChange...");
+    console.log("[LOGIN] [FORENSIC-AUTH] Subscribing to supabase.auth.onAuthStateChange...");
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      console.log(`[FORENSIC-AUTH] onAuthStateChange event received. Event: "${event}", hasSession: ${!!currentSession}`);
+      console.log(`[LOGIN] [FORENSIC-AUTH] onAuthStateChange event received. Event: "${event}", hasSession: ${!!currentSession}`);
       if (!mounted) {
-        console.log("[FORENSIC-AUTH] onAuthStateChange callback received but component is unmounted.");
+        console.log("[LOGIN] [FORENSIC-AUTH] onAuthStateChange callback received but component is unmounted.");
         return;
       }
       
-      if (currentSession) {
-        console.log("[FORENSIC-AUTH] Setting session and loading profile/subscription for event:", event);
-        setLoading(true);
-        setSession(currentSession);
-        await handleProfileAndSubscriptionLoading(currentSession);
-      } else {
-        console.log("[FORENSIC-AUTH] No session active for event:", event);
-        setSession(null);
-        setProfile(null);
-        setSubscription(null);
+      try {
+        if (currentSession) {
+          console.log("[LOGIN] [FORENSIC-AUTH] Setting session and loading profile/subscription for event:", event);
+          setLoading(true);
+          setSession(currentSession);
+          await handleProfileAndSubscriptionLoading(currentSession);
+        } else {
+          console.log("[LOGIN] [FORENSIC-AUTH] No session active for event:", event);
+          setSession(null);
+          setProfile(null);
+          setSubscription(null);
+        }
+      } catch (authChangeErr) {
+        console.error("[LOGIN] [FORENSIC-AUTH] Error in onAuthStateChange callback:", authChangeErr);
+      } finally {
+        console.log("[LOGIN] [FORENSIC-AUTH] Setting loading state to false in onAuthStateChange.");
+        setLoading(false);
       }
-      console.log("[FORENSIC-AUTH] Setting loading state to false in onAuthStateChange.");
-      setLoading(false);
     });
 
     return () => {
-      console.log("[FORENSIC-AUTH] AuthProvider unmounting. Cleaning up listener.");
+      console.log("[LOGIN] [FORENSIC-AUTH] AuthProvider unmounting. Cleaning up listener.");
       mounted = false;
       authSub.unsubscribe();
     };

@@ -243,41 +243,41 @@ function AppContent() {
   }, [hasInitialized]);
 
   const setAppStage = async (stage: AppStage) => {
-    console.log(`[FORENSIC-ROUTE-STAGE] setAppStage called. Target stage: "${stage}", current stage: "${appStageRef.current}"`);
+    console.log(`[ROUTER] navigation decisions. setAppStage called. Target stage: "${stage}", current stage: "${appStageRef.current}"`);
     appStageRef.current = stage;
     setAppStageState(stage);
     
     // Synced path push
     if (stage === 'landing') {
-      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to landing page: /");
+      console.log("[ROUTER] navigation decisions. Redirecting to landing page: /");
       navigate('/');
     }
     else if (stage === 'building') {
-      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to building: /building");
+      console.log("[ROUTER] navigation decisions. Redirecting to building: /building");
       navigate('/building');
     }
     else if (stage === 'onboarding') {
-      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to onboarding signup: /signup");
+      console.log("[ROUTER] navigation decisions. Redirecting to onboarding signup: /signup");
       navigate('/signup');
     }
     else if (stage === 'dashboard') {
-      console.log("[FORENSIC-ROUTE-STAGE] Preparing dashboard stage. Calling refreshShop()...");
+      console.log("[ROUTER] navigation decisions. Preparing dashboard stage. Calling refreshShop()...");
       const t0 = performance.now();
       await refreshShop();
       const t1 = performance.now();
-      console.log(`[FORENSIC-ROUTE-STAGE] refreshShop() finished in ${(t1 - t0).toFixed(2)}ms. Navigating to /dashboard...`);
+      console.log(`[ROUTER] refreshShop() finished in ${(t1 - t0).toFixed(2)}ms. Navigating to /dashboard...`);
       navigate('/dashboard');
     }
     else if (stage === 'admin') {
-      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to admin: /admin");
+      console.log("[ROUTER] navigation decisions. Redirecting to admin: /admin");
       navigate('/admin');
     }
     else if (stage === 'setup') {
-      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to setup: /setup");
+      console.log("[ROUTER] navigation decisions. Redirecting to setup: /setup");
       navigate('/setup');
     }
     else if (stage === 'checkout') {
-      console.log("[FORENSIC-ROUTE-STAGE] Redirecting to checkout: /checkout/nardopay");
+      console.log("[ROUTER] navigation decisions. Redirecting to checkout: /checkout/nardopay");
       navigate('/checkout/nardopay');
     }
   };
@@ -305,16 +305,16 @@ function AppContent() {
   // Route protection and syncing
   useEffect(() => {
     const path = location.pathname.toLowerCase();
-    console.log("[FORENSIC-ROUTE-GUARD] Route Sync Effect triggered. Path:", path, "authLoading:", loading, "shopLoading:", shopLoading, "hasShop:", hasShop, "isPublicShopPath:", isPublicShopPath, "loggedIn:", !!session, "appStage:", appStageRef.current);
+    console.log("[ROUTER] Route Sync Effect triggered. Path:", path, "authLoading:", loading, "shopLoading:", shopLoading, "hasShop:", hasShop, "isPublicShopPath:", isPublicShopPath, "loggedIn:", !!session, "appStage:", appStageRef.current);
 
     if (loading) {
-      console.log("[FORENSIC-ROUTE-GUARD] Auth loading in progress, returning.");
+      console.log("[ROUTER] Auth loading in progress, returning.");
       return;
     }
     
     // Allow public routes
     if (isPublicShopPath) {
-      console.log("[FORENSIC-ROUTE-GUARD] Public shop path. Sync bypassed.");
+      console.log("[ROUTER] Public shop path. Sync bypassed.");
       return;
     }
 
@@ -334,37 +334,37 @@ function AppContent() {
       path.startsWith('/auth') ||
       path === '/reset-password'
     ) {
-      console.log("[FORENSIC-ROUTE-GUARD] Special/Public/Form route, returning.");
+      console.log("[ROUTER] Special/Public/Form route, returning.");
       return;
     }
 
     const loggedIn = !!session;
 
     if (!loggedIn) {
-      console.log("[FORENSIC-ROUTE-GUARD] User is not logged in on protected route. Current stage:", appStageRef.current);
+      console.log("[ROUTER] User is not logged in on protected route. Current stage:", appStageRef.current);
       if (
         appStageRef.current !== 'landing' && 
         appStageRef.current !== 'onboarding' &&
         appStageRef.current !== 'building'
       ) {
-        console.log("[FORENSIC-ROUTE-GUARD] Changing stage to 'landing' due to unauthenticated state.");
+        console.log("[ROUTER] navigation decisions. Changing stage to 'landing' due to unauthenticated state.");
         setAppStage('landing');
       }
     } else {
-      console.log("[FORENSIC-ROUTE-GUARD] User is logged in on protected route. Checking shopLoading...");
+      console.log("[ROUTER] User is logged in on protected route. Checking shopLoading...");
       if (shopLoading) {
-        console.log("[FORENSIC-ROUTE-GUARD] shopLoading is true, delaying stage adjustment.");
+        console.log("[ROUTER] shopLoading is true, delaying stage adjustment.");
         return;
       }
 
-      console.log("[FORENSIC-ROUTE-GUARD] User is logged in and shop is done loading. Current stage:", appStageRef.current);
+      console.log("[ROUTER] User is logged in and shop is done loading. Current stage:", appStageRef.current);
       if (
         appStageRef.current !== 'dashboard' &&
         appStageRef.current !== 'onboarding' &&
         appStageRef.current !== 'building' &&
         appStageRef.current !== 'setup'
       ) {
-        console.log("[FORENSIC-ROUTE-GUARD] Transitioning stage to 'dashboard'.");
+        console.log("[ROUTER] navigation decisions. Transitioning stage to 'dashboard'.");
         setAppStage('dashboard');
       }
     }

@@ -18,34 +18,34 @@ export const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[FORENSIC] handleLogin initiated. Email:", email);
+    console.log("[LOGIN] handleLogin button clicked. Email:", email);
     if (!email || !password) {
-      console.warn("[FORENSIC] handleLogin cancelled: missing email/password");
+      console.warn("[LOGIN] handleLogin cancelled: missing email/password");
       toast.error('Please fill in all fields');
       return;
     }
 
-    console.log("[FORENSIC] Setting loading state to true");
+    console.log("[LOGIN] Setting loading state to true");
     setLoading(true);
     setLoginError(null);
     setShake(false);
 
     try {
-      console.log("[FORENSIC] Calling supabase.auth.signInWithPassword...");
+      console.log("[LOGIN] Calling supabase.auth.signInWithPassword...");
       const t0 = performance.now();
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password
       });
       const t1 = performance.now();
-      console.log(`[FORENSIC] supabase.auth.signInWithPassword returned after ${(t1 - t0).toFixed(2)}ms`);
+      console.log(`[LOGIN] supabase.auth.signInWithPassword returned after ${(t1 - t0).toFixed(2)}ms`);
 
       if (error) {
-        console.error("[FORENSIC] supabase.auth.signInWithPassword returned error:", error);
+        console.error("[LOGIN] supabase.auth.signInWithPassword returned error:", error);
         throw error;
       }
 
-      console.log("[FORENSIC] signInWithPassword response details:", {
+      console.log("[LOGIN] signInWithPassword response details:", {
         hasSession: !!data?.session,
         hasUser: !!data?.user,
         userId: data?.user?.id,
@@ -57,16 +57,16 @@ export const Login: React.FC = () => {
       }
 
       toast.success('Signed in successfully');
-      console.log("[FORENSIC] Triggering route navigation to /dashboard via navigate()...");
+      console.log("[LOGIN] Triggering route navigation to /dashboard via navigate()...");
       navigate('/dashboard');
-      console.log("[FORENSIC] navigate('/dashboard') called.");
+      console.log("[LOGIN] navigate('/dashboard') called.");
     } catch (err: any) {
-      console.error("[FORENSIC] Exception caught in handleLogin:", err);
+      console.error("[LOGIN] Exception caught in handleLogin:", err);
       setPassword('');
       setShake(true);
       setLoginError(err?.message || 'Incorrect email or password. Please try again.');
     } finally {
-      console.log("[FORENSIC] handleLogin finally block reached. Setting loading state to false");
+      console.log("[LOGIN] handleLogin finally block reached. Setting loading state to false");
       setLoading(false);
     }
   };
