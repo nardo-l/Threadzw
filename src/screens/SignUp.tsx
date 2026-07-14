@@ -122,11 +122,13 @@ export const SignUp: React.FC = () => {
         throw error;
       }
 
-      console.log("SIGNUP FLOW: signUp completed successfully. Redirecting to check-email...");
+      console.log("SIGNUP FLOW: signUp completed successfully. Redirecting to setup...");
       isSigningUpRef.current = false;
-      sessionStorage.setItem('pending_verification_email', email.trim().toLowerCase());
-      toast.success('Account created. Verification email sent.');
-      navigate('/check-email');
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
+      }
+      toast.success('Account created successfully!');
+      navigate('/setup');
     } catch (err: any) {
       isSigningUpRef.current = false;
       console.error("SIGNUP FLOW: Error object caught during sign up:", err);

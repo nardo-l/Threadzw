@@ -131,9 +131,11 @@ export const Auth: React.FC = () => {
         });
       }
       
-      sessionStorage.setItem('pending_verification_email', email.trim().toLowerCase());
-      toast.success('Account created. Verification email sent.');
-      navigate('/check-email');
+      if (data.session) {
+        await supabase.auth.setSession(data.session);
+      }
+      toast.success('Account created successfully!');
+      navigate('/setup');
     } catch (err: any) {
       console.error("[AUTH-SIGNUP-DEBUG] Complete error object caught:", err);
       if (err) {
