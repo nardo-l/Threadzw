@@ -273,6 +273,17 @@ export const StorefrontPage: React.FC = () => {
         return;
       }
 
+      // Check if the shop is active and has a valid subscription
+      const isTrialValid = shopResult.subscription_status === 'trial' && 
+        (!shopResult.trial_ends_at || new Date(shopResult.trial_ends_at) > new Date());
+      const isSubscriptionValid = shopResult.subscription_status === 'active' || isTrialValid;
+
+      if (!shopResult.is_active || !isSubscriptionValid) {
+        setError('not_found');
+        setLoading(false);
+        return;
+      }
+
       if (shopResult) {
         const { description: plainDesc, config } = parseShopConfig(shopResult.description || '');
         shopResult = {
@@ -285,19 +296,18 @@ export const StorefrontPage: React.FC = () => {
       setShop(shopResult);
       document.title = `${shopResult.name} | Storefront`;
 
-      // Fetch dynamic categories
-      const { data: dbCats, error: catsErr } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('shop_id', shopResult.id)
-        .order('sort_order', { ascending: true });
-
-      if (catsErr) {
-        console.error("Supabase Error querying categories:", catsErr);
-        throw catsErr;
-      }
-
-      setCategories(dbCats || []);
+      // Generate dynamic categories from the shop metadata (shopResult.categories or shopResult.category)
+      const shopCats = Array.isArray(shopResult.categories)
+        ? shopResult.categories.map((cat: string, index: number) => ({
+            id: `cat-${index}`,
+            name: cat,
+            sort_order: index
+          }))
+        : shopResult.category
+          ? [{ id: 'cat-0', name: shopResult.category, sort_order: 0 }]
+          : [];
+      
+      setCategories(shopCats);
 
       // Fetch dynamic products
       const { data: dbProducts, error: prodsErr } = await supabase
