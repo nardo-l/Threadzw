@@ -24,7 +24,7 @@ export interface Shop {
   access_code: string;
   code_expires_at: string;
   monthly_price: number;
-  is_live: boolean;
+  is_active: boolean;
   product_count: number;
   follower_count?: number;
   total_sales: number;

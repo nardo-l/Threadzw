@@ -7,7 +7,7 @@ export interface Shop {
   slug?: string;
   whatsapp_number: string;
   whatsapp?: string;
-  is_live: boolean;
+  is_active: boolean;
   subscription_status: string;
   trial_ends_at?: string;
   description?: string;

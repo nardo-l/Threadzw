@@ -305,7 +305,7 @@ export const ShopEdit = () => {
       setBannerPreview(data.banner_url || null);
       setAvatarUrl(data.logo_url || data.avatar_url || null);
       setAvatarPreview(data.logo_url || data.avatar_url || null);
-      setIsLive(data.is_live);
+      setIsLive(data.is_active);
       setProductCount(data.product_count || 0);
 
     } catch (err) {
@@ -714,7 +714,7 @@ export const ShopEdit = () => {
     try {
       const { error } = await supabase
         .from('shops')
-        .update({ is_live: !isLive })
+        .update({ is_active: !isLive })
         .eq('id', shopId)
         .eq('owner_id', user.id);
 
@@ -727,7 +727,7 @@ export const ShopEdit = () => {
           const cached = localStorage.getItem(cachedKey);
           if (cached) {
             const parsed = JSON.parse(cached);
-            parsed.is_live = !isLive;
+            parsed.is_active = !isLive;
             localStorage.setItem(cachedKey, JSON.stringify(parsed));
           }
         }

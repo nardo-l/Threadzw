@@ -317,13 +317,13 @@ export const ShopDirectoryPage: React.FC = () => {
           banner_url,
           town,
           location,
-          is_live,
+          is_active,
           product_count,
           created_at,
           categories,
           category
         `)
-        .eq('is_live', true)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (queryError) {

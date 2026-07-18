@@ -83,6 +83,8 @@ export const SignUp: React.FC = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return; // Prevent double submission
+
     if (!fullName.trim() || !email.trim() || !password) {
       toast.error('Please fill in all fields');
       return;
@@ -97,45 +99,164 @@ export const SignUp: React.FC = () => {
     setSignUpError(null);
     isSigningUpRef.current = true;
 
-    try {
-      console.log("SIGNUP FLOW: Starting sign up process...");
-      
-      const redirectUrl =
-        window.location.hostname === 'localhost'
-          ? 'http://localhost:3000/auth/confirm'
-          : 'https://threadzw.vercel.app/auth/confirm';
+    // Safety timeout to reset loading state if anything hangs
+    let timeoutId: any;
+    const safetyTimeout = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error('Operation timed out after 10 seconds'));
+      }, 10000);
+    });
 
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            display_name: fullName.trim(),
-          },
-          emailRedirectTo: redirectUrl,
-        }
+    try {
+      console.log("[SIGNUP] [FORENSIC] Starting handleSignUp user registration process...");
+      console.log("[SIGNUP] [FORENSIC] Payload parameters: email =", email.trim().toLowerCase(), "fullName =", fullName.trim());
+      
+      const redirectUrl = `${window.location.origin}/auth/confirm`;
+      console.log("[SIGNUP] [FORENSIC] Resolved redirectUrl:", redirectUrl);
+
+      console.log("[SIGNUP] [FORENSIC] (AWAIT_1_BEFORE) Initiating supabase.auth.signUp...");
+      const tSignUp0 = performance.now();
+      let signUpResult;
+      try {
+        signUpResult = await Promise.race([
+          supabase.auth.signUp({
+            email: email.trim().toLowerCase(),
+            password,
+            options: {
+              data: {
+                full_name: fullName.trim(),
+                display_name: fullName.trim(),
+              },
+              emailRedirectTo: redirectUrl,
+            }
+          }),
+          safetyTimeout
+        ]) as any;
+        const tSignUp1 = performance.now();
+        console.log(`[SIGNUP] [FORENSIC] (AWAIT_1_AFTER) supabase.auth.signUp resolved successfully in ${(tSignUp1 - tSignUp0).toFixed(2)}ms.`);
+      } catch (signUpExc: any) {
+        const tSignUp1 = performance.now();
+        console.error(`[SIGNUP] [FORENSIC] (AWAIT_1_EXCEPTION) supabase.auth.signUp thrown error in ${(tSignUp1 - tSignUp0).toFixed(2)}ms. Details:`, {
+          message: signUpExc?.message,
+          stack: signUpExc?.stack,
+          fullError: JSON.stringify(signUpExc, Object.getOwnPropertyNames(signUpExc))
+        });
+        throw signUpExc;
+      }
+
+      const { data, error } = signUpResult;
+
+      // Log the complete returned object (data.user, data.session, and error)
+      console.log("[SIGNUP] [FORENSIC] Complete response payload from supabase.auth.signUp():", {
+        user: data?.user ? { id: data.user.id, email: data.user.email, email_confirmed_at: data.user.email_confirmed_at } : null,
+        session: data?.session ? { access_token_prefix: data.session.access_token?.substring(0, 15), expires_at: data.session.expires_at } : null,
+        error: error ? { message: error.message, status: error.status } : null
       });
 
       if (error) {
-        isSigningUpRef.current = false;
+        console.error("[SIGNUP] [FORENSIC] supabase.auth.signUp() returned an auth error:", error);
         throw error;
       }
 
-      console.log("SIGNUP FLOW: signUp completed successfully. Redirecting to setup...");
-      isSigningUpRef.current = false;
-      if (data.session) {
-        await supabase.auth.setSession(data.session);
+      if (!data?.user) {
+        const noUserErr = new Error("Sign up completed but no user object was returned in the response.");
+        console.error("[SIGNUP] [FORENSIC] Critical: No user returned:", noUserErr);
+        throw noUserErr;
       }
+
+      console.log("[SIGNUP] [FORENSIC] User created in authentication store. User ID:", data.user.id);
+
+      // Handle the case where email verification is required (no session is returned automatically)
+      if (!data.session) {
+        console.log("[SIGNUP] [FORENSIC] User registered successfully, but data.session is null. This implies that email verification is required by Supabase.");
+        toast.success("Account created successfully! Please check your email to verify and activate your account.", { duration: 10000 });
+        console.log("[SIGNUP] [FORENSIC] Redirecting to /login because email verification is required.");
+        navigate('/login');
+        return;
+      }
+
+      // (1) data.session is non-null
+      console.log("[SIGNUP] [FORENSIC] (1) Session state check: data.session is non-null. User is signed in automatically.");
+
+      // Supabase auth client automatically sets the session and fires onAuthStateChange.
+      // We don't need to manually verify or set the session, which can cause deadlocks in local storage locks.
+
+      // Profile creation / upsert
+      console.log("[SIGNUP] [FORENSIC] (AWAIT_4_BEFORE) Upserting user profile row in database...");
+      let profileUpsertSuccess = false;
+      const tUpsert0 = performance.now();
+      try {
+        const { error: profileError } = await Promise.race([
+          supabase.from('profiles').upsert({
+            id: data.user.id,
+            email: email.trim().toLowerCase(),
+            full_name: fullName.trim(),
+            display_name: fullName.trim(),
+            created_at: new Date().toISOString()
+          }),
+          safetyTimeout
+        ]) as any;
+        const tUpsert1 = performance.now();
+        if (profileError) {
+          console.error(`[SIGNUP] [FORENSIC] (AWAIT_4_ERROR) Profile upsert failed in ${(tUpsert1 - tUpsert0).toFixed(2)}ms with error:`, profileError);
+        } else {
+          console.log(`[SIGNUP] [FORENSIC] (AWAIT_4_AFTER) Profile upserted successfully in ${(tUpsert1 - tUpsert0).toFixed(2)}ms.`);
+          profileUpsertSuccess = true;
+        }
+      } catch (profCatch: any) {
+        const tUpsert1 = performance.now();
+        console.error(`[SIGNUP] [FORENSIC] (AWAIT_4_EXCEPTION) Unexpected exception during profile upsert in ${(tUpsert1 - tUpsert0).toFixed(2)}ms. Details:`, {
+          message: profCatch?.message,
+          stack: profCatch?.stack,
+          fullError: JSON.stringify(profCatch, Object.getOwnPropertyNames(profCatch))
+        });
+      }
+
+      // Verify that profile upsert failures cannot block navigation or leave the loading state active.
+      if (!profileUpsertSuccess) {
+        console.warn("[SIGNUP] [FORENSIC] Profile upsert was unsuccessful. Running safety session check before proceeding...");
+        console.log("[SIGNUP] [FORENSIC] (AWAIT_5_BEFORE) Checking if current session is active for navigation safety...");
+        const tSafety0 = performance.now();
+        try {
+          const { data: { session: currentSession } } = await Promise.race([
+            supabase.auth.getSession(),
+            safetyTimeout
+          ]) as any;
+          const tSafety1 = performance.now();
+          console.log(`[SIGNUP] [FORENSIC] (AWAIT_5_AFTER) Safety session check resolved in ${(tSafety1 - tSafety0).toFixed(2)}ms.`);
+          if (currentSession) {
+            console.log("[SIGNUP] [FORENSIC] Active session verified. Continuing with navigation despite profile upsert failure.");
+          } else {
+            console.error("[SIGNUP] [FORENSIC] Safety session check failed. No active session.");
+            throw new Error("Profile creation failed and no active auth session was found.");
+          }
+        } catch (sessErr: any) {
+          const tSafety1 = performance.now();
+          console.error(`[SIGNUP] [FORENSIC] (AWAIT_5_EXCEPTION) Safety session check failed in ${(tSafety1 - tSafety0).toFixed(2)}ms. Details:`, {
+            message: sessErr?.message,
+            stack: sessErr?.stack,
+            fullError: JSON.stringify(sessErr, Object.getOwnPropertyNames(sessErr))
+          });
+          throw sessErr;
+        }
+      }
+
+      // (4) navigation proceeds to onboarding without additional session activation
+      console.log("[SIGNUP] [FORENSIC] (4) (NAVIGATING) Directing user to onboarding setup flow (/setup)...");
       toast.success('Account created successfully!');
       navigate('/setup');
+      console.log("[SIGNUP] [FORENSIC] navigate('/setup') called successfully.");
+
     } catch (err: any) {
-      isSigningUpRef.current = false;
-      console.error("SIGNUP FLOW: Error object caught during sign up:", err);
+      console.error("[SIGNUP] Exception caught in sign-up flow try block:", err);
       const errorMessage = err?.message || 'Failed to create account. Please try again.';
       setSignUpError(errorMessage);
       toast.error(`Sign up failed\n\n${errorMessage}`);
+    } finally {
+      clearTimeout(timeoutId);
+      console.log("[SIGNUP] Cleaning up sign up task context. Setting loading states to false.");
       setLoading(false);
+      isSigningUpRef.current = false;
     }
   };
 

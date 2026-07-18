@@ -15,7 +15,7 @@ export const useFeed = (activeCategory = 'all') => {
       // Try fetching with shop join first
       let { data, error } = await supabase
         .from('products')
-        .select('*, shop:shops(id,name,handle,logo_url,is_live)')
+        .select('*, shop:shops(id,name,handle,logo_url,is_active)')
         .eq('is_published', true)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
@@ -51,7 +51,7 @@ export const useFeed = (activeCategory = 'all') => {
       
       const { data, error } = await supabase
         .from('products')
-        .select('id,name,price,images,is_published,created_at,shop:shops(id,name,handle,logo_url,is_live)')
+        .select('id,name,price,images,is_published,created_at,shop:shops(id,name,handle,logo_url,is_active)')
         .gte('created_at', cutoff.toISOString())
         .eq('is_published', true)
         .eq('status', 'active')
@@ -66,7 +66,7 @@ export const useFeed = (activeCategory = 'all') => {
       const shopMap: Record<string, any> = {};
       data?.forEach(p => {
         const shop = Array.isArray(p.shop) ? p.shop[0] : p.shop;
-        if (!shop?.id || !shop?.is_live) return;
+        if (!shop?.id || !shop?.is_active) return;
         if (!shopMap[shop.id]) {
           shopMap[shop.id] = { shop, products: [] };
         }
@@ -83,7 +83,7 @@ export const useFeed = (activeCategory = 'all') => {
     // Since is_featured is not in the schema, we'll pick the latest published product or omit
     const { data } = await supabase
       .from('products')
-      .select('*, shop:shops(id,name,handle,logo_url,is_live)')
+      .select('*, shop:shops(id,name,handle,logo_url,is_active)')
       .eq('is_published', true)
       .eq('status', 'active')
       .order('created_at', { ascending: false })

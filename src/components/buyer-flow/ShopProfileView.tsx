@@ -41,7 +41,7 @@ export const ShopProfileView: React.FC = () => {
         .from('shops')
         .select('*')
         .eq('handle', cleanHandle)
-        .eq('is_live', true)
+        .eq('is_active', true)
         .single();
         
       if (error || !data) {

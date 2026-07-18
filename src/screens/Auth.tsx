@@ -88,56 +88,199 @@ export const Auth: React.FC = () => {
     setError(null);
     
     try {
+      console.log("[SIGNUP] Starting user registration process via alternate Auth flow...");
       const cleanHandle = handle.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      console.log("[SIGNUP] Payload: email =", email.trim(), "handle =", cleanHandle, "displayName =", displayName.trim());
+
       const { data: existing } = await supabase.from('profiles').select('id').eq('handle', cleanHandle).maybeSingle();
       if (existing) {
         setError('That handle is already taken.');
-        setLoading(false);
         return;
       }
       
-      const redirectUrl =
-        window.location.hostname === 'localhost'
-          ? 'http://localhost:5173/auth/confirm'
-          : 'https://threadzw.vercel.app/auth/confirm';
-
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password: password,
-        options: { 
-          data: { display_name: displayName.trim(), handle: cleanHandle },
-          emailRedirectTo: redirectUrl
-        }
+      const redirectUrl = `${window.location.origin}/auth/confirm`;
+      console.log("[SIGNUP] [FORENSIC-ALT] Alternate redirectUrl:", redirectUrl);
+ 
+      console.log("[SIGNUP] [FORENSIC-ALT] (AWAIT_1_BEFORE) Initiating alternate supabase.auth.signUp...");
+      const tSignUp0 = performance.now();
+      let signUpResult;
+      try {
+        signUpResult = await supabase.auth.signUp({
+          email: email.trim(),
+          password: password,
+          options: { 
+            data: { display_name: displayName.trim(), handle: cleanHandle },
+            emailRedirectTo: redirectUrl
+          }
+        });
+        const tSignUp1 = performance.now();
+        console.log(`[SIGNUP] [FORENSIC-ALT] (AWAIT_1_AFTER) Alternate supabase.auth.signUp resolved successfully in ${(tSignUp1 - tSignUp0).toFixed(2)}ms.`);
+      } catch (signUpExc: any) {
+        const tSignUp1 = performance.now();
+        console.error(`[SIGNUP] [FORENSIC-ALT] (AWAIT_1_EXCEPTION) Alternate supabase.auth.signUp thrown error in ${(tSignUp1 - tSignUp0).toFixed(2)}ms. Details:`, {
+          message: signUpExc?.message,
+          stack: signUpExc?.stack,
+          fullError: JSON.stringify(signUpExc, Object.getOwnPropertyNames(signUpExc))
+        });
+        throw signUpExc;
+      }
+ 
+      const { data, error: signUpError } = signUpResult;
+ 
+      // Log the complete returned object (data.user, data.session, and error)
+      console.log("[SIGNUP] [FORENSIC-ALT] Complete response payload from alternate supabase.auth.signUp():", {
+        user: data?.user ? { id: data.user.id, email: data.user.email, email_confirmed_at: data.user.email_confirmed_at } : null,
+        session: data?.session ? { access_token_prefix: data.session.access_token?.substring(0, 15), expires_at: data.session.expires_at } : null,
+        error: signUpError ? { message: signUpError.message, status: signUpError.status } : null
       });
       
       if (signUpError) {
         if (signUpError.message.toLowerCase().includes('already registered')) {
           setView('signin');
           setError('An account with this email already exists. Please sign in.');
-          setLoading(false);
           return;
         }
+        console.error("[SIGNUP] [FORENSIC-ALT] Alternate supabase.auth.signUp() returned an auth error:", signUpError);
         throw signUpError;
       }
-      
+ 
+      if (!data?.user) {
+        const noUserErr = new Error("Alternate sign up completed but no user object was returned in the response.");
+        console.error("[SIGNUP] [FORENSIC-ALT] Critical: No user returned:", noUserErr);
+        throw noUserErr;
+      }
+ 
+      console.log("[SIGNUP] [FORENSIC-ALT] Alternate user created in authentication store. User ID:", data.user.id);
+ 
+      // Handle the case where email verification is required (no session is returned automatically)
+      if (!data.session) {
+        console.log("[SIGNUP] [FORENSIC-ALT] Alternate user registered successfully, but data.session is null. This implies email verification is required.");
+        toast.success("Account created successfully! Please check your email to verify and activate your account.", { duration: 10000 });
+        console.log("[SIGNUP] [FORENSIC-ALT] Redirecting to signin view because email verification is required.");
+        setView('signin');
+        return;
+      }
+ 
+      // (1) data.session is non-null
+      console.log("[SIGNUP] [FORENSIC-ALT] (1) Alternate session state check: data.session is non-null. User is signed in automatically.");
+ 
+      // (2) supabase.auth.getSession() immediately returns the same session
+      let isSessionAlreadyActive = false;
+      console.log("[SIGNUP] [FORENSIC-ALT] (AWAIT_2_BEFORE) Calling supabase.auth.getSession()...");
+      const tGetSess0 = performance.now();
+      try {
+        const { data: { session: activeSession } } = await supabase.auth.getSession();
+        const tGetSess1 = performance.now();
+        console.log(`[SIGNUP] [FORENSIC-ALT] (AWAIT_2_AFTER) supabase.auth.getSession() returned in ${(tGetSess1 - tGetSess0).toFixed(2)}ms.`);
+        
+        if (activeSession && data.session && activeSession.access_token === data.session.access_token) {
+          console.log("[SIGNUP] [FORENSIC-ALT] (2) Alternate active session confirmation: supabase.auth.getSession() returned matching session. Manual setSession is bypassed.");
+          isSessionAlreadyActive = true;
+        } else {
+          console.log("[SIGNUP] [FORENSIC-ALT] (2) Alternate Info: active session mismatch or null. Active session exists:", !!activeSession);
+        }
+      } catch (sessCheckErr: any) {
+        const tGetSess1 = performance.now();
+        console.error(`[SIGNUP] [FORENSIC-ALT] (AWAIT_2_EXCEPTION) supabase.auth.getSession() failed in ${(tGetSess1 - tGetSess0).toFixed(2)}ms. Details:`, {
+          message: sessCheckErr?.message,
+          stack: sessCheckErr?.stack,
+          fullError: JSON.stringify(sessCheckErr, Object.getOwnPropertyNames(sessCheckErr))
+        });
+      }
+ 
+      // If for some reason the session is NOT active, we'll gracefully fallback or set it, but if it is already active we bypass manual activation.
+      if (!isSessionAlreadyActive && data.session) {
+        console.log("[SIGNUP] [FORENSIC-ALT] (AWAIT_3_BEFORE) Setting session manually to align authentication states...");
+        const tSetSess0 = performance.now();
+        try {
+          const { error: sessionError } = await supabase.auth.setSession(data.session);
+          const tSetSess1 = performance.now();
+          if (sessionError) {
+            console.error(`[SIGNUP] [FORENSIC-ALT] (AWAIT_3_ERROR) Failed to set session manually (took ${(tSetSess1 - tSetSess0).toFixed(2)}ms):`, sessionError);
+            throw sessionError;
+          } else {
+            console.log(`[SIGNUP] [FORENSIC-ALT] (AWAIT_3_AFTER) Manual setSession succeeded in ${(tSetSess1 - tSetSess0).toFixed(2)}ms.`);
+          }
+        } catch (sessCatch: any) {
+          const tSetSess1 = performance.now();
+          console.error(`[SIGNUP] [FORENSIC-ALT] (AWAIT_3_EXCEPTION) Unexpected exception during setSession in ${(tSetSess1 - tSetSess0).toFixed(2)}ms. Details:`, {
+            message: sessCatch?.message,
+            stack: sessCatch?.stack,
+            fullError: JSON.stringify(sessCatch, Object.getOwnPropertyNames(sessCatch))
+          });
+          throw sessCatch;
+        }
+      } else {
+        console.log("[SIGNUP] [FORENSIC-ALT] Skipping manual setSession as native session is already active.");
+      }
+ 
+      // (3) onAuthStateChange emits SIGNED_IN event (this is handled in AuthContext.tsx listener)
+      console.log("[SIGNUP] [FORENSIC-ALT] (3) Monitoring AuthContext's onAuthStateChange subscriber for SIGNED_IN emission.");
+ 
       localStorage.setItem('thread_has_account', 'true');
-      if (data.user) {
-        await supabase.from('profiles').upsert({
+      
+      // Profile creation / upsert
+      console.log("[SIGNUP] [FORENSIC-ALT] (AWAIT_4_BEFORE) Upserting user profile row in database...");
+      let profileUpsertSuccess = false;
+      const tUpsert0 = performance.now();
+      try {
+        const { error: profileError } = await supabase.from('profiles').upsert({
           id: data.user.id,
           display_name: displayName.trim(),
           handle: cleanHandle,
           email: email.trim(),
           created_at: new Date().toISOString()
         });
+        const tUpsert1 = performance.now();
+        if (profileError) {
+          console.error(`[SIGNUP] [FORENSIC-ALT] (AWAIT_4_ERROR) Alternate Profile upsert failed in ${(tUpsert1 - tUpsert0).toFixed(2)}ms with error:`, profileError);
+        } else {
+          console.log(`[SIGNUP] [FORENSIC-ALT] (AWAIT_4_AFTER) Alternate Profile upserted successfully in ${(tUpsert1 - tUpsert0).toFixed(2)}ms.`);
+          profileUpsertSuccess = true;
+        }
+      } catch (profCatch: any) {
+        const tUpsert1 = performance.now();
+        console.error(`[SIGNUP] [FORENSIC-ALT] (AWAIT_4_EXCEPTION) Unexpected exception during alternate profile upsert in ${(tUpsert1 - tUpsert0).toFixed(2)}ms. Details:`, {
+          message: profCatch?.message,
+          stack: profCatch?.stack,
+          fullError: JSON.stringify(profCatch, Object.getOwnPropertyNames(profCatch))
+        });
       }
-      
-      if (data.session) {
-        await supabase.auth.setSession(data.session);
+ 
+      // Verify that profile upsert failures cannot block navigation or leave the loading state active.
+      if (!profileUpsertSuccess) {
+        console.warn("[SIGNUP] [FORENSIC-ALT] Alternate Profile upsert was unsuccessful. Running safety session check before proceeding...");
+        console.log("[SIGNUP] [FORENSIC-ALT] (AWAIT_5_BEFORE) Checking if current session is active for navigation safety...");
+        const tSafety0 = performance.now();
+        try {
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          const tSafety1 = performance.now();
+          console.log(`[SIGNUP] [FORENSIC-ALT] (AWAIT_5_AFTER) Alternate Safety session check resolved in ${(tSafety1 - tSafety0).toFixed(2)}ms.`);
+          if (currentSession) {
+            console.log("[SIGNUP] [FORENSIC-ALT] Alternate Active session verified. Continuing with navigation despite profile upsert failure.");
+          } else {
+            console.error("[SIGNUP] [FORENSIC-ALT] Alternate Safety session check failed. No active session.");
+            throw new Error("Profile creation failed and no active auth session was found.");
+          }
+        } catch (sessErr: any) {
+          const tSafety1 = performance.now();
+          console.error(`[SIGNUP] [FORENSIC-ALT] (AWAIT_5_EXCEPTION) Alternate Safety session check failed in ${(tSafety1 - tSafety0).toFixed(2)}ms. Details:`, {
+            message: sessErr?.message,
+            stack: sessErr?.stack,
+            fullError: JSON.stringify(sessErr, Object.getOwnPropertyNames(sessErr))
+          });
+          throw sessErr;
+        }
       }
+ 
+      // (4) navigation proceeds to onboarding without additional session activation
+      console.log("[SIGNUP] [FORENSIC-ALT] (4) (NAVIGATING) Alternate Navigation proceeds directly to onboarding (/setup) without additional session activation.");
+ 
       toast.success('Account created successfully!');
       navigate('/setup');
+      console.log("[SIGNUP] [FORENSIC-ALT] navigate('/setup') called successfully.");
     } catch (err: any) {
-      console.error("[AUTH-SIGNUP-DEBUG] Complete error object caught:", err);
+      console.error("[SIGNUP] Complete error object caught in alternate signup try block:", err);
       if (err) {
         if (err.code) {
           console.error("[AUTH-SIGNUP-DEBUG] Error code:", err.code);
@@ -154,6 +297,7 @@ export const Auth: React.FC = () => {
       setError(mapError(err));
       toast.error(`Sign up failed\n\n${errorMessage}`);
     } finally {
+      console.log("[SIGNUP] Cleaning up alternate sign up task context. Setting loading states to false.");
       if (mounted.current) setLoading(false);
     }
   };

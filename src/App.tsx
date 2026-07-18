@@ -490,8 +490,8 @@ function AppContent() {
   if (isDashboardSubPath) {
     return (
       <Routes>
-        <Route path="/" element={<Dashboard initialLocked={false} />} />
-        <Route path="/dashboard" element={<Dashboard initialLocked={false} />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />

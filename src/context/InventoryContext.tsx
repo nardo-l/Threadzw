@@ -21,7 +21,7 @@ export interface Shop {
   avatar_url?: string;
   banner_url?: string;
   is_verified: boolean;
-  is_live: boolean;
+  is_active: boolean;
   trial_ends_at?: string;
   subscription_status?: string;
   plan?: string;
@@ -224,7 +224,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         setUserData(prev => ({
           ...prev,
           hasShop: true,
-          isShopLive: data.is_live,
+          isShopLive: data.is_active,
           shopId: data.id,
           shopName: data.name,
           shopHandle: data.handle,
@@ -264,7 +264,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         const { data, error: shopsErr } = await supabase
           .from('shops')
           .select('*')
-          .eq('is_live', true);
+          .eq('is_active', true);
 
         if (!shopsErr && data) {
           // Filter out dummy/mock shops if any of non-UUID format

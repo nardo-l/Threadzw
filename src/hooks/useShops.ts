@@ -14,7 +14,7 @@ export const useShops = (searchQuery = '', filters: any = {}) => {
       const { data, error: queryErr } = await supabase
         .from('shops')
         .select('*')
-        .eq('is_live', true)
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (queryErr) throw queryErr;

@@ -83,8 +83,26 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
   // 5 = Storefront Preview
   // 6 = "Build My Shop" Processing Screen
   // 7 = Success (Store is Live!)
-  const [step, setStep] = useState(0);
+  // Retrieve saved step from localStorage or default to 1 (Shop Category Choice)
+  const [step, setStep] = useState<number>(() => {
+    const saved = localStorage.getItem('threadzw_onboarding_step');
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      // Ensure we only restore valid onboarding steps (not Step 0, and not completed steps 29/30)
+      if (parsed > 0 && parsed < 29) {
+        return parsed;
+      }
+    }
+    return 1; // Default to step 1 (Shop Category Choice)
+  });
   const [loading, setLoading] = useState(false);
+
+  // Persist current onboarding step
+  useEffect(() => {
+    if (step > 0 && step < 29) {
+      localStorage.setItem('threadzw_onboarding_step', step.toString());
+    }
+  }, [step]);
 
   // Form states
   const [shopName, setShopName] = useState('');
@@ -152,8 +170,8 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
       try {
         const { data, error } = await supabase
           .from('shops')
-          .select('handle')
-          .eq('handle', shopHandle.toLowerCase().trim())
+          .select('slug')
+          .eq('slug', shopHandle.toLowerCase().trim())
           .maybeSingle();
 
         if (error) {
@@ -208,6 +226,8 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
     localReader.onload = () => setLogoPreview(localReader.result as string);
     localReader.readAsDataURL(file);
 
+    console.log("[SETUP-SHOP] [FORENSIC] (AWAIT_LOGO_UPLOAD_BEFORE) Starting logo upload to Storage...");
+    const t0 = performance.now();
     try {
       const url = await uploadImage({
         supabase,
@@ -216,10 +236,17 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
         folder: 'logo',
         userId: user.id
       });
+      const t1 = performance.now();
+      console.log(`[SETUP-SHOP] [FORENSIC] (AWAIT_LOGO_UPLOAD_AFTER) Logo upload succeeded in ${(t1 - t0).toFixed(2)}ms. URL:`, url);
       setLogoUrl(url);
       toast.success('Logo uploaded successfully');
     } catch (err: any) {
-      console.error('Logo upload error:', err);
+      const t1 = performance.now();
+      console.error(`[SETUP-SHOP] [FORENSIC] (AWAIT_LOGO_UPLOAD_EXCEPTION) Logo upload failed in ${(t1 - t0).toFixed(2)}ms. Details:`, {
+        message: err?.message,
+        stack: err?.stack,
+        fullError: JSON.stringify(err, Object.getOwnPropertyNames(err))
+      });
       toast.error(err?.message || 'Logo upload failed. Try again.');
       setLogoPreview(null);
     } finally {
@@ -242,6 +269,8 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
     localReader.onload = () => setBannerPreview(localReader.result as string);
     localReader.readAsDataURL(file);
 
+    console.log("[SETUP-SHOP] [FORENSIC] (AWAIT_BANNER_UPLOAD_BEFORE) Starting banner upload to Storage...");
+    const t0 = performance.now();
     try {
       const url = await uploadImage({
         supabase,
@@ -250,10 +279,17 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
         folder: 'banner',
         userId: user.id
       });
+      const t1 = performance.now();
+      console.log(`[SETUP-SHOP] [FORENSIC] (AWAIT_BANNER_UPLOAD_AFTER) Banner upload succeeded in ${(t1 - t0).toFixed(2)}ms. URL:`, url);
       setBannerUrl(url);
       toast.success('Banner uploaded successfully');
     } catch (err: any) {
-      console.error('Banner upload error:', err);
+      const t1 = performance.now();
+      console.error(`[SETUP-SHOP] [FORENSIC] (AWAIT_BANNER_UPLOAD_EXCEPTION) Banner upload failed in ${(t1 - t0).toFixed(2)}ms. Details:`, {
+        message: err?.message,
+        stack: err?.stack,
+        fullError: JSON.stringify(err, Object.getOwnPropertyNames(err))
+      });
       toast.error(err?.message || 'Banner upload failed. Try again.');
       setBannerPreview(null);
     } finally {
@@ -264,12 +300,14 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
   // Submit and create the storefront
   const handleCreateShop = async () => {
     if (!user?.id) {
+      console.error("[SETUP-SHOP] [FORENSIC] Not authenticated, cannot run handleCreateShop.");
       toast.error('Not authenticated');
       setStep(28); // Go back to review if error
       return;
     }
 
     if (!shopName.trim() || !shopHandle.trim() || !whatsapp.trim()) {
+      console.error("[SETUP-SHOP] [FORENSIC] Validation failed: name, handle or whatsapp is empty.");
       toast.error('Please complete all fields');
       setStep(28); // Go back to review if error
       return;
@@ -277,40 +315,89 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
 
     const cleanWhatsapp = whatsapp.replace(/[^0-9]/g, '');
     if (cleanWhatsapp.length < 9) {
+      console.error("[SETUP-SHOP] [FORENSIC] Validation failed: whatsapp number is invalid.");
       toast.error('Please enter a valid WhatsApp number');
       setStep(28); // Go back to review if error
       return;
     }
 
+    console.log("[SETUP-SHOP] [FORENSIC] Initiating shop creation. Parameters:", {
+      userId: user.id,
+      shopName: shopName.trim(),
+      shopHandle: shopHandle.toLowerCase().trim(),
+      selectedCategory,
+      whatsapp: `+263${cleanWhatsapp}`,
+      descriptionLength: description.trim().length,
+      hasLogo: !!logoUrl,
+      hasBanner: !!bannerUrl
+    });
+
     setLoading(true);
 
     try {
       // Create shop in database via the custom RPC
-      const { data, error: rpcError } = await supabase.rpc('create_shop', {
-        p_name: shopName.trim(),
-        p_slug: shopHandle.toLowerCase().trim(),
-        p_category: selectedCategory,
-        p_whatsapp_number: `+263${cleanWhatsapp}`,
+      console.log("[SETUP-SHOP] [FORENSIC] (AWAIT_RPC_CREATE_BEFORE) Calling supabase.rpc('create_shop')...");
+      const tRpc0 = performance.now();
+      let rpcResult;
+      try {
+        rpcResult = await supabase.rpc('create_shop', {
+          p_name: shopName.trim(),
+          p_slug: shopHandle.toLowerCase().trim(),
+          p_category: selectedCategory,
+          p_whatsapp_number: `+263${cleanWhatsapp}`,
+        });
+        const tRpc1 = performance.now();
+        console.log(`[SETUP-SHOP] [FORENSIC] (AWAIT_RPC_CREATE_AFTER) supabase.rpc('create_shop') resolved in ${(tRpc1 - tRpc0).toFixed(2)}ms.`);
+      } catch (rpcExc: any) {
+        const tRpc1 = performance.now();
+        console.error(`[SETUP-SHOP] [FORENSIC] (AWAIT_RPC_CREATE_EXCEPTION) supabase.rpc('create_shop') exception in ${(tRpc1 - tRpc0).toFixed(2)}ms. Details:`, {
+          message: rpcExc?.message,
+          stack: rpcExc?.stack,
+          fullError: JSON.stringify(rpcExc, Object.getOwnPropertyNames(rpcExc))
+        });
+        throw rpcExc;
+      }
+
+      const { data, error: rpcError } = rpcResult;
+      console.log("[SETUP-SHOP] [FORENSIC] supabase.rpc('create_shop') response payload:", {
+        data,
+        error: rpcError ? { message: rpcError.message, code: rpcError.code, details: rpcError.details, hint: rpcError.hint } : null
       });
 
       if (rpcError) {
         throw rpcError;
       }
 
-      // Update logo, banner, town, description right after creating the shop
+      // Update logo, banner, and description right after creating the shop
       const updatePayload: any = {
         description: description.trim(),
-        town: city || '',
       };
       if (logoUrl) updatePayload.logo_url = logoUrl;
       if (bannerUrl) updatePayload.banner_url = bannerUrl;
 
-      const { error: updateError } = await supabase
-        .from('shops')
-        .update(updatePayload)
-        .eq('owner_id', user.id);
+      console.log("[SETUP-SHOP] [FORENSIC] (AWAIT_SHOP_UPDATE_BEFORE) Updating additional storefront metadata. Payload:", updatePayload);
+      const tUpd0 = performance.now();
+      let updateResult;
+      try {
+        updateResult = await supabase
+          .from('shops')
+          .update(updatePayload)
+          .eq('owner_id', user.id);
+        const tUpd1 = performance.now();
+        console.log(`[SETUP-SHOP] [FORENSIC] (AWAIT_SHOP_UPDATE_AFTER) Shops update operation resolved in ${(tUpd1 - tUpd0).toFixed(2)}ms.`);
+      } catch (updExc: any) {
+        const tUpd1 = performance.now();
+        console.error(`[SETUP-SHOP] [FORENSIC] (AWAIT_SHOP_UPDATE_EXCEPTION) Shops update failed in ${(tUpd1 - tUpd0).toFixed(2)}ms. Details:`, {
+          message: updExc?.message,
+          stack: updExc?.stack,
+          fullError: JSON.stringify(updExc, Object.getOwnPropertyNames(updExc))
+        });
+        throw updExc;
+      }
 
+      const { error: updateError } = updateResult;
       if (updateError) {
+        console.error("[SETUP-SHOP] [FORENSIC] Shops table update returned a Supabase error:", updateError);
         throw updateError;
       }
 
@@ -318,14 +405,37 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
       localStorage.setItem('threadzw_first_login_overlay_shown', 'true');
       localStorage.setItem('threadzw_shop_onboarding_first_time', 'done');
       localStorage.setItem('threadzw_onboarding_complete', 'true');
+      localStorage.removeItem('threadzw_onboarding_step');
+      console.log("[SETUP-SHOP] [FORENSIC] Local onboarding flag states updated in localStorage.");
 
       if (updateProfile) {
-        await updateProfile({ onboarding_complete: true });
+        console.log("[SETUP-SHOP] [FORENSIC] (AWAIT_PROFILE_SYNC_BEFORE) Calling updateProfile to complete merchant onboarding...");
+        const tProf0 = performance.now();
+        try {
+          await updateProfile({ onboarding_complete: true, town: city || 'Harare' });
+          const tProf1 = performance.now();
+          console.log(`[SETUP-SHOP] [FORENSIC] (AWAIT_PROFILE_SYNC_AFTER) updateProfile completed in ${(tProf1 - tProf0).toFixed(2)}ms.`);
+        } catch (profExc: any) {
+          const tProf1 = performance.now();
+          console.error(`[SETUP-SHOP] [FORENSIC] (AWAIT_PROFILE_SYNC_EXCEPTION) updateProfile threw an error in ${(tProf1 - tProf0).toFixed(2)}ms. Details:`, {
+            message: profExc?.message,
+            stack: profExc?.stack,
+            fullError: JSON.stringify(profExc, Object.getOwnPropertyNames(profExc))
+          });
+          throw profExc;
+        }
+      } else {
+        console.warn("[SETUP-SHOP] [FORENSIC] Warning: updateProfile is not defined in context.");
       }
 
+      console.log("[SETUP-SHOP] [FORENSIC] Storefront onboarding completed successfully. Transitioning to dbCreationFinished status.");
       setDbCreationFinished(true);
     } catch (err: any) {
-      console.error('Error creating shop:', err);
+      console.error('[SETUP-SHOP] [FORENSIC] EXCEPTION during shop creation flow:', {
+        message: err?.message,
+        stack: err?.stack,
+        fullError: JSON.stringify(err, Object.getOwnPropertyNames(err))
+      });
       toast.error(err?.message || 'Failed to initialize storefront details.');
       setStep(28); // Return to review on error
     } finally {
@@ -1367,10 +1477,10 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
           {/* Action Button */}
           <div className="w-full shrink-0">
             <button
-              onClick={handleCreateShop}
+              onClick={() => setStep(29)}
               className="w-full h-14 bg-[#bef715] hover:opacity-95 text-black font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-lg shadow-[#bef715]/10"
             >
-              <span>Create My Shop 🚀</span>
+              <span>Build My Shop 🚀</span>
             </button>
           </div>
         </motion.div>
@@ -1504,12 +1614,30 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
           <div className="w-full space-y-3 shrink-0 mt-6">
             <button
               onClick={async () => {
-                if (onSetupComplete) {
-                  await onSetupComplete();
-                } else {
-                  await refreshShop();
+                console.log("[SETUP-SHOP] [FORENSIC] (AWAIT_GO_DASHBOARD_BEFORE) User clicked 'Go to Dashboard' button.");
+                const t0 = performance.now();
+                try {
+                  if (onSetupComplete) {
+                    console.log("[SETUP-SHOP] [FORENSIC] Calling onSetupComplete()...");
+                    await onSetupComplete();
+                    console.log("[SETUP-SHOP] [FORENSIC] onSetupComplete() finished.");
+                  } else {
+                    console.log("[SETUP-SHOP] [FORENSIC] onSetupComplete is not defined. Calling refreshShop()...");
+                    await refreshShop();
+                    console.log("[SETUP-SHOP] [FORENSIC] refreshShop() finished.");
+                  }
+                  const t1 = performance.now();
+                  console.log(`[SETUP-SHOP] [FORENSIC] (AWAIT_GO_DASHBOARD_AFTER) Completion routine resolved in ${(t1 - t0).toFixed(2)}ms. Navigating to /dashboard...`);
+                } catch (navExc: any) {
+                  const t1 = performance.now();
+                  console.error(`[SETUP-SHOP] [FORENSIC] (AWAIT_GO_DASHBOARD_EXCEPTION) Completion routine threw exception in ${(t1 - t0).toFixed(2)}ms. Details:`, {
+                    message: navExc?.message,
+                    stack: navExc?.stack,
+                    fullError: JSON.stringify(navExc, Object.getOwnPropertyNames(navExc))
+                  });
                 }
                 navigate('/dashboard');
+                console.log("[SETUP-SHOP] [FORENSIC] navigate('/dashboard') called.");
               }}
               className="w-full h-14 bg-[#bef715] hover:opacity-95 text-black font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] shadow-lg shadow-[#bef715]/10"
             >
@@ -1522,10 +1650,27 @@ export const SetupShop: React.FC<{ onSetupComplete?: () => void }> = ({ onSetupC
               target="_blank"
               rel="noopener noreferrer"
               onClick={async () => {
-                if (onSetupComplete) {
-                  await onSetupComplete();
-                } else {
-                  await refreshShop();
+                console.log("[SETUP-SHOP] [FORENSIC] (AWAIT_PREVIEW_BEFORE) User clicked 'Preview My Shop' link.");
+                const t0 = performance.now();
+                try {
+                  if (onSetupComplete) {
+                    console.log("[SETUP-SHOP] [FORENSIC] Calling onSetupComplete() on preview...");
+                    await onSetupComplete();
+                    console.log("[SETUP-SHOP] [FORENSIC] onSetupComplete() finished.");
+                  } else {
+                    console.log("[SETUP-SHOP] [FORENSIC] onSetupComplete is not defined. Calling refreshShop() on preview...");
+                    await refreshShop();
+                    console.log("[SETUP-SHOP] [FORENSIC] refreshShop() finished.");
+                  }
+                  const t1 = performance.now();
+                  console.log(`[SETUP-SHOP] [FORENSIC] (AWAIT_PREVIEW_AFTER) Completion routine for preview resolved in ${(t1 - t0).toFixed(2)}ms.`);
+                } catch (navExc: any) {
+                  const t1 = performance.now();
+                  console.error(`[SETUP-SHOP] [FORENSIC] (AWAIT_PREVIEW_EXCEPTION) Completion routine for preview threw exception in ${(t1 - t0).toFixed(2)}ms. Details:`, {
+                    message: navExc?.message,
+                    stack: navExc?.stack,
+                    fullError: JSON.stringify(navExc, Object.getOwnPropertyNames(navExc))
+                  });
                 }
               }}
               className="w-full h-12 bg-transparent text-[#bef715] border border-zinc-900 rounded-2xl hover:bg-zinc-950 font-extrabold text-sm flex items-center justify-center cursor-pointer transition-all active:scale-[0.98]"

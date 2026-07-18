@@ -69,7 +69,7 @@ export const HomeFeed: React.FC = () => {
         .select(`
           id, name, handle, logo_url, follower_count
         `)
-        .eq('is_live', true)
+        .eq('is_active', true)
         .order('follower_count', { ascending: false })
         .limit(15);
       
@@ -125,7 +125,7 @@ export const HomeFeed: React.FC = () => {
         `)
         .eq('is_published', true)
         .eq('status', 'active')
-        .eq('shops.is_live', true)
+        .eq('shops.is_active', true)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -157,7 +157,7 @@ export const HomeFeed: React.FC = () => {
         `)
         .eq('is_published', true)
         .eq('status', 'active')
-        .eq('shops.is_live', true)
+        .eq('shops.is_active', true)
         .order('created_at', { ascending: false })
         .limit(10);
       
@@ -197,8 +197,8 @@ export const HomeFeed: React.FC = () => {
       
       let query = supabase
         .from('shops')
-        .select('id, name, handle, logo_url, category, follower_count, is_live')
-        .eq('is_live', true);
+        .select('id, name, handle, logo_url, category, follower_count, is_active')
+        .eq('is_active', true);
 
       if (session?.user?.id) {
         const { data: followed } = await supabase

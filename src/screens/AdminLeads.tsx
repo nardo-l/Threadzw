@@ -346,7 +346,7 @@ export const AdminLeads: React.FC = () => {
           trial_ends_at: endRenewal,
           subscription_start: nowStr,
           subscription_end: endRenewal,
-          is_live: true,
+          is_active: true,
           manual_lock: false,
           payment_overdue_flagged: false
         };

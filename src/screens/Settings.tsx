@@ -1,53 +1,120 @@
-import React, { useState, useEffect } from 'react';
+// src/screens/Settings.tsx
+
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Home, Package, BarChart3, Settings as SettingsIcon, ShoppingBag,
-  LogOut, Shield, ChevronRight, User, Settings as GearIcon,
-  FileText, Globe, Percent
+  User, 
+  Lock, 
+  Calendar, 
+  Loader2, 
+  LogOut, 
+  ChevronRight, 
+  CheckCircle2, 
+  AlertTriangle 
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
-import { getShopStatus } from '../utils/shopStatus';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const [shop, setShop] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [conversionRate, setConversionRate] = useState<number>(() => {
-    return Number(localStorage.getItem('threadzw_conversion_rate') || '30');
-  });
+  const { user, session, profile, subscription, updateProfile, updatePassword, signOut } = useAuth();
 
+  const [loading, setLoading] = useState(false);
+
+  // Profile Form State
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [town, setTown] = useState('Harare');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  // Password Form State
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [updatingPass, setUpdatingPass] = useState(false);
+
+  // Initialize fields
   useEffect(() => {
-    const fetchShop = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          navigate('/');
-          return;
-        }
+    if (profile) {
+      setDisplayName(profile.display_name || '');
+      setEmail(profile.email || user?.email || '');
+      setTown(profile.town || 'Harare');
+    } else if (user) {
+      setEmail(user.email || '');
+    }
+  }, [profile, user]);
 
-        const { data: shopData } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('owner_id', session.user.id)
-          .single();
+  // Calculate remaining trial days
+  const trialDaysRemaining = useMemo(() => {
+    if (!subscription) return 0;
+    if (subscription.status === 'active') return null; // Fully subscribed
+    if (!subscription.trial_ends_at) return 0;
+    const ends = new Date(subscription.trial_ends_at);
+    const now = new Date();
+    const diffTime = ends.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return Math.max(0, diffDays);
+  }, [subscription]);
 
-        if (shopData) {
-          setShop(shopData);
-        }
-      } catch (err) {
-        console.error('Settings shop fetch error:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Save Profile Changes
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!displayName.trim()) {
+      toast.error('Display Name is required.');
+      return;
+    }
 
-    fetchShop();
-  }, [navigate]);
+    setSavingProfile(true);
+    try {
+      const { error } = await updateProfile({
+        display_name: displayName.trim(),
+        town: town.trim()
+      });
 
+      if (error) throw error;
+      toast.success('Profile updated successfully!');
+    } catch (err: any) {
+      console.error('Error updating profile:', err);
+      toast.error(err?.message || 'Failed to update profile.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  // Update Password
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword) {
+      toast.error('Please enter a new password.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+
+    setUpdatingPass(true);
+    try {
+      const { error } = await updatePassword(newPassword);
+      if (error) throw error;
+
+      toast.success('Password updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      console.error('Error updating password:', err);
+      toast.error(err?.message || 'Failed to update password.');
+    } finally {
+      setUpdatingPass(false);
+    }
+  };
+
+  // Handle Log Out
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -58,191 +125,175 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const togglePublishState = async () => {
-    if (!shop) return;
-    const nextIsLive = !shop.is_live;
-    try {
-      const { error } = await supabase
-        .from('shops')
-        .update({ is_live: nextIsLive })
-        .eq('id', shop.id);
-      
-      if (error) throw error;
-
-      const updatedShop = { ...shop, is_live: nextIsLive };
-      setShop(updatedShop);
-      localStorage.setItem(`shop_${shop.owner_id}`, JSON.stringify(updatedShop));
-      
-      toast.success(nextIsLive ? 'Shop published successfully! 🚀' : 'Shop paused successfully.');
-    } catch (err) {
-      console.error('Error updating shop live state:', err);
-      toast.error('Failed to update shop status.');
-    }
-  };
-
-  const statusObj = { status: 'free', daysLeft: 999 };
-  const daysLeft = 999;
-  const isUrgent = false;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#F9FAFB] flex items-center justify-center">
-        <div className="w-8 h-8 rounded-full border-2 border-zinc-800 border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#F9FAFB] text-zinc-800 pb-32 font-sans select-none text-left">
-      <div className="max-w-md mx-auto px-5 pt-8">
-        <h1 className="text-2xl font-black text-zinc-950 tracking-tight leading-none uppercase mb-6">Settings</h1>
-        
-        {/* Settings List */}
-        <div className="flex flex-col bg-white border border-zinc-150/80 rounded-3xl p-4 shadow-sm space-y-1">
-          
-          {/* 2. Shop Settings */}
-          <div 
-            onClick={() => {
-              navigate('/edit-shop');
-            }} 
-            className="group active:opacity-80 transition-all flex items-center gap-3.5 py-3 cursor-pointer border-b border-zinc-100 last:border-none"
-          >
-            <div className="w-10 h-10 rounded-full bg-zinc-50 text-zinc-500 border border-zinc-200/40 flex items-center justify-center flex-shrink-0">
-              <GearIcon size={18} />
-            </div>
-            <div className="flex-1">
-              <div className="text-zinc-900 font-bold text-[14px]">Shop Settings</div>
-              <p className="text-zinc-500 text-xs mt-0.5 font-medium">Manage shop name, logo & domain info</p>
-            </div>
-            <ChevronRight size={16} className="text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-
-          {/* Shop Visibility Switch */}
-          <div 
-            onClick={togglePublishState}
-            className="group active:opacity-80 transition-all flex items-center gap-3.5 py-3 cursor-pointer border-b border-zinc-100 last:border-none select-none"
-          >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 border ${shop?.is_live ? 'bg-[#25D366]/15 border-[#25D366]/40 text-zinc-900' : 'bg-red-50 border-red-100 text-red-500'}`}>
-              <Globe size={18} />
-            </div>
-            <div className="flex-1">
-              <div className="text-zinc-900 font-bold text-[14px]">Shop Visibility</div>
-              <p className="text-zinc-500 text-xs mt-0.5 font-medium">
-                Status: <span className={shop?.is_live ? 'text-zinc-900 font-black' : 'text-red-500 font-bold'}>{shop?.is_live ? 'LIVE' : 'PAUSED'}</span>
-              </p>
-            </div>
-            <div className={`w-10 h-6 rounded-full p-0.5 transition-colors duration-200 ${shop?.is_live ? 'bg-[#25D366]' : 'bg-zinc-200'}`}>
-              <div className="w-5 h-5 rounded-full bg-white transition-transform duration-200 shadow-sm" style={{ transform: shop?.is_live ? 'translateX(16px)' : 'translateX(0px)' }} />
-            </div>
-          </div>
-
-          {/* 5. Privacy & Terms */}
-          <div 
-            onClick={() => {
-              toast.info('Merchant terms and compliance agreements are active');
-            }}
-            className="group active:opacity-80 transition-all flex items-center gap-3.5 py-3 cursor-pointer border-b border-zinc-100 last:border-none"
-          >
-            <div className="w-10 h-10 rounded-full bg-zinc-50 text-zinc-500 border border-zinc-200/40 flex items-center justify-center flex-shrink-0">
-              <FileText size={18} />
-            </div>
-            <div className="flex-1">
-              <div className="text-zinc-900 font-bold text-[14px]">Privacy & Terms</div>
-              <p className="text-zinc-500 text-xs mt-0.5 font-medium">Read compliance guidelines & legal policies</p>
-            </div>
-            <ChevronRight size={16} className="text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-
-          {/* 6. Help & Support */}
-          <div 
-            onClick={() => {
-              navigate('/support');
-            }} 
-            className="group active:opacity-80 transition-all flex items-center gap-3.5 py-3 cursor-pointer border-b border-zinc-100 last:border-none"
-          >
-            <div className="w-10 h-10 rounded-full bg-zinc-50 text-zinc-500 border border-zinc-200/40 flex items-center justify-center flex-shrink-0">
-              <Shield size={18} />
-            </div>
-            <div className="flex-1">
-              <div className="text-zinc-900 font-bold text-[14px]">Help & Support</div>
-              <p className="text-zinc-500 text-xs mt-0.5 font-medium">Read FAQs, log tickets & contact support</p>
-            </div>
-            <ChevronRight size={16} className="text-zinc-400 group-hover:translate-x-0.5 transition-transform" />
-          </div>
-
-        </div>
-
-        {/* Business Metrics Configuration Section */}
-        <div className="h-4" />
-        <div className="bg-white border border-zinc-150/80 rounded-3xl p-5 shadow-sm text-left">
-          <div className="flex items-center gap-2.5 mb-2">
-            <div className="w-8 h-8 rounded-full bg-zinc-50 border border-zinc-200/40 flex items-center justify-center text-zinc-800">
-              <Percent size={15} className="stroke-[3.5px] text-zinc-700" />
-            </div>
-            <div>
-              <h3 className="text-zinc-900 font-bold text-[14px]">Business Metrics</h3>
-              <p className="text-zinc-400 text-[10px] uppercase tracking-wider font-mono font-bold">Sales & Conversion Rates</p>
-            </div>
-          </div>
-          <p className="text-zinc-500 text-xs font-medium leading-relaxed mb-4">
-            Configure the estimated conversion percentage from Buyer Intent actions (WhatsApp clicks and shop direction views) to actual completed sales. This value is used to calculate Estimated Revenue throughout your merchant dashboard.
+    <div className="min-h-screen bg-white text-black font-sans selection:bg-[#25D366] selection:text-black pb-32">
+      {/* Top Header */}
+      <header className="max-w-md mx-auto px-6 pt-10 pb-6 flex items-center justify-between border-b border-zinc-100">
+        <div className="space-y-1 text-left">
+          <h1 className="text-2xl font-black tracking-tight text-black">Settings</h1>
+          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">
+            Account Management
           </p>
-          <div className="space-y-3.5 pt-1.5">
-            <div className="flex justify-between items-center">
-              <label className="text-zinc-800 text-[11px] font-black uppercase tracking-wider">
-                Estimated Buyer Intent → Sale Conversion %
-              </label>
-              <span className="bg-[#25D366]/15 text-zinc-900 px-3 py-1 rounded-xl text-xs font-mono font-black border border-[#25D366]/30">
-                {conversionRate}%
-              </span>
-            </div>
-            <input 
-              type="range"
-              min="5"
-              max="100"
-              value={conversionRate}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                setConversionRate(val);
-                localStorage.setItem('threadzw_conversion_rate', String(val));
-                toast.success(`Conversion rate set to ${val}%! Dashboard updated.`);
-              }}
-              className="w-full accent-zinc-900 h-2 bg-zinc-150 rounded-lg cursor-pointer appearance-none border border-zinc-200"
-            />
-            <div className="flex justify-between text-[9px] text-zinc-400 font-bold tracking-widest uppercase">
-              <span>5% (Conservative)</span>
-              <span>100% (Direct)</span>
-            </div>
-          </div>
         </div>
+      </header>
 
-        {/* Separator card spacing */}
-        <div className="h-4" />
+      {/* Main Content Area */}
+      <main className="max-w-md mx-auto px-6 pt-8 space-y-8">
+        
+        {/* SECTION 1: Profile Details */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <User size={16} className="text-black" />
+            <h2 className="text-xs font-black uppercase tracking-wider text-black">Profile Details</h2>
+          </div>
 
-        {/* Action card for Log out */}
-        <div className="bg-white border border-zinc-150/80 rounded-3xl p-4 shadow-sm">
-          {/* 7. Log Out */}
-          <div 
+          <form onSubmit={handleSaveProfile} className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-700">Display Name</label>
+              <input 
+                type="text" 
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your Name"
+                className="w-full h-11 bg-white border border-zinc-200 rounded-xl px-4 text-sm text-black focus:outline-none focus:border-[#25D366] transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-700">Email Address (Read Only)</label>
+              <input 
+                type="email" 
+                value={email}
+                readOnly
+                className="w-full h-11 bg-zinc-100/60 border border-zinc-200 rounded-xl px-4 text-sm text-zinc-500 cursor-not-allowed focus:outline-none"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-700">Town/Location</label>
+              <input 
+                type="text" 
+                value={town}
+                onChange={(e) => setTown(e.target.value)}
+                placeholder="e.g. Harare"
+                className="w-full h-11 bg-white border border-zinc-200 rounded-xl px-4 text-sm text-black focus:outline-none focus:border-[#25D366] transition-all"
+              />
+            </div>
+
+            <button 
+              type="submit"
+              disabled={savingProfile}
+              className="w-full h-11 bg-black hover:bg-zinc-900 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            >
+              {savingProfile ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                'Save Profile Changes'
+              )}
+            </button>
+          </form>
+        </section>
+
+        {/* SECTION 2: Change Password */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Lock size={16} className="text-black" />
+            <h2 className="text-xs font-black uppercase tracking-wider text-black">Security</h2>
+          </div>
+
+          <form onSubmit={handleUpdatePassword} className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-700">New Password</label>
+              <input 
+                type="password" 
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimum 6 characters"
+                className="w-full h-11 bg-white border border-zinc-200 rounded-xl px-4 text-sm text-black focus:outline-none focus:border-[#25D366] transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-zinc-700">Confirm New Password</label>
+              <input 
+                type="password" 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter password"
+                className="w-full h-11 bg-white border border-zinc-200 rounded-xl px-4 text-sm text-black focus:outline-none focus:border-[#25D366] transition-all"
+              />
+            </div>
+
+            <button 
+              type="submit"
+              disabled={updatingPass}
+              className="w-full h-11 bg-black hover:bg-zinc-900 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+            >
+              {updatingPass ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                'Update Password'
+              )}
+            </button>
+          </form>
+        </section>
+
+        {/* SECTION 3: Subscription & Billing */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Calendar size={16} className="text-black" />
+            <h2 className="text-xs font-black uppercase tracking-wider text-black">Subscription Plan</h2>
+          </div>
+
+          <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
+            {trialDaysRemaining !== null ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="text-sm font-black text-black uppercase">
+                    Trial Mode ({trialDaysRemaining} days remaining)
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+                  Your shop is currently operating under the 7-day free trial. After trial expiry, product management will be locked. Upgrade to Premium for $2.99/month.
+                </p>
+                <button 
+                  onClick={() => navigate('/dashboard')}
+                  className="w-full h-11 bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+                >
+                  Upgrade to Premium ($2.99/mo)
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#25D366] shrink-0" />
+                  <span className="text-sm font-black text-black uppercase">
+                    Premium Account Active
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 font-medium leading-relaxed">
+                  Your Premium Merchant Subscription is active and verified. Under our standard billing tier, you have unlimited storefront access.
+                </p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* LOGOUT BUTTON */}
+        <div className="pt-4">
+          <button 
             onClick={handleSignOut}
-            className="group active:opacity-80 transition-all flex items-center gap-3.5 py-1.5 cursor-pointer"
+            className="w-full h-12 bg-red-50 hover:bg-red-100 text-red-600 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-red-100"
           >
-            <div className="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center flex-shrink-0">
-              <LogOut size={18} />
-            </div>
-            <div className="flex-1">
-              <div className="text-red-500 font-bold text-[14px]">Log Out</div>
-              <p className="text-red-500/80 text-xs mt-0.5 font-medium">Sign out of your merchant account securely</p>
-            </div>
-            <ChevronRight size={16} className="text-red-400 group-hover:translate-x-0.5 transition-transform" />
-          </div>
+            <LogOut size={14} />
+            <span>Log Out Account</span>
+          </button>
         </div>
 
-        <div className="pt-10 text-center">
-          <p className="text-zinc-400 text-[10px] font-mono tracking-wider"><span className="text-[10px] uppercase text-zinc-900 font-bold italic mr-1">ThreadZW</span> v2.1.0-Light</p>
-          <p className="text-zinc-400 text-[10px] font-mono mt-1">© 2026 Operations Node Zimbabwe</p>
-        </div>
-      </div>
+      </main>
 
+      {/* Bottom Navigation */}
       <BottomNavBar />
     </div>
   );

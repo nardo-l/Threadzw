@@ -59,7 +59,7 @@ export async function runStoreRouterTestSuite(): Promise<TestResult[]> {
         handle: `autotest-${runId}`,
         slug: `autotest-${runId}`,
         description: 'Auto-generated successful diagnostics store.',
-        is_live: false
+        is_active: false
       });
 
     if (insertError) throw insertError;

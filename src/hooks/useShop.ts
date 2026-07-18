@@ -72,7 +72,7 @@ export const useShop = () => {
         return;
       }
 
-      console.log("[SHOP] fetch start");
+      console.log("[SHOP] fetch start...");
       const tShop0 = performance.now();
       const { data, error } = await supabase
         .from('shops')
