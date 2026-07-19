@@ -238,21 +238,6 @@ export const StorefrontPage: React.FC = () => {
 
       let shopResult = dbShop;
       if (!shopResult) {
-        // Fallback search handle
-        const { data: altShop, error: shopErr2 } = await supabase
-          .from('shops')
-          .select('*')
-          .ilike('handle', cleanSlug)
-          .maybeSingle();
-        
-        if (shopErr2) {
-          console.error("Supabase Error querying shops by handle:", shopErr2);
-          throw shopErr2;
-        }
-        shopResult = altShop;
-      }
-
-      if (!shopResult) {
         // Fallback search by ID
         const { data: shopById, error: shopErr3 } = await supabase
           .from('shops')
@@ -313,8 +298,7 @@ export const StorefrontPage: React.FC = () => {
       const { data: dbProducts, error: prodsErr } = await supabase
         .from('products')
         .select('*')
-        .eq('shop_id', shopResult.id)
-        .neq('status', 'deleted');
+        .eq('shop_id', shopResult.id);
 
       if (prodsErr) {
         console.error("Supabase Error querying products:", prodsErr);
@@ -323,9 +307,10 @@ export const StorefrontPage: React.FC = () => {
 
       const mapped = (dbProducts || []).map((p: any) => ({
         ...p,
-        images: Array.isArray(p.images) ? p.images.filter(Boolean) : [p.images].filter(Boolean),
+        images: p.images ? (Array.isArray(p.images) ? p.images.filter(Boolean) : [p.images].filter(Boolean)) : (p.image_url ? [p.image_url] : []),
         colours: p.colours || p.colors || [],
-        sizes: Array.isArray(p.sizes) ? p.sizes.map((s: any) => typeof s === 'object' ? s.size : s) : []
+        sizes: Array.isArray(p.sizes) ? p.sizes.map((s: any) => typeof s === 'object' ? s.size : s) : [],
+        total_stock: p.stock !== undefined ? p.stock : (p.total_stock || 0)
       }));
 
       setProducts(mapped);
@@ -359,7 +344,7 @@ export const StorefrontPage: React.FC = () => {
 
     } catch (err) {
       console.error(err);
-      setError('error');
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -713,8 +698,8 @@ export const StorefrontPage: React.FC = () => {
       <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col items-center justify-center p-6 text-center font-sans gap-4 select-none">
         <ShieldAlert className="w-12 h-12 text-green-600 animate-bounce" />
         <h1 className="text-lg font-bold tracking-tight text-zinc-900">Storefront Offline</h1>
-        <p className="text-zinc-500 text-xs max-w-xs leading-relaxed">
-          Could not locate boutique parameters matching this handle. Check the link or explore standard directories.
+        <p className="text-zinc-500 text-xs max-w-xs leading-relaxed break-all">
+          {error !== 'not_found' && error ? `Error: ${error}` : "Could not locate boutique parameters matching this handle. Check the link or explore standard directories."}
         </p>
         <button 
           onClick={() => navigate('/')} 

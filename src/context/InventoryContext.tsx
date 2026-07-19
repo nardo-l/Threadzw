@@ -212,7 +212,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
       const { data, error } = await supabase
         .from('shops')
         .select('*')
-        .eq('owner_id', user.id)
+        .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1)
         .maybeSingle();
 
       if (error) {

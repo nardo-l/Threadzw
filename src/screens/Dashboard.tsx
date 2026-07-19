@@ -130,7 +130,7 @@ export const Dashboard: React.FC = () => {
     if (!shop) return;
     try {
       // Use proper domain for public storefront
-      const url = `https://threadzw.vercel.app/shop/${shop.id.trim()}?page=home`;
+      const url = `https://threadzw.vercel.app/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
       await navigator.clipboard.writeText(url);
       toast.success('Shop link copied to clipboard!');
     } catch (err) {
@@ -353,7 +353,7 @@ export const Dashboard: React.FC = () => {
           <div className="pt-2 border-t border-zinc-100 space-y-3">
             <div className="bg-white border border-zinc-150 rounded-xl p-3 flex items-center justify-between overflow-hidden">
               <span className="text-xs font-mono text-zinc-600 truncate mr-2">
-                threadzw.app/shop/{shop.id.trim()}
+                threadzw.app/shop/{shop.slug ? shop.slug.trim() : shop.id.trim()}
               </span>
               <button 
                 onClick={handleCopyShopLink}

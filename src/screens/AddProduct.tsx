@@ -94,12 +94,12 @@ export const AddProduct: React.FC = () => {
         if (session) {
           const { data: shop } = await supabase
             .from('shops')
-            .select('id, handle')
-            .eq('owner_id', session.user.id)
+            .select('id, slug')
+            .eq('owner_id', session.user.id).order('created_at', { ascending: false }).limit(1)
             .maybeSingle();
           if (shop) {
             setShopId(shop.id);
-            setShopHandle(shop.handle);
+            setShopHandle(shop.slug);
           }
         }
       } catch (err) {
@@ -425,6 +425,20 @@ export const AddProduct: React.FC = () => {
         throw new Error('You must be signed in to create products.');
       }
       const ownerId = session.user.id;
+      
+      let currentShopId = shopId;
+      if (!currentShopId || String(currentShopId).startsWith('local-shop-') || currentShopId === '55555555-5555-5555-5555-555555555555') {
+        const { data: shop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', ownerId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (shop) {
+          currentShopId = shop.id;
+        }
+      }
 
       // Structure size variants
       let configuredSizes = [];
@@ -459,24 +473,18 @@ export const AddProduct: React.FC = () => {
       }
 
       const productPayload = {
-        shop_id: shopId,
-        owner_id: ownerId,
+        shop_id: currentShopId,
         name: name.trim(),
         price: parseFloat(price),
         category: selectedCategory || null,
-        condition: condition || 'New',
         description: finalDescription || null,
-        images,
+        image_url: images[0] || null,
         sizes: configuredSizes,
-        colours: selectedColors,
-        total_stock: totalStock,
-        is_published: true,
-        is_featured: isFeatured,
-        status: productStatus === 'sold_out' ? 'sold_out' : (totalStock === 0 ? 'sold_out' : 'active'),
+        stock: totalStock,
         created_at: new Date().toISOString()
       };
 
-      if (!shopId || String(shopId).startsWith('local-shop-') || shopId === '55555555-5555-5555-5555-555555555555') {
+      if (!currentShopId || String(currentShopId).startsWith('local-shop-') || currentShopId === '55555555-5555-5555-5555-555555555555') {
         throw new Error("Cannot create product: No active, valid shop found for your profile.");
       }
 

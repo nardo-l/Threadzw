@@ -66,7 +66,7 @@ export const MyProducts: React.FC = () => {
         const { data } = await supabase
           .from('shops')
           .select('id')
-          .eq('owner_id', user.id)
+          .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1)
           .maybeSingle();
         if (data) shopData = data;
       } catch (e) {
@@ -91,7 +91,6 @@ export const MyProducts: React.FC = () => {
         .from('products')
         .select('*')
         .eq('shop_id', shopData.id)
-        .neq('status', 'deleted')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -206,8 +205,8 @@ export const MyProducts: React.FC = () => {
                   className={`bg-white rounded-[32px] overflow-hidden border-2 border-charcoal group relative transition-all shadow-[8px_8px_0_rgba(0,0,0,0.05)] hover:shadow-[12px_12px_0_#25D366] hover:translate-y-[-4px] ${isSoldOut ? 'grayscale' : ''}`}
                 >
                   <div className="aspect-square bg-cream relative flex items-center justify-center text-4xl overflow-hidden border-b-2 border-charcoal">
-                    {product.images?.[0] ? (
-                      <img src={product.images[0] || undefined} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    {product.images?.[0] || product.image_url ? (
+                      <img src={(product.images && product.images[0]) || product.image_url || undefined} alt={product.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <Package size={48} className="text-charcoal/10" />
                     )}

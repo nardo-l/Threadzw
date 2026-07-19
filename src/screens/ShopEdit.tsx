@@ -255,8 +255,7 @@ export const ShopEdit = () => {
         const { data: pData } = await supabase
           .from('products')
           .select('id, name, price, images, category')
-          .eq('shop_id', data.id)
-          .neq('status', 'deleted');
+          .eq('shop_id', data.id);
         if (pData) {
           setShopProducts(pData);
         }
@@ -350,8 +349,7 @@ export const ShopEdit = () => {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
-          .eq('owner_id', user.id)
-          .maybeSingle();
+          .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (dbShop) {
           activeShopId = dbShop.id;
           setShopId(dbShop.id);
@@ -545,8 +543,7 @@ export const ShopEdit = () => {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
-          .eq('owner_id', user.id)
-          .maybeSingle();
+          .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
         if (dbShop) {
           activeShopId = dbShop.id;
           setShopId(dbShop.id);

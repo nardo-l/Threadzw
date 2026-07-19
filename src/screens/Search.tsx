@@ -40,7 +40,7 @@ export const Search: React.FC = () => {
         const { data: shopData } = await supabase
           .from('shops')
           .select('id')
-          .eq('owner_id', session.user.id)
+          .eq('owner_id', session.user.id).order('created_at', { ascending: false }).limit(1)
           .maybeSingle();
 
         if (shopData) {

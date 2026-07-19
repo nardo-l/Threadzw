@@ -77,8 +77,7 @@ export const useShop = () => {
       const { data, error } = await supabase
         .from('shops')
         .select('*')
-        .eq('owner_id', user.id)
-        .maybeSingle();
+        .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
       const tShop1 = performance.now();
       console.log(`[SHOP] fetch completion. Query returned in ${(tShop1 - tShop0).toFixed(2)}ms. Data:`, data, "Error:", error);
 

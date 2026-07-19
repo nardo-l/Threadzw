@@ -106,7 +106,7 @@ export const EditProduct: React.FC = () => {
           const { data } = await supabase
             .from('shops')
             .select('id, handle')
-            .eq('owner_id', session.user.id)
+            .eq('owner_id', session.user.id).order('created_at', { ascending: false }).limit(1)
             .maybeSingle();
           if (data) shop = data;
         } catch (e) {
@@ -438,28 +438,35 @@ export const EditProduct: React.FC = () => {
 
       const { data: { session } } = await supabase.auth.getSession();
       const ownerId = session?.user?.id;
+      
+      let currentShopId = shopId;
+      if (!currentShopId && ownerId) {
+        const { data: shop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', ownerId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (shop) currentShopId = shop.id;
+      }
 
       const updatePayload = {
         name: name.trim(),
         price: parseFloat(price),
         category: loadedCategory || null,
         description: description.trim() || null,
-        images,
+        image_url: images[0] || null,
         sizes: configuredSizes,
-        colours: selectedColors,
-        total_stock: totalStock,
-        is_published: isVisible,
-        is_featured: isFeatured,
-        status: productStatus === 'sold_out' ? 'sold_out' : (totalStock === 0 ? 'sold_out' : 'active'),
-        updated_at: new Date().toISOString(),
-        ...(ownerId ? { owner_id: ownerId } : {})
+        stock: totalStock,
+        updated_at: new Date().toISOString()
       };
 
       const { error: updateError } = await supabase
         .from('products')
         .update(updatePayload)
         .eq('id', productId)
-        .eq('shop_id', shopId);
+        .eq('shop_id', currentShopId);
 
       if (updateError) throw updateError;
 
