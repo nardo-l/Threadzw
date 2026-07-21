@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useShop } from '../hooks/useShop';
+import { useShop } from '../../hooks/useShop';
 
 export const TrialBanner = () => {
   const navigate = useNavigate();

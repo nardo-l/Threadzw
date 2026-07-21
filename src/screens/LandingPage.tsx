@@ -3,7 +3,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { ArrowRight, ShoppingBag } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Check } from 'lucide-react';
 
 interface LandingPageProps {
   onStartFree: () => void;
@@ -53,7 +53,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
       </header>
 
       {/* Main Container */}
-      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-[480px] mx-auto px-6 py-4 relative z-10 space-y-8">
+      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-[480px] mx-auto px-6 py-4 relative z-10 space-y-12">
         
         {/* Made in Zimbabwe Badge */}
         <motion.div
@@ -117,7 +117,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="relative w-full h-56 flex items-center justify-center mt-4"
+          className="relative w-full h-56 flex items-center justify-center mt-2"
         >
           {/* Subtle Ambient Glow */}
           <div className="absolute w-44 h-44 bg-[#bef715]/5 rounded-full blur-3xl -z-10 animate-pulse" />
@@ -154,12 +154,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
           </div>
         </motion.div>
 
+        {/* Pricing Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="w-full bg-zinc-950 border border-zinc-900 rounded-3xl p-6 text-center space-y-6 shadow-2xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#bef715] to-transparent" />
+          
+          <div className="space-y-2">
+            <span className="text-xs font-mono uppercase text-[#bef715] tracking-widest font-extrabold">PRICING PLAN</span>
+            <h3 className="text-2xl font-black uppercase tracking-tight">ThreadZW Pro</h3>
+            <div className="flex items-baseline justify-center gap-1">
+              <span className="text-4xl font-black text-white">$1</span>
+              <span className="text-zinc-500 font-bold text-sm">/month</span>
+            </div>
+            <p className="text-xs text-zinc-400">7-day free trial included for every new shop.</p>
+          </div>
+
+          <div className="space-y-3 text-left">
+            {[
+              'Unlimited products',
+              'Online storefront',
+              'WhatsApp ordering integration',
+              'Custom shop link',
+              'Priority merchant support'
+            ].map(benefit => (
+              <div key={benefit} className="flex items-center gap-2.5 text-xs font-bold text-zinc-300">
+                <div className="w-4 h-4 rounded-full bg-[#bef715]/10 flex items-center justify-center text-[#bef715] shrink-0">
+                  <Check size={12} className="stroke-[3]" />
+                </div>
+                <span>{benefit}</span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={onStartFree}
+            className="w-full h-12 bg-[#bef715] hover:opacity-95 text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer active:scale-95 shadow-md shadow-[#bef715]/10"
+          >
+            Start Free Trial
+          </button>
+        </motion.div>
+
         {/* Social Proof Live Shops Row */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="w-full pt-4 flex flex-col items-center space-y-2.5 shrink-0"
+          transition={{ duration: 0.5, delay: 0.6 }}
+          className="w-full pt-2 flex flex-col items-center space-y-2.5 shrink-0"
         >
           <div className="flex items-center justify-center">
             {/* Overlapping profile circles */}
@@ -191,3 +235,4 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
     </div>
   );
 };
+

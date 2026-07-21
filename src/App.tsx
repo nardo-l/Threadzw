@@ -334,10 +334,13 @@ function AppContent() {
 
     const loggedIn = !!session;
 
-    // Handle special paths when logged in or out
+    if (path === '' || path === '/') {
+      console.log("[ROUTER] Root landing page. Returning to let user view landing page.");
+      return;
+    }
+
+    // Handle special auth paths when logged in or out
     if (
-      path === '' ||
-      path === '/' ||
       path === '/login' ||
       path === '/signup' ||
       path === '/onboarding'
@@ -359,7 +362,7 @@ function AppContent() {
           setAppStage('dashboard');
         } else {
           // If logged in but does not have a shop
-          if (path === '' || path === '/' || path === '/login') {
+          if (path === '/login') {
             console.log("[ROUTER] User has no shop on special route. Transitioning to onboarding.");
             setAppStage('onboarding');
           } else {
