@@ -241,13 +241,13 @@ export const Settings: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  Your shop is currently operating under the 7-day free trial. After trial expiry, product management will be locked. Upgrade to Premium for $2.99/month.
+                  Your shop is currently operating under the 7-day free trial. After trial expiry, product management will be locked. Upgrade to Premium for $1/month.
                 </p>
-                <button 
-                  onClick={() => navigate('/dashboard')}
-                  className="w-full h-11 bg-[#25D366] hover:bg-[#20ba5a] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+                <button
+                  onClick={() => navigate('/subscription')}
+                  className="w-full mt-4 bg-zinc-900 text-white font-bold py-3 rounded-xl hover:bg-zinc-800 transition-colors"
                 >
-                  Upgrade to Premium ($2.99/mo)
+                  Upgrade to Premium ($1/month)
                 </button>
               </div>
             ) : (

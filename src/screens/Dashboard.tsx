@@ -205,7 +205,7 @@ export const Dashboard: React.FC = () => {
       <main className="max-w-md mx-auto px-6 pt-8 space-y-6">
         <GuidedWalkthrough />
         <TrialBanner />
-        <LaunchChecklist />
+        <LaunchChecklist shop={shop} productsCount={productsCount} />
         
         {/* SECTION 1: Shop Status */}
         
@@ -240,7 +240,7 @@ export const Dashboard: React.FC = () => {
             <p className="text-xs text-zinc-500 font-medium mt-1 leading-relaxed">
               {shop?.is_active 
                 ? 'Your storefront is active. Customers can browse catalog items and submit direct WhatsApp orders.' 
-                : 'Your storefront is paused. External users will see a maintenance message, but existing data is preserved.'
+                : 'Your storefront is paused. Existing data is preserved.'
               }
             </p>
           </div>
@@ -262,7 +262,7 @@ export const Dashboard: React.FC = () => {
             {trialDaysRemaining !== null && (
               <button 
                 id="walkthrough-store"
-          onClick={() => navigate('/settings')}
+                onClick={() => navigate('/subscription')}
                 className="py-1.5 px-3 bg-black hover:bg-zinc-900 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-all active:scale-95 cursor-pointer"
               >
                 Upgrade
@@ -276,11 +276,13 @@ export const Dashboard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                   <span className="text-sm font-black text-black uppercase">
-                    Trial Mode ({trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'} remaining)
+                    {trialDaysRemaining === 0 ? 'Trial Expired' : `Trial Mode (${trialDaysRemaining} ${trialDaysRemaining === 1 ? 'day' : 'days'} remaining)`}
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  Your 7-day free trial is active. Upgrade to our Premium Merchant plan for $2.99/month to ensure uninterrupted shop management.
+                  {trialDaysRemaining === 0 
+                    ? 'Your free trial has ended. Upgrade to continue using ThreadZW.'
+                    : 'Your 7-day free trial is active. Upgrade to our Premium Merchant plan for $1/month to ensure uninterrupted shop management.'}
                 </p>
               </div>
             ) : (

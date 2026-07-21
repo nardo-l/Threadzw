@@ -548,7 +548,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   <span className="text-xs font-mono uppercase text-[#C6FF00] tracking-widest font-extrabold">STEP 04 — SHOP DETAILS</span>
                   <h2 className="text-3xl sm:text-5xl font-black uppercase tracking-tight">Create your shop</h2>
                 </div>
-
+                
                 <div className="space-y-4 pt-2">
                   <div className="space-y-1">
                     <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-extrabold block">Shop Name</label>
@@ -561,35 +561,43 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         updateField('username', slug);
                       }}
                       placeholder="Nulla Clothing"
-                      className="w-full px-5 py-4 bg-zinc-950 border border-zinc-850 rounded-2xl focus:outline-none focus:border-[#C6FF00] text-base font-bold text-white transition-all"
+                      className="w-full px-5 py-4 bg-zinc-950 border border-zinc-850 rounded-2xl focus:outline-none focus:border-[#C6FF00] text-base font-bold text-white transition-all placeholder:text-zinc-700"
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-extrabold block">Storefront Username</label>
-                    <div className="relative">
-                      <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-500 font-mono text-sm select-none">
-                        thread.zw/@
+                    <div className="relative flex items-center bg-zinc-950 border border-zinc-850 rounded-2xl focus-within:border-[#C6FF00] transition-all">
+                      <span className="pl-5 text-zinc-500 font-mono text-sm select-none">
+                        threadzw.app/
                       </span>
                       <input 
                         type="text"
                         value={formData.username}
                         onChange={(e) => updateField('username', e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                         placeholder="nulla-clothing"
-                        className="w-full pl-24 pr-5 py-4 bg-zinc-950 border border-zinc-850 rounded-2xl focus:outline-none focus:border-[#C6FF00] text-sm font-mono font-bold text-[#C6FF00] transition-all"
+                        className="flex-1 px-2 py-4 bg-transparent focus:outline-none text-sm font-mono font-bold text-[#C6FF00] placeholder:text-zinc-700"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-extrabold block">WhatsApp Number (For Orders)</label>
-                    <input 
-                      type="tel"
-                      value={formData.whatsapp_number}
-                      onChange={(e) => updateField('whatsapp_number', e.target.value)}
-                      placeholder="+263 77 123 4567"
-                      className="w-full px-5 py-4 bg-zinc-950 border border-zinc-850 rounded-2xl focus:outline-none focus:border-[#C6FF00] text-sm font-mono font-bold text-white transition-all"
-                    />
+                    <div className="relative flex items-center bg-zinc-950 border border-zinc-850 rounded-2xl focus-within:border-[#C6FF00] transition-all">
+                      <span className="pl-5 text-zinc-500 font-mono text-sm select-none">
+                        +263 |
+                      </span>
+                      <input 
+                        type="tel"
+                        value={formData.whatsapp_number.replace(/^\+263/, '')}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          updateField('whatsapp_number', val ? `+263${val}` : '');
+                        }}
+                        placeholder="77 123 4567"
+                        className="flex-1 px-2 py-4 bg-transparent focus:outline-none text-sm font-mono font-bold text-white placeholder:text-zinc-700"
+                      />
+                    </div>
                   </div>
                 </div>
 

@@ -5,6 +5,7 @@ export interface Shop {
   slug?: string;
   category: string;
   description: string;
+  location?: string | null;
   whatsapp_number?: string;
   instagram: string;
   avatar_url?: string;

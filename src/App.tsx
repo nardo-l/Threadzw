@@ -33,11 +33,11 @@ import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
-import { MaintenanceOverlay } from './components/MaintenanceOverlay';
 import { NardoPayCheckout } from './screens/NardoPayCheckout';
+import { Subscription } from './screens/Subscription';
 
 
-type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success';
+type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription';
 
 const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
@@ -68,6 +68,9 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   }
   if (path.startsWith('/checkout')) {
     return { stage: 'checkout' };
+  }
+  if (path === '/subscription') {
+    return { stage: 'subscription' };
   }
   
   // Match /product/:id
@@ -537,6 +540,10 @@ function AppContent() {
     return <NardoPayCheckout />;
   }
 
+  if (appStage === 'subscription') {
+    return <Subscription />;
+  }
+
   if (isDashboardSubPath) {
     return (
       <Routes>
@@ -564,7 +571,6 @@ function App() {
             <InventoryProvider>
               <ShopProvider>
                 <AppContent />
-                <MaintenanceOverlay />
                 <ToastContainer />
                 <Toaster position="top-center" theme="dark" expand={false} richColors />
               </ShopProvider>
