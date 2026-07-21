@@ -58,7 +58,7 @@ export const Enquiries: React.FC = () => {
     message += `\nPlease confirm availability.`;
 
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${shop.whatsapp?.replace(/\+/g, '')}?text=${encodedMessage}`, '_blank');
+    window.open(`https://wa.me/${shop.whatsapp_number?.replace(/\+/g, '')}?text=${encodedMessage}`, '_blank');
   };
 
   const handleWhatsAppItem = async (item: CartItem) => {
@@ -70,7 +70,7 @@ export const Enquiries: React.FC = () => {
 
     const message = `Hi, I'm interested in this from Thread ZW:\n• ${item.name} (Size ${item.size}) × ${item.quantity}\n\nPlease confirm availability.`;
     const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${shop.whatsapp?.replace(/\+/g, '')}?text=${encodedMessage}`, '_blank');
+    window.open(`https://wa.me/${shop.whatsapp_number?.replace(/\+/g, '')}?text=${encodedMessage}`, '_blank');
   };
 
   if (cart.length === 0) {

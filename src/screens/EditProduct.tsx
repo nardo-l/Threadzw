@@ -118,7 +118,7 @@ export const EditProduct: React.FC = () => {
         }
 
         setShopId(shop.id);
-        setShopHandle(shop.handle || '');
+        setShopHandle(shop.slug || '');
 
         // Fetch product info matching product ID and shop ID
         const { data: product, error } = await supabase

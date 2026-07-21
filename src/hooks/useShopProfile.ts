@@ -11,11 +11,11 @@ export const useShopProfile = (shopHandle: string | undefined) => {
     if (!shopHandle) return;
     setLoading(true);
     try {
-      // Find shop by slug/handle or ID
+      // Find shop by slug or ID
       const { data: shopData, error: shopErr } = await supabase
         .from('shops')
         .select('*')
-        .or(`handle.eq.${shopHandle},slug.eq.${shopHandle},id.eq.${shopHandle}`)
+        .or(`slug.eq.${shopHandle},id.eq.${shopHandle}`)
         .maybeSingle();
 
       if (shopErr) throw shopErr;

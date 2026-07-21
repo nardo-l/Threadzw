@@ -7,13 +7,11 @@ export interface Shop {
   id: string;
   name: string;
   owner_id: string;
-  handle: string;
   slug?: string;
   categories: string[];
   category?: string;
   description: string;
-  location: string;
-  whatsapp: string;
+  whatsapp_number?: string;
   instagram?: string;
   is_online_only: boolean;
   delivery_info?: string;
@@ -31,10 +29,6 @@ export interface Shop {
   share_count?: number;
   product_count?: number;
   follower_count?: number;
-  landmark?: string;
-  directions?: string;
-  town?: string;
-  area?: string;
 }
 
 export interface Product {
@@ -90,17 +84,14 @@ export interface CartItem {
 
 interface UserData {
   name: string;
-  handle?: string;
   hasShop: boolean;
   isShopLive: boolean;
   shopId?: string;
   shopName?: string;
-  shopHandle?: string;
+  shopSlug?: string;
   shopLogo?: string;
-  shopArea?: string;
   shopWhatsApp?: string;
   shopIsVerified?: boolean;
-  personality?: string;
 }
 
 interface InventoryContextType {
@@ -182,9 +173,8 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     isShopLive: false,
     shopId: null,
     shopName: '',
-    shopHandle: '',
+    shopSlug: '',
     shopLogo: null,
-    shopArea: 'Harare',
     shopWhatsApp: '',
     shopIsVerified: false,
   });
@@ -227,10 +217,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
           isShopLive: data.is_active,
           shopId: data.id,
           shopName: data.name,
-          shopHandle: data.handle,
+          shopSlug: data.slug,
           shopLogo: data.logo_url || null,
-          shopWhatsApp: data.whatsapp,
-          shopArea: data.location || 'Harare',
+          shopWhatsApp: data.whatsapp_number,
           shopIsVerified: data.is_verified || false
         }));
       } else {
@@ -241,7 +230,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
           isShopLive: false,
           shopId: null,
           shopName: '',
-          shopHandle: '',
+          shopSlug: '',
           shopLogo: null,
           shopWhatsApp: '',
           shopIsVerified: false
@@ -270,7 +259,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
           // Filter out dummy/mock shops if any of non-UUID format
           const realShops = data.filter(s => {
             const idLower = (s.id || '').toLowerCase();
-            const handleLower = (s.handle || '').toLowerCase();
+            const handleLower = (s.slug || '').toLowerCase();
             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idLower);
             return isUUID && idLower !== 'demo-shop' && idLower !== 'shop-001' && handleLower !== 'demo';
           });

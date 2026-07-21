@@ -75,12 +75,12 @@ export const Following: React.FC = () => {
             key={shop.id}
             className="bg-card p-4 rounded-card border border-white/5 flex items-center gap-4 group active:scale-[0.98] transition-all"
             onClick={() => {
-              const path = getShopUrl((shop as any).handle || (shop as any).slug, shop.id);
+              const path = getShopUrl((shop as any).slug, shop.id);
               console.log("[FOLLOWING ROUTING] Following shop click: navigating to store path:", path);
               if (path) {
                 navigate(path);
               } else {
-                console.warn("[FOLLOWING ROUTING] Broken link prevented: slug/handle missing on", shop);
+                console.warn("[FOLLOWING ROUTING] Broken link prevented: slug missing on", shop);
               }
             }}
           >
@@ -96,7 +96,7 @@ export const Following: React.FC = () => {
                   <span key={cat} className="text-[8px] font-mono text-muted uppercase tracking-widest">{cat}</span>
                 ))}
               </div>
-              <span className="text-xs font-sans text-muted mt-1">{shop.location}</span>
+              <span className="text-xs font-sans text-muted mt-1">{""}</span>
             </div>
             <button 
               onClick={(e) => {

@@ -24,7 +24,7 @@ export const useShops = (searchQuery = '', filters: any = {}) => {
       // Filter out demo/mock shops
       const liveShops = rawShops.filter(s => {
         const idLower = (s.id || '').toLowerCase();
-        const handleLower = (s.handle || '').toLowerCase();
+        const handleLower = (s.slug || '').toLowerCase();
         const nameLower = (s.name || '').toLowerCase();
         
         return idLower !== 'demo-shop' && 
@@ -39,8 +39,6 @@ export const useShops = (searchQuery = '', filters: any = {}) => {
         const q = searchQuery.toLowerCase();
         return (shop.name || '').toLowerCase().includes(q) ||
                (shop.description || '').toLowerCase().includes(q) ||
-               (shop.location || '').toLowerCase().includes(q) ||
-               (shop.handle || '').toLowerCase().includes(q) ||
                (shop.slug || '').toLowerCase().includes(q);
       });
 

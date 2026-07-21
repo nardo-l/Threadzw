@@ -631,7 +631,7 @@ const StoryItem = memo(({ item, viewedStories, onView }: { item: any; viewedStor
           setStoriesViewerOpen(true, item.id);
           if (!isViewed) onView(item.id);
         } else {
-          const path = getShopUrl(item.slug || item.handle, item.id);
+          const path = getShopUrl(item.slug, item.id);
           console.log("[HOME FEED SYSTEM] Circle click, navigating to:", path);
           if (path) {
             navigate(path);
@@ -709,7 +709,7 @@ const ShopCard = memo(({ shop, onFollow, formatFollowers }: { shop: any; onFollo
   return (
     <div 
       onClick={() => {
-        const path = getShopUrl(shop.slug || shop.handle, shop.id);
+        const path = getShopUrl(shop.slug, shop.id);
         console.log("[HOME FEED SYSTEM] ShopCard clicked, navigating to storefront path:", path);
         if (path) {
           navigate(path);

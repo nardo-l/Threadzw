@@ -195,8 +195,8 @@ export const ShopEdit = () => {
       try {
         const { data, error } = await supabase
           .from('shops')
-          .select('handle')
-          .eq('handle', handle.toLowerCase())
+          .select('slug')
+          .eq('slug', handle.toLowerCase())
           .neq('id', shopId)
           .maybeSingle();
 
@@ -229,8 +229,8 @@ export const ShopEdit = () => {
 
       setShopId(data.id);
       setShopName(data.name || '');
-      setHandle(data.handle || '');
-      setOriginalHandle(data.handle || '');
+      setHandle(data.slug || '');
+      setOriginalHandle(data.slug || '');
       setCategories(data.categories || []);
       
       // Parse description config safely to support premium custom properties
@@ -615,8 +615,7 @@ export const ShopEdit = () => {
       // Prepare payload and strip undefined values
       const updateData: any = {
         name: shopName.trim(),
-        handle: handle.trim().toLowerCase(),
-        slug: slugify(handle),
+        slug: handle.trim().toLowerCase(),
         description: serializedDescription,
         categories,
         category: categories[0] || 'Other',

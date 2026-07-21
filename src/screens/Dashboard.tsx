@@ -20,6 +20,9 @@ import { useAuth } from '../context/AuthContext';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
+import { TrialBanner } from '../components/dashboard/TrialBanner';
+import { GuidedWalkthrough } from '../components/dashboard/GuidedWalkthrough';
+import { LaunchChecklist } from '../components/dashboard/LaunchChecklist';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -154,17 +157,21 @@ export const Dashboard: React.FC = () => {
 
   if (!shop) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center text-zinc-950 p-8 space-y-8 text-center font-sans">
-        <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400">
-          <ShoppingBag size={24} />
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-8 space-y-8 text-center font-sans relative">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none opacity-40" />
+        
+        <div className="w-20 h-20 rounded-3xl bg-[#C6FF00]/10 border border-[#C6FF00]/20 flex items-center justify-center text-[#C6FF00] relative z-10 shadow-[0_0_30px_rgba(198,255,0,0.1)]">
+          <ShoppingBag size={32} />
         </div>
-        <div className="space-y-2">
-          <h3 className="text-xl font-bold text-black">No Shop Registered</h3>
-          <p className="text-sm text-zinc-500 max-w-sm font-medium">Create your digital storefront to start selling on ThreadZW.</p>
+        <div className="space-y-3 relative z-10 max-w-sm">
+          <h3 className="text-3xl font-black uppercase tracking-tight">No Shop Registered</h3>
+          <p className="text-sm text-zinc-400 font-medium leading-relaxed">
+            Initialize your premium streetwear digital storefront to start dropping products on ThreadZW.
+          </p>
         </div>
         <button 
           onClick={() => navigate('/setup')} 
-          className="px-8 py-4 bg-[#25D366] text-black font-black text-sm rounded-full hover:bg-[#20ba5a] active:scale-95 transition-all cursor-pointer shadow-xs"
+          className="px-10 py-4.5 bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider rounded-full hover:shadow-[0_0_25px_rgba(198,255,0,0.35)] active:scale-95 transition-all cursor-pointer relative z-10"
         >
           Create Shop
         </button>
@@ -186,6 +193,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <button 
+          id="walkthrough-store"
           onClick={() => navigate('/settings')}
           className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
         >
@@ -195,9 +203,13 @@ export const Dashboard: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="max-w-md mx-auto px-6 pt-8 space-y-6">
+        <GuidedWalkthrough />
+        <TrialBanner />
+        <LaunchChecklist />
         
         {/* SECTION 1: Shop Status */}
-        <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
+        
+        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center ${shop?.is_active ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-zinc-100 text-zinc-400'}`}>
@@ -235,7 +247,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* SECTION 2: Trial Countdown */}
-        <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
+        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-zinc-100 text-black flex items-center justify-center">
@@ -249,7 +261,8 @@ export const Dashboard: React.FC = () => {
             
             {trialDaysRemaining !== null && (
               <button 
-                onClick={() => navigate('/settings')}
+                id="walkthrough-store"
+          onClick={() => navigate('/settings')}
                 className="py-1.5 px-3 bg-black hover:bg-zinc-900 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-all active:scale-95 cursor-pointer"
               >
                 Upgrade
@@ -287,7 +300,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* SECTION 3: Number of Products */}
-        <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
+        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-zinc-100 text-black flex items-center justify-center">
@@ -301,6 +314,7 @@ export const Dashboard: React.FC = () => {
             
             <div className="flex gap-2">
               <button 
+                id="walkthrough-add-product"
                 onClick={() => navigate('/add-product')}
                 className="p-2 bg-[#25D366] hover:bg-[#20ba5a] text-black rounded-lg transition-all active:scale-95 cursor-pointer"
                 title="Add Product"
@@ -337,7 +351,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* SECTION 4: Share Shop Button */}
-        <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
+        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center">

@@ -40,7 +40,7 @@ export const ShopProfileView: React.FC = () => {
       const { data, error } = await supabase
         .from('shops')
         .select('*')
-        .eq('handle', cleanHandle)
+        .eq('slug', cleanHandle)
         .eq('is_active', true)
         .single();
         
@@ -214,7 +214,7 @@ export const ShopProfileView: React.FC = () => {
             {shop.name}
           </h1>
           <p className="text-sm text-neutral-400 font-medium tracking-tight">
-            @{shop.handle} • {shop.town || shop.location || 'Bulawayo'}
+            @{shop.slug} • {'Bulawayo'}
           </p>
         </div>
 
@@ -225,7 +225,7 @@ export const ShopProfileView: React.FC = () => {
           </span>
           <span className="px-4 py-1.5 rounded-full text-xs font-semibold bg-neutral-900 border border-neutral-800 text-neutral-300 flex items-center gap-1.5">
             <MapPin size={12} className="text-neutral-500" />
-            {shop.town || shop.location || 'Bulawayo'}
+            {'Bulawayo'}
           </span>
         </div>
 
@@ -250,7 +250,7 @@ export const ShopProfileView: React.FC = () => {
         <div className="bg-[#111111] border border-[#1E1E1E] rounded-2xl p-4 flex items-center gap-3">
           <MapPin size={18} className="text-[#C6FF00] flex-shrink-0" />
           <span className="text-sm font-semibold text-neutral-200">
-            {shop.town || shop.location || 'Bulawayo'}
+            {'Bulawayo'}
           </span>
         </div>
 
@@ -272,7 +272,7 @@ export const ShopProfileView: React.FC = () => {
 
         {/* Full-width premium hot emerald WhatsApp CTA button */}
         <a 
-          href={`https://wa.me/${shop.whatsapp?.replace(/\D/g, '') || ''}`}
+          href={`https://wa.me/${shop.whatsapp_number?.replace(/\D/g, '') || ''}`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full bg-[#25D366] hover:bg-[#20ba59] active:scale-[0.97] text-white font-extrabold text-sm uppercase tracking-wider h-[54px] rounded-full flex items-center justify-center gap-2.5 shadow-lg shadow-[#25D366]/15 transition-all cursor-pointer select-none"
@@ -442,7 +442,7 @@ export const ShopProfileView: React.FC = () => {
               <div className="grid grid-cols-2 gap-y-4 gap-x-2 mt-1">
                 <div>
                   <span className="text-[10px] uppercase text-neutral-500 font-semibold tracking-wider block">Station Area</span>
-                  <span className="text-sm font-medium text-neutral-200 mt-0.5 block">{shop.town || shop.location || 'Bulawayo'}</span>
+                  <span className="text-sm font-medium text-neutral-200 mt-0.5 block">{'Bulawayo'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-neutral-500 font-semibold tracking-wider block">Drip Stream</span>
@@ -450,7 +450,7 @@ export const ShopProfileView: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-neutral-500 font-semibold tracking-wider block">Instagram Account</span>
-                  <span className="text-sm font-medium text-[#C6FF00] mt-0.5 block">@{shop.instagram || shop.handle}</span>
+                  <span className="text-sm font-medium text-[#C6FF00] mt-0.5 block">@{shop.instagram || shop.slug}</span>
                 </div>
                 <div>
                   <span className="text-[10px] uppercase text-neutral-500 font-semibold tracking-wider block">Operational Status</span>

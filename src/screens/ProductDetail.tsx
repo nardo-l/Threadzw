@@ -20,8 +20,10 @@ interface Shop {
   id: string;
   name: string;
   handle: string;
+  slug?: string;
   avatar_url: string | null;
   whatsapp: string | null;
+  whatsapp_number: string | null;
   description: string | null;
 }
 
@@ -105,7 +107,7 @@ export const ProductDetail: React.FC = () => {
       toast.error('please select a size first');
       return;
     }
-    const cleanPhone = (shop.whatsapp || '').replace(/[^0-9]/g, '') || '263';
+    const cleanPhone = (shop.whatsapp_number || shop.whatsapp || '').replace(/[^0-9]/g, '') || '263';
     const message = `hi! I saw your ${product.name} on threadzw and I'm interested. ${selectedSize ? `Is it available in size ${selectedSize}?` : ''}`;
     const url = `https://wa.me/${cleanPhone}/?text=${encodeURIComponent(message)}`;
     window.open(url, '_blank');
@@ -299,18 +301,18 @@ export const ProductDetail: React.FC = () => {
             {/* View store brand */}
             <div 
               onClick={() => {
-                const path = getShopUrl((shop as any).slug || (shop as any).handle, shop.id);
+                const path = getShopUrl((shop as any).slug, shop.id);
                 console.log("[PRODUCT DETAIL ROUTING] Brand line click: navigating to store path:", path);
                 if (path) {
                   navigate(path);
                 } else {
-                  console.warn("[PRODUCT DETAIL ROUTING] Broken link prevented: slug/handle missing on", shop);
+                  console.warn("[PRODUCT DETAIL ROUTING] Broken link prevented: slug missing on", shop);
                   toast.error("Unable to load store storefront!");
                 }
               }} 
               className="flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-white cursor-pointer select-none"
             >
-              <span className="lowercase font-bold">@{shop.handle}</span>
+              <span className="lowercase font-bold">@{shop.slug}</span>
               <ChevronRight size={10} className="text-zinc-600" />
             </div>
           </div>
@@ -402,12 +404,12 @@ export const ProductDetail: React.FC = () => {
           {/* Brand profile link block card */}
           <div 
             onClick={() => {
-              const path = getShopUrl((shop as any).slug || (shop as any).handle, shop.id);
+              const path = getShopUrl((shop as any).slug, shop.id);
               console.log("[PRODUCT DETAIL ROUTING] Brand card click: navigating to store path:", path);
               if (path) {
                 navigate(path);
               } else {
-                console.warn("[PRODUCT DETAIL ROUTING] Broken link prevented: slug/handle missing on", shop);
+                console.warn("[PRODUCT DETAIL ROUTING] Broken link prevented: slug missing on", shop);
                 toast.error("Unable to load store storefront!");
               }
             }}
@@ -425,7 +427,7 @@ export const ProductDetail: React.FC = () => {
               </div>
               <div>
                 <h4 className="font-extrabold text-sm text-white mb-0.5">{shop.name}</h4>
-                <p className="text-zinc-500 text-[10.5px] font-mono leading-none lowercase">@{shop.handle}</p>
+                <p className="text-zinc-500 text-[10.5px] font-mono leading-none lowercase">@{shop.slug}</p>
               </div>
             </div>
             <ChevronRight size={16} className="text-zinc-600 group-hover:translate-x-1 group-hover:text-white transition-all" />

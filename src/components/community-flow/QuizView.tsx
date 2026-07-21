@@ -344,12 +344,10 @@ export const QuizView: React.FC = () => {
   const handleBallComplete = useCallback(async () => {
     try {
       const result = calculatePersonality(answers);
-      updateUserData({ personality: result } as any);
       
       if (session) {
         (async () => {
           try {
-            await updateProfile({ personality_type: result });
             await supabase.from('personality_results').upsert({
               user_id: session.user.id,
               personality_type: result,

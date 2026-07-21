@@ -107,9 +107,9 @@ export const Auth: React.FC = () => {
       try {
         signUpResult = await supabase.auth.signUp({
           email: email.trim(),
-          password: password,
+        password: password,
           options: { 
-            data: { display_name: displayName.trim(), handle: cleanHandle },
+            data: { full_name: displayName.trim(), handle: cleanHandle },
             emailRedirectTo: redirectUrl
           }
         });
@@ -226,9 +226,7 @@ export const Auth: React.FC = () => {
       try {
         const { error: profileError } = await supabase.from('profiles').upsert({
           id: data.user.id,
-          display_name: displayName.trim(),
-          handle: cleanHandle,
-          email: email.trim(),
+          full_name: displayName.trim(),
           created_at: new Date().toISOString()
         });
         const tUpsert1 = performance.now();
@@ -277,7 +275,7 @@ export const Auth: React.FC = () => {
       console.log("[SIGNUP] [FORENSIC-ALT] (4) (NAVIGATING) Alternate Navigation proceeds directly to onboarding (/setup) without additional session activation.");
  
       toast.success('Account created successfully!');
-      navigate('/setup');
+      navigate('/pricing');
       console.log("[SIGNUP] [FORENSIC-ALT] navigate('/setup') called successfully.");
     } catch (err: any) {
       console.error("[SIGNUP] Complete error object caught in alternate signup try block:", err);

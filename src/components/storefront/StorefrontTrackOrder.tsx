@@ -87,7 +87,7 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
   }, [orderResults]);
 
   const handleContactHelp = () => {
-    const wa = (shop.whatsapp || shop.whatsapp_number || '+263771234567').replace(/\D/g, '');
+    const wa = (shop.whatsapp_number || shop.whatsapp || '+263771234567').replace(/\D/g, '');
     const textMsg = `Hi ${shop.name}, I need assistance tracking my order. Reference code: ${orderRef || 'Not Specified'}`;
     const url = `https://wa.me/${wa}?text=${encodeURIComponent(textMsg)}`;
     window.open(url, '_blank');

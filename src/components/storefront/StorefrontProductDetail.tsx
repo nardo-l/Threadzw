@@ -223,7 +223,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
       { order_reference: orderRef, product_id: product.id, total_price: product.price }
     );
 
-    const whatsappNum = shop.whatsapp || shop.whatsapp_number || shop.phone || '+263771234567';
+    const whatsappNum = shop.whatsapp_number || shop.whatsapp || shop.phone || '+263771234567';
     let clean = whatsappNum.replace(/\D/g, '');
     if (clean.startsWith('0')) {
       clean = '263' + clean.substring(1);

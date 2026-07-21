@@ -2,13 +2,10 @@ export interface Shop {
   id: string;
   owner_id: string;
   name: string;
-  handle: string;
   slug?: string;
   category: string;
   description: string;
-  town: string;
-  location?: string;
-  whatsapp: string;
+  whatsapp_number?: string;
   instagram: string;
   avatar_url?: string;
   logo_url?: string;
@@ -87,11 +84,7 @@ export interface Payment {
 export interface Profile {
   id: string;
   display_name: string;
-  handle: string;
   avatar_url: string;
-  town: string;
-  whatsapp_number: string;
-  onboarding_complete: boolean;
   created_at: string;
 }
 

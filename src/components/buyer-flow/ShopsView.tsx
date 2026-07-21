@@ -22,7 +22,7 @@ export const ShopsView: React.FC = () => {
     const shopCategory = shop.category || (shop.categories && shop.categories[0]) || '';
     const matchesFilter = filter === 'All' || shopCategory === filter;
     
-    const shopArea = shop.area || shop.location || '';
+    const shopArea = '';
     const matchesSearch = shop.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           shopArea.toLowerCase().includes(searchQuery.toLowerCase());
     
@@ -249,7 +249,7 @@ export const ShopsView: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-1.5 mt-1.5 text-white/20">
                   <MapPin size={11} />
-                  <p className="text-[11px] truncate">{shop.area || shop.location}</p>
+                  <p className="text-[11px] truncate">{""}</p>
                 </div>
               </div>
             </div>

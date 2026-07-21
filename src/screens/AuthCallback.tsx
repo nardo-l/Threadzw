@@ -236,7 +236,7 @@ export const AuthCallback: React.FC = () => {
     if (detectedType === 'recovery') {
       navigate('/reset-password');
     } else if (!hasShop) {
-      navigate('/setup');
+      navigate('/pricing');
     } else {
       navigate('/dashboard');
     }

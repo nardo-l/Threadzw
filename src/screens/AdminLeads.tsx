@@ -649,7 +649,7 @@ export const AdminLeads: React.FC = () => {
                           </div>
                           <div className="flex justify-between items-center font-sans">
                             <span className="text-[#888] text-xs">Owner WhatsApp:</span>
-                            <span className="text-white font-bold text-xs">{shop.whatsapp || 'N/A'}</span>
+                            <span className="text-white font-bold text-xs">{shop.whatsapp_number || shop.whatsapp || 'N/A'}</span>
                           </div>
                         </div>
 
@@ -657,7 +657,7 @@ export const AdminLeads: React.FC = () => {
                         <div className="space-y-2 pt-2">
                           <button
                             onClick={() => {
-                              const whatsappPhone = shop.whatsapp?.replace(/\D/g, '') || '';
+                              const whatsappPhone = (shop.whatsapp_number || shop.whatsapp || '').replace(/\D/g, '');
                               const prefilledMsg = `Hi ${shop.name}! Your ThreadZW shop subscription has ended. Keep your shop live for $7/month — pay $7 USD via NardoPay in your dashboard. — ThreadZW 🇿🇼`;
                               window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(prefilledMsg)}`, '_blank');
                             }}
@@ -729,7 +729,7 @@ export const AdminLeads: React.FC = () => {
                         </div>
                         <div className="flex justify-between items-center font-mono">
                           <span className="text-[#888] text-xs">WhatsApp:</span>
-                          <span className="text-white font-bold text-xs">{shop.whatsapp || 'N/A'}</span>
+                          <span className="text-white font-bold text-xs">{shop.whatsapp_number || shop.whatsapp || 'N/A'}</span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-[#888] text-xs">Reason:</span>

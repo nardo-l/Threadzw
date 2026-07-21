@@ -11,6 +11,7 @@ export const useShop = () => {
   const [hasShop, setHasShop] = useState(false);
   
   const lastFetchedUserIdRef = useRef<string | null>(null);
+  const hasFetchedRef = useRef(false);
   const isFetchingRef = useRef(false);
 
   const path = location.pathname.toLowerCase();
@@ -29,6 +30,7 @@ export const useShop = () => {
       setHasShop(false);
       setLoading(false);
       lastFetchedUserIdRef.current = null;
+      hasFetchedRef.current = false;
       return;
     }
     console.log("[SHOP] authLoading is false and user is active. Fetching shop...");
@@ -51,26 +53,16 @@ export const useShop = () => {
         return;
       }
 
+      // Skip if already fetched and not forced
+      if (!force && hasFetchedRef.current && lastFetchedUserIdRef.current === user.id) {
+        console.log("[SHOP] fetchShop early return: already fetched for current user.");
+        return;
+      }
+
       // Mark that this specific execution started the actual fetch operation
       didStartFetch = true;
       isFetchingRef.current = true;
       lastFetchedUserIdRef.current = user.id;
-
-      // Skip automatic fetch during signup onboarding to avoid useless query returning null
-      const hasCompletedOnboarding = localStorage.getItem('threadzw_onboarding_complete') === 'true';
-      console.log("[SHOP] Checking onboarding skip condition. isOnboarding:", isOnboarding, "hasCompletedOnboarding:", hasCompletedOnboarding);
-      if (!force && isOnboarding && !hasCompletedOnboarding) {
-        console.log("[SHOP] fetchShop early return: isOnboarding and onboarding is not complete.");
-        setHasShop(false);
-        setShop(null);
-        return;
-      }
-
-      // Skip if already fetched and not forced
-      if (!force && lastFetchedUserIdRef.current === user.id && shop !== null) {
-        console.log("[SHOP] fetchShop early return: already fetched for current user and shop is not null (cached shop reuse).");
-        return;
-      }
 
       console.log("[SHOP] fetch start...");
       const tShop0 = performance.now();
@@ -104,6 +96,7 @@ export const useShop = () => {
           console.warn('[SHOP] Error syncing fetched shop to cache:', cacheErr);
         }
       }
+      hasFetchedRef.current = true;
     } catch (err) {
       console.error('[SHOP] fetch errors:', err);
       setHasShop(false);

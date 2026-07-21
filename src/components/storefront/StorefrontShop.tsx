@@ -322,7 +322,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
 
                       {/* Instagram-inspired Direct WhatsApp Order CTA */}
                       <a
-                        href={`https://wa.me/${(shop.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(
+                        href={`https://wa.me/${(shop.whatsapp_number || shop.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(
                           `Hi ${shop.name}, I want to order "${p.name}" ($${p.price}) directly from your catalog!`
                         )}`}
                         target="_blank"

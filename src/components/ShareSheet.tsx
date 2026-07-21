@@ -11,7 +11,8 @@ interface ShareSheetProps {
   shop: {
     id: string;
     name: string;
-    handle: string;
+    handle?: string;
+    slug?: string;
     logo_url?: string;
     avatar_url?: string;
   };
@@ -21,13 +22,13 @@ interface ShareSheetProps {
 export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, onTrackShare }) => {
   const [copied, setCopied] = useState(false);
 
-  const getShopLink = (handle: string) => {
+  const getShopLink = (slug: string) => {
     const base = getAppOrigin();
-    return base + '/shop/@' + handle.toLowerCase();
+    return base + '/shop/@' + slug.toLowerCase();
   };
 
   const handleCopyLink = async () => {
-    const link = getShopLink(shop.handle);
+    const link = getShopLink(shop.slug || shop.handle || '');
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(link);
@@ -53,7 +54,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
 
   const shareViaWhatsApp = () => {
     const message = encodeURIComponent(
-      `Check out ${shop.name} on Zimbabwe ThreadZW! 🧵\n${getShopLink(shop.handle)}`
+      `Check out ${shop.name} on Zimbabwe ThreadZW! 🧵\n${getShopLink(shop.slug || shop.handle || '')}`
     );
     window.open(`https://wa.me/?text=${message}`, '_blank');
     onTrackShare?.();
@@ -62,7 +63,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
 
   const shareViaTwitter = () => {
     const tweet = encodeURIComponent(
-      `Check out ${shop.name} on @threadzw — Zimbabwe's fashion marketplace 🧵\n\n${getShopLink(shop.handle)}\n\n#ZimbabweFashion #ThreadZW`
+      `Check out ${shop.name} on @threadzw — Zimbabwe's fashion marketplace 🧵\n\n${getShopLink(shop.slug || shop.handle || '')}\n\n#ZimbabweFashion #ThreadZW`
     );
     window.open(`https://twitter.com/intent/tweet?text=${tweet}`, '_blank');
     onTrackShare?.();
@@ -101,7 +102,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
                 <Avatar url={shop.avatar_url || shop.logo_url} size={44} ring={false} />
                 <div className="flex flex-col">
                   <span className="text-[15px] font-bold text-white">{shop.name}</span>
-                  <span className="text-[12px] mt-0.5 text-[#888]">@{shop.handle}</span>
+                  <span className="text-[12px] mt-0.5 text-[#888]">@{shop.slug || shop.handle}</span>
                 </div>
               </div>
 
@@ -110,7 +111,7 @@ export const ShareSheet: React.FC<ShareSheetProps> = ({ isOpen, onClose, shop, o
                 className="flex items-center gap-3 p-3 px-3.5 rounded-[10px] border mb-5 bg-[#1a1a1a] border-[#222]"
               >
                 <span className="flex-1 text-[12px] font-mono truncate text-[#888]">
-                   {getShopLink(shop.handle)}
+                   {getShopLink(shop.slug || shop.handle || '')}
                 </span>
                 <button 
                   onClick={handleCopyLink}

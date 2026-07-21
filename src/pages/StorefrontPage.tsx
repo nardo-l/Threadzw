@@ -58,7 +58,7 @@ export const StorefrontPage: React.FC = () => {
 
   // Check if location info is configured
   const hasLocationInfo = useMemo(() => {
-    return !!(shop?.location?.trim() || shop?.landmark?.trim() || shop?.directions?.trim());
+    return false;
   }, [shop]);
 
   // Compute active page from URL search params (?page=home)
@@ -238,18 +238,21 @@ export const StorefrontPage: React.FC = () => {
 
       let shopResult = dbShop;
       if (!shopResult) {
-        // Fallback search by ID
-        const { data: shopById, error: shopErr3 } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('id', slug)
-          .maybeSingle();
+        // Fallback search by ID (only if slug is a valid UUID)
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (uuidRegex.test(slug)) {
+          const { data: shopById, error: shopErr3 } = await supabase
+            .from('shops')
+            .select('*')
+            .eq('id', slug)
+            .maybeSingle();
 
-        if (shopErr3) {
-          console.error("Supabase Error querying shops by ID:", shopErr3);
-          throw shopErr3;
+          if (shopErr3) {
+            console.error("Supabase Error querying shops by ID:", shopErr3);
+          } else {
+            shopResult = shopById;
+          }
         }
-        shopResult = shopById;
       }
 
       if (!shopResult) {
@@ -1112,73 +1115,6 @@ export const StorefrontPage: React.FC = () => {
                 <div className="p-5 space-y-5 overflow-y-auto font-sans text-xs flex-1">
                   
                   <div className="space-y-4">
-                    <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 shadow-sm space-y-3.5 text-left w-full">
-                      {/* 📍 Address */}
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm shrink-0">📍</span>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Address</span>
-                          <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.shop_address || shop.location || shop.town || 'Bulawayo CBD'}</span>
-                        </div>
-                      </div>
-
-                      {/* 📍 Building */}
-                      {(shop.building_name) && (
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm shrink-0">📍</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Building</span>
-                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.building_name}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 🏢 Floor */}
-                      {(shop.floor) && (
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm shrink-0">🏢</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Floor</span>
-                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.floor}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 🚪 Shop Number */}
-                      {(shop.shop_number) && (
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm shrink-0">🚪</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Shop Number</span>
-                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.shop_number}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 📌 Landmark */}
-                      {(shop.landmark) && (
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm shrink-0">📌</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Landmark</span>
-                            <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop.landmark}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 🧭 Directions (Most prominent) */}
-                      {(shop.directions) && (
-                        <div className="bg-white border-2 border-green-200/80 rounded-xl p-3 shadow-xs mt-3 flex items-start gap-3">
-                          <span className="text-base shrink-0 mt-0.5">🧭</span>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[9px] font-extrabold text-green-700 uppercase tracking-wider block font-mono">Directions</span>
-                            <p className="text-xs font-bold text-zinc-950 font-sans mt-0.5 leading-relaxed break-words whitespace-pre-wrap">
-                              {shop.directions}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
 
                   {/* Trading Hours */}
@@ -1211,10 +1147,10 @@ export const StorefrontPage: React.FC = () => {
                   </div>
 
                   {/* Actions mapping links */}
-                  {shop.whatsapp && (
+                  {(shop.whatsapp_number || shop.whatsapp) && (
                     <div className="pt-2">
                       <a
-                        href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(
+                        href={`https://wa.me/${(shop.whatsapp_number || shop.whatsapp).replace(/\D/g, '')}?text=${encodeURIComponent(
                           `Hi, I'm interested in visiting your shop. Could I get more details on visiting your physical showroom?`
                         )}`}
                         target="_blank"
@@ -1280,7 +1216,7 @@ export const StorefrontPage: React.FC = () => {
 
                 {/* Bottom coordinates */}
                 <div className="border-t border-zinc-100 pt-4 space-y-1 text-xs text-zinc-400">
-                  <p>Location: {shop.city || shop.location || (shop.id?.startsWith('shop-') ? 'Available Online' : 'Harare')}, Zimbabwe</p>
+                  <p>Location: Harare, Zimbabwe</p>
                   <p>Powered by ThreadZW 💚</p>
                 </div>
               </motion.div>

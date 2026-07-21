@@ -26,7 +26,6 @@ export const Settings: React.FC = () => {
   // Profile Form State
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [town, setTown] = useState('Harare');
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Password Form State
@@ -39,7 +38,6 @@ export const Settings: React.FC = () => {
     if (profile) {
       setDisplayName(profile.display_name || '');
       setEmail(profile.email || user?.email || '');
-      setTown(profile.town || 'Harare');
     } else if (user) {
       setEmail(user.email || '');
     }
@@ -68,8 +66,7 @@ export const Settings: React.FC = () => {
     setSavingProfile(true);
     try {
       const { error } = await updateProfile({
-        display_name: displayName.trim(),
-        town: town.trim()
+        display_name: displayName.trim()
       });
 
       if (error) throw error;
@@ -166,17 +163,6 @@ export const Settings: React.FC = () => {
                 value={email}
                 readOnly
                 className="w-full h-11 bg-zinc-100/60 border border-zinc-200 rounded-xl px-4 text-sm text-zinc-500 cursor-not-allowed focus:outline-none"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-zinc-700">Town/Location</label>
-              <input 
-                type="text" 
-                value={town}
-                onChange={(e) => setTown(e.target.value)}
-                placeholder="e.g. Harare"
-                className="w-full h-11 bg-white border border-zinc-200 rounded-xl px-4 text-sm text-black focus:outline-none focus:border-[#25D366] transition-all"
               />
             </div>
 
@@ -279,6 +265,19 @@ export const Settings: React.FC = () => {
             )}
           </div>
         </section>
+
+        {/* REPLAY WALKTHROUGH */}
+        <div className="pt-2">
+          <button 
+            onClick={() => {
+              localStorage.setItem('threadzw_needs_walkthrough', 'true');
+              navigate('/dashboard');
+            }}
+            className="w-full h-12 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-zinc-200"
+          >
+            <span>Replay Dashboard Walkthrough</span>
+          </button>
+        </div>
 
         {/* LOGOUT BUTTON */}
         <div className="pt-4">

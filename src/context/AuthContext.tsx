@@ -37,17 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const tProfile0 = performance.now();
       let profileResult;
       
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Profile fetch timed out')), 5000));
-      
       try {
-        profileResult = await Promise.race([
-          supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', userId)
-            .maybeSingle(),
-          timeoutPromise
-        ]) as any;
+        profileResult = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
         const tProfile1 = performance.now();
         console.log(`[LOGIN] [FORENSIC-AUTH] STEP 1 PROFILE: (AWAIT_PROFILE_AFTER) Query resolved in ${(tProfile1 - tProfile0).toFixed(2)}ms.`);
       } catch (profileExc: any) {
@@ -80,8 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile({
           id: userId,
           display_name: activeSession.user.user_metadata?.full_name || 'ThreadZW Merchant',
-          email: activeSession.user.email,
-          onboarding_complete: false
+          email: activeSession.user.email
         });
       }
 
@@ -90,17 +84,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const tSub0 = performance.now();
       let subResult;
       
-      const subTimeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Subscription fetch timed out')), 5000));
-      
       try {
-        subResult = await Promise.race([
-          supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('profile_id', userId)
-            .maybeSingle(),
-          subTimeoutPromise
-        ]) as any;
+        subResult = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('profile_id', userId)
+          .maybeSingle();
         const tSub1 = performance.now();
         console.log(`[LOGIN] [FORENSIC-AUTH] STEP 2 SUB: (AWAIT_SUB_AFTER) Query resolved in ${(tSub1 - tSub0).toFixed(2)}ms.`);
       } catch (subExc: any) {
@@ -209,6 +198,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log("[LOGIN] [FORENSIC-AUTH] Subscribing to supabase.auth.onAuthStateChange...");
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
       console.log(`[LOGIN] [FORENSIC-AUTH] onAuthStateChange event received. Event: "${event}", hasSession: ${!!currentSession}`);
+      if (event === 'INITIAL_SESSION') {
+        console.log("[LOGIN] [FORENSIC-AUTH] Ignoring INITIAL_SESSION from onAuthStateChange since initSession handles it.");
+        return;
+      }
       if (event === 'SIGNED_IN') {
         console.log(`[SIGNUP] (3) onAuthStateChange emitted the expected SIGNED_IN event. Session active user: ${currentSession?.user?.id}`);
       }
@@ -356,12 +349,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsGuest(false)
     setSessionExpired(false)
     
-    // Clear local storage items cached for onboarding/user details
+    // Clear local storage items cached for user details
     localStorage.removeItem('threadzw_logged_in')
     localStorage.removeItem('supabase_logged_in_user_id')
-    localStorage.removeItem('threadzw_onboarding_complete')
-    localStorage.removeItem('threadzw_onboarding_step')
-    localStorage.removeItem('threadzw_onboarding_states')
     localStorage.removeItem('threadzw_owner_name')
     localStorage.removeItem('threadzw_first_login_overlay_shown')
     localStorage.removeItem('threadzw_shop_onboarding_first_time')

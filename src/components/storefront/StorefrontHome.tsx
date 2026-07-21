@@ -176,9 +176,9 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
               >
                 Browse Catalog <ArrowRight className="w-3.5 h-3.5" />
               </button>
-              {shop.whatsapp && (
+              {(shop.whatsapp_number || shop.whatsapp) && (
                 <a
-                  href={`https://wa.me/${shop.whatsapp.replace(/\D/g, '')}`}
+                  href={`https://wa.me/${(shop.whatsapp_number || shop.whatsapp).replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center border border-zinc-200/30 text-center"
@@ -306,7 +306,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                       </div>
 
                       <a
-                        href={`https://wa.me/${(shop.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(
+                        href={`https://wa.me/${(shop.whatsapp_number || shop.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(
                           `Hi ${shop.name}, I'm interested in buying: "${p.name}" ($${p.price}) from your shop link!`
                         )}`}
                         target="_blank"

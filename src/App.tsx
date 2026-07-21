@@ -29,7 +29,6 @@ import { InventoryProvider } from './context/InventoryContext';
 import { Toaster } from 'sonner';
 import { LandingPage } from './screens/LandingPage';
 import { AdminLeads } from './screens/AdminLeads';
-import { SetupShop } from './screens/SetupShop';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
@@ -38,16 +37,16 @@ import { MaintenanceOverlay } from './components/MaintenanceOverlay';
 import { NardoPayCheckout } from './screens/NardoPayCheckout';
 
 
-type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout';
+type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success';
 
-const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?: string; id?: string } => {
+const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
 
   if (path === '/shop' || path === '/store' || path === '/shops') {
     return { stage: 'shop-directory' };
   }
   if (path === '/demo' || path === '/shop/demo' || path === '/store/demo') {
-    return { stage: 'shop', handle: 'demo' };
+    return { stage: 'shop', slug: 'demo' };
   }
   if (path === '/admin') {
     return { stage: 'admin' };
@@ -57,6 +56,12 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   }
   if (path.startsWith('/dashboard') || path === '/inventory' || path === '/add-product' || path.startsWith('/edit-product') || path === '/settings' || path === '/edit-shop') {
     return { stage: 'dashboard' };
+  }
+  if (path === '/pricing') {
+    return { stage: 'pricing' };
+  }
+  if (path === '/setup-success') {
+    return { stage: 'setup-success' };
   }
   if (path === '/setup') {
     return { stage: 'setup' };
@@ -78,7 +83,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -104,12 +109,12 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
       const slugPart = firstSegment.substring(0, idx);
       const idPart = firstSegment.substring(idx + 2);
       // Since it has '--', it's always a persistent storefront URL, regardless of whether the slug is a reserved word
-      return { stage: 'shop', handle: slugPart, id: idPart };
+      return { stage: 'shop', slug: slugPart, id: idPart };
     }
 
     // Default: If it's not a reserved route, treat as raw slug storefront
     if (!reserved.includes(firstSegment.toLowerCase())) {
-      return { stage: 'shop', handle: firstSegment.toLowerCase() };
+      return { stage: 'shop', slug: firstSegment.toLowerCase() };
     }
   }
 
@@ -118,7 +123,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; handle?:
   if (shopMatch) {
     return {
       stage: 'shop',
-      handle: shopMatch[1].replace(/^@/, '').toLowerCase()
+      slug: shopMatch[1].replace(/^@/, '').toLowerCase()
     };
   }
 
@@ -155,7 +160,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -272,6 +277,12 @@ function AppContent() {
       console.log("[ROUTER] navigation decisions. Redirecting to admin: /admin");
       navigate('/admin');
     }
+    else if (stage === 'pricing') {
+      navigate('/pricing');
+    }
+    else if (stage === 'setup-success') {
+      navigate('/setup-success');
+    }
     else if (stage === 'setup') {
       console.log("[ROUTER] navigation decisions. Redirecting to setup: /setup");
       navigate('/setup');
@@ -304,7 +315,7 @@ function AppContent() {
 
   // Route protection and syncing
   useEffect(() => {
-    const path = location.pathname.toLowerCase();
+    const path = location.pathname.toLowerCase().replace(/\/$/, '');
     console.log("[ROUTER] Route Sync Effect triggered. Path:", path, "authLoading:", loading, "shopLoading:", shopLoading, "hasShop:", hasShop, "isPublicShopPath:", isPublicShopPath, "loggedIn:", !!session, "appStage:", appStageRef.current);
 
     if (loading) {
@@ -318,27 +329,58 @@ function AppContent() {
       return;
     }
 
+    const loggedIn = !!session;
+
+    // Handle special paths when logged in or out
     if (
       path === '' ||
       path === '/' ||
       path === '/login' ||
       path === '/signup' ||
-      path === '/onboarding' ||
+      path === '/onboarding'
+    ) {
+      if (!loggedIn) {
+        // If not logged in, these paths are perfectly fine to view. No redirect needed.
+        console.log("[ROUTER] Special route while unauthenticated, returning.");
+        return;
+      } else {
+        // If logged in, check if shop is still loading
+        if (shopLoading) {
+          console.log("[ROUTER] shopLoading is true on special route, delaying decision.");
+          return;
+        }
+
+        if (hasShop) {
+          // If logged in and has shop, redirect to dashboard!
+          console.log("[ROUTER] User has shop on special route. Transitioning to dashboard.");
+          setAppStage('dashboard');
+        } else {
+          // If logged in but does not have a shop
+          if (path === '' || path === '/' || path === '/login') {
+            console.log("[ROUTER] User has no shop on special route. Transitioning to onboarding.");
+            setAppStage('onboarding');
+          } else {
+            console.log("[ROUTER] User is already on onboarding, returning.");
+          }
+        }
+        return;
+      }
+    }
+
+    // Other non-onboarding, non-landing public routes are bypassed
+    if (
       path.startsWith('/shop/') || 
       path.startsWith('/store/') || 
       path === '/demo' || 
-      path === '/demo/' || 
       path === '/admin' || 
       path.startsWith('/product/') ||
       path.startsWith('/checkout') ||
       path.startsWith('/auth') ||
       path === '/reset-password'
     ) {
-      console.log("[ROUTER] Special/Public/Form route, returning.");
+      console.log("[ROUTER] General public route bypassed.");
       return;
     }
-
-    const loggedIn = !!session;
 
     if (!loggedIn) {
       console.log("[ROUTER] User is not logged in on protected route. Current stage:", appStageRef.current);
@@ -358,11 +400,18 @@ function AppContent() {
       }
 
       console.log("[ROUTER] User is logged in and shop is done loading. Current stage:", appStageRef.current);
+      if (!hasShop) {
+        // If logged in but does not have a shop, protect from dashboard subpaths and redirect to onboarding!
+        console.log("[ROUTER] User is logged in on protected route but has no shop. Transitioning to onboarding.");
+        setAppStage('onboarding');
+        return;
+      }
+
       if (
         appStageRef.current !== 'dashboard' &&
         appStageRef.current !== 'onboarding' &&
         appStageRef.current !== 'building' &&
-        appStageRef.current !== 'setup'
+        appStageRef.current !== 'setup' && appStageRef.current !== 'setup-success' && appStageRef.current !== 'pricing'
       ) {
         console.log("[ROUTER] navigation decisions. Transitioning stage to 'dashboard'.");
         setAppStage('dashboard');
@@ -451,11 +500,6 @@ function AppContent() {
     return (
       <LandingPage 
         onStartFree={() => {
-          localStorage.removeItem('threadzw_logged_in');
-          localStorage.removeItem('threadzw_onboarding_complete');
-          localStorage.removeItem('threadzw_onboarding_step');
-          localStorage.removeItem('threadzw_onboarding_states');
-          localStorage.removeItem('threadzw_owner_name');
           setAppStage('onboarding');
         }} 
         onLoginSuccess={() => {
@@ -479,8 +523,14 @@ function AppContent() {
     );
   }
 
+  if (appStage === 'pricing') {
+    return <SignUp initialStep={3} />;
+  }
+  if (appStage === 'setup-success') {
+    return <SignUp initialStep={13} />;
+  }
   if (appStage === 'setup') {
-    return <SetupShop onSetupComplete={refreshShop} />;
+    return <SignUp initialStep={5} />;
   }
 
   if (appStage === 'checkout') {
