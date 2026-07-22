@@ -19,13 +19,10 @@ import { SalesSystem } from './screens/SalesSystem';
 import { Support } from './screens/Support';
 import { Notifications } from './screens/Notifications';
 import { Search } from './screens/Search';
-import { ShopProfileView } from './components/buyer-flow/ShopProfileView';
 import { ProductDetail } from './screens/ProductDetail';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/ToastContainer';
-import { FollowProvider } from './context/FollowContext';
-import { InventoryProvider } from './context/InventoryContext';
 import { Toaster } from 'sonner';
 import { LandingPage } from './screens/LandingPage';
 import { AdminLeads } from './screens/AdminLeads';
@@ -86,7 +83,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -163,7 +160,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -294,9 +291,22 @@ function AppContent() {
       console.log("[ROUTER] navigation decisions. Redirecting to checkout: /checkout/nardopay");
       navigate('/checkout/nardopay');
     }
+    else if (stage === 'subscription') {
+      console.log("[ROUTER] navigation decisions. Redirecting to subscription: /subscription");
+      navigate('/subscription');
+    }
   };
 
   const isDashboardSubPath = useMemo(() => {
+    if (
+      cleanPath === '/subscription' || 
+      cleanPath.startsWith('/checkout') || 
+      cleanPath === '/pricing' || 
+      cleanPath === '/setup' || 
+      cleanPath === '/setup-success'
+    ) {
+      return false;
+    }
     return (
       appStage === 'dashboard' ||
       cleanPath === '/dashboard' ||
@@ -382,7 +392,8 @@ function AppContent() {
       path.startsWith('/product/') ||
       path.startsWith('/checkout') ||
       path.startsWith('/auth') ||
-      path === '/reset-password'
+      path === '/reset-password' ||
+      path === '/subscription'
     ) {
       console.log("[ROUTER] General public route bypassed.");
       return;
@@ -417,7 +428,7 @@ function AppContent() {
         appStageRef.current !== 'dashboard' &&
         appStageRef.current !== 'onboarding' &&
         appStageRef.current !== 'building' &&
-        appStageRef.current !== 'setup' && appStageRef.current !== 'setup-success' && appStageRef.current !== 'pricing'
+        appStageRef.current !== 'setup' && appStageRef.current !== 'setup-success' && appStageRef.current !== 'pricing' && appStageRef.current !== 'subscription'
       ) {
         console.log("[ROUTER] navigation decisions. Transitioning stage to 'dashboard'.");
         setAppStage('dashboard');
@@ -543,7 +554,7 @@ function AppContent() {
     return <NardoPayCheckout />;
   }
 
-  if (appStage === 'subscription') {
+  if (appStage === 'subscription' || cleanPath === '/subscription') {
     return <Subscription />;
   }
 
@@ -557,6 +568,7 @@ function AppContent() {
         <Route path="/edit-shop" element={<ShopEdit />} />
         <Route path="/add-product" element={<AddProduct />} />
         <Route path="/edit-product/:id" element={<EditProduct />} />
+        <Route path="/subscription" element={<Subscription />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     );
@@ -570,15 +582,11 @@ function App() {
     <Router>
       <AuthProvider>
         <ToastProvider>
-          <FollowProvider>
-            <InventoryProvider>
-              <ShopProvider>
-                <AppContent />
-                <ToastContainer />
-                <Toaster position="top-center" theme="dark" expand={false} richColors />
-              </ShopProvider>
-            </InventoryProvider>
-          </FollowProvider>
+          <ShopProvider>
+            <AppContent />
+            <ToastContainer />
+            <Toaster position="top-center" theme="dark" expand={false} richColors />
+          </ShopProvider>
         </ToastProvider>
       </AuthProvider>
     </Router>

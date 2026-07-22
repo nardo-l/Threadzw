@@ -3,7 +3,6 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Shield, Sparkles, Feather } from 'lucide-react';
 import { ShopLogo, ShopBanner } from '../ui/ShopImage';
-import { useInventory } from '../../context/InventoryContext';
 
 interface StorefrontAboutProps {
   shop: any;

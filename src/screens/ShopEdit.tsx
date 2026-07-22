@@ -34,7 +34,6 @@ import { Shimmer } from '../components/ui/Shimmer';
 import { ScreenError } from '../components/ui/ScreenError';
 import { FieldError } from '../components/ui/FieldError';
 import { uploadImage } from '../utils/uploadImage';
-import { useInventory } from '../context/InventoryContext';
 import { useShopContext } from '../context/ShopContext';
 import { parseShopConfig, serializeShopConfig, StorefrontConfig } from '../utils/configHelper';
 import { slugify } from '../utils/slugify';
@@ -61,7 +60,6 @@ export const ShopEdit = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { refreshInventory } = useInventory();
   const { refreshShop } = useShopContext();
   
   const [loading, setLoading] = useState(true);
@@ -102,6 +100,35 @@ export const ShopEdit = () => {
   const [businessHighlights, setBusinessHighlights] = useState('');
   const [responseTime, setResponseTime] = useState('');
   const [customNotes, setCustomNotes] = useState('');
+  const [generatingBio, setGeneratingBio] = useState(false);
+
+  const handleGenerateShopBio = async () => {
+    setGeneratingBio(true);
+    try {
+      const res = await fetch('/api/ai/generate-shop-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopName: shopName || 'ThreadZW Boutique',
+          category: categories.join(', ') || 'Streetwear & Apparel',
+          location: city || suburb || 'Harare, Zimbabwe'
+        })
+      });
+      const data = await res.json();
+      if (data.description) {
+        setDescription(data.description.substring(0, 300));
+        markChanged();
+      }
+      if (data.bio && !tagline) {
+        setTagline(data.bio);
+      }
+      showToast('Generated shop bio with Gemini AI!', 'success');
+    } catch (err) {
+      showToast('Failed to generate shop bio', 'error');
+    } finally {
+      setGeneratingBio(false);
+    }
+  };
   
   // Custom Premium Redesigned Storefront States
   const [storeStory, setStoreStory] = useState('');
@@ -414,7 +441,6 @@ export const ShopEdit = () => {
       );
 
       // Trigger active layout rebuild
-      await refreshInventory();
       await refreshShop();
 
     } catch (err: any) {
@@ -685,7 +711,6 @@ export const ShopEdit = () => {
       }
 
       // Sync state and memory to avoid stale data
-      await refreshInventory();
       await refreshShop();
 
       setHasChanges(false);
@@ -1074,8 +1099,19 @@ export const ShopEdit = () => {
 
           {/* Description */}
           <div className="space-y-2">
-            <div className="flex justify-between items-end">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">Description</label>
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <label className="font-mono text-xs text-muted uppercase tracking-wider">Description</label>
+                <button
+                  type="button"
+                  onClick={handleGenerateShopBio}
+                  disabled={generatingBio}
+                  className="px-2.5 py-1 bg-primary/20 hover:bg-primary/30 text-primary font-mono text-[10px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 border border-primary/30"
+                >
+                  <Sparkles size={11} className={generatingBio ? 'animate-spin' : ''} />
+                  {generatingBio ? 'Generating...' : 'Auto-Generate Bio'}
+                </button>
+              </div>
               <span className="font-mono text-[10px] text-muted">{description.length}/300</span>
             </div>
             <textarea 

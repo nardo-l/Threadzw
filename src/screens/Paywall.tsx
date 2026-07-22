@@ -82,7 +82,7 @@ const initializeNardoPayWidget = () => {
               <span class="text-xs text-[#bef715] font-mono block truncate max-w-[180px] font-semibold">${this.linkCode}</span>
             </div>
             <div class="bg-[#bef715]/10 px-3 py-1.5 rounded-lg border border-[#bef715]/20 flex items-center gap-1">
-              <span class="text-sm font-black text-[#bef715] font-mono">$2.99</span>
+              <span class="text-sm font-black text-[#bef715] font-mono">$1</span>
               <span class="text-[9px] text-zinc-400 font-semibold uppercase">USD</span>
             </div>
           </div>
@@ -115,7 +115,7 @@ const initializeNardoPayWidget = () => {
               class="w-full h-14 bg-[#bef715] hover:bg-[#a6d910] text-black font-black uppercase tracking-widest text-xs rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 active:scale-95 cursor-pointer mt-3"
               style="background-color:#bef715 !important; color:#000000 !important; border-radius:10px !important; font-weight:800 !important; font-size:14px !important;"
             >
-              <span>Authorize $2.99 USD</span>
+              <span>Authorize $1 USD</span>
             </button>
           </div>
 
@@ -209,7 +209,7 @@ const initializeNardoPayWidget = () => {
                     <div class="space-y-2">
                       <h3 class="text-xl font-black uppercase tracking-tight font-grotesk text-white">Payment Authorized</h3>
                       <p class="text-zinc-400 text-xs font-semibold leading-relaxed max-w-xs mx-auto">
-                        Thank you! Your payment of $2.99 USD has been authorized successfully.
+                        Thank you! Your payment of $1 USD has been authorized successfully.
                       </p>
                     </div>
                   </div>
@@ -225,7 +225,7 @@ const initializeNardoPayWidget = () => {
           } catch (err: any) {
             console.error('[NardoPayWidget] Authorization error:', err);
             submitBtn.disabled = false;
-            submitBtn.innerHTML = `<span>Authorize $2.99 USD</span>`;
+            submitBtn.innerHTML = `<span>Authorize $1 USD</span>`;
             
             if (errorBox && errorMsg) {
               errorMsg.textContent = err.message || 'Authorization failed. Please try again.';
@@ -549,7 +549,7 @@ export const Paywall: React.FC = () => {
             <span className="text-xs text-zinc-300 font-bold">Unlimited products, custom link</span>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$2.99</span>
+            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$1</span>
             <span className="text-[10px] text-zinc-500 font-bold">per month</span>
           </div>
         </div>

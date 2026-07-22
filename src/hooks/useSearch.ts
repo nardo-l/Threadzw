@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
-import { useInventory } from '../context/InventoryContext';
 
 export interface SearchFilters {
   category?: string[];
@@ -13,7 +12,6 @@ export interface SearchFilters {
 }
 
 export const useSearch = (query: string, filters: SearchFilters = {}) => {
-  const { toggleLike, toggleSave, likedProductIds, savedProductIds } = useInventory();
   const [products, setProducts] = useState<any[]>([]);
   const [shops, setShops] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -28,41 +26,33 @@ export const useSearch = (query: string, filters: SearchFilters = {}) => {
 
     setLoading(true);
     setError(null);
-    try {
-      let productQuery = supabase
-        .from('products')
-        .select('*, shop:shops(*)')
-        .eq('status', 'active')
-        .eq('is_published', true);
 
+    try {
+      let pQuery = supabase.from('products').select('*, shop:shops(*)');
+      
       if (query) {
-        productQuery = productQuery.ilike('name', `%${query}%`);
+        pQuery = pQuery.ilike('name', `%${query}%`);
       }
 
       if (filters.category && filters.category.length > 0) {
-        productQuery = productQuery.in('category', filters.category);
-      }
-      if (filters.condition && filters.condition.length > 0) {
-        productQuery = productQuery.in('condition', filters.condition);
-      }
-      if (filters.minPrice) productQuery = productQuery.gte('price', filters.minPrice);
-      if (filters.maxPrice) productQuery = productQuery.lte('price', filters.maxPrice);
-      if (filters.inStockOnly) productQuery = productQuery.gt('total_stock', 0);
-
-      switch (filters.sortBy) {
-        case 'price_asc': productQuery = productQuery.order('price', { ascending: true }); break;
-        case 'price_desc': productQuery = productQuery.order('price', { ascending: false }); break;
-        case 'popular': productQuery = productQuery.order('like_count', { ascending: false }); break;
-        default: productQuery = productQuery.order('created_at', { ascending: false });
+        pQuery = pQuery.in('category', filters.category);
       }
 
-      const shopQuery = supabase
-        .from('shops')
-        .select('*')
-        .ilike('name', `%${query}%`)
-        .limit(10);
+      if (filters.minPrice !== undefined) {
+        pQuery = pQuery.gte('price', filters.minPrice);
+      }
 
-      const [pRes, sRes] = await Promise.all([productQuery, shopQuery]);
+      if (filters.maxPrice !== undefined) {
+        pQuery = pQuery.lte('price', filters.maxPrice);
+      }
+
+      const pRes = await pQuery;
+
+      let sQuery = supabase.from('shops').select('*');
+      if (query) {
+        sQuery = sQuery.ilike('name', `%${query}%`);
+      }
+      const sRes = await sQuery;
 
       if (pRes.error) throw pRes.error;
       if (sRes.error) throw sRes.error;
@@ -71,11 +61,11 @@ export const useSearch = (query: string, filters: SearchFilters = {}) => {
       setShops(sRes.data || []);
     } catch (err: any) {
       console.error('Search error:', err);
-      setError(err.message || 'Search failed');
+      setError(err.message || 'Error searching database');
     } finally {
       setLoading(false);
     }
-  }, [query, JSON.stringify(filters)]);
+  }, [query, filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -94,9 +84,5 @@ export const useSearch = (query: string, filters: SearchFilters = {}) => {
     loading,
     error,
     refetch: performSearch,
-    toggleLike,
-    toggleSave,
-    likedProductIds,
-    savedProductIds
   };
 };

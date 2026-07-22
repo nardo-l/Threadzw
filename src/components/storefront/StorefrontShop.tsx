@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
 import { supabase } from '../../lib/supabase';
-import { useInventory } from '../../context/InventoryContext';
 
 interface StorefrontShopProps {
   shop: any;

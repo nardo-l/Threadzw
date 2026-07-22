@@ -75,13 +75,47 @@ export const NardoPayCheckout: React.FC = () => {
         throw new Error(data.error || 'Payment authorization declined by network');
       }
 
+      // Ensure client-side Supabase record update as fallback
+      const currentUser = activeSession?.user;
+      if (currentUser) {
+        const now = new Date();
+        const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        const { data: existingSub } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('profile_id', currentUser.id)
+          .maybeSingle();
+
+        const subPayload = {
+          profile_id: currentUser.id,
+          status: 'active',
+          plan: 'pro',
+          amount: 1.00,
+          currency: 'USD',
+          subscription_started_at: now.toISOString(),
+          subscription_ends_at: endsAt
+        };
+
+        if (existingSub?.id) {
+          await supabase.from('subscriptions').update(subPayload).eq('id', existingSub.id);
+        } else {
+          await supabase.from('subscriptions').insert([subPayload]);
+        }
+
+        await supabase.from('shops').update({
+          subscription_status: 'active',
+          subscription_end: endsAt
+        }).eq('owner_id', currentUser.id);
+      }
+
       setSuccess(true);
       toast.success('Payment authorized successfully!');
 
-      // Redirect after a beautiful success countdown
+      // Redirect after a success countdown
       setTimeout(() => {
         navigate('/dashboard?payment=success');
-      }, 2500);
+      }, 2000);
 
     } catch (err: any) {
       console.error('NardoPay transaction processing failed:', err);
@@ -104,7 +138,7 @@ export const NardoPayCheckout: React.FC = () => {
               Payment Secured
             </h2>
             <p className="text-zinc-400 text-sm font-medium">
-              Your transaction of $7.00 USD has been completed. Re-entering ThreadZW application workspace...
+              Your transaction of $1.00 USD has been completed. Re-entering ThreadZW application workspace...
             </p>
           </div>
           <div className="flex items-center justify-center gap-2 text-zinc-600 font-mono text-xs">
@@ -145,7 +179,7 @@ export const NardoPayCheckout: React.FC = () => {
             NardoPay Secure Authorization
           </h2>
           <p className="text-zinc-500 text-xs font-semibold leading-relaxed">
-            Please enter your WhatsApp details to authorize subscription fee of <strong className="text-white font-black">$7.00 USD</strong>.
+            Please enter your WhatsApp details to authorize subscription fee of <strong className="text-white font-black">$1.00 USD</strong>.
           </p>
         </div>
 
@@ -163,7 +197,7 @@ export const NardoPayCheckout: React.FC = () => {
           </div>
           <div className="bg-[#25D366]/10 px-3 py-1.5 rounded-lg border border-[#25D366]/20 flex items-center gap-1">
             <DollarSign size={14} className="text-[#25D366]" />
-            <span className="text-sm font-black text-[#25D366] font-mono">7.00</span>
+            <span className="text-sm font-black text-[#25D366] font-mono">1.00</span>
           </div>
         </div>
 
@@ -198,7 +232,7 @@ export const NardoPayCheckout: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin text-black" />
             ) : (
               <>
-                <span>Securely Authorize $7.00 USD</span>
+                <span>Securely Authorize $1.00 USD</span>
                 <ArrowRight size={14} className="stroke-[2.5px]" />
               </>
             )}

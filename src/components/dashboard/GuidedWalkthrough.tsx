@@ -8,7 +8,8 @@ export const GuidedWalkthrough = () => {
 
   useEffect(() => {
     const needsWalkthrough = localStorage.getItem('threadzw_needs_walkthrough');
-    if (needsWalkthrough === 'true') {
+    const isCompleted = localStorage.getItem('threadzw_walkthrough_completed');
+    if (needsWalkthrough === 'true' && isCompleted !== 'true') {
       setIsVisible(true);
     }
   }, []);
@@ -16,17 +17,22 @@ export const GuidedWalkthrough = () => {
   if (!isVisible) return null;
 
   const steps = [
-    { title: "Welcome to your Dashboard!", description: "This is where you'll manage your entire shop." },
-    { title: "Add Products", description: "Click here to add your first product." },
-    { title: "Share Store", description: "Once products are added, grab your link and share it." }
+    { title: "Store", description: "Customize your storefront here." },
+    { title: "Products", description: "Add your first product." },
+    { title: "Dashboard", description: "Track your business here." }
   ];
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    localStorage.removeItem('threadzw_needs_walkthrough');
+    localStorage.setItem('threadzw_walkthrough_completed', 'true');
+  };
 
   const handleNext = () => {
     if (step < steps.length - 1) {
       setStep(step + 1);
     } else {
-      setIsVisible(false);
-      localStorage.removeItem('threadzw_needs_walkthrough');
+      handleDismiss();
     }
   };
 
@@ -40,7 +46,7 @@ export const GuidedWalkthrough = () => {
       >
         <div className="flex justify-between items-center">
           <h3 className="font-bold text-zinc-900 text-lg">Step {step + 1} of {steps.length}</h3>
-          <button onClick={() => { setIsVisible(false); localStorage.removeItem('threadzw_needs_walkthrough'); }} className="p-2 hover:bg-zinc-100 rounded-full">
+          <button onClick={handleDismiss} className="p-2 hover:bg-zinc-100 rounded-full">
             <X className="w-5 h-5 text-zinc-500" />
           </button>
         </div>

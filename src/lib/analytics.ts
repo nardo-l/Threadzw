@@ -93,6 +93,67 @@ export async function trackSearchUsage(shopId: string, query: string) {
   await logAnalyticsEvent('search_usage', shopId, null, { search_query: query.trim() });
 }
 
+export async function trackLandingPageView() {
+  const vid = localStorage.getItem('boutique_customer_id') || 'visitor_' + Math.random().toString(36).substring(2, 11);
+  if (!localStorage.getItem('boutique_customer_id')) {
+    localStorage.setItem('boutique_customer_id', vid);
+  }
+  try {
+    await supabase.from('analytics_events').insert([{
+      shop_id: 'system_landing',
+      event_type: 'landing_page_view',
+      visitor_id: vid,
+      metadata: { referrer: document.referrer || 'Direct' },
+      created_at: new Date().toISOString()
+    }]);
+  } catch (e) {
+    console.warn('Analytics landing page log skipped:', e);
+  }
+}
+
+export async function trackSignUpEvent(userId: string) {
+  try {
+    await supabase.from('analytics_events').insert([{
+      shop_id: 'system_signup',
+      event_type: 'merchant_signup',
+      visitor_id: userId,
+      metadata: { user_id: userId },
+      created_at: new Date().toISOString()
+    }]);
+  } catch (e) {
+    console.warn('Analytics signup log skipped:', e);
+  }
+}
+
+export async function trackShopCreatedEvent(shopId: string, shopName: string) {
+  try {
+    await supabase.from('analytics_events').insert([{
+      shop_id: shopId,
+      event_type: 'shop_created',
+      visitor_id: shopId,
+      metadata: { name: shopName },
+      created_at: new Date().toISOString()
+    }]);
+  } catch (e) {
+    console.warn('Analytics shop created log skipped:', e);
+  }
+}
+
+export async function trackProductCreatedEvent(shopId: string, productId: string) {
+  try {
+    await supabase.from('analytics_events').insert([{
+      shop_id: shopId,
+      product_id: productId,
+      event_type: 'product_created',
+      visitor_id: shopId,
+      metadata: {},
+      created_at: new Date().toISOString()
+    }]);
+  } catch (e) {
+    console.warn('Analytics product created log skipped:', e);
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // NOTIFICATION GENERATION HELPER
 // ═══════════════════════════════════════════════════════════════════════════

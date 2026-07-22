@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { uploadImage } from '../utils/uploadImage';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
 import { getSizesForCategory } from '../utils/sizes';
+import { cropToSquare, enhanceLighting, compressAndOptimize } from '../utils/imageEnhancer';
 
 interface SizeStock {
   active: boolean;
@@ -29,7 +30,69 @@ export const AddProduct: React.FC = () => {
     cameraInputRef.current?.click();
   };
 
-  // Flow State (6 Steps)
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleGenerateAIDescription = async () => {
+    if (!name) {
+      toast.error('Please enter a product title in Step 1 first!');
+      return;
+    }
+    setAiGenerating(true);
+    const toastId = toast.loading('Generating AI description & selling points...');
+    try {
+      const res = await fetch('/api/ai/generate-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          category: selectedCategory || 'Apparel',
+          price: price || '0.00'
+        })
+      });
+      const data = await res.json();
+      if (data.description) {
+        setDescription(data.description);
+      }
+      if (data.sellingPoints && Array.isArray(data.sellingPoints)) {
+        setFeatures(data.sellingPoints.join(', '));
+      }
+      toast.success('Generated with Gemini! Review and edit before saving.', { id: toastId });
+    } catch (err) {
+      toast.error('Failed to generate description with AI.', { id: toastId });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleCropSquare = async (idx: number) => {
+    try {
+      const toastId = toast.loading('Cropping image to 1:1 square...');
+      const cropped = await cropToSquare(images[idx]);
+      setImages(prev => {
+        const copy = [...prev];
+        copy[idx] = cropped;
+        return copy;
+      });
+      toast.success('Image cropped to 1:1 square!', { id: toastId });
+    } catch (err) {
+      toast.error('Crop failed');
+    }
+  };
+
+  const handleEnhanceLighting = async (idx: number) => {
+    try {
+      const toastId = toast.loading('Enhancing lighting & contrast...');
+      const enhanced = await enhanceLighting(images[idx]);
+      setImages(prev => {
+        const copy = [...prev];
+        copy[idx] = enhanced;
+        return copy;
+      });
+      toast.success('Lighting enhanced!', { id: toastId });
+    } catch (err) {
+      toast.error('Enhancement failed');
+    }
+  };
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<1 | -1>(1);
   const [uploading, setUploading] = useState(false);
@@ -472,15 +535,21 @@ export const AddProduct: React.FC = () => {
         if (careInstructions) finalDescription += `\nCare Instructions: ${careInstructions}`;
       }
 
-      const productPayload = {
+      const productPayload: any = {
         shop_id: currentShopId,
+        owner_id: ownerId,
         name: name.trim(),
         price: parseFloat(price),
         category: selectedCategory || null,
         description: finalDescription || null,
+        images: images,
         image_url: images[0] || null,
         sizes: configuredSizes,
         stock: totalStock,
+        total_stock: totalStock,
+        colours: selectedColors,
+        is_published: true,
+        status: 'active',
         created_at: new Date().toISOString()
       };
 
@@ -835,6 +904,29 @@ export const AddProduct: React.FC = () => {
                               </div>
                             </div>
                           ))}
+                        </div>
+
+                        {/* AI Image Tools Bar */}
+                        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-[11px] mt-2">
+                          <span className="text-white/70 font-bold flex items-center gap-1.5 text-[10px] uppercase tracking-wider">
+                            <Sparkles size={13} className="text-[#25D366]" /> Cover Photo Tools:
+                          </span>
+                          <div className="flex gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleCropSquare(0)}
+                              className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg font-extrabold text-[10px] cursor-pointer transition-all active:scale-95"
+                            >
+                              1:1 Square Crop
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEnhanceLighting(0)}
+                              className="px-2.5 py-1 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] rounded-lg font-extrabold text-[10px] cursor-pointer transition-all active:scale-95 border border-[#25D366]/30"
+                            >
+                              Boost Lighting
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1212,7 +1304,18 @@ export const AddProduct: React.FC = () => {
                   <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-[380px]">
                     {/* Story / Description Text Box */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Narrative Description</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Narrative Description</label>
+                        <button
+                          type="button"
+                          onClick={handleGenerateAIDescription}
+                          disabled={aiGenerating}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] text-[10px] font-extrabold rounded-lg transition-all cursor-pointer border border-[#25D366]/30"
+                        >
+                          <Sparkles size={12} className={aiGenerating ? 'animate-spin' : ''} />
+                          {aiGenerating ? 'Generating...' : 'Auto-Generate with AI'}
+                        </button>
+                      </div>
                       <textarea 
                         value={description}
                         onChange={e => setDescription(e.target.value)}

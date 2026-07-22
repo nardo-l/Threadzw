@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import billingRouter from './server/routes/billing';
+import aiRouter from './server/routes/ai';
 
 dotenv.config();
 
@@ -208,6 +209,9 @@ async function startServer() {
 
   // --- SECURE SERVER-SIDE BILLING (NARDOPAY INTEGRATION) ---
   app.use('/api/billing', billingRouter);
+
+  // --- AI & MERCHANT PRODUCTIVITY SERVICES ---
+  app.use('/api/ai', aiRouter);
 
   // --- VITE MIDDLEWARE ---
   if (process.env.NODE_ENV !== 'production') {

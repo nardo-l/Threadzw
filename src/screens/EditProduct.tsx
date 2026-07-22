@@ -10,6 +10,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { getShopUrl } from '../utils/shopUrl';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
 import { getSizesForCategory } from '../utils/sizes';
+import { cropToSquare, enhanceLighting, compressAndOptimize } from '../utils/imageEnhancer';
 
 interface SizeStock {
   active: boolean;
@@ -39,6 +40,36 @@ export const EditProduct: React.FC = () => {
   const [productStatus, setProductStatus] = useState<'active' | 'sold_out'>('active');
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+
+  const handleGenerateAIDescription = async () => {
+    if (!name) {
+      toast.error('Please enter a product name first!');
+      return;
+    }
+    setAiGenerating(true);
+    const toastId = toast.loading('Generating AI description...');
+    try {
+      const res = await fetch('/api/ai/generate-product', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          category: loadedCategory || 'Apparel',
+          price: price || '0.00'
+        })
+      });
+      const data = await res.json();
+      if (data.description) {
+        setDescription(data.description.substring(0, 300));
+      }
+      toast.success('Generated with Gemini AI! Review and edit before saving.', { id: toastId });
+    } catch (err) {
+      toast.error('Failed to generate description with AI.', { id: toastId });
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   // SCREEN 1: Photos State
   const [images, setImages] = useState<string[]>([]);
@@ -451,14 +482,20 @@ export const EditProduct: React.FC = () => {
         if (shop) currentShopId = shop.id;
       }
 
-      const updatePayload = {
+      const updatePayload: any = {
         name: name.trim(),
         price: parseFloat(price),
         category: loadedCategory || null,
         description: description.trim() || null,
+        images: images,
         image_url: images[0] || null,
         sizes: configuredSizes,
         stock: totalStock,
+        total_stock: totalStock,
+        colours: selectedColors,
+        is_published: isVisible,
+        status: productStatus,
+        is_featured: isFeatured,
         updated_at: new Date().toISOString()
       };
 
@@ -1155,10 +1192,21 @@ export const EditProduct: React.FC = () => {
 
                   {/* Description input */}
                   <div className="space-y-2 animate-none">
-                    <div className="flex justify-between items-baseline">
-                      <label className="text-[11px] font-bold uppercase tracking-[1.5px] text-white/40 block">
-                        Description (optional)
-                      </label>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <label className="text-[11px] font-bold uppercase tracking-[1.5px] text-white/40 block">
+                          Description (optional)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handleGenerateAIDescription}
+                          disabled={aiGenerating}
+                          className="px-2.5 py-1 bg-[#bef715]/20 hover:bg-[#bef715]/30 text-[#bef715] font-sans text-[10px] font-extrabold rounded-lg transition-all cursor-pointer flex items-center gap-1 border border-[#bef715]/30"
+                        >
+                          <Sparkles size={11} className={aiGenerating ? 'animate-spin' : ''} />
+                          {aiGenerating ? 'Generating...' : 'Auto-Generate with AI'}
+                        </button>
+                      </div>
                       <span className="text-[10px] font-mono text-white/30 font-bold leading-none">
                         {description.length}/300
                       </span>

@@ -6,6 +6,7 @@ import { Menu, X, ShoppingBag, Search, Home, Grid, Heart, User, ShieldAlert, Arr
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { parseShopConfig } from '../utils/configHelper';
+import { updateMetaTags } from '../utils/seo';
 import { 
   trackStoreView, 
   trackProductView, 
@@ -261,13 +262,20 @@ export const StorefrontPage: React.FC = () => {
         return;
       }
 
-      // Check if the shop is active and has a valid subscription
-      const isTrialValid = shopResult.subscription_status === 'trial' && 
+      // Check if the shop is active and subscription/trial status
+      const subStatus = shopResult.subscription_status;
+      const isTrialValid = (!subStatus || subStatus === 'trial') && 
         (!shopResult.trial_ends_at || new Date(shopResult.trial_ends_at) > new Date());
-      const isSubscriptionValid = shopResult.subscription_status === 'active' || isTrialValid;
+      const isSubscriptionValid = !subStatus || subStatus === 'active' || subStatus === 'trial' || isTrialValid;
 
-      if (!shopResult.is_active || !isSubscriptionValid) {
-        setError('not_found');
+      if (!shopResult.is_active) {
+        setError('paused');
+        setLoading(false);
+        return;
+      }
+
+      if (!isSubscriptionValid) {
+        setError('subscription_expired');
         setLoading(false);
         return;
       }
@@ -357,6 +365,32 @@ export const StorefrontPage: React.FC = () => {
   useEffect(() => {
     loadStorefront();
   }, [slug, loadStorefront]);
+
+  // Dynamic SEO & Social Sharing Meta Tags Update
+  useEffect(() => {
+    if (!shop) return;
+    const prodId = searchParams.get('prod_id') || searchParams.get('product_id') || searchParams.get('product');
+    let pageTitle = `${shop.name} | Storefront on ThreadZW`;
+    let pageDesc = shop.description || `Browse fashion, sneakers & apparel at ${shop.name} on ThreadZW. Order directly via WhatsApp.`;
+    let pageImg = shop.banner_url || shop.logo_url || 'https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png';
+
+    if (activePage === 'product' && prodId && products.length > 0) {
+      const selectedProd = products.find((p: any) => p.id === prodId);
+      if (selectedProd) {
+        pageTitle = `${selectedProd.name} — $${selectedProd.price} | ${shop.name}`;
+        if (selectedProd.description) pageDesc = selectedProd.description;
+        if (selectedProd.images && selectedProd.images[0]) pageImg = selectedProd.images[0];
+      }
+    }
+
+    updateMetaTags({
+      title: pageTitle,
+      description: pageDesc,
+      image: pageImg,
+      url: window.location.href,
+      type: 'website'
+    });
+  }, [shop, activePage, searchParams, products]);
 
   // Redesigned Funnel Analytics Event Tracker
   useEffect(() => {
@@ -697,16 +731,29 @@ export const StorefrontPage: React.FC = () => {
 
   // Error/Shop Not Found Screen
   if (error || !shop) {
+    let title = "Storefront Offline";
+    let message = "Could not locate boutique parameters matching this handle. Check the link or explore standard directories.";
+
+    if (error === 'paused') {
+      title = "Storefront Paused";
+      message = "This merchant has temporarily paused their shop visibility. Please check back soon or contact the seller directly.";
+    } else if (error === 'subscription_expired') {
+      title = "Subscription Inactive";
+      message = "This storefront is undergoing account maintenance. Please contact the seller directly via WhatsApp.";
+    } else if (error && error !== 'not_found') {
+      message = "We couldn't load this shop. Please check your internet connection and try again.";
+    }
+
     return (
       <div className="min-h-screen bg-zinc-50 text-zinc-900 flex flex-col items-center justify-center p-6 text-center font-sans gap-4 select-none">
-        <ShieldAlert className="w-12 h-12 text-green-600 animate-bounce" />
-        <h1 className="text-lg font-bold tracking-tight text-zinc-900">Storefront Offline</h1>
-        <p className="text-zinc-500 text-xs max-w-xs leading-relaxed break-all">
-          {error !== 'not_found' && error ? `Error: ${error}` : "Could not locate boutique parameters matching this handle. Check the link or explore standard directories."}
+        <ShieldAlert className="w-12 h-12 text-[#25D366]" />
+        <h1 className="text-lg font-bold tracking-tight text-zinc-900">{title}</h1>
+        <p className="text-zinc-500 text-xs max-w-xs leading-relaxed">
+          {message}
         </p>
         <button 
           onClick={() => navigate('/')} 
-          className="mt-4 px-6 py-2.5 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 transition-colors cursor-pointer shadow-sm"
+          className="mt-4 px-6 py-2.5 bg-black text-white text-xs font-bold rounded-xl hover:bg-zinc-900 transition-colors cursor-pointer shadow-sm uppercase tracking-wider"
         >
           Return Home
         </button>

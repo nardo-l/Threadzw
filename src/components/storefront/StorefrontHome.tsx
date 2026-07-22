@@ -4,7 +4,6 @@ import { motion } from 'motion/react';
 import { ArrowRight, MessageCircle, Heart, Sparkles, Grid, Share2 } from 'lucide-react';
 import { ProductImage, ShopLogo, ShopBanner } from '../ui/ShopImage';
 import { parseShopConfig } from '../../utils/configHelper';
-import { useInventory } from '../../context/InventoryContext';
 
 interface StorefrontHomeProps {
   shop: any;

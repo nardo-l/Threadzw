@@ -12,7 +12,10 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertTriangle,
-  Settings
+  Settings,
+  Edit3,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
@@ -23,6 +26,10 @@ import { Paywall } from './Paywall';
 import { TrialBanner } from '../components/dashboard/TrialBanner';
 import { GuidedWalkthrough } from '../components/dashboard/GuidedWalkthrough';
 import { LaunchChecklist } from '../components/dashboard/LaunchChecklist';
+import { AIAssistantModal } from '../components/AIAssistantModal';
+import { AISocialGeneratorModal } from '../components/AISocialGeneratorModal';
+import { AICatalogAuditBanner } from '../components/AICatalogAuditBanner';
+import { Sparkles, Bot, Share2 as ShareIcon } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -32,6 +39,9 @@ export const Dashboard: React.FC = () => {
   const [productsCount, setProductsCount] = useState<number>(0);
   const [loadingProds, setLoadingProds] = useState(true);
   const [togglingStatus, setTogglingStatus] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [isSocialGenOpen, setIsSocialGenOpen] = useState(false);
+  const [recentProducts, setRecentProducts] = useState<any[]>([]);
 
   // 1. Session check redirect
   useEffect(() => {
@@ -50,13 +60,14 @@ export const Dashboard: React.FC = () => {
   const fetchProductsCount = async (shopId: string) => {
     try {
       setLoadingProds(true);
-      const { count, error } = await supabase
+      const { data, count, error } = await supabase
         .from('products')
-        .select('*', { count: 'exact', head: true })
+        .select('*', { count: 'exact' })
         .eq('shop_id', shopId);
 
       if (error) throw error;
       setProductsCount(count || 0);
+      setRecentProducts(data || []);
     } catch (err) {
       console.error('Error fetching products count:', err);
     } finally {
@@ -207,6 +218,99 @@ export const Dashboard: React.FC = () => {
         <TrialBanner />
         <LaunchChecklist shop={shop} productsCount={productsCount} />
         
+        {/* QUICK ACTIONS GRID */}
+        <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-5 text-left shadow-xs space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Quick Actions</h3>
+            <span className="text-[10px] text-zinc-400 font-semibold">Shortcuts</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2.5">
+            <button
+              onClick={() => navigate('/edit-shop')}
+              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+            >
+              <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0">
+                <Edit3 size={15} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-black block truncate">Edit Store</span>
+                <span className="text-[10px] text-zinc-400 font-medium block truncate">Update profile</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setIsAssistantOpen(true)}
+              className="flex items-center gap-2.5 p-3 bg-zinc-900 text-white border border-zinc-800 hover:bg-black rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#25D366]/20 flex items-center justify-center text-[#25D366] shrink-0">
+                <Bot size={16} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-white block truncate">AI Assistant</span>
+                <span className="text-[10px] text-zinc-400 font-medium block truncate">Get help</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setIsSocialGenOpen(true)}
+              className="flex items-center gap-2.5 p-3 bg-purple-950/80 text-white border border-purple-800/60 hover:bg-purple-900 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+            >
+              <div className="w-8 h-8 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300 shrink-0">
+                <Sparkles size={16} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-purple-100 block truncate">AI Marketing</span>
+                <span className="text-[10px] text-purple-300/80 font-medium block truncate">Gen captions</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate('/add-product')}
+              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#25D366]/10 flex items-center justify-center text-[#25D366] shrink-0">
+                <Plus size={16} className="stroke-[2.5]" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-black block truncate">Add Product</span>
+                <span className="text-[10px] text-zinc-400 font-medium block truncate">New item</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                const url = `/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
+                window.open(url, '_blank');
+              }}
+              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+            >
+              <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0">
+                <ExternalLink size={15} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-black block truncate">View Store</span>
+                <span className="text-[10px] text-zinc-400 font-medium block truncate">Open preview</span>
+              </div>
+            </button>
+
+            <button
+              onClick={handleCopyShopLink}
+              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+            >
+              <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0">
+                <Copy size={15} />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-black block truncate">Copy Link</span>
+                <span className="text-[10px] text-zinc-400 font-medium block truncate">Share shop</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* AI Catalog Audit & Smart Recommendations Banner */}
+        <AICatalogAuditBanner products={recentProducts} shop={shop} />
+
         {/* SECTION 1: Shop Status */}
         
         <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
@@ -390,6 +494,19 @@ export const Dashboard: React.FC = () => {
         </div>
 
       </main>
+
+      {/* AI Productivity Modals */}
+      <AIAssistantModal
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+      />
+
+      <AISocialGeneratorModal
+        isOpen={isSocialGenOpen}
+        onClose={() => setIsSocialGenOpen(false)}
+        shopName={shop?.name || 'ThreadZW Boutique'}
+        products={recentProducts}
+      />
 
       {/* Bottom Navigation */}
       <BottomNavBar />

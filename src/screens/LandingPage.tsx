@@ -1,9 +1,10 @@
 // src/screens/LandingPage.tsx
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { ArrowRight, ShoppingBag, Check } from 'lucide-react';
+import { trackLandingPageView } from '../lib/analytics';
 
 interface LandingPageProps {
   onStartFree: () => void;
@@ -12,6 +13,10 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    trackLandingPageView();
+  }, []);
 
   // Colorful profile circles for social proof
   const profiles = [

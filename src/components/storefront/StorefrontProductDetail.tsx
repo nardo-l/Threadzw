@@ -7,7 +7,6 @@ import { parseShopConfig } from '../../utils/configHelper';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
 import { trackPurchaseIntent, createMerchantNotification } from '../../lib/analytics';
-import { useInventory } from '../../context/InventoryContext';
 
 // Helper to safely insert orders even if some columns don't exist on remote table yet
 async function safeInsertOrder(orderPayload: any) {
