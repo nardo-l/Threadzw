@@ -231,7 +231,7 @@ export const Inventory: React.FC = () => {
   };
 
   const getProductUrl = (productId: string) => {
-    const slugVal = shop?.slug || shop?.handle || 'demo';
+    const slugVal = shop?.slug || shop?.handle || 'him-clothing';
     const base = import.meta.env.VITE_APP_URL || window.location.origin;
     return `${base}/shop/${slugVal}/product/${productId}`;
   };

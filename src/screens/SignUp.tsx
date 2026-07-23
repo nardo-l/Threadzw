@@ -394,13 +394,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const filteredCities = cities.filter(c => c.toLowerCase().includes(formData.citySearch.toLowerCase()));
 
   return (
-    <div id="threadzw-onboarding-design-system" className="min-h-screen bg-black text-[#e1e4cf] selection:bg-[#bef500] selection:text-black font-sans flex flex-col justify-between overflow-x-hidden relative">
+    <div id="threadzw-onboarding-design-system" className="min-h-screen w-full bg-black text-[#e1e4cf] selection:bg-[#bef500] selection:text-black font-sans flex flex-col justify-between overflow-y-auto overflow-x-hidden relative">
       {/* Background Micro Glow */}
       <div className="fixed top-0 right-0 w-96 h-96 bg-[#bef500]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="fixed bottom-0 left-0 w-96 h-96 bg-[#bef500]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       {/* Top Navigation Bar */}
-      <header className="flex justify-between items-center w-full max-w-[420px] mx-auto px-5 pt-6 pb-2 bg-black z-50 sticky top-0">
+      <header className="flex justify-between items-center w-full max-w-[420px] mx-auto px-5 pt-6 pb-2 bg-black/90 backdrop-blur-md z-50 sticky top-0 shrink-0">
         <div className="flex items-center gap-1">
           <span className="font-extrabold text-xl tracking-tight text-white font-sans">
             ThreadZW<span className="text-[#C6FF00]">.</span>
@@ -419,7 +419,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-start px-4 py-4 max-w-md mx-auto w-full z-10">
+      <main className={`flex-1 flex flex-col items-center justify-start px-4 pt-2 max-w-md mx-auto w-full z-10 ${step < 7 ? 'pb-32' : 'pb-16'}`}>
         
         {/* Progress Tracker Bar */}
         {step < 12 && (
@@ -448,12 +448,12 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="w-full flex flex-col items-center justify-center text-center space-y-6"
+            className="w-full flex flex-col items-center justify-start text-center space-y-5 my-auto"
           >
 
             {/* STEP 01: Create Online Shop */}
             {step === 1 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-6 text-left px-2">
                 {/* 3D Illustration */}
                 <Storefront3DIllustration />
 
@@ -485,7 +485,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 02: Shop Name */}
             {step === 2 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-6 text-left px-2">
                 {/* 3D Illustration */}
                 <ShopSign3DIllustration shopName={formData.shopName} />
 
@@ -556,7 +556,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 03: Referral Source */}
             {step === 3 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-5 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-5 text-left px-2">
                 {/* 3D Illustration */}
                 <SocialOrbit3DIllustration />
 
@@ -622,7 +622,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 04: Product Category */}
             {step === 4 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <ProductCatalog3DIllustration />
 
@@ -689,7 +689,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 05: Save Account Intro */}
             {step === 5 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-6 text-left px-2">
                 {/* 3D Illustration */}
                 <SafeVault3DIllustration />
 
@@ -720,7 +720,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 06: Create Account / Auth */}
             {step === 6 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <MailAccount3DIllustration />
 
@@ -838,7 +838,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 07: What's your shop called? */}
             {step === 7 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-6 text-left px-2">
                 {/* 3D Illustration */}
                 <ShopSign3DIllustration shopName={formData.shopName} />
 
@@ -902,7 +902,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 08: What best describes your shop? */}
             {step === 8 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <HoodieFashion3DIllustration />
 
@@ -973,7 +973,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 09: Where are you located? */}
             {step === 9 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <ZimbabweMap3DIllustration />
 
@@ -1001,7 +1001,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
 
                 {/* Suggested cities list */}
-                <div className="space-y-1.5 max-h-[160px] overflow-y-auto no-scrollbar">
+                <div className="space-y-1.5 max-h-[180px] overflow-y-auto overscroll-contain touch-pan-y no-scrollbar">
                   {['Bulawayo', 'Harare', 'Mutare', 'Gweru', 'Masvingo', 'Chinhoyi', 'Other']
                     .filter(c => !formData.citySearch || c.toLowerCase().includes(formData.citySearch.toLowerCase()))
                     .map((city, cIdx) => {
@@ -1044,7 +1044,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 10: Upload Logo */}
             {step === 10 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <LogoUpload3DIllustration />
 
@@ -1100,7 +1100,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 11: Upload Banner */}
             {step === 11 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <BannerUpload3DIllustration />
 
@@ -1155,7 +1155,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 12: Your Shop is Ready */}
             {step === 12 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <ShopReady3DIllustration />
 

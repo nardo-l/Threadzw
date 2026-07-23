@@ -43,7 +43,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
     return { stage: 'shop-directory' };
   }
   if (path === '/demo' || path === '/shop/demo' || path === '/store/demo') {
-    return { stage: 'shop', slug: 'demo' };
+    return { stage: 'shop', slug: 'him-clothing' };
   }
   if (path === '/admin') {
     return { stage: 'admin' };
@@ -460,7 +460,7 @@ function AppContent() {
   if (isPublicShopPath || appStage === 'shop' || appStage === 'shop-directory') {
     return (
       <Routes>
-        <Route path="/demo" element={<StorefrontPage />} />
+        <Route path="/demo" element={<Navigate to="/shop/him-clothing?page=home" replace />} />
         
         {/* Marketplace Directory Routes */}
         <Route path="/shops" element={<ShopDirectoryPage />} />

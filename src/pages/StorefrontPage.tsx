@@ -218,6 +218,9 @@ export const StorefrontPage: React.FC = () => {
 
       let cleanSlug = slug.replace(/^@/, '').trim().toLowerCase();
       cleanSlug = cleanSlug.replace(/\s+/g, '').replace(/[^a-z0-9-]/g, '');
+      if (cleanSlug === 'demo') {
+        cleanSlug = 'him-clothing';
+      }
 
       if (!cleanSlug) {
         setError('not_found');
