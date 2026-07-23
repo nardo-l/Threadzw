@@ -69,45 +69,57 @@ export const NardoPayCheckout: React.FC = () => {
         })
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data: any = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error('Failed to parse JSON response:', responseText);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Payment authorization declined by network');
       }
 
       // Ensure client-side Supabase record update as fallback
-      const currentUser = activeSession?.user;
-      if (currentUser) {
-        const now = new Date();
-        const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-        const { data: existingSub } = await supabase
-          .from('subscriptions')
-          .select('id')
-          .eq('profile_id', currentUser.id)
-          .maybeSingle();
-
-        const subPayload = {
-          profile_id: currentUser.id,
-          status: 'active',
-          plan: 'pro',
-          amount: 1.00,
-          currency: 'USD',
-          subscription_started_at: now.toISOString(),
-          subscription_ends_at: endsAt
-        };
-
-        if (existingSub?.id) {
-          await supabase.from('subscriptions').update(subPayload).eq('id', existingSub.id);
-        } else {
-          await supabase.from('subscriptions').insert([subPayload]);
-        }
-
-        await supabase.from('shops').update({
-          subscription_status: 'active',
-          subscription_end: endsAt
-        }).eq('owner_id', currentUser.id);
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        throw new Error('Authentication session required. Please log in again.');
       }
+
+      const now = new Date();
+      const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: existingSub } = await supabase
+        .from('subscriptions')
+        .select('id')
+        .eq('profile_id', user.id)
+        .maybeSingle();
+
+      const subPayload = {
+        profile_id: user.id,
+        status: 'active',
+        plan: 'pro',
+        amount: 1.00,
+        currency: 'USD',
+        subscription_started_at: now.toISOString(),
+        subscription_ends_at: endsAt
+      };
+
+      console.log('[SUBSCRIPTION] Inserting/updating subscription payload with user.id:', user.id, subPayload);
+
+      if (existingSub?.id) {
+        const { error: updateError } = await supabase.from('subscriptions').update(subPayload).eq('id', existingSub.id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase.from('subscriptions').insert([subPayload]);
+        if (insertError) throw insertError;
+      }
+
+      await supabase.from('shops').update({
+        subscription_status: 'active',
+        subscription_end: endsAt
+      }).eq('owner_id', user.id);
 
       setSuccess(true);
       toast.success('Payment authorized successfully!');

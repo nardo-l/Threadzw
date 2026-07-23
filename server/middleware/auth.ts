@@ -5,6 +5,19 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL ||
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
 export const serverSupabase = createClient(supabaseUrl, supabaseKey);
 
+export function getUserSupabaseClient(token?: string) {
+  if (token) {
+    return createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    });
+  }
+  return serverSupabase;
+}
+
 export interface AuthenticatedRequest extends Request {
   user?: any;
 }

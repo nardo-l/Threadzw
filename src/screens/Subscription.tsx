@@ -69,12 +69,18 @@ export const Subscription: React.FC = () => {
         body: JSON.stringify({ shopId: shop?.id })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to initialize payment gateway');
+      const responseText = await response.text();
+      let data: any = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error('Failed to parse JSON response:', responseText);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to initialize payment gateway');
+      }
+
       if (data.checkoutUrl) {
         navigate(data.checkoutUrl);
       } else {

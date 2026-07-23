@@ -339,12 +339,18 @@ export const Paywall: React.FC = () => {
         }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to generate secure subscription session');
+      const responseText = await response.text();
+      let data: any = {};
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch (e) {
+        console.error('Failed to parse JSON response:', responseText);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate secure subscription session');
+      }
+
       if (!data.linkCode) {
         throw new Error('No subscription link code received from billing gateway');
       }

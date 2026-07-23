@@ -1,6 +1,6 @@
 // server/services/billing.ts
 
-import { serverSupabase } from '../middleware/auth';
+import { serverSupabase, getUserSupabaseClient } from '../middleware/auth';
 
 export class BillingService {
   /**
@@ -11,13 +11,15 @@ export class BillingService {
     userId: string,
     amount: number,
     transactionId: string | null,
-    provider: string = 'nardopay'
+    provider: string = 'nardopay',
+    userToken?: string
   ) {
     console.log(`[BillingService] Attempting to activate subscription for user ${userId} with transactionId: ${transactionId}`);
+    const db = getUserSupabaseClient(userToken);
 
     // 1. Implement Idempotency: Check if payment already exists with this transactionId
     if (transactionId) {
-      const { data: existingPayment, error: payCheckError } = await serverSupabase
+      const { data: existingPayment, error: payCheckError } = await db
         .from('payments')
         .select('id')
         .eq('provider_transaction_id', transactionId)
@@ -34,7 +36,7 @@ export class BillingService {
     }
 
     // 2. Load current subscription to see if it exists
-    const { data: currentSub, error: subFetchError } = await serverSupabase
+    const { data: currentSub, error: subFetchError } = await db
       .from('subscriptions')
       .select('*')
       .eq('profile_id', userId)
@@ -61,14 +63,16 @@ export class BillingService {
     if (currentSub) {
       subscriptionId = currentSub.id;
       // Update existing subscription using production schema only
-      const { error: subUpdateError } = await serverSupabase
+      const updatePayload = {
+        status: 'active',
+        subscription_started_at: new Date().toISOString(),
+        subscription_ends_at: endsAtISO,
+        updated_at: new Date().toISOString()
+      };
+      console.log('[BillingService] Updating subscription for profile_id:', userId, JSON.stringify(updatePayload, null, 2));
+      const { error: subUpdateError } = await db
         .from('subscriptions')
-        .update({
-          status: 'active',
-          subscription_started_at: new Date().toISOString(),
-          subscription_ends_at: endsAtISO,
-          updated_at: new Date().toISOString()
-        })
+        .update(updatePayload)
         .eq('profile_id', userId);
 
       if (subUpdateError) {
@@ -76,17 +80,19 @@ export class BillingService {
       }
     } else {
       // Insert new subscription using production schema only
-      const { data: newSub, error: subInsertError } = await serverSupabase
+      const subPayload = {
+        profile_id: userId,
+        status: 'active',
+        trial_ends_at: new Date().toISOString(),
+        subscription_started_at: new Date().toISOString(),
+        subscription_ends_at: endsAtISO,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      console.log('[BillingService] Inserting new subscription payload with profile_id:', userId, JSON.stringify(subPayload, null, 2));
+      const { data: newSub, error: subInsertError } = await db
         .from('subscriptions')
-        .insert([{
-          profile_id: userId,
-          status: 'active',
-          trial_ends_at: new Date().toISOString(),
-          subscription_started_at: new Date().toISOString(),
-          subscription_ends_at: endsAtISO,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }])
+        .insert([subPayload])
         .select()
         .single();
 
@@ -97,7 +103,7 @@ export class BillingService {
     }
 
     // 4. Load currency from app_settings
-    const { data: currencySetting, error: currencyError } = await serverSupabase
+    const { data: currencySetting, error: currencyError } = await db
       .from('app_settings')
       .select('value')
       .eq('key', 'currency')
@@ -109,7 +115,7 @@ export class BillingService {
 
     const currency = currencySetting?.value ? String(currencySetting.value) : 'USD';
 
-    // 5. Insert into payments table using the actual production schema only
+    // 5. Insert into payments table using db client
     const paymentRecord = {
       subscription_id: subscriptionId,
       provider: provider,
@@ -120,7 +126,8 @@ export class BillingService {
       paid_at: new Date().toISOString()
     };
 
-    const { error: payError } = await serverSupabase
+    console.log('[BillingService] Inserting payment record:', JSON.stringify(paymentRecord, null, 2));
+    const { error: payError } = await db
       .from('payments')
       .insert([paymentRecord]);
 
@@ -128,8 +135,8 @@ export class BillingService {
       throw new Error('Failed to record payment transaction: ' + payError.message);
     }
 
-    // 6. Unlock and activate the shop associated with this user
-    const { error: shopErr } = await serverSupabase
+    // 6. Unlock and activate the shop associated with this user using db client
+    const { error: shopErr } = await db
       .from('shops')
       .update({
         is_live: true,
@@ -219,17 +226,19 @@ export class BillingService {
       }
     } else {
       // Insert new subscription using production schema only
+      const subPayload = {
+        profile_id: userId,
+        status: 'active',
+        trial_ends_at: nowStr,
+        subscription_started_at: nowStr,
+        subscription_ends_at: endRenewal,
+        created_at: nowStr,
+        updated_at: nowStr
+      };
+      console.log('[BillingService] Admin approve claim inserting new subscription payload:', subPayload);
       const { data: newSub, error: subInsertError } = await serverSupabase
         .from('subscriptions')
-        .insert([{
-          profile_id: userId,
-          status: 'active',
-          trial_ends_at: nowStr,
-          subscription_started_at: nowStr,
-          subscription_ends_at: endRenewal,
-          created_at: nowStr,
-          updated_at: nowStr
-        }])
+        .insert([subPayload])
         .select()
         .single();
 

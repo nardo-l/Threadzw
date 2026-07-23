@@ -41,7 +41,6 @@ export interface Shop {
 export interface Product {
   id: string;
   shop_id: string;
-  owner_id?: string;
   name: string;
   description: string;
   price: number;

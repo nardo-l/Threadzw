@@ -791,8 +791,7 @@ export const ShopEdit = () => {
       // Mark products as deleted
       await supabase.from('products')
         .update({ status: 'deleted' })
-        .eq('shop_id', shopId)
-        .eq('owner_id', user.id);
+        .eq('shop_id', shopId);
 
       // Delete shop
       await supabase.from('shops')

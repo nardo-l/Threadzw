@@ -72,7 +72,9 @@ export class BillingController {
         console.log(`[BillingController] Dev/Simulation Mode: Automatically activating subscription for user ${userId} via confirmPayment.`);
         
         const transactionId = sessionId || `MOCK-TX-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
-        await billingService.activateSubscription(userId, 7.00, transactionId);
+        const authHeader = req.headers.authorization;
+        const token = authHeader ? authHeader.split(' ')[1] : undefined;
+        await billingService.activateSubscription(userId, 7.00, transactionId, 'nardopay', token);
         return res.status(200).json({ success: true, message: 'Subscription successfully activated (Simulation)' });
       }
 

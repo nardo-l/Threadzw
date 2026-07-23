@@ -18,7 +18,6 @@ import { seedShopProductsIfEmpty } from '../utils/seedData';
 interface Product {
   id: string;
   shop_id: string;
-  owner_id?: string;
   name: string;
   price: number;
   description?: string;
@@ -113,7 +112,6 @@ export const Inventory: React.FC = () => {
         .from('products')
         .insert({
           shop_id: shop.id,
-          owner_id: ownerId,
           name: clonedName,
           price: product.price,
           description: product.description || null,

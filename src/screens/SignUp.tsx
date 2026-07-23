@@ -46,6 +46,19 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
 import { uploadImage } from '../utils/uploadImage';
+import { 
+  Storefront3DIllustration, 
+  ShopSign3DIllustration, 
+  SocialOrbit3DIllustration,
+  ProductCatalog3DIllustration,
+  SafeVault3DIllustration,
+  MailAccount3DIllustration,
+  HoodieFashion3DIllustration,
+  ZimbabweMap3DIllustration,
+  LogoUpload3DIllustration,
+  BannerUpload3DIllustration,
+  ShopReady3DIllustration
+} from '../components/onboarding/OnboardingIllustrations';
 
 interface SignUpProps {
   initialStep?: number;
@@ -358,6 +371,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       localStorage.removeItem('threadzw_walkthrough_completed');
 
       toast.success('Your ThreadZW store is live!');
+      setTimeout(() => {
+        navigate('/dashboard');
+        window.location.reload();
+      }, 500);
     } catch (err: any) {
       clearInterval(interval);
       console.error('Store creation error:', err);
@@ -383,13 +400,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       <div className="fixed bottom-0 left-0 w-96 h-96 bg-[#bef500]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       {/* Top Navigation Bar */}
-      <header className="flex justify-between items-center w-full px-6 md:px-16 h-[80px] bg-black border-b border-[#232323] z-50 sticky top-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#bef500] flex items-center justify-center text-black font-black">
-            <Radio size={18} />
-          </div>
-          <span className="font-extrabold text-2xl tracking-tight text-white uppercase font-serif">
-            Thread<span className="text-[#bef500]">ZW</span>
+      <header className="flex justify-between items-center w-full max-w-[420px] mx-auto px-5 pt-6 pb-2 bg-black z-50 sticky top-0">
+        <div className="flex items-center gap-1">
+          <span className="font-extrabold text-xl tracking-tight text-white font-sans">
+            ThreadZW<span className="text-[#C6FF00]">.</span>
           </span>
         </div>
 
@@ -397,7 +411,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           <button
             type="button"
             onClick={handleSkip}
-            className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-400 hover:text-[#bef500] transition-colors cursor-pointer"
+            className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-400 hover:text-[#C6FF00] transition-colors cursor-pointer"
           >
             SKIP
           </button>
@@ -405,24 +419,24 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-10 max-w-4xl mx-auto w-full z-10">
+      <main className="flex-1 flex flex-col items-center justify-start px-4 py-4 max-w-md mx-auto w-full z-10">
         
-        {/* Progress Tracker (12 Rectangular Blocks) */}
+        {/* Progress Tracker Bar */}
         {step < 12 && (
-          <div className="w-full max-w-xl mb-10">
-            <div className="flex justify-between items-center mb-2 font-mono text-xs">
-              <span className="text-[#bef500] uppercase font-bold tracking-widest">Progress</span>
-              <span className="text-zinc-500 font-bold">{String(step).padStart(2, '0')} / 12</span>
-            </div>
-            <div className="flex gap-1.5 h-1.5 w-full">
-              {Array.from({ length: 12 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`flex-1 h-full rounded-xs transition-all duration-300 ${
-                    idx < step ? 'bg-[#bef500]' : 'bg-[#232323]'
-                  }`}
-                />
-              ))}
+          <div className="w-full max-w-[390px] mx-auto mb-4">
+            <div className="flex justify-between items-center font-mono text-xs">
+              {/* Progress segments */}
+              <div className="flex gap-1.5 h-1.5 w-32">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex-1 h-full rounded-full transition-all duration-300 ${
+                      idx < Math.ceil((step / 12) * 4) ? 'bg-[#C6FF00]' : 'bg-[#222225]'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-zinc-400 font-bold text-[11px]">{step} / 12</span>
             </div>
           </div>
         )}
@@ -434,29 +448,36 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="w-full flex flex-col items-center justify-center text-center space-y-8"
+            className="w-full flex flex-col items-center justify-center text-center space-y-6"
           >
 
-            {/* STEP 01: Welcome Screen */}
+            {/* STEP 01: Create Online Shop */}
             {step === 1 && (
-              <div className="space-y-8 max-w-2xl text-left">
-                <div className="text-6xl animate-bounce">👋</div>
-                <h1 className="text-4xl sm:text-7xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  HEY.<br />
-                  LET'S BUILD<br />
-                  YOUR <span className="text-[#bef500]">SHOP.</span>
-                </h1>
-                <p className="text-lg text-zinc-400 font-medium max-w-md">
-                  Answer a few questions. This takes less than <span className="text-[#bef500] font-mono font-bold">a minute.</span>
-                </p>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+                {/* 3D Illustration */}
+                <Storefront3DIllustration />
 
-                <div className="pt-4">
+                {/* Typography */}
+                <div className="space-y-3">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    CREATE YOUR<br />
+                    ONLINE SHOP<br />
+                    <span className="text-[#C6FF00]">IN MINUTES.</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal leading-relaxed">
+                    No website skills needed.<br />
+                    Create your shop, upload products, and share your link.
+                  </p>
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
                   <button
                     onClick={() => setStep(2)}
-                    className="w-full py-5 rounded-2xl bg-[#bef500] text-black font-extrabold text-base uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-[0_0_25px_rgba(190,245,0,0.25)]"
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
                   >
-                    LET'S GO
-                    <ArrowRight size={20} />
+                    <span>START</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
                   </button>
                 </div>
               </div>
@@ -464,44 +485,95 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 02: Shop Name */}
             {step === 2 && (
-              <div className="space-y-8 w-full max-w-xl text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  WHAT'S YOUR<br />SHOP NAME?
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+                {/* 3D Illustration */}
+                <ShopSign3DIllustration shopName={formData.shopName} />
 
-                <div className="space-y-4">
-                  <input
-                    ref={nameInputRef}
-                    type="text"
-                    value={formData.shopName}
-                    onChange={(e) => {
-                      updateField('shopName', e.target.value);
-                      const slug = e.target.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').substring(0, 32);
-                      updateField('username', slug);
-                    }}
-                    placeholder="e.g. NULLA Clothing"
-                    className="w-full h-24 sm:h-28 bg-[#0F0F10] border border-[#232323] px-6 text-2xl sm:text-4xl font-black text-white placeholder:text-zinc-700 focus:border-[#bef500] focus:outline-none rounded-2xl transition-all"
-                  />
+                {/* Typography */}
+                <div className="space-y-2">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHAT'S YOUR<br />
+                    <span className="text-[#C6FF00]">SHOP NAME?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    This will be the name of your online shop.
+                  </p>
+                </div>
 
-                  {/* Slug Live Preview */}
-                  <div className="flex items-center gap-2 px-2 text-xs font-mono text-zinc-400">
-                    <Globe size={14} className="text-zinc-500" />
+                {/* Input Field */}
+                <div className="space-y-2.5">
+                  <div className="relative">
+                    <input
+                      ref={nameInputRef}
+                      type="text"
+                      value={formData.shopName}
+                      onChange={(e) => {
+                        updateField('shopName', e.target.value);
+                        const slug = e.target.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').substring(0, 32);
+                        updateField('username', slug);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (!formData.shopName.trim()) {
+                            toast.error('Please enter a shop name!');
+                            return;
+                          }
+                          setStep(3);
+                        }
+                      }}
+                      placeholder="NULLA Clothing"
+                      className="w-full bg-[#111114] border border-[#232326] px-4 py-3.5 text-base font-bold text-white placeholder:text-zinc-600 focus:border-[#C6FF00] focus:outline-none rounded-2xl transition-all"
+                    />
+                  </div>
+
+                  {/* Slug Subtext */}
+                  <div className="px-1 text-xs font-mono text-zinc-400">
                     <span>
-                      threadzw.com/shop/<span className="text-[#bef500] font-bold">{formData.username || 'nulla-clothing'}</span>
+                      threadzw.com/shop/<span className="text-[#C6FF00] font-bold">{formData.username || 'nulla-clothing'}</span>
                     </span>
                   </div>
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (!formData.shopName.trim()) {
+                        updateField('shopName', 'NULLA Clothing');
+                        updateField('username', 'nulla-clothing');
+                      }
+                      setStep(3);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
                 </div>
               </div>
             )}
 
             {/* STEP 03: Referral Source */}
             {step === 3 && (
-              <div className="space-y-8 w-full max-w-2xl text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  WHERE DID<br />YOU HEAR<br /><span className="text-[#bef500]">ABOUT US?</span>
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-5 text-left px-2">
+                {/* 3D Illustration */}
+                <SocialOrbit3DIllustration />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Typography */}
+                <div className="space-y-1.5">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHERE DID<br />
+                    YOU HEAR<br />
+                    <span className="text-[#C6FF00]">ABOUT US?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Help us improve by letting us know where you found us.
+                  </p>
+                </div>
+
+                {/* Options 2-Column Grid */}
+                <div className="grid grid-cols-2 gap-2.5">
                   {[
                     { label: 'Instagram', icon: Globe },
                     { label: 'TikTok', icon: Zap },
@@ -516,33 +588,57 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       <button
                         key={i}
                         type="button"
-                        onClick={() => {
-                          updateField('referralSource', item.label);
-                          setTimeout(() => setStep(4), 200);
-                        }}
-                        className={`p-6 rounded-2xl border text-left flex items-center justify-between transition-all cursor-pointer ${
+                        onClick={() => updateField('referralSource', item.label)}
+                        className={`p-3.5 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#bef500]/10 border-[#bef500] text-white'
-                            : 'bg-[#0F0F10] border-[#232323] text-zinc-300 hover:border-zinc-500'
+                            ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
+                            : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
                         }`}
                       >
-                        <span className="font-bold text-sm uppercase tracking-widest">{item.label}</span>
-                        <IconComp size={20} className={isSelected ? 'text-[#bef500]' : 'text-zinc-500'} />
+                        <IconComp size={16} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
+                        <span className="font-bold text-xs tracking-tight">{item.label}</span>
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (!formData.referralSource) {
+                        updateField('referralSource', 'Instagram');
+                      }
+                      setStep(4);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
                 </div>
               </div>
             )}
 
             {/* STEP 04: Product Category */}
             {step === 4 && (
-              <div className="space-y-8 w-full max-w-2xl text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  WHAT ARE<br /><span className="text-[#bef500]">YOU SELLING?</span>
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <ProductCatalog3DIllustration />
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHAT ARE<br />
+                    YOU <span className="text-[#C6FF00]">SELLING?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Choose the best option that describes what you sell.
+                  </p>
+                </div>
+
+                {/* Options 2-Column Grid */}
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     { label: 'Streetwear', icon: ShoppingBag },
                     { label: 'Sneakers', icon: Zap },
@@ -551,8 +647,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     { label: 'Perfume', icon: Radio },
                     { label: 'Beauty', icon: Sparkles },
                     { label: 'Accessories', icon: Sliders },
-                    { label: 'Electronics', icon: Smartphone },
-                    { label: 'Other', icon: Layers }
+                    { label: 'Electronics', icon: Smartphone }
                   ].map((cat, idx) => {
                     const isSelected = formData.businessType === cat.label;
                     const IconComp = cat.icon;
@@ -560,372 +655,444 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => {
-                          updateField('businessType', cat.label);
-                          setTimeout(() => setStep(5), 200);
-                        }}
-                        className={`p-5 rounded-2xl border flex flex-col items-center justify-center text-center gap-3 transition-all cursor-pointer min-h-[130px] ${
+                        onClick={() => updateField('businessType', cat.label)}
+                        className={`p-3 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#bef500]/10 border-[#bef500] text-white'
-                            : 'bg-[#0F0F10] border-[#232323] text-zinc-300 hover:border-zinc-500'
+                            ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
+                            : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
                         }`}
                       >
-                        <IconComp size={28} className={isSelected ? 'text-[#bef500]' : 'text-zinc-500'} />
-                        <span className="font-bold text-xs uppercase tracking-wider">{cat.label}</span>
+                        <IconComp size={16} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
+                        <span className="font-bold text-xs tracking-tight">{cat.label}</span>
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (!formData.businessType) {
+                        updateField('businessType', 'Streetwear');
+                      }
+                      setStep(5);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
                 </div>
               </div>
             )}
 
             {/* STEP 05: Save Account Intro */}
             {step === 5 && (
-              <div className="space-y-8 w-full max-w-2xl text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  PERFECT.<br />NOW LET'S<br /><span className="text-[#bef500]">SAVE YOUR</span><br />ACCOUNT.
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+                {/* 3D Illustration */}
+                <SafeVault3DIllustration />
 
-                <p className="text-zinc-400 text-sm leading-relaxed max-w-lg">
-                  We'll securely save your progress before creating your shop. Your <span className="text-[#bef500] font-mono">brand assets</span> and <span className="text-[#bef500] font-mono">preferences</span> are being prepared.
-                </p>
+                {/* Typography */}
+                <div className="space-y-2">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    LET'S SAVE<br />
+                    YOUR<br />
+                    <span className="text-[#C6FF00]">ACCOUNT.</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal leading-relaxed">
+                    We'll securely save your progress before creating your shop.
+                  </p>
+                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="bg-[#0F0F10] border border-[#232323] p-6 rounded-2xl flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#bef500]/10 flex items-center justify-center text-[#bef500] shrink-0">
-                      <Shield size={22} />
-                    </div>
-                    <div>
-                      <h4 className="font-mono text-xs font-bold text-white uppercase tracking-wider">DATA SECURITY</h4>
-                      <p className="text-xs text-zinc-400">256-bit encryption</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-[#0F0F10] border border-[#232323] p-6 rounded-2xl flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-[#bef500]/10 flex items-center justify-center text-[#bef500] shrink-0">
-                      <Cloud size={22} />
-                    </div>
-                    <div>
-                      <h4 className="font-mono text-xs font-bold text-white uppercase tracking-wider">AUTO-SYNC</h4>
-                      <p className="text-xs text-zinc-400">Real-time cloud save</p>
-                    </div>
-                  </div>
+                {/* Bottom CTA Button */}
+                <div className="pt-4">
+                  <button
+                    onClick={() => setStep(6)}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
                 </div>
               </div>
             )}
 
             {/* STEP 06: Create Account / Auth */}
             {step === 6 && (
-              <div className="space-y-6 w-full max-w-md text-left">
-                <h1 className="text-4xl sm:text-5xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  CREATE YOUR<br />ACCOUNT.
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <MailAccount3DIllustration />
 
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    CREATE YOUR<br />
+                    <span className="text-[#C6FF00]">ACCOUNT.</span>
+                  </h1>
+                </div>
+
+                {/* Auth Form / Inputs */}
                 {session?.user ? (
-                  <div className="bg-[#0F0F10] border border-[#bef500]/30 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center gap-3 text-sm text-zinc-300">
-                      <CheckCircle2 size={20} className="text-[#bef500]" />
+                  <div className="bg-[#111114] border border-[#C6FF00]/40 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center gap-2.5 text-xs text-zinc-300">
+                      <CheckCircle2 size={18} className="text-[#C6FF00]" />
                       <span>Logged in as <strong>{session.user.email}</strong></span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold block">
-                        WhatsApp Number for Orders
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.whatsappNumber}
-                        onChange={(e) => updateField('whatsappNumber', e.target.value)}
-                        placeholder="+263771234567"
-                        className="w-full bg-black border border-[#232323] rounded-xl px-4 py-3 text-sm font-mono font-bold text-white focus:outline-none focus:border-[#bef500]"
-                      />
                     </div>
 
                     <button
                       type="button"
                       onClick={() => setStep(7)}
-                      className="w-full py-4 bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-widest rounded-xl hover:opacity-90 cursor-pointer"
+                      className="w-full py-3 bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl hover:opacity-90 cursor-pointer"
                     >
                       Continue With This Account
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleSignUp} className="space-y-4">
+                  <form onSubmit={handleSignUp} className="space-y-3">
                     {authError && (
-                      <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+                      <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
                         {authError}
                       </div>
                     )}
 
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold block">
-                        Email Address
-                      </label>
-                      <div className="relative">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                        <input
-                          type="email"
-                          required
-                          value={formData.email}
-                          onChange={(e) => updateField('email', e.target.value)}
-                          placeholder="NAME@DOMAIN.COM"
-                          className="w-full bg-[#0F0F10] border border-[#232323] rounded-xl pl-12 pr-4 py-3.5 text-xs font-mono font-bold text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#bef500]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold block">
-                        Password
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                        <input
-                          type={showPassword ? 'text' : 'password'}
-                          required
-                          value={formData.password}
-                          onChange={(e) => updateField('password', e.target.value)}
-                          placeholder="••••••••••••"
-                          className="w-full bg-[#0F0F10] border border-[#232323] rounded-xl pl-12 pr-10 py-3.5 text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#bef500]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
-                        >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold block">
-                        Confirm Password
-                      </label>
-                      <div className="relative">
-                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
-                        <input
-                          type={showConfirmPassword ? 'text' : 'password'}
-                          required
-                          value={formData.confirmPassword}
-                          onChange={(e) => updateField('confirmPassword', e.target.value)}
-                          placeholder="••••••••••••"
-                          className="w-full bg-[#0F0F10] border border-[#232323] rounded-xl pl-12 pr-10 py-3.5 text-xs font-mono text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#bef500]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
-                        >
-                          {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest font-bold block">
-                        WhatsApp Number for Orders
-                      </label>
+                    {/* Email Input */}
+                    <div className="relative">
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                       <input
-                        type="tel"
-                        value={formData.whatsappNumber}
-                        onChange={(e) => updateField('whatsappNumber', e.target.value)}
-                        placeholder="+263771234567"
-                        className="w-full bg-[#0F0F10] border border-[#232323] rounded-xl px-4 py-3.5 text-xs font-mono font-bold text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#bef500]"
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => updateField('email', e.target.value)}
+                        placeholder="Email address"
+                        className="w-full bg-[#111114] border border-[#232326] rounded-xl pl-10 pr-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
                       />
                     </div>
 
+                    {/* Password Input */}
+                    <div className="relative">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={formData.password}
+                        onChange={(e) => updateField('password', e.target.value)}
+                        placeholder="Password"
+                        className="w-full bg-[#111114] border border-[#232326] rounded-xl pl-10 pr-10 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Google Button */}
                     <button
-                      type="submit"
-                      disabled={authLoading}
-                      className="w-full py-4 bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                      type="button"
+                      onClick={() => {
+                        toast.info('Google Sign-In initialized');
+                      }}
+                      className="w-full py-3 bg-white text-zinc-900 font-bold text-xs rounded-xl flex items-center justify-center gap-2 hover:bg-zinc-100 transition-all cursor-pointer shadow-xs"
                     >
-                      {authLoading ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          Creating Account...
-                        </>
-                      ) : (
-                        <>
-                          Create Account
-                          <ArrowRight size={16} />
-                        </>
-                      )}
+                      <svg className="w-4 h-4" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                      </svg>
+                      <span>Continue with Google</span>
                     </button>
+
+                    {/* Divider OR */}
+                    <div className="flex items-center my-2">
+                      <div className="flex-1 border-t border-[#232326]" />
+                      <span className="px-3 text-[10px] font-bold text-zinc-500">OR</span>
+                      <div className="flex-1 border-t border-[#232326]" />
+                    </div>
+
+                    {/* Terms */}
+                    <p className="text-[10px] text-zinc-500 text-center leading-relaxed">
+                      By continuing you agree to our{' '}
+                      <span className="text-[#C6FF00] underline cursor-pointer">Terms of Service</span> and{' '}
+                      <span className="text-[#C6FF00] underline cursor-pointer">Privacy Policy</span>.
+                    </p>
+
+                    {/* Submit Button */}
+                    <div className="pt-1">
+                      <button
+                        type="submit"
+                        disabled={authLoading}
+                        className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)] disabled:opacity-50"
+                      >
+                        <span>{authLoading ? 'CREATING...' : 'CONTINUE'}</span>
+                        <ArrowRight size={20} className="stroke-[3]" />
+                      </button>
+                    </div>
                   </form>
                 )}
               </div>
             )}
 
-            {/* STEP 07: Trial & Pricing Offer */}
+            {/* STEP 07: What's your shop called? */}
             {step === 7 && (
-              <div className="space-y-8 w-full max-w-lg text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  START <br /><span className="text-[#bef500]">FREE.</span>
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-6 text-left px-2">
+                {/* 3D Illustration */}
+                <ShopSign3DIllustration shopName={formData.shopName} />
 
-                <div className="bg-gradient-to-b from-[#0F0F10] to-black border-2 border-[#bef500] rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden shadow-[0_0_30px_rgba(190,245,0,0.15)]">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-[#bef500] font-bold">FULL ACCESS</span>
-                    <h3 className="text-2xl font-black uppercase text-white">7 DAY FREE TRIAL</h3>
-                    <p className="text-xs font-mono text-zinc-400">$2.99/month afterwards.</p>
-                  </div>
+                {/* Typography */}
+                <div className="space-y-2">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHAT'S YOUR<br />
+                    <span className="text-[#C6FF00]">SHOP NAME?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    This is what customers will see.
+                  </p>
+                </div>
 
-                  <div className="h-[1px] w-full bg-[#232323]" />
+                {/* Large rounded text field */}
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={formData.shopName}
+                    onChange={(e) => {
+                      updateField('shopName', e.target.value);
+                      const slug = e.target.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').substring(0, 32);
+                      updateField('username', slug);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (!formData.shopName.trim()) {
+                          updateField('shopName', 'Nulla Clothing');
+                          updateField('username', 'nulla-clothing');
+                        }
+                        setStep(8);
+                      }
+                    }}
+                    placeholder="e.g. Nulla Clothing"
+                    className="w-full bg-[#111114] border border-[#232326] px-4 py-3.5 text-base font-bold text-white placeholder:text-zinc-600 focus:border-[#C6FF00] focus:outline-none rounded-2xl transition-all"
+                  />
+                  <p className="text-xs text-zinc-500 font-medium px-1">
+                    You can change this later.
+                  </p>
+                </div>
 
-                  <ul className="space-y-3 text-xs font-bold uppercase tracking-wide text-zinc-200">
-                    {['Unlimited products', 'Online storefront', 'WhatsApp orders', 'Analytics', 'Inventory'].map((feat, fIdx) => (
-                      <li key={fIdx} className="flex items-center gap-3">
-                        <CheckCircle2 size={16} className="text-[#bef500] shrink-0" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
                   <button
-                    onClick={() => setStep(8)}
-                    className="w-full py-4 bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-[0_0_20px_rgba(190,245,0,0.3)]"
+                    onClick={() => {
+                      if (!formData.shopName.trim()) {
+                        updateField('shopName', 'Nulla Clothing');
+                        updateField('username', 'nulla-clothing');
+                      }
+                      setStep(8);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
                   >
-                    START MY FREE TRIAL
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
                   </button>
-
-                  <div className="text-center space-y-1">
-                    <p className="text-[10px] font-mono text-zinc-500 uppercase">NO PAYMENT TODAY. BILLED ONLY AFTER TRIAL.</p>
-                    <p className="text-[10px] font-mono text-white font-bold uppercase">CANCEL ANYTIME.</p>
-                  </div>
                 </div>
               </div>
             )}
 
-            {/* STEP 08: Shop Identity / Vibe */}
+            {/* STEP 08: What best describes your shop? */}
             {step === 8 && (
-              <div className="space-y-8 w-full max-w-2xl text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  WHAT BEST<br />DESCRIBES<br />YOUR SHOP?
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <HoodieFashion3DIllustration />
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHAT BEST<br />
+                    DESCRIBES<br />
+                    <span className="text-[#C6FF00]">YOUR SHOP?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Choose the style that best represents your business.
+                  </p>
+                </div>
+
+                {/* Large premium cards */}
+                <div className="grid grid-cols-2 gap-2.5">
                   {[
-                    { title: 'Minimal', desc: 'Clean lines & essential aesthetics', icon: Sliders },
-                    { title: 'Streetwear', desc: 'Urban culture & bold drops', icon: ShoppingBag },
-                    { title: 'Luxury', desc: 'High-end design & quality', icon: Sparkles },
-                    { title: 'Vintage', desc: 'Timeless classics & retro pieces', icon: RefreshCw },
-                    { title: 'Sportswear', desc: 'Performance & active lifestyle', icon: Zap },
-                    { title: 'Beauty', desc: 'Skincare & personal wellness', icon: Sparkles },
-                    { title: 'Tech', desc: 'Hardware & digital gear', icon: Smartphone },
-                    { title: 'Accessories', desc: 'Curated additions to complete fit', icon: Layers }
-                  ].map((v, vIdx) => {
-                    const isSelected = formData.vibe === v.title;
-                    const IconComp = v.icon;
+                    { label: 'Clothing Brand', icon: ShoppingBag },
+                    { label: 'Sneakers', icon: Zap },
+                    { label: 'Accessories', icon: Sliders },
+                    { label: 'Vintage', icon: RefreshCw },
+                    { label: 'Sportswear', icon: Zap },
+                    { label: 'Boutique', icon: Sparkles },
+                    { label: 'Streetwear', icon: Layers },
+                    { label: 'Other', icon: Sparkles }
+                  ].map((style, sIdx) => {
+                    const isSelected = formData.vibe === style.label || formData.businessType === style.label;
+                    const IconComp = style.icon;
                     return (
                       <button
-                        key={vIdx}
+                        key={sIdx}
                         type="button"
                         onClick={() => {
-                          updateField('vibe', v.title);
-                          setTimeout(() => setStep(9), 200);
+                          updateField('vibe', style.label);
+                          updateField('businessType', style.label);
                         }}
-                        className={`p-5 rounded-2xl border flex flex-col justify-between text-left transition-all cursor-pointer min-h-[140px] ${
+                        className={`p-3.5 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#bef500]/10 border-[#bef500] text-white'
-                            : 'bg-[#0F0F10] border-[#232323] text-zinc-300 hover:border-zinc-500'
+                            ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
+                            : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
                         }`}
                       >
-                        <IconComp size={22} className={isSelected ? 'text-[#bef500]' : 'text-zinc-500'} />
-                        <div>
-                          <span className="font-bold text-xs uppercase tracking-wider block text-white">{v.title}</span>
-                          <span className="text-[10px] text-zinc-500 line-clamp-2 mt-0.5">{v.desc}</span>
-                        </div>
+                        <IconComp size={16} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
+                        <span className="font-bold text-xs tracking-tight">{style.label}</span>
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (!formData.vibe) {
+                        updateField('vibe', 'Clothing Brand');
+                      }
+                      setStep(9);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* STEP 09: Location Selection */}
+            {/* STEP 09: Where are you located? */}
             {step === 9 && (
-              <div className="space-y-6 w-full max-w-xl text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  WHERE ARE<br /><span className="text-[#bef500]">YOU</span><br />LOCATED?
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <ZimbabweMap3DIllustration />
 
-                {/* Search Bar */}
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHERE ARE<br />
+                    YOU <span className="text-[#C6FF00]">LOCATED?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Customers nearby can discover your shop.
+                  </p>
+                </div>
+
+                {/* Search field */}
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
                   <input
                     type="text"
                     value={formData.citySearch}
                     onChange={(e) => updateField('citySearch', e.target.value)}
-                    placeholder="SEARCH YOUR CITY..."
-                    className="w-full bg-[#0F0F10] border border-[#232323] rounded-xl pl-12 pr-4 py-3.5 font-mono text-xs text-white placeholder:text-zinc-600 focus:outline-none focus:border-[#bef500]"
+                    placeholder="Search your city"
+                    className="w-full bg-[#111114] border border-[#232326] rounded-xl pl-10 pr-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
                   />
                 </div>
 
-                {/* City Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto no-scrollbar">
-                  {filteredCities.map((city, cIdx) => {
-                    const isSelected = formData.location === city;
-                    return (
-                      <button
-                        key={cIdx}
-                        type="button"
-                        onClick={() => {
-                          updateField('location', city);
-                          setTimeout(() => setStep(10), 200);
-                        }}
-                        className={`p-4 rounded-xl border flex items-center justify-between text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#bef500]/10 border-[#bef500] text-white font-bold'
-                            : 'bg-[#0F0F10] border-[#232323] text-zinc-300 hover:border-zinc-500'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <MapPin size={16} className={isSelected ? 'text-[#bef500]' : 'text-zinc-500'} />
-                          <span className="text-xs uppercase font-bold">{city}</span>
-                        </div>
-                        <ChevronRight size={16} className="text-zinc-600" />
-                      </button>
-                    );
-                  })}
+                {/* Suggested cities list */}
+                <div className="space-y-1.5 max-h-[160px] overflow-y-auto no-scrollbar">
+                  {['Bulawayo', 'Harare', 'Mutare', 'Gweru', 'Masvingo', 'Chinhoyi', 'Other']
+                    .filter(c => !formData.citySearch || c.toLowerCase().includes(formData.citySearch.toLowerCase()))
+                    .map((city, cIdx) => {
+                      const isSelected = formData.location === city;
+                      return (
+                        <button
+                          key={cIdx}
+                          type="button"
+                          onClick={() => updateField('location', city)}
+                          className={`w-full p-2.5 rounded-xl border flex items-center gap-2.5 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
+                              : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
+                          }`}
+                        >
+                          <MapPin size={15} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
+                          <span className="font-semibold text-xs tracking-tight">{city}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (!formData.location) {
+                        updateField('location', 'Harare');
+                      }
+                      setStep(10);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
                 </div>
               </div>
             )}
 
             {/* STEP 10: Upload Logo */}
             {step === 10 && (
-              <div className="space-y-8 w-full max-w-xl text-center flex flex-col items-center">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif text-left w-full">
-                  ADD YOUR<br /><span className="text-[#bef500]">LOGO.</span>
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <LogoUpload3DIllustration />
 
-                <label className="w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-[#0F0F10] border-2 border-dashed border-[#232323] hover:border-[#bef500] transition-all cursor-pointer flex flex-col items-center justify-center p-6 group relative overflow-hidden">
-                  <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    UPLOAD YOUR<br />
+                    <span className="text-[#C6FF00]">LOGO.</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Your logo appears across your storefront and builds trust with customers.
+                  </p>
+                </div>
 
-                  {logoPreview ? (
-                    <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover rounded-full" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 text-zinc-400 group-hover:text-white transition-colors">
-                      <Upload size={36} className="text-[#bef500]" />
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-center">
-                        DRAG & DROP OR TAP TO BROWSE
-                      </span>
+                {/* Large upload area */}
+                <div className="space-y-1.5">
+                  <label className="w-full bg-[#111114] border border-dashed border-[#232326] hover:border-[#C6FF00] rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center">
+                    <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                    {logoPreview ? (
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#27272A]">
+                        <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#1A1A20] flex items-center justify-center text-[#C6FF00] group-hover:scale-110 transition-transform">
+                        <Upload size={20} />
+                      </div>
+                    )}
+                    <span className="font-extrabold text-xs text-white uppercase tracking-wide">
+                      {logoPreview ? 'Change Logo' : '⬆ Tap to Upload'}
+                    </span>
+                    <div className="text-[11px] text-zinc-400 space-y-0.5 font-medium">
+                      <p>Supported formats: <span className="text-zinc-300">PNG • JPG • SVG</span></p>
+                      <p>Recommended: <span className="text-zinc-300">Square image (1024×1024)</span></p>
                     </div>
-                  )}
-                </label>
+                  </label>
+                  <p className="text-[11px] text-zinc-500 font-medium px-1">
+                    You can change this later.
+                  </p>
+                </div>
 
-                <div className="flex gap-3 w-full max-w-sm">
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
                   <button
                     onClick={() => setStep(11)}
-                    className="flex-1 py-3.5 bg-zinc-900 border border-zinc-800 text-zinc-300 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-zinc-800"
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
                   >
-                    Skip Logo
-                  </button>
-                  <button
-                    onClick={() => setStep(11)}
-                    className="flex-1 py-3.5 bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-widest rounded-xl hover:opacity-90"
-                  >
-                    Continue
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
                   </button>
                 </div>
               </div>
@@ -933,115 +1100,110 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
             {/* STEP 11: Upload Banner */}
             {step === 11 && (
-              <div className="space-y-6 w-full max-w-xl text-left">
-                <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tight text-white leading-none font-serif">
-                  UPLOAD YOUR<br /><span className="text-[#bef500]">BANNER.</span>
-                </h1>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <BannerUpload3DIllustration />
 
-                <label className="w-full aspect-[21/9] rounded-2xl bg-[#0F0F10] border-2 border-dashed border-[#232323] hover:border-[#bef500] transition-all cursor-pointer flex flex-col items-center justify-center p-6 group relative overflow-hidden">
-                  <input type="file" accept="image/*" onChange={handleBannerSelect} className="hidden" />
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    UPLOAD YOUR<br />
+                    <span className="text-[#C6FF00]">BANNER.</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Show customers what makes your brand unique.
+                  </p>
+                </div>
 
-                  {bannerPreview ? (
-                    <img src={bannerPreview} alt="Banner Preview" className="w-full h-full object-cover rounded-xl" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 text-zinc-400 group-hover:text-white transition-colors">
-                      <Camera size={32} className="text-[#bef500]" />
-                      <span className="text-xs font-bold text-white uppercase">Click to select banner photo</span>
-                      <span className="text-[10px] font-mono text-zinc-500">Recommended: 1920 x 820px</span>
-                    </div>
-                  )}
-                </label>
+                {/* Large upload area */}
+                <div className="space-y-1.5">
+                  <label className="w-full bg-[#111114] border border-dashed border-[#232326] hover:border-[#C6FF00] rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center">
+                    <input type="file" accept="image/*" onChange={handleBannerSelect} className="hidden" />
+                    {bannerPreview ? (
+                      <div className="relative w-full h-20 rounded-xl overflow-hidden border border-[#27272A]">
+                        <img src={bannerPreview} alt="Banner Preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#1A1A20] flex items-center justify-center text-[#C6FF00] group-hover:scale-110 transition-transform">
+                        <Camera size={20} />
+                      </div>
+                    )}
+                    <span className="font-extrabold text-xs text-white uppercase tracking-wide">
+                      {bannerPreview ? 'Change Banner' : '🖼 Tap to Upload Banner'}
+                    </span>
+                    <p className="text-[11px] text-zinc-400 font-medium">
+                      Recommended size: <span className="text-zinc-300">1600 × 600 px</span>
+                    </p>
+                  </label>
+                  <p className="text-[11px] text-zinc-500 font-medium px-1">
+                    This becomes the hero image of your storefront.
+                  </p>
+                </div>
 
-                <button
-                  onClick={triggerStoreCreation}
-                  className="w-full py-4 bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-widest rounded-xl hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-[0_0_20px_rgba(190,245,0,0.3)] flex items-center justify-center gap-2"
-                >
-                  Create & Launch Storefront
-                  <ArrowRight size={16} />
-                </button>
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => setStep(12)}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* STEP 12: Deployment / Building Screen */}
+            {/* STEP 12: Your Shop is Ready */}
             {step === 12 && (
-              <div className="space-y-10 w-full max-w-lg text-center flex flex-col items-center py-6">
-                <div className="relative w-48 h-48 sm:w-56 sm:h-56 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90">
-                    <circle
-                      cx="50%"
-                      cy="50%"
-                      r="42%"
-                      className="text-zinc-900"
-                      strokeWidth="6"
-                      stroke="currentColor"
-                      fill="transparent"
-                    />
-                    <circle
-                      cx="50%"
-                      cy="50%"
-                      r="42%"
-                      className="text-[#bef500] transition-all duration-300 ease-linear"
-                      strokeWidth="6"
-                      strokeDasharray="264"
-                      strokeDashoffset={264 - (264 * buildPercent) / 100}
-                      strokeLinecap="round"
-                      stroke="currentColor"
-                      fill="transparent"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl sm:text-4xl font-black text-[#bef500] font-mono">
-                      {buildPercent}%
-                    </span>
-                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">CREATING</span>
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-between flex-1 space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <ShopReady3DIllustration />
+
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    YOUR SHOP IS<br />
+                    <span className="text-[#C6FF00]">READY.</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Everything is set. Let's launch your storefront and start selling.
+                  </p>
+                </div>
+
+                {/* Completion checklist */}
+                <div className="bg-[#111114] border border-[#232326] rounded-2xl p-3.5 space-y-2">
+                  <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-zinc-300">
+                    {[
+                      'Account created',
+                      'Shop name saved',
+                      'Category selected',
+                      'Location added',
+                      'Logo uploaded',
+                      'Banner uploaded'
+                    ].map((item, iIdx) => (
+                      <div key={iIdx} className="flex items-center gap-2">
+                        <CheckCircle2 size={15} className="text-[#C6FF00] shrink-0" />
+                        <span className="text-[11px] font-medium">{item}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <h2 className="text-3xl sm:text-5xl font-black uppercase text-white font-serif">
-                    CREATING YOUR <span className="text-black bg-[#bef500] px-3 py-0.5 rounded-md">STORE</span>...
-                  </h2>
-                </div>
-
-                {/* 5 Step Indicator List */}
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 w-full text-left">
-                  {[
-                    { label: 'Syncing Workspace', icon: RefreshCw },
-                    { label: 'Generating Storefront', icon: Globe },
-                    { label: 'Preparing Dashboard', icon: Sliders },
-                    { label: 'Creating Inventory', icon: Layers },
-                    { label: 'Finalizing', icon: CheckCircle2 }
-                  ].map((sItem, sIdx) => {
-                    const isActive = buildStepIndex === sIdx;
-                    const isDone = buildStepIndex > sIdx;
-                    const IconC = sItem.icon;
-                    return (
-                      <div
-                        key={sIdx}
-                        className={`p-3 rounded-xl border text-[10px] font-mono uppercase flex flex-col items-center text-center gap-1.5 transition-all ${
-                          isDone
-                            ? 'bg-[#bef500]/10 border-[#bef500] text-[#bef500]'
-                            : isActive
-                            ? 'bg-zinc-900 border-white text-white animate-pulse'
-                            : 'bg-[#0F0F10] border-[#232323] text-zinc-600'
-                        }`}
-                      >
-                        <IconC size={14} />
-                        <span className="leading-tight font-bold">{sItem.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {buildComplete && (
+                {/* Bottom CTA Button & subtext */}
+                <div className="pt-2 space-y-2">
                   <button
-                    onClick={finishAndGoToDashboard}
-                    className="w-full py-5 bg-[#bef500] text-black font-extrabold text-sm uppercase tracking-widest rounded-2xl hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-[0_0_30px_rgba(190,245,0,0.4)] flex items-center justify-center gap-2"
+                    onClick={triggerStoreCreation}
+                    disabled={isBuilding}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)] disabled:opacity-70"
                   >
-                    GO TO DASHBOARD
-                    <ArrowRight size={18} />
+                    <span>{isBuilding ? 'LAUNCHING...' : 'LAUNCH MY SHOP'}</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
                   </button>
-                )}
+
+                  <p className="text-[11px] text-zinc-500 text-center font-medium">
+                    You're entering your merchant dashboard.
+                  </p>
+                </div>
               </div>
             )}
 
@@ -1049,8 +1211,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         </AnimatePresence>
       </main>
 
-      {/* Bottom Navigation Shell */}
-      {step < 12 && (
+      {/* Bottom Navigation Shell for initial setup steps */}
+      {step < 7 && (
         <footer className="fixed bottom-0 left-0 right-0 w-full z-50 flex justify-between items-center px-6 md:px-16 py-5 bg-black/95 backdrop-blur-md border-t border-[#232323]">
           {step > 1 ? (
             <button
@@ -1065,26 +1227,36 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             <div />
           )}
 
-          {step > 1 && step < 12 && (
+          {step > 1 && step < 7 && (
             <button
               type="button"
               onClick={() => {
-                if (step === 2 && !formData.shopName.trim()) {
-                  toast.error('Please enter a shop name!');
+                if (step === 2) {
+                  if (!formData.shopName.trim()) {
+                    toast.error('Please enter a shop name!');
+                    return;
+                  }
+                  setStep(3);
                   return;
                 }
                 if (step === 6) {
-                  return; // handled by form
-                }
-                if (step === 11) {
-                  triggerStoreCreation();
+                  if (session?.user) {
+                    setStep(7);
+                  } else {
+                    const formEl = document.querySelector('form');
+                    if (formEl) {
+                      formEl.requestSubmit ? formEl.requestSubmit() : formEl.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    } else {
+                      toast.error('Please enter your email and password to create your account.');
+                    }
+                  }
                   return;
                 }
                 setStep(prev => prev + 1);
               }}
               className="bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-widest px-8 py-3.5 rounded-xl flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-[0_0_15px_rgba(190,245,0,0.2)]"
             >
-              Continue
+              {step === 6 ? 'Create Account' : 'Continue'}
               <ArrowRight size={16} />
             </button>
           )}

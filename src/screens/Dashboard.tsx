@@ -1,79 +1,69 @@
 // src/screens/Dashboard.tsx
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Loader2, 
-  Share2, 
+  Menu,
+  Bell,
+  ChevronDown,
+  Calendar,
+  DollarSign,
   ShoppingBag, 
-  Calendar, 
-  Globe, 
+  Users,
+  TrendingUp,
   Plus, 
-  ArrowRight,
-  CheckCircle2,
-  AlertTriangle,
-  Settings,
+  Store,
+  Share2,
+  Tag,
   Edit3,
-  ExternalLink,
-  Copy
+  Package,
+  Layers,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
+import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 import { TrialBanner } from '../components/dashboard/TrialBanner';
 import { GuidedWalkthrough } from '../components/dashboard/GuidedWalkthrough';
 import { LaunchChecklist } from '../components/dashboard/LaunchChecklist';
-import { AIAssistantModal } from '../components/AIAssistantModal';
-import { AISocialGeneratorModal } from '../components/AISocialGeneratorModal';
-import { AICatalogAuditBanner } from '../components/AICatalogAuditBanner';
-import { Sparkles, Bot, Share2 as ShareIcon } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, session, loading: authLoading, subscription } = useAuth();
-  const { shop, refreshShop, loading: shopLoading } = useShopContext();
+  const { shop, loading: shopLoading } = useShopContext();
 
-  const [productsCount, setProductsCount] = useState<number>(0);
-  const [loadingProds, setLoadingProds] = useState(true);
-  const [togglingStatus, setTogglingStatus] = useState(false);
-  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const [isSocialGenOpen, setIsSocialGenOpen] = useState(false);
-  const [recentProducts, setRecentProducts] = useState<any[]>([]);
+  // Load live, real Supabase dashboard metrics for authenticated merchant's shop
+  const {
+    productsCount,
+    availableProductsCount,
+    outOfStockProductsCount,
+    categoriesCount,
+    totalRevenue,
+    revenueChangePercent,
+    totalOrders,
+    ordersChangePercent,
+    totalVisitors,
+    visitorsChangePercent,
+    conversionRate,
+    conversionRateChangePercent,
+    dailyChartData,
+    topProducts,
+    recentProducts,
+    recentOrders,
+    loading: dashboardLoading
+  } = useDashboard(shop?.id);
 
-  // 1. Session check redirect
+  // Session check redirect
   useEffect(() => {
     if (!authLoading && !session) {
       navigate('/login');
     }
   }, [session, authLoading, navigate]);
-
-  // Fetch products count
-  useEffect(() => {
-    if (shop?.id) {
-      fetchProductsCount(shop.id);
-    }
-  }, [shop]);
-
-  const fetchProductsCount = async (shopId: string) => {
-    try {
-      setLoadingProds(true);
-      const { data, count, error } = await supabase
-        .from('products')
-        .select('*', { count: 'exact' })
-        .eq('shop_id', shopId);
-
-      if (error) throw error;
-      setProductsCount(count || 0);
-      setRecentProducts(data || []);
-    } catch (err) {
-      console.error('Error fetching products count:', err);
-    } finally {
-      setLoadingProds(false);
-    }
-  };
 
   // Determine if subscription/trial is active
   const isSubscriptionOrTrialActive = useMemo(() => {
@@ -103,47 +93,10 @@ export const Dashboard: React.FC = () => {
     return false;
   }, [subscription, session, user]);
 
-  // Calculate remaining trial days
-  const trialDaysRemaining = useMemo(() => {
-    if (!subscription) return 0;
-    if (subscription.status === 'active') return null; // Fully subscribed
-    if (!subscription.trial_ends_at) return 0;
-    const ends = new Date(subscription.trial_ends_at);
-    const now = new Date();
-    const diffTime = ends.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  }, [subscription]);
-
-  // Toggle Shop Status (Live / Paused)
-  const toggleShopStatus = async () => {
-    if (!shop || togglingStatus) return;
-    setTogglingStatus(true);
-    const nextIsLive = !shop.is_active;
-
-    try {
-      const { error } = await supabase
-        .from('shops')
-        .update({ is_active: nextIsLive })
-        .eq('id', shop.id);
-
-      if (error) throw error;
-
-      await refreshShop();
-      toast.success(nextIsLive ? 'Shop is now Online and visible to customers!' : 'Shop status set to Paused.');
-    } catch (err: any) {
-      console.error('Error toggling shop status:', err);
-      toast.error(`Failed to update shop status: ${err?.message || 'Unknown error'}`);
-    } finally {
-      setTogglingStatus(false);
-    }
-  };
-
   // Copy Shop Link
   const handleCopyShopLink = async () => {
     if (!shop) return;
     try {
-      // Use proper domain for public storefront
       const url = `https://threadzw.vercel.app/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
       await navigator.clipboard.writeText(url);
       toast.success('Shop link copied to clipboard!');
@@ -152,11 +105,45 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  if (shopLoading || authLoading) {
+  const greetingText = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  const dateRangeLabel = useMemo(() => {
+    if (!dailyChartData || dailyChartData.length === 0) return 'Last 7 days';
+    const start = dailyChartData[0]?.dateLabel || '';
+    const end = dailyChartData[dailyChartData.length - 1]?.dateLabel || '';
+    return `${start} – ${end}`;
+  }, [dailyChartData]);
+
+  // Dynamic Chart Points Calculation
+  const chartPointsStr = useMemo(() => {
+    if (!dailyChartData || dailyChartData.length === 0) {
+      return '35,140 103,140 171,140 239,140 307,140 375,140 443,140';
+    }
+    const maxVal = Math.max(...dailyChartData.map(d => d.orders || d.revenue), 1);
+    const count = dailyChartData.length;
+    
+    return dailyChartData.map((d, i) => {
+      const x = 35 + (i * (410 / Math.max(count - 1, 1)));
+      const val = d.orders > 0 ? d.orders : (d.revenue > 0 ? d.revenue : 0);
+      const y = maxVal > 0 ? 140 - ((val / maxVal) * 110) : 140;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+  }, [dailyChartData]);
+
+  const hasChartActivity = useMemo(() => {
+    return (dailyChartData || []).some(d => d.orders > 0 || d.revenue > 0);
+  }, [dailyChartData]);
+
+  if (shopLoading || authLoading || dashboardLoading) {
     return (
       <div className="min-h-screen bg-white text-black flex flex-col items-center justify-center font-sans">
-        <Loader2 className="animate-spin text-[#25D366] w-8 h-8" />
-        <span className="text-xs text-zinc-500 mt-4 font-mono">Loading dashboard...</span>
+        <Loader2 className="animate-spin text-[#bef500] w-8 h-8" />
+        <span className="text-xs text-zinc-500 mt-4 font-mono">Loading merchant dashboard...</span>
       </div>
     );
   }
@@ -169,20 +156,18 @@ export const Dashboard: React.FC = () => {
   if (!shop) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-8 space-y-8 text-center font-sans relative">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#111_1px,transparent_1px),linear-gradient(to_bottom,#111_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none opacity-40" />
-        
-        <div className="w-20 h-20 rounded-3xl bg-[#C6FF00]/10 border border-[#C6FF00]/20 flex items-center justify-center text-[#C6FF00] relative z-10 shadow-[0_0_30px_rgba(198,255,0,0.1)]">
+        <div className="w-20 h-20 rounded-3xl bg-[#bef500]/10 border border-[#bef500]/20 flex items-center justify-center text-[#bef500] relative z-10">
           <ShoppingBag size={32} />
         </div>
         <div className="space-y-3 relative z-10 max-w-sm">
           <h3 className="text-3xl font-black uppercase tracking-tight">No Shop Registered</h3>
           <p className="text-sm text-zinc-400 font-medium leading-relaxed">
-            Initialize your premium streetwear digital storefront to start dropping products on ThreadZW.
+            Initialize your storefront to start selling on ThreadZW.
           </p>
         </div>
         <button 
           onClick={() => navigate('/setup')} 
-          className="px-10 py-4.5 bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider rounded-full hover:shadow-[0_0_25px_rgba(198,255,0,0.35)] active:scale-95 transition-all cursor-pointer relative z-10"
+          className="px-10 py-4 bg-[#bef500] text-black font-extrabold text-sm uppercase tracking-wider rounded-full hover:opacity-90 transition-all cursor-pointer relative z-10"
         >
           Create Shop
         </button>
@@ -190,323 +175,395 @@ export const Dashboard: React.FC = () => {
     );
   }
 
+  const userFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Merchant';
+
   return (
-    <div className="min-h-screen bg-white text-black font-sans selection:bg-[#25D366] selection:text-black pb-32">
+    <div className="min-h-screen bg-[#F8F9FA] text-black font-sans pb-28">
       {/* Top Header */}
-      <header className="max-w-md mx-auto px-6 pt-10 pb-6 flex items-center justify-between border-b border-zinc-100">
-        <div className="space-y-1 text-left">
-          <h1 className="text-2xl font-black tracking-tight text-black">
-            {shop?.name || 'My Dashboard'}
-          </h1>
-          <p className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">
-            Merchant Workspace
-          </p>
+      <header className="max-w-md mx-auto px-5 pt-6 pb-4 flex items-center justify-between bg-[#F8F9FA] sticky top-0 z-30">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/settings')}
+            className="p-2 hover:bg-zinc-200/50 rounded-xl transition-colors cursor-pointer"
+          >
+            <Menu size={22} className="text-zinc-900" />
+          </button>
+          
+          <div className="flex items-center text-xl font-black tracking-tight">
+            <span className="text-black">Thread</span>
+            <span className="text-[#bef500] font-black">ZW</span>
+          </div>
         </div>
 
-        <button 
-          id="walkthrough-store"
-          onClick={() => navigate('/settings')}
-          className="w-10 h-10 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-700 hover:bg-zinc-100 transition-all cursor-pointer"
-        >
-          <Settings className="w-5 h-5 stroke-[1.75]" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/notifications')}
+            className="relative p-2 hover:bg-zinc-200/50 rounded-xl transition-colors cursor-pointer"
+          >
+            <Bell size={20} className="text-zinc-800" />
+            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#bef500] rounded-full ring-2 ring-[#F8F9FA]" />
+          </button>
+
+          <button 
+            onClick={() => navigate('/settings')}
+            className="flex items-center gap-1 hover:opacity-90 transition-opacity cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-bold overflow-hidden border border-zinc-200">
+              {userFirstName.charAt(0).toUpperCase()}
+            </div>
+            <ChevronDown size={14} className="text-zinc-500" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-md mx-auto px-6 pt-8 space-y-6">
+      <main className="max-w-md mx-auto px-5 space-y-5">
         <GuidedWalkthrough />
         <TrialBanner />
         <LaunchChecklist shop={shop} productsCount={productsCount} />
-        
-        {/* QUICK ACTIONS GRID */}
-        <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-5 text-left shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Quick Actions</h3>
-            <span className="text-[10px] text-zinc-400 font-semibold">Shortcuts</span>
+
+        {/* Greeting & Date Filter */}
+        <div className="flex items-start justify-between gap-2 pt-1">
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-zinc-950 flex items-center gap-2">
+              {greetingText}, {userFirstName} <span className="text-xl">👋</span>
+            </h1>
+            <p className="text-xs text-zinc-500 font-medium mt-1">
+              Live store statistics for <span className="font-bold text-zinc-800">{shop.name}</span>.
+            </p>
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              onClick={() => navigate('/edit-shop')}
-              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
-            >
-              <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0">
-                <Edit3 size={15} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-black block truncate">Edit Store</span>
-                <span className="text-[10px] text-zinc-400 font-medium block truncate">Update profile</span>
-              </div>
-            </button>
 
-            <button
-              onClick={() => setIsAssistantOpen(true)}
-              className="flex items-center gap-2.5 p-3 bg-zinc-900 text-white border border-zinc-800 hover:bg-black rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
-            >
-              <div className="w-8 h-8 rounded-xl bg-[#25D366]/20 flex items-center justify-center text-[#25D366] shrink-0">
-                <Bot size={16} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-white block truncate">AI Assistant</span>
-                <span className="text-[10px] text-zinc-400 font-medium block truncate">Get help</span>
-              </div>
-            </button>
+          <button className="shrink-0 bg-white border border-zinc-200 rounded-xl px-3 py-2 flex items-center gap-2 text-xs font-semibold text-zinc-800 shadow-2xs hover:bg-zinc-50 cursor-pointer">
+            <Calendar size={14} className="text-zinc-500" />
+            <span>{dateRangeLabel}</span>
+            <ChevronDown size={13} className="text-zinc-400" />
+          </button>
+        </div>
 
-            <button
-              onClick={() => setIsSocialGenOpen(true)}
-              className="flex items-center gap-2.5 p-3 bg-purple-950/80 text-white border border-purple-800/60 hover:bg-purple-900 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
-            >
-              <div className="w-8 h-8 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-300 shrink-0">
-                <Sparkles size={16} />
+        {/* 4 Primary Metric Cards Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Card 1: Total Revenue */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-500">Total Revenue</span>
+              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
+                <DollarSign size={16} />
               </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-purple-100 block truncate">AI Marketing</span>
-                <span className="text-[10px] text-purple-300/80 font-medium block truncate">Gen captions</span>
+            </div>
+            <div>
+              <div className="text-xl font-black text-zinc-950 tracking-tight">
+                ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-            </button>
+              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
+                <span>{revenueChangePercent >= 0 ? `↑ ${revenueChangePercent}%` : `↓ ${Math.abs(revenueChangePercent)}%`}</span>
+                <span className="text-zinc-400 font-normal">vs last week</span>
+              </div>
+            </div>
+          </div>
 
-            <button
+          {/* Card 2: Orders */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-500">Total Orders</span>
+              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
+                <ShoppingBag size={15} />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-black text-zinc-950 tracking-tight">{totalOrders}</div>
+              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
+                <span>{ordersChangePercent >= 0 ? `↑ ${ordersChangePercent}%` : `↓ ${Math.abs(ordersChangePercent)}%`}</span>
+                <span className="text-zinc-400 font-normal">vs last week</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Visitors */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-500">Store Visitors</span>
+              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
+                <Users size={15} />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-black text-zinc-950 tracking-tight">{totalVisitors}</div>
+              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
+                <span>{visitorsChangePercent >= 0 ? `↑ ${visitorsChangePercent}%` : `↓ ${Math.abs(visitorsChangePercent)}%`}</span>
+                <span className="text-zinc-400 font-normal">vs last week</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Conversion Rate */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-zinc-500">Conversion Rate</span>
+              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
+                <TrendingUp size={15} />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl font-black text-zinc-950 tracking-tight">{conversionRate}%</div>
+              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
+                <span>{conversionRateChangePercent >= 0 ? `↑ ${conversionRateChangePercent}%` : `↓ ${Math.abs(conversionRateChangePercent)}%`}</span>
+                <span className="text-zinc-400 font-normal">vs last week</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Inventory Overview Grid */}
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Inventory Status</h3>
+            <button 
+              onClick={() => navigate('/inventory')}
+              className="text-xs font-bold text-zinc-900 hover:underline cursor-pointer"
+            >
+              Manage Catalog →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 text-center pt-1">
+            <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-2.5">
+              <div className="text-lg font-black text-zinc-950">{productsCount}</div>
+              <div className="text-[10px] font-semibold text-zinc-500 mt-0.5">Total Products</div>
+            </div>
+
+            <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5">
+              <div className="text-lg font-black text-emerald-800">{availableProductsCount}</div>
+              <div className="text-[10px] font-semibold text-emerald-600 mt-0.5">In Stock</div>
+            </div>
+
+            <div className="bg-rose-50/60 border border-rose-100 rounded-xl p-2.5">
+              <div className="text-lg font-black text-rose-800">{outOfStockProductsCount}</div>
+              <div className="text-[10px] font-semibold text-rose-600 mt-0.5">Out of Stock</div>
+            </div>
+
+            <div className="bg-amber-50/60 border border-amber-100 rounded-xl p-2.5">
+              <div className="text-lg font-black text-amber-800">{categoriesCount}</div>
+              <div className="text-[10px] font-semibold text-amber-600 mt-0.5">Categories</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Orders Overview Chart Card */}
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-zinc-950">Orders Overview</h3>
+            <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-lg">
+              Past 7 days
+            </span>
+          </div>
+
+          {/* Chart SVG */}
+          <div className="pt-2 relative">
+            <div className="relative h-40 w-full">
+              {/* Grid background lines */}
+              <div className="absolute inset-0 flex flex-col justify-between text-[10px] text-zinc-400 font-medium">
+                <div className="border-b border-zinc-100 pb-0.5">Active</div>
+                <div className="border-b border-zinc-100 pb-0.5"></div>
+                <div className="border-b border-zinc-100 pb-0.5"></div>
+                <div>0</div>
+              </div>
+
+              {!hasChartActivity && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 backdrop-blur-[1px] z-10 text-center p-2">
+                  <span className="text-xs font-bold text-zinc-600">No orders recorded in this period</span>
+                  <span className="text-[10px] text-zinc-400 font-medium mt-0.5">Share your store link to receive WhatsApp orders</span>
+                </div>
+              )}
+
+              {/* Line SVG */}
+              <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 500 160">
+                <polyline
+                  fill="none"
+                  stroke="#bef500"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  points={chartPointsStr}
+                />
+              </svg>
+            </div>
+
+            {/* X-axis date labels */}
+            <div className="flex justify-between text-[10px] font-medium text-zinc-400 pt-3 px-1">
+              {(dailyChartData || []).map((point, idx) => (
+                <span key={idx}>{point.dateLabel}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions Section */}
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-4">
+          <h3 className="text-sm font-bold text-zinc-950">Quick Actions</h3>
+
+          {/* 5 Quick Action Icon Buttons */}
+          <div className="grid grid-cols-5 gap-2 text-center">
+            <button 
               onClick={() => navigate('/add-product')}
-              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+              className="flex flex-col items-center gap-2 group cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-xl bg-[#25D366]/10 flex items-center justify-center text-[#25D366] shrink-0">
-                <Plus size={16} className="stroke-[2.5]" />
+              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Plus size={20} className="stroke-[2.5]" />
               </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-black block truncate">Add Product</span>
-                <span className="text-[10px] text-zinc-400 font-medium block truncate">New item</span>
-              </div>
+              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Add Product</span>
             </button>
 
-            <button
+            <button 
               onClick={() => {
                 const url = `/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
                 window.open(url, '_blank');
               }}
-              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
+              className="flex flex-col items-center gap-2 group cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0">
-                <ExternalLink size={15} />
+              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Store size={19} />
               </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-black block truncate">View Store</span>
-                <span className="text-[10px] text-zinc-400 font-medium block truncate">Open preview</span>
-              </div>
+              <span className="text-[10px] font-medium text-zinc-700 leading-tight">View Store</span>
             </button>
 
-            <button
-              onClick={handleCopyShopLink}
-              className="flex items-center gap-2.5 p-3 bg-white border border-zinc-200/80 hover:border-zinc-300 rounded-2xl transition-all cursor-pointer text-left active:scale-[0.98] shadow-2xs"
-            >
-              <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0">
-                <Copy size={15} />
-              </div>
-              <div className="min-w-0">
-                <span className="text-xs font-bold text-black block truncate">Copy Link</span>
-                <span className="text-[10px] text-zinc-400 font-medium block truncate">Share shop</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* AI Catalog Audit & Smart Recommendations Banner */}
-        <AICatalogAuditBanner products={recentProducts} shop={shop} />
-
-        {/* SECTION 1: Shop Status */}
-        
-        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${shop?.is_active ? 'bg-[#25D366]/10 text-[#25D366]' : 'bg-zinc-100 text-zinc-400'}`}>
-                <Globe size={20} className="stroke-[2]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-black">Shop Status</h3>
-                <p className="text-xs text-zinc-400 font-semibold tracking-wide uppercase mt-0.5">Visibility</p>
-              </div>
-            </div>
-            
             <button 
-              onClick={toggleShopStatus}
-              disabled={togglingStatus}
-              className={`w-12 h-7 rounded-full p-0.5 transition-colors duration-200 cursor-pointer flex items-center ${shop?.is_active ? 'bg-[#25D366]' : 'bg-zinc-200'}`}
+              onClick={handleCopyShopLink}
+              className="flex flex-col items-center gap-2 group cursor-pointer"
             >
-              <div className={`w-6 h-6 rounded-full bg-white transition-transform duration-200 shadow-xs ${shop?.is_active ? 'translate-x-5' : 'translate-x-0'}`} />
+              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Share2 size={19} />
+              </div>
+              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Share Store</span>
+            </button>
+
+            <button 
+              onClick={() => toast.info('Discount feature ready to create new promo code.')}
+              className="flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Tag size={19} />
+              </div>
+              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Create Discount</span>
+            </button>
+
+            <button 
+              onClick={() => navigate('/edit-shop')}
+              className="flex flex-col items-center gap-2 group cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Edit3 size={19} />
+              </div>
+              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Customize Store</span>
             </button>
           </div>
-          
-          <div className="pt-2 border-t border-zinc-100">
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${shop?.is_active ? 'bg-[#25D366] animate-pulse' : 'bg-zinc-400'}`} />
-              <span className="text-sm font-black uppercase text-black">
-                {shop?.is_active ? 'Online' : 'Paused'}
-              </span>
-            </div>
-            <p className="text-xs text-zinc-500 font-medium mt-1 leading-relaxed">
-              {shop?.is_active 
-                ? 'Your storefront is active. Customers can browse catalog items and submit direct WhatsApp orders.' 
-                : 'Your storefront is paused. Existing data is preserved.'
-              }
-            </p>
-          </div>
+
+          {/* Primary Add Product Button */}
+          <button 
+            onClick={() => navigate('/add-product')}
+            className="w-full bg-[#bef500] text-black font-extrabold text-sm py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-xs"
+          >
+            <Plus size={18} className="stroke-[3]" />
+            <span>Add Product</span>
+          </button>
         </div>
 
-        {/* SECTION 2: Trial Countdown */}
-        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-zinc-100 text-black flex items-center justify-center">
-                <Calendar size={20} className="stroke-[1.75]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-black">Subscription Status</h3>
-                <p className="text-xs text-zinc-400 font-semibold tracking-wide uppercase mt-0.5">Billing & Access</p>
-              </div>
+        {/* Merchant Products Section (Real Data + Elegant Empty State) */}
+        {productsCount === 0 ? (
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 text-center space-y-4 shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-[#bef500]/20 text-zinc-900 border border-[#bef500]/30 flex items-center justify-center mx-auto">
+              <ShoppingBag size={22} />
             </div>
-            
-            {trialDaysRemaining !== null && (
-              <button 
-                id="walkthrough-store"
-                onClick={() => navigate('/subscription')}
-                className="py-1.5 px-3 bg-black hover:bg-zinc-900 text-white font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-all active:scale-95 cursor-pointer"
-              >
-                Upgrade
-              </button>
-            )}
-          </div>
-
-          <div className="pt-2 border-t border-zinc-100">
-            {trialDaysRemaining !== null ? (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="text-sm font-black text-black uppercase">
-                    {trialDaysRemaining === 0 ? 'Trial Expired' : `Trial Mode (${trialDaysRemaining} ${trialDaysRemaining === 1 ? 'day' : 'days'} remaining)`}
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  {trialDaysRemaining === 0 
-                    ? 'Your free trial has ended. Upgrade to continue using ThreadZW.'
-                    : 'Your 7-day free trial is active. Upgrade to our Premium Merchant plan for $1/month to ensure uninterrupted shop management.'}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-[#25D366] shrink-0" />
-                  <span className="text-sm font-black text-black uppercase">
-                    Premium Plan Active
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  Thank you for being a ThreadZW Premium partner. Your merchant operations and shop channels are fully authorized.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* SECTION 3: Number of Products */}
-        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-zinc-100 text-black flex items-center justify-center">
-                <ShoppingBag size={20} className="stroke-[1.75]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-black">Active Inventory</h3>
-                <p className="text-xs text-zinc-400 font-semibold tracking-wide uppercase mt-0.5">Catalog</p>
-              </div>
+            <div>
+              <h3 className="text-base font-extrabold text-zinc-950">No products yet.</h3>
+              <p className="text-xs text-zinc-500 font-medium mt-1 max-w-xs mx-auto leading-relaxed">
+                Add your first product to activate your storefront catalog and accept WhatsApp orders.
+              </p>
             </div>
-            
-            <div className="flex gap-2">
-              <button 
-                id="walkthrough-add-product"
-                onClick={() => navigate('/add-product')}
-                className="p-2 bg-[#25D366] hover:bg-[#20ba5a] text-black rounded-lg transition-all active:scale-95 cursor-pointer"
-                title="Add Product"
-              >
-                <Plus size={16} className="stroke-[2.5]" />
-              </button>
+            <button 
+              onClick={() => navigate('/add-product')}
+              className="px-6 py-2.5 bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus size={15} className="stroke-[2.5]" />
+              <span>Add your first product</span>
+            </button>
+          </div>
+        ) : (
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-zinc-950">Top Products</h3>
               <button 
                 onClick={() => navigate('/inventory')}
-                className="py-1.5 px-3 bg-white border border-zinc-200 hover:border-zinc-300 text-black font-extrabold text-[10px] uppercase tracking-wider rounded-lg transition-all active:scale-95 cursor-pointer"
+                className="text-xs font-semibold text-zinc-500 hover:text-black cursor-pointer uppercase tracking-wider"
               >
-                Manage
+                View all ({productsCount})
               </button>
             </div>
-          </div>
 
-          <div className="pt-2 border-t border-zinc-100 flex items-baseline justify-between">
-            <div>
-              <span className="text-4xl font-black text-black font-sans leading-none">
-                {loadingProds ? '...' : productsCount}
-              </span>
-              <span className="text-sm text-zinc-500 font-bold ml-2">
-                {productsCount === 1 ? 'Product listed' : 'Products listed'}
-              </span>
+            <div className="space-y-3">
+              {(topProducts.length > 0 ? topProducts : recentProducts).slice(0, 5).map((product) => {
+                const pImg = product.images?.[0] || product.image_url;
+                const isSoldOut = product.total_stock === 0 || product.status === 'sold_out';
+
+                return (
+                  <div key={product.id} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-100 overflow-hidden shrink-0 flex items-center justify-center text-zinc-400 font-bold text-[10px] border border-zinc-200">
+                        {pImg ? (
+                          <img 
+                            src={pImg} 
+                            alt={product.name} 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <Package size={18} />
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-bold text-zinc-900 truncate max-w-[170px]">{product.name}</div>
+                        <div className="text-zinc-400 text-[11px] flex items-center gap-1.5">
+                          {isSoldOut ? (
+                            <span className="text-rose-600 font-bold">Out of stock</span>
+                          ) : (
+                            <span>{product.total_stock || 0} in stock</span>
+                          )}
+                          <span>•</span>
+                          <span>{product.category || 'General'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="font-extrabold text-zinc-950 text-xs">
+                      ${Number(product.price || 0).toFixed(2)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            
-            <button 
-              onClick={() => navigate('/inventory')}
-              className="text-xs font-black text-zinc-900 hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <span>View catalog</span>
-              <ArrowRight size={12} className="stroke-[2.5]" />
-            </button>
           </div>
-        </div>
+        )}
 
-        {/* SECTION 4: Share Shop Button */}
-        <div id="walkthrough-products" className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center">
-                <Share2 size={20} className="stroke-[2]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-black">Share Channel</h3>
-                <p className="text-xs text-zinc-400 font-semibold tracking-wide uppercase mt-0.5">Direct link</p>
-              </div>
+        {/* Recent Activity / Sales Log Card */}
+        {recentOrders.length > 0 && (
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Recent Sales & Orders</h3>
+            </div>
+            <div className="space-y-2">
+              {recentOrders.map((order, idx) => (
+                <div key={`${order.id}-${idx}`} className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-0 text-xs">
+                  <div>
+                    <div className="font-bold text-zinc-900">{order.title}</div>
+                    <div className="text-[10px] text-zinc-400 font-medium">
+                      {new Date(order.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <span className="font-extrabold text-emerald-600">+${Number(order.amount).toFixed(2)}</span>
+                </div>
+              ))}
             </div>
           </div>
-
-          <div className="pt-2 border-t border-zinc-100 space-y-3">
-            <div className="bg-white border border-zinc-150 rounded-xl p-3 flex items-center justify-between overflow-hidden">
-              <span className="text-xs font-mono text-zinc-600 truncate mr-2">
-                threadzw.app/shop/{shop.slug ? shop.slug.trim() : shop.id.trim()}
-              </span>
-              <button 
-                onClick={handleCopyShopLink}
-                className="text-[10px] font-black uppercase text-[#25D366] hover:text-[#20ba5a] transition-colors whitespace-nowrap cursor-pointer shrink-0"
-              >
-                Copy Link
-              </button>
-            </div>
-            
-            <button 
-              onClick={handleCopyShopLink}
-              className="w-full h-12 bg-[#25D366] hover:bg-[#20ba5a] text-black font-black uppercase tracking-wider text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-xs"
-            >
-              <Share2 size={14} className="stroke-[2.5]" />
-              <span>Share Storefront Link</span>
-            </button>
-          </div>
-        </div>
-
+        )}
       </main>
-
-      {/* AI Productivity Modals */}
-      <AIAssistantModal
-        isOpen={isAssistantOpen}
-        onClose={() => setIsAssistantOpen(false)}
-      />
-
-      <AISocialGeneratorModal
-        isOpen={isSocialGenOpen}
-        onClose={() => setIsSocialGenOpen(false)}
-        shopName={shop?.name || 'ThreadZW Boutique'}
-        products={recentProducts}
-      />
 
       {/* Bottom Navigation */}
       <BottomNavBar />

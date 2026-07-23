@@ -537,7 +537,6 @@ export const AddProduct: React.FC = () => {
 
       const productPayload: any = {
         shop_id: currentShopId,
-        owner_id: ownerId,
         name: name.trim(),
         price: parseFloat(price),
         category: selectedCategory || null,

@@ -104,21 +104,32 @@ export const Login: React.FC = () => {
               className="bg-red-950/20 border border-red-900/40 rounded-2xl p-5 text-center space-y-3"
             >
               <div className="text-red-500 font-extrabold text-sm">
-                Incorrect credentials
+                Login Failed
               </div>
-              <p className="text-zinc-500 text-xs leading-relaxed">
-                {loginError}
+              <p className="text-zinc-400 text-xs leading-relaxed">
+                {loginError === 'Invalid login credentials' 
+                  ? 'The email or password you entered is incorrect. Please check your credentials or create a new account.' 
+                  : loginError}
               </p>
-              <button
-                type="button"
-                onClick={() => {
-                  setLoginError(null);
-                  setShake(false);
-                }}
-                className="w-full py-2.5 px-4 bg-[#bef715] hover:opacity-90 text-black font-extrabold text-xs rounded-xl cursor-pointer transition-all"
-              >
-                Try Again
-              </button>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLoginError(null);
+                    setShake(false);
+                  }}
+                  className="flex-1 py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all border border-zinc-800"
+                >
+                  Try Again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/signup')}
+                  className="flex-1 py-2.5 px-4 bg-[#bef715] hover:opacity-90 text-black font-extrabold text-xs rounded-xl cursor-pointer transition-all"
+                >
+                  Create Account
+                </button>
+              </div>
             </motion.div>
           )}
 
