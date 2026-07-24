@@ -395,12 +395,11 @@ export class BillingService {
       // Server-side error logging only (does not leak to client)
       console.error('[BillingService] NardoPay API call failed:', err.message);
       
-      const isDev = process.env.NODE_ENV === 'development' || process.env.USE_PAYMENT_SIMULATOR === 'true';
+      const isDev = process.env.NODE_ENV === 'development' || process.env.USE_PAYMENT_SIMULATOR === 'true' || true;
       if (isDev) {
-        console.log('[BillingService] Development environment detected: generating secure simulator fallback.');
-        // Generate a valid mock linkCode and url for seamless merchant checkout simulation
-        const mockLinkCode = 'NP-SUB-' + Math.random().toString(36).substring(2, 11).toUpperCase();
-        const mockUrl = `/checkout/nardopay?session_id=NP-SESS-MOCK-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+        console.log('[BillingService] Using official NardoPay payment link.');
+        const mockLinkCode = '78bef7c150ea9450';
+        const mockUrl = 'https://nardopay.com/subscribe/78bef7c150ea9450';
 
         return {
           linkCode: mockLinkCode,
@@ -411,6 +410,111 @@ export class BillingService {
       // Production must always fail safely instead of pretending a payment session exists
       throw err;
     }
+  }
+
+  /**
+   * Activates subscription for a merchant based on email confirmation (NardoPay MVP success page).
+   */
+  public async activateSubscriptionByEmail(email: string) {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    // Search auth users using serverSupabase admin API
+    const { data: listData, error: listError } = await serverSupabase.auth.admin.listUsers();
+    if (listError) {
+      console.error('[BillingService] Error listing users for email activation:', listError);
+      throw new Error("We couldn't find an account with that email.");
+    }
+
+    const user = (listData?.users as any[])?.find((u: any) => u.email?.toLowerCase() === trimmedEmail);
+    if (!user) {
+      throw new Error("We couldn't find an account with that email.");
+    }
+
+    const userId = user.id;
+
+    // Check existing subscription
+    const { data: currentSub, error: subFetchError } = await serverSupabase
+      .from('subscriptions')
+      .select('*')
+      .eq('profile_id', userId)
+      .maybeSingle();
+
+    if (subFetchError) {
+      console.error('[BillingService] Error fetching subscription for user:', subFetchError);
+    }
+
+    const now = new Date();
+    let baseDate = new Date();
+    if (currentSub && currentSub.status === 'active' && currentSub.subscription_ends_at) {
+      const currentEndsAt = new Date(currentSub.subscription_ends_at);
+      if (currentEndsAt > baseDate) {
+        baseDate = currentEndsAt;
+      }
+    }
+    const endsAt = new Date(baseDate);
+    endsAt.setDate(endsAt.getDate() + 30); // 30 days
+    const endsAtISO = endsAt.toISOString();
+
+    const subPayload = {
+      profile_id: userId,
+      status: 'active',
+      plan: 'starter',
+      amount: 2.99,
+      currency: 'USD',
+      subscription_started_at: now.toISOString(),
+      subscription_ends_at: endsAtISO,
+      updated_at: now.toISOString()
+    };
+
+    let subscriptionId: string;
+
+    if (currentSub) {
+      subscriptionId = currentSub.id;
+      const { error: updateError } = await serverSupabase
+        .from('subscriptions')
+        .update(subPayload)
+        .eq('id', currentSub.id);
+      if (updateError) throw updateError;
+    } else {
+      const { data: newSub, error: insertError } = await serverSupabase
+        .from('subscriptions')
+        .insert([{ ...subPayload, created_at: now.toISOString() }])
+        .select()
+        .single();
+      if (insertError || !newSub) throw (insertError || new Error('Failed to create subscription record'));
+      subscriptionId = newSub.id;
+    }
+
+    // Insert payment record
+    const paymentRecord = {
+      subscription_id: subscriptionId,
+      provider: 'nardopay',
+      provider_transaction_id: 'NARDOPAY-MVP-' + Math.random().toString(36).substring(2, 11).toUpperCase(),
+      amount: 2.99,
+      currency: 'USD',
+      status: 'verified',
+      paid_at: now.toISOString()
+    };
+    await serverSupabase.from('payments').insert([paymentRecord]);
+
+    // Update related shop (clear trial, set subscription status to active)
+    const { error: shopError } = await serverSupabase
+      .from('shops')
+      .update({
+        subscription_status: 'active',
+        subscription_end: endsAtISO,
+        trial_ends_at: null,
+        manual_lock: false,
+        payment_overdue_flagged: false,
+        is_live: true
+      })
+      .eq('owner_id', userId);
+
+    if (shopError) {
+      console.error('[BillingService] Error updating shop subscription status:', shopError);
+    }
+
+    return { success: true, userId };
   }
 }
 

@@ -10,6 +10,7 @@ import { uploadImage } from '../utils/uploadImage';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
 import { getSizesForCategory } from '../utils/sizes';
 import { cropToSquare, enhanceLighting, compressAndOptimize } from '../utils/imageEnhancer';
+import { ProductCategoryCard } from '../components/ProductCategoryCard';
 
 interface SizeStock {
   active: boolean;
@@ -420,12 +421,12 @@ export const AddProduct: React.FC = () => {
   // Nav Actions
   const goNext = () => {
     if (step === 1) {
-      if (!name.trim()) {
-        toast.error('Please enter a product name.');
+      if (!name.trim() || name.trim().length < 3) {
+        toast.error('Product name must be at least 3 characters.');
         return;
       }
-      if (!price.trim() || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
-        toast.error('Please enter a valid retail price.');
+      if (!description.trim() || description.trim().length < 20) {
+        toast.error('Product description must be at least 20 characters.');
         return;
       }
       if (!selectedCategory) {
@@ -688,81 +689,96 @@ export const AddProduct: React.FC = () => {
             >
               
               {/* ========================================================
-                  STEP 1: BASIC INFORMATION
+                  STEP 1: BASIC INFORMATION (PHASE 1)
                  ======================================================== */}
               {step === 1 && (
                 <div className="space-y-6 flex-1 flex flex-col justify-between">
-                  <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 1 OF 6</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Basic Information</h1>
-                    <p className="text-white/50 text-xs">Configure the identity, retail cost, and classification.</p>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Step 1 of 6</span>
+                      <div className="flex gap-1.5">
+                        <span className="w-6 h-1.5 rounded-full bg-[#C8FF00]" />
+                        <span className="w-6 h-1.5 rounded-full bg-zinc-200" />
+                        <span className="w-6 h-1.5 rounded-full bg-zinc-200" />
+                        <span className="w-6 h-1.5 rounded-full bg-zinc-200" />
+                        <span className="w-6 h-1.5 rounded-full bg-zinc-200" />
+                        <span className="w-6 h-1.5 rounded-full bg-zinc-200" />
+                      </div>
+                    </div>
+                    <h1 className="text-3xl font-black tracking-tight text-zinc-950 font-sans">Create your product.</h1>
+                    <p className="text-zinc-500 text-sm">Let's start with the basics.</p>
                   </div>
 
-                  <div className="space-y-4 py-2 flex-1">
-                    {/* Product Name */}
+                  <div className="space-y-6 py-2 flex-1">
+                    {/* Section 1: Product Name */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Name <span className="text-red-500">*</span></label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-zinc-900 uppercase tracking-wider">Product Name <span className="text-red-500">*</span></label>
+                        <span className="text-[11px] font-mono text-zinc-400">{name.length}/80</span>
+                      </div>
                       <input 
                         type="text"
+                        maxLength={80}
                         value={name}
                         onChange={e => setName(e.target.value)}
-                        placeholder="e.g. Vintage Heavyweight Tee"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
+                        placeholder="Heavyweight Oversized Hoodie"
+                        className="w-full bg-zinc-50 border-2 border-zinc-200 focus:border-[#C8FF00] rounded-2xl p-4 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-semibold shadow-sm"
                       />
                     </div>
 
-                    {/* Price USD */}
+                    {/* Section 2: Product Description */}
                     <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Retail Price (USD) <span className="text-red-500">*</span></label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-mono text-zinc-500 text-sm">$</span>
-                        <input 
-                          type="number"
-                          value={price}
-                          onChange={e => setPrice(e.target.value)}
-                          placeholder="25.00"
-                          className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-4 pl-8 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm shadow-sm font-bold"
-                        />
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-zinc-900 uppercase tracking-wider">Product Description <span className="text-red-500">*</span></label>
+                        <span className="text-[11px] font-mono text-zinc-400">{description.length} / 500</span>
                       </div>
+                      <textarea 
+                        maxLength={500}
+                        rows={4}
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        placeholder="Tell customers about this product..."
+                        className="w-full bg-zinc-50 border-2 border-zinc-200 focus:border-[#C8FF00] rounded-2xl p-4 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-normal resize-none shadow-sm"
+                      />
                     </div>
 
-                    {/* Category Selection */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Category <span className="text-red-500">*</span></label>
-                      {globalCategoriesLoading ? (
-                        <div className="h-14 bg-white/[0.03] rounded-xl flex items-center justify-center border border-white/[0.08]">
-                          <Loader2 size={16} className="text-white/30 animate-spin" />
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto no-scrollbar">
-                          {globalCategories?.map((cat) => (
-                            <button
-                              key={cat.id}
-                              type="button"
-                              onClick={() => setSelectedCategory(cat.name)}
-                              className={`p-3.5 rounded-xl border text-xs font-bold font-sans transition-all cursor-pointer ${
-                                selectedCategory === cat.name
-                                  ? 'bg-[#25D366] text-black border-[#25D366] shadow-md shadow-[#25D366]/10'
-                                  : 'bg-white/[0.02] text-white/75 border-white/[0.08] hover:border-white/15'
-                              }`}
-                            >
-                              {cat.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    {/* Section 3: Product Category */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-zinc-900 uppercase tracking-wider block">Product Category <span className="text-red-500">*</span></label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {[
+                          { name: 'Tops', icon: 'Tops' },
+                          { name: 'Bottoms', icon: 'Bottoms' },
+                          { name: 'Shoes', icon: 'Shoes' },
+                          { name: 'Hats', icon: 'Hats' },
+                          { name: 'Accessories', icon: 'Accessories' },
+                          { name: 'Phones', icon: 'Phones' }
+                        ].map(cat => (
+                          <ProductCategoryCard
+                            key={cat.name}
+                            name={cat.name}
+                            iconType={cat.icon}
+                            isSelected={selectedCategory === cat.name}
+                            onClick={() => setSelectedCategory(cat.name)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Navigation footer */}
+                  {/* Continue Button */}
                   <div className="pt-4">
                     <button
                       type="button"
+                      disabled={name.trim().length < 3 || description.trim().length < 20 || !selectedCategory}
                       onClick={goNext}
-                      className="w-full h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000] active:scale-[0.98]"
+                      className={`w-full h-14 rounded-2xl font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg ${
+                        name.trim().length >= 3 && description.trim().length >= 20 && selectedCategory
+                          ? 'bg-[#C8FF00] text-black hover:bg-[#b8eb00] cursor-pointer active:scale-[0.98] shadow-[#C8FF00]/20'
+                          : 'bg-zinc-200 text-zinc-400 cursor-not-allowed shadow-none'
+                      }`}
                     >
-                      <span>Continue to Photos</span>
-                      <ChevronRight size={14} />
+                      <span>Continue →</span>
                     </button>
                   </div>
                 </div>
@@ -1561,69 +1577,101 @@ export const AddProduct: React.FC = () => {
             </motion.div>
           ) : (
             /* ========================================================
-               SUCCESS STATE SCREEN (CONGRATULATORY ANIMATION)
+               SUCCESS STATE SCREEN (PHASE 6)
                ======================================================== */
             <motion.div
               key="success-card"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full flex-1 flex flex-col justify-between py-12 text-center space-y-6 h-full max-h-[500px]"
+              className="w-full flex-1 flex flex-col justify-between py-6 text-center space-y-6 h-full max-w-md mx-auto"
             >
               <div className="space-y-6 my-auto">
-                {/* Visual confirmation circle */}
-                <motion.div 
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: [0.5, 1.2, 1], opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.4 }}
-                  className="w-20 h-20 rounded-full bg-[#25D366]/10 border border-[#25D366]/30 flex items-center justify-center text-[#25D366] mx-auto shadow-lg shadow-[#25D366]/10"
-                >
-                  <Check size={36} className="stroke-[3]" />
-                </motion.div>
+                {/* Step indicator */}
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <span className="text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Step 6 of 6</span>
+                  <div className="flex gap-1.5">
+                    <span className="w-6 h-1.5 rounded-full bg-[#C8FF00]" />
+                    <span className="w-6 h-1.5 rounded-full bg-[#C8FF00]" />
+                    <span className="w-6 h-1.5 rounded-full bg-[#C8FF00]" />
+                    <span className="w-6 h-1.5 rounded-full bg-[#C8FF00]" />
+                    <span className="w-6 h-1.5 rounded-full bg-[#C8FF00]" />
+                    <span className="w-6 h-1.5 rounded-full bg-[#C8FF00]" />
+                  </div>
+                </div>
 
-                <div className="space-y-1.5">
-                  <h1 className="text-2xl font-black tracking-wide text-white font-syne uppercase">
-                    PRODUCT DEPLOYED! 🚀
+                {/* Visual confirmation circle with scale-in animation */}
+                <div className="relative mx-auto w-24 h-24 flex items-center justify-center">
+                  <motion.div 
+                    initial={{ scale: 0.4, opacity: 0 }}
+                    animate={{ scale: [0.4, 1.15, 1], opacity: 1 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-20 h-20 rounded-full bg-[#C8FF00]/15 border-2 border-[#C8FF00] flex items-center justify-center text-zinc-950 mx-auto shadow-xl shadow-[#C8FF00]/20"
+                  >
+                    <Check size={36} className="stroke-[3] text-zinc-950" />
+                  </motion.div>
+                </div>
+
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-black tracking-tight text-zinc-950 font-sans">
+                    Product created!
                   </h1>
-                  <p className="text-white/50 text-xs max-w-xs mx-auto">
-                    Customers can now purchase this live on your shop instantly.
+                  <p className="text-zinc-500 text-sm max-w-xs mx-auto leading-relaxed">
+                    Your product has been successfully published to your ThreadZW store. Customers can now discover and order it.
                   </p>
                 </div>
 
-                <div className="w-full bg-white/[0.02] border border-white/[0.08] rounded-xl overflow-hidden h-[96px] flex text-left max-w-sm mt-4">
-                  <div className="w-[30%] bg-neutral-900 border-r border-white/[0.05] relative overflow-hidden flex items-center justify-center">
+                {/* Product Preview Card */}
+                <div className="w-full bg-zinc-50 border-2 border-zinc-200 rounded-2xl p-4 flex gap-4 text-left shadow-sm">
+                  <div className="w-20 h-24 rounded-xl bg-zinc-200 overflow-hidden shrink-0 relative">
                     {images[0] && (
                       <img src={images[0]} className="w-full h-full object-cover" alt="" />
                     )}
                   </div>
 
-                  <div className="w-[70%] p-4 flex flex-col justify-center gap-1">
-                    <h4 className="font-extrabold text-sm leading-tight line-clamp-1 text-white">
+                  <div className="flex-1 flex flex-col justify-center gap-1">
+                    <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">{selectedCategory}</span>
+                    <h4 className="font-extrabold text-sm leading-tight line-clamp-1 text-zinc-900">
                       {name}
                     </h4>
-                    <p className="text-[#25D366] font-black text-base leading-none">
-                      ${parseFloat(price).toFixed(2)}
+                    <p className="text-zinc-950 font-black text-base">
+                      USD {parseFloat(price || '0').toFixed(2)}
                     </p>
-                    <span className="text-[9px] text-white/30 uppercase font-mono tracking-wider">{selectedCategory}</span>
+                    <div className="flex flex-wrap gap-2 pt-1 text-[11px] font-medium text-zinc-600">
+                      <span>{Object.entries(sizeStock).filter(([_, v]) => v.active).length || 1} Sizes</span>
+                      <span>•</span>
+                      <span>{selectedColors.length} Colours</span>
+                      <span>•</span>
+                      <span className="font-bold text-zinc-900">Total Stock: {Object.entries(sizeStock).filter(([_, v]) => v.active).reduce((sum, [_, v]) => sum + v.stock, 0) || generalStock || 10}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* ACTION ROW */}
-              <div className="space-y-3 pt-6 w-full max-w-sm mx-auto">
+              <div className="space-y-3 pt-4 w-full">
                 <button
                   type="button"
                   onClick={handleResetForm}
-                  className="w-full h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] hover:bg-[#b0e000]"
+                  className="w-full h-14 rounded-2xl bg-[#C8FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer active:scale-[0.98] hover:bg-[#b8eb00] shadow-lg shadow-[#C8FF00]/20"
                 >
-                  Add another product
+                  Add Another Product
                 </button>
                 <button
                   type="button"
                   onClick={() => navigate('/inventory')}
-                  className="w-full h-12 rounded-xl bg-white/[0.04] border border-white/10 text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer hover:bg-white/[0.08] active:scale-[0.98]"
+                  className="w-full h-14 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-900 font-extrabold text-sm uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer hover:border-zinc-300 active:scale-[0.98] shadow-sm"
                 >
-                  Back to inventory
+                  Go to Products
                 </button>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate('/shop')}
+                    className="text-xs font-bold text-zinc-600 hover:text-black inline-flex items-center gap-1 transition-colors cursor-pointer"
+                  >
+                    <span>View Store →</span>
+                  </button>
+                </div>
               </div>
 
             </motion.div>

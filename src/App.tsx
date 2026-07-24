@@ -32,6 +32,7 @@ import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
 import { NardoPayCheckout } from './screens/NardoPayCheckout';
 import { Subscription } from './screens/Subscription';
+import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 
 
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription';
@@ -68,6 +69,9 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   }
   if (path === '/subscription') {
     return { stage: 'subscription' };
+  }
+  if (path === '/subscription/success') {
+    return { stage: 'subscription-success' as any };
   }
   
   // Match /product/:id
@@ -300,6 +304,7 @@ function AppContent() {
   const isDashboardSubPath = useMemo(() => {
     if (
       cleanPath === '/subscription' || 
+      cleanPath === '/subscription/success' ||
       cleanPath.startsWith('/checkout') || 
       cleanPath === '/pricing' || 
       cleanPath === '/setup' || 
@@ -393,7 +398,8 @@ function AppContent() {
       path.startsWith('/checkout') ||
       path.startsWith('/auth') ||
       path === '/reset-password' ||
-      path === '/subscription'
+      path === '/subscription' ||
+      path === '/subscription/success'
     ) {
       console.log("[ROUTER] General public route bypassed.");
       return;
@@ -556,6 +562,10 @@ function AppContent() {
 
   if (appStage === 'subscription' || cleanPath === '/subscription') {
     return <Subscription />;
+  }
+
+  if (cleanPath === '/subscription/success') {
+    return <SubscriptionSuccess />;
   }
 
   if (isDashboardSubPath) {

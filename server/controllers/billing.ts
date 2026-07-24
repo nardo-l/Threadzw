@@ -223,6 +223,25 @@ export class BillingController {
       return res.status(500).json({ error: err.message || 'Webhook internal error' });
     }
   }
+
+  /**
+   * Activates subscription based on email confirmation (NardoPay MVP success page).
+   */
+  public async activateByEmail(req: any, res: Response) {
+    try {
+      const { email } = req.body;
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: 'Please enter a valid email address.' });
+      }
+
+      await billingService.activateSubscriptionByEmail(email);
+      return res.status(200).json({ success: true, message: 'Subscription successfully activated.' });
+    } catch (err: any) {
+      console.error('[BillingController] activateByEmail failed:', err);
+      const msg = err.message || 'Something went wrong.\nPlease contact ThreadZW support.';
+      return res.status(400).json({ error: msg });
+    }
+  }
 }
 
 export const billingController = new BillingController();

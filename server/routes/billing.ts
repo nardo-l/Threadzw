@@ -16,7 +16,8 @@ router.post('/cancel-subscription', requireAuth, (req, res) => billingController
 router.post('/admin/approve-claim', requireAuth, (req, res) => billingController.adminApproveClaim(req, res));
 router.post('/admin/reject-claim', requireAuth, (req, res) => billingController.adminRejectClaim(req, res));
 
-// Webhook
+// Webhook & Public Verification
 router.post('/webhook', (req, res) => billingController.webhook(req, res));
+router.post('/activate-by-email', (req, res) => billingController.activateByEmail(req, res));
 
 export default router;

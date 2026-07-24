@@ -11,7 +11,9 @@ import {
   ArrowRight, 
   Check, 
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  ExternalLink,
+  Copy
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -255,6 +257,7 @@ export const Paywall: React.FC = () => {
   const [currentSubscription, setCurrentSubscription] = useState<any | null>(null);
   const [loadingSub, setLoadingSub] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [nardopayUrl, setNardopayUrl] = useState<string | null>('https://nardopay.com/subscribe/78bef7c150ea9450');
 
   useEffect(() => {
     if (user) {
@@ -353,6 +356,10 @@ export const Paywall: React.FC = () => {
 
       if (!data.linkCode) {
         throw new Error('No subscription link code received from billing gateway');
+      }
+
+      if (data.url) {
+        setNardopayUrl(data.url);
       }
 
       // Load and initialize the official NardoPay widget
@@ -611,6 +618,42 @@ export const Paywall: React.FC = () => {
               </>
             )}
           </button>
+
+          {nardopayUrl && (
+            <div className="bg-zinc-950 border border-zinc-800 rounded-2xl p-4 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400">
+                <span>NardoPay Payment Link</span>
+                <span className="text-[#bef715] font-mono">Active</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={nardopayUrl}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-mono text-zinc-300 focus:outline-none truncate"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(nardopayUrl);
+                    toast.success('NardoPay payment link copied to clipboard!');
+                  }}
+                  className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+                  title="Copy link"
+                >
+                  <Copy size={13} />
+                </button>
+                <a
+                  href={nardopayUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2 bg-[#bef715] hover:bg-[#a6d910] text-black rounded-xl text-xs font-black transition-colors cursor-pointer shrink-0 flex items-center gap-1"
+                  title="Open in new tab"
+                >
+                  <ExternalLink size={13} />
+                </a>
+              </div>
+            </div>
+          )}
 
           <p className="text-[10px] text-zinc-600 font-bold text-center leading-normal max-w-xs mx-auto">
             Clicking will open NardoPay's secure checkout widget.
