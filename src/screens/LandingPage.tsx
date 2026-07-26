@@ -172,10 +172,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             <span className="text-xs font-mono uppercase text-[#bef715] tracking-widest font-extrabold">PRICING PLAN</span>
             <h3 className="text-2xl font-black uppercase tracking-tight">ThreadZW Pro</h3>
             <div className="flex items-baseline justify-center gap-1">
-              <span className="text-4xl font-black text-white">$1</span>
+              <span className="text-4xl font-black text-white">$2.99</span>
               <span className="text-zinc-500 font-bold text-sm">/month</span>
             </div>
-            <p className="text-xs text-zinc-400">7-day free trial included for every new shop.</p>
+            <p className="text-xs text-zinc-400">14-day free trial included for every new shop.</p>
           </div>
 
           <div className="space-y-3 text-left">

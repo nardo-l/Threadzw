@@ -104,7 +104,7 @@ export const Subscription: React.FC = () => {
               </span>
               <h2 className="text-3xl font-black uppercase tracking-tight text-zinc-900">ThreadZW Pro</h2>
               <div className="flex items-baseline justify-center gap-1 mt-2">
-                <span className="text-4xl font-black text-black">$1</span>
+                <span className="text-4xl font-black text-black">$2.99</span>
                 <span className="text-zinc-500 font-bold text-sm">/month</span>
               </div>
             </div>
@@ -151,7 +151,7 @@ export const Subscription: React.FC = () => {
               ) : subscription?.status === 'active' ? (
                 'Pro Plan Active'
               ) : (
-                'Upgrade for $1/month'
+                'Upgrade for $2.99/month'
               )}
             </button>
           </div>

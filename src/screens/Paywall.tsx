@@ -365,7 +365,7 @@ export const Paywall: React.FC = () => {
     if (currentSubscription.status === 'trial') {
       const ends = currentSubscription.trial_ends_at ? new Date(currentSubscription.trial_ends_at) : null;
       return ends && ends < new Date() 
-        ? `Your 7-day trial expired on ${ends.toLocaleDateString()}.`
+        ? `Your 14-day trial expired on ${ends.toLocaleDateString()}.`
         : `Your trial is active but restricted.`;
     }
     if (currentSubscription.status === 'active') {
@@ -489,7 +489,7 @@ export const Paywall: React.FC = () => {
             <span className="text-xs text-zinc-300 font-bold">Unlimited products, custom link</span>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$1</span>
+            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$2.99</span>
             <span className="text-[10px] text-zinc-500 font-bold">per month</span>
           </div>
         </div>

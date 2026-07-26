@@ -6,7 +6,7 @@ import { ProductImage, ShopLogo } from '../ui/ShopImage';
 import { parseShopConfig } from '../../utils/configHelper';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
-import { trackPurchaseIntent, createMerchantNotification } from '../../lib/analytics';
+import { trackPurchaseIntent, createMerchantNotification, trackWhatsAppClick } from '../../lib/analytics';
 
 // Helper to safely insert orders even if some columns don't exist on remote table yet
 async function safeInsertOrder(orderPayload: any) {
@@ -213,6 +213,8 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
       selectedSize || 'M',
       selectedColor || 'Black'
     );
+
+    await trackWhatsAppClick(shop.id, product.id, product.name);
     
     await createMerchantNotification(
       shop.owner_id,

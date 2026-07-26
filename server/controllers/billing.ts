@@ -17,8 +17,8 @@ export class BillingController {
         return res.status(400).json({ error: 'User context is missing' });
       }
 
-      // Merchant plan is standard $7 USD
-      const session = nardoPay.createCheckoutSession(userId, shopId || null, 7.00);
+      // Merchant plan is standard $2.99 USD
+      const session = nardoPay.createCheckoutSession(userId, shopId || null, 2.99);
       
       // Redirect URL inside the application to the PCI-DSS free hosted checkout simulator
       const checkoutUrl = `/checkout/nardopay?session_id=${session.id}`;
@@ -74,7 +74,7 @@ export class BillingController {
         const transactionId = sessionId || `MOCK-TX-${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
         const authHeader = req.headers.authorization;
         const token = authHeader ? authHeader.split(' ')[1] : undefined;
-        await billingService.activateSubscription(userId, 7.00, transactionId, 'nardopay', token);
+        await billingService.activateSubscription(userId, 2.99, transactionId, 'nardopay', token);
         return res.status(200).json({ success: true, message: 'Subscription successfully activated (Simulation)' });
       }
 
@@ -203,7 +203,7 @@ export class BillingController {
 
       if (event === 'payment.succeeded' || event === 'verified' || payload.status === 'success' || payload.status === 'verified') {
         const userId = data.userId || data.owner_id || data.profile_id || data.customer_id;
-        const amount = Number(data.amount || data.price || 7.00);
+        const amount = Number(data.amount || data.price || 2.99);
         const transactionId = data.transactionId || data.transaction_id || data.id || payload.transactionId || payload.transaction_id || payload.id || null;
 
         if (!userId) {

@@ -241,13 +241,13 @@ export const Settings: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  Your shop is currently operating under the 7-day free trial. After trial expiry, product management will be locked. Upgrade to Premium for $1/month.
+                  Your shop is currently operating under the 14-day free trial. After trial expiry, product management will be locked. Upgrade to Pro for $2.99/month.
                 </p>
                 <button
                   onClick={() => navigate('/subscription')}
                   className="w-full mt-4 bg-zinc-900 text-white font-bold py-3 rounded-xl hover:bg-zinc-800 transition-colors"
                 >
-                  Upgrade to Premium ($1/month)
+                  Upgrade to Pro ($2.99/month)
                 </button>
               </div>
             ) : (

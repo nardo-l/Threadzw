@@ -175,7 +175,7 @@ Knowledge Base Rules:
 1. Adding products: Merchants go to Dashboard -> 'Add Product' or 'Inventory' tab -> fill in title, price, images, stock, and click Save.
 2. Storefront visibility: Storefronts are published instantly at /shop/[slug]. Ensure shop status is active and trial/subscription is valid.
 3. Sharing shop: Copy the shop link from the Dashboard or Storefront header and paste on WhatsApp, Instagram, or Facebook.
-4. Subscriptions & Trial: All new shops receive a 14-day free trial. Afterwards, subscription is $10/month managed via the Subscription screen or NardoPay/WhatsApp admin.
+4. Subscriptions & Trial: All new shops receive a 14-day free trial. Afterwards, subscription is $2.99/month managed via the Subscription screen or NardoPay/WhatsApp admin.
 5. WhatsApp orders: When customers click 'Order on WhatsApp' on the storefront, a pre-filled WhatsApp message with order details and product images opens directly to the merchant's WhatsApp number.
 Keep answers friendly, clear, concise (maximum 3 bullet points or short paragraphs), and focused on ThreadZW merchant success.`;
 

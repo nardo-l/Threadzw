@@ -1,6 +1,6 @@
 // src/screens/Dashboard.tsx
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Loader2, 
@@ -8,19 +8,21 @@ import {
   Bell,
   ChevronDown,
   Calendar,
-  DollarSign,
   ShoppingBag, 
   Users,
   TrendingUp,
   Plus, 
   Store,
   Share2,
-  Tag,
   Edit3,
   Package,
-  Layers,
+  MessageSquare,
+  Percent,
+  MapPin,
   CheckCircle2,
-  AlertTriangle
+  AlertCircle,
+  Clock,
+  ArrowUpRight
 } from 'lucide-react';
 import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
@@ -28,44 +30,35 @@ import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
-import { TrialBanner } from '../components/dashboard/TrialBanner';
-import { GuidedWalkthrough } from '../components/dashboard/GuidedWalkthrough';
-import { LaunchChecklist } from '../components/dashboard/LaunchChecklist';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, session, loading: authLoading, subscription } = useAuth();
   const { shop, loading: shopLoading } = useShopContext();
+  const [timeFilter, setTimeFilter] = useState('This Week');
 
-  // Load live, real Supabase dashboard metrics for authenticated merchant's shop
   const {
-    productsCount,
-    availableProductsCount,
-    outOfStockProductsCount,
-    categoriesCount,
-    totalRevenue,
-    revenueChangePercent,
-    totalOrders,
-    ordersChangePercent,
     totalVisitors,
     visitorsChangePercent,
+    whatsappClicks,
+    whatsappClicksChangePercent,
     conversionRate,
     conversionRateChangePercent,
-    dailyChartData,
+    visitShopClicks,
+    visitShopClicksChangePercent,
     topProducts,
-    recentProducts,
-    recentOrders,
+    trafficSources,
+    storeHealth,
+    recentActivity,
     loading: dashboardLoading
   } = useDashboard(shop?.id);
 
-  // Session check redirect
   useEffect(() => {
     if (!authLoading && !session) {
       navigate('/login');
     }
   }, [session, authLoading, navigate]);
 
-  // Determine if subscription/trial is active
   const isSubscriptionOrTrialActive = useMemo(() => {
     if (!session || !user || !subscription) return false;
     const now = new Date();
@@ -93,7 +86,6 @@ export const Dashboard: React.FC = () => {
     return false;
   }, [subscription, session, user]);
 
-  // Copy Shop Link
   const handleCopyShopLink = async () => {
     if (!shop) return;
     try {
@@ -112,43 +104,15 @@ export const Dashboard: React.FC = () => {
     return 'Good evening';
   }, []);
 
-  const dateRangeLabel = useMemo(() => {
-    if (!dailyChartData || dailyChartData.length === 0) return 'Last 7 days';
-    const start = dailyChartData[0]?.dateLabel || '';
-    const end = dailyChartData[dailyChartData.length - 1]?.dateLabel || '';
-    return `${start} – ${end}`;
-  }, [dailyChartData]);
-
-  // Dynamic Chart Points Calculation
-  const chartPointsStr = useMemo(() => {
-    if (!dailyChartData || dailyChartData.length === 0) {
-      return '35,140 103,140 171,140 239,140 307,140 375,140 443,140';
-    }
-    const maxVal = Math.max(...dailyChartData.map(d => d.orders || d.revenue), 1);
-    const count = dailyChartData.length;
-    
-    return dailyChartData.map((d, i) => {
-      const x = 35 + (i * (410 / Math.max(count - 1, 1)));
-      const val = d.orders > 0 ? d.orders : (d.revenue > 0 ? d.revenue : 0);
-      const y = maxVal > 0 ? 140 - ((val / maxVal) * 110) : 140;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    }).join(' ');
-  }, [dailyChartData]);
-
-  const hasChartActivity = useMemo(() => {
-    return (dailyChartData || []).some(d => d.orders > 0 || d.revenue > 0);
-  }, [dailyChartData]);
-
   if (shopLoading || authLoading || dashboardLoading) {
     return (
       <div className="min-h-screen bg-white text-black flex flex-col items-center justify-center font-sans">
-        <Loader2 className="animate-spin text-[#bef500] w-8 h-8" />
-        <span className="text-xs text-zinc-500 mt-4 font-mono">Loading merchant dashboard...</span>
+        <Loader2 className="animate-spin text-[#D7FF00] w-8 h-8" />
+        <span className="text-xs text-zinc-500 mt-4 font-mono">Loading dashboard analytics...</span>
       </div>
     );
   }
 
-  // Gatekeeper checks
   if (!isSubscriptionOrTrialActive) {
     return <Paywall />;
   }
@@ -156,18 +120,18 @@ export const Dashboard: React.FC = () => {
   if (!shop) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-8 space-y-8 text-center font-sans relative">
-        <div className="w-20 h-20 rounded-3xl bg-[#bef500]/10 border border-[#bef500]/20 flex items-center justify-center text-[#bef500] relative z-10">
+        <div className="w-20 h-20 rounded-3xl bg-[#D7FF00]/10 border border-[#D7FF00]/20 flex items-center justify-center text-[#D7FF00] relative z-10">
           <ShoppingBag size={32} />
         </div>
         <div className="space-y-3 relative z-10 max-w-sm">
           <h3 className="text-3xl font-black uppercase tracking-tight">No Shop Registered</h3>
           <p className="text-sm text-zinc-400 font-medium leading-relaxed">
-            Initialize your storefront to start selling on ThreadZW.
+            Initialize your storefront to start receiving WhatsApp orders on ThreadZW.
           </p>
         </div>
         <button 
           onClick={() => navigate('/setup')} 
-          className="px-10 py-4 bg-[#bef500] text-black font-extrabold text-sm uppercase tracking-wider rounded-full hover:opacity-90 transition-all cursor-pointer relative z-10"
+          className="px-10 py-4 bg-[#D7FF00] text-black font-extrabold text-sm uppercase tracking-wider rounded-full hover:opacity-90 transition-all cursor-pointer relative z-10"
         >
           Create Shop
         </button>
@@ -175,12 +139,12 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  const userFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Merchant';
+  const userFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Nardo';
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-black font-sans pb-28">
+    <div className="min-h-screen bg-[#F8F9FA] text-black font-sans pb-32">
       {/* Top Header */}
-      <header className="max-w-md mx-auto px-5 pt-6 pb-4 flex items-center justify-between bg-[#F8F9FA] sticky top-0 z-30">
+      <header className="max-w-5xl mx-auto px-6 pt-6 pb-4 flex items-center justify-between bg-[#F8F9FA] sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <button 
             onClick={() => navigate('/settings')}
@@ -189,9 +153,9 @@ export const Dashboard: React.FC = () => {
             <Menu size={22} className="text-zinc-900" />
           </button>
           
-          <div className="flex items-center text-xl font-black tracking-tight">
+          <div className="flex items-center text-xl font-black tracking-tight cursor-pointer" onClick={() => navigate('/dashboard')}>
             <span className="text-black">Thread</span>
-            <span className="text-[#bef500] font-black">ZW</span>
+            <span className="text-[#D7FF00] bg-black px-1 rounded font-black ml-0.5">ZW</span>
           </div>
         </div>
 
@@ -201,221 +165,53 @@ export const Dashboard: React.FC = () => {
             className="relative p-2 hover:bg-zinc-200/50 rounded-xl transition-colors cursor-pointer"
           >
             <Bell size={20} className="text-zinc-800" />
-            <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-[#bef500] rounded-full ring-2 ring-[#F8F9FA]" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D7FF00] rounded-full ring-2 ring-[#F8F9FA]" />
           </button>
-
-          <button 
-            onClick={() => navigate('/settings')}
-            className="flex items-center gap-1 hover:opacity-90 transition-opacity cursor-pointer"
+          
+          <div 
+            onClick={() => navigate('/profile')}
+            className="w-10 h-10 rounded-full bg-black text-[#D7FF00] font-black text-sm flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition-transform"
           >
-            <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-bold overflow-hidden border border-zinc-200">
-              {userFirstName.charAt(0).toUpperCase()}
-            </div>
-            <ChevronDown size={14} className="text-zinc-500" />
-          </button>
+            {userFirstName.substring(0, 2).toUpperCase()}
+          </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="max-w-md mx-auto px-5 space-y-5">
-        <GuidedWalkthrough />
-        <TrialBanner />
-        <LaunchChecklist shop={shop} productsCount={productsCount} />
-
-        {/* Greeting & Date Filter */}
-        <div className="flex items-start justify-between gap-2 pt-1">
+      <main className="max-w-5xl mx-auto px-6 py-6 space-y-8">
+        {/* Greeting & Time Filter Row */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-zinc-950 flex items-center gap-2">
-              {greetingText}, {userFirstName} <span className="text-xl">👋</span>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-zinc-950 flex items-center gap-2">
+              {greetingText}, {userFirstName} <span className="text-2xl">👋</span>
             </h1>
-            <p className="text-xs text-zinc-500 font-medium mt-1">
-              Live store statistics for <span className="font-bold text-zinc-800">{shop.name}</span>.
+            <p className="text-sm text-zinc-500 font-medium mt-1">
+              Here's what's happening in your store today.
             </p>
           </div>
 
-          <button className="shrink-0 bg-white border border-zinc-200 rounded-xl px-3 py-2 flex items-center gap-2 text-xs font-semibold text-zinc-800 shadow-2xs hover:bg-zinc-50 cursor-pointer">
-            <Calendar size={14} className="text-zinc-500" />
-            <span>{dateRangeLabel}</span>
-            <ChevronDown size={13} className="text-zinc-400" />
-          </button>
-        </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-bold shadow-2xs">
+              <Calendar size={14} className="text-zinc-500" />
+              <span>{timeFilter}</span>
+              <ChevronDown size={14} className="text-zinc-400" />
+            </div>
 
-        {/* 4 Primary Metric Cards Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Card 1: Total Revenue */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-500">Total Revenue</span>
-              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
-                <DollarSign size={16} />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-black text-zinc-950 tracking-tight">
-                ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
-                <span>{revenueChangePercent >= 0 ? `↑ ${revenueChangePercent}%` : `↓ ${Math.abs(revenueChangePercent)}%`}</span>
-                <span className="text-zinc-400 font-normal">vs last week</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: Orders */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-500">Total Orders</span>
-              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
-                <ShoppingBag size={15} />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-black text-zinc-950 tracking-tight">{totalOrders}</div>
-              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
-                <span>{ordersChangePercent >= 0 ? `↑ ${ordersChangePercent}%` : `↓ ${Math.abs(ordersChangePercent)}%`}</span>
-                <span className="text-zinc-400 font-normal">vs last week</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Visitors */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-500">Store Visitors</span>
-              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
-                <Users size={15} />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-black text-zinc-950 tracking-tight">{totalVisitors}</div>
-              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
-                <span>{visitorsChangePercent >= 0 ? `↑ ${visitorsChangePercent}%` : `↓ ${Math.abs(visitorsChangePercent)}%`}</span>
-                <span className="text-zinc-400 font-normal">vs last week</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: Conversion Rate */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-zinc-500">Conversion Rate</span>
-              <div className="w-7 h-7 bg-[#bef500] rounded-lg flex items-center justify-center text-black font-bold">
-                <TrendingUp size={15} />
-              </div>
-            </div>
-            <div>
-              <div className="text-xl font-black text-zinc-950 tracking-tight">{conversionRate}%</div>
-              <div className="text-[11px] font-semibold text-[#82b300] mt-1 flex items-center gap-1">
-                <span>{conversionRateChangePercent >= 0 ? `↑ ${conversionRateChangePercent}%` : `↓ ${Math.abs(conversionRateChangePercent)}%`}</span>
-                <span className="text-zinc-400 font-normal">vs last week</span>
-              </div>
+            <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-bold shadow-2xs">
+              <span className="text-zinc-500">Compare to:</span>
+              <span>Previous Period</span>
+              <ChevronDown size={14} className="text-zinc-400" />
             </div>
           </div>
         </div>
 
-        {/* Inventory Overview Grid */}
-        <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Inventory Status</h3>
-            <button 
-              onClick={() => navigate('/inventory')}
-              className="text-xs font-bold text-zinc-900 hover:underline cursor-pointer"
-            >
-              Manage Catalog →
-            </button>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2 text-center pt-1">
-            <div className="bg-zinc-50 border border-zinc-100 rounded-xl p-2.5">
-              <div className="text-lg font-black text-zinc-950">{productsCount}</div>
-              <div className="text-[10px] font-semibold text-zinc-500 mt-0.5">Total Products</div>
-            </div>
-
-            <div className="bg-emerald-50/60 border border-emerald-100 rounded-xl p-2.5">
-              <div className="text-lg font-black text-emerald-800">{availableProductsCount}</div>
-              <div className="text-[10px] font-semibold text-emerald-600 mt-0.5">In Stock</div>
-            </div>
-
-            <div className="bg-rose-50/60 border border-rose-100 rounded-xl p-2.5">
-              <div className="text-lg font-black text-rose-800">{outOfStockProductsCount}</div>
-              <div className="text-[10px] font-semibold text-rose-600 mt-0.5">Out of Stock</div>
-            </div>
-
-            <div className="bg-amber-50/60 border border-amber-100 rounded-xl p-2.5">
-              <div className="text-lg font-black text-amber-800">{categoriesCount}</div>
-              <div className="text-[10px] font-semibold text-amber-600 mt-0.5">Categories</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Orders Overview Chart Card */}
-        <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-zinc-950">Orders Overview</h3>
-            <span className="text-[11px] font-semibold text-zinc-500 bg-zinc-100 px-2.5 py-1 rounded-lg">
-              Past 7 days
-            </span>
-          </div>
-
-          {/* Chart SVG */}
-          <div className="pt-2 relative">
-            <div className="relative h-40 w-full">
-              {/* Grid background lines */}
-              <div className="absolute inset-0 flex flex-col justify-between text-[10px] text-zinc-400 font-medium">
-                <div className="border-b border-zinc-100 pb-0.5">Active</div>
-                <div className="border-b border-zinc-100 pb-0.5"></div>
-                <div className="border-b border-zinc-100 pb-0.5"></div>
-                <div>0</div>
-              </div>
-
-              {!hasChartActivity && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 backdrop-blur-[1px] z-10 text-center p-2">
-                  <span className="text-xs font-bold text-zinc-600">No orders recorded in this period</span>
-                  <span className="text-[10px] text-zinc-400 font-medium mt-0.5">Share your store link to receive WhatsApp orders</span>
-                </div>
-              )}
-
-              {/* Line SVG */}
-              <svg className="absolute inset-0 w-full h-full overflow-visible" viewBox="0 0 500 160">
-                <polyline
-                  fill="none"
-                  stroke="#bef500"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  points={chartPointsStr}
-                />
-              </svg>
-            </div>
-
-            {/* X-axis date labels */}
-            <div className="flex justify-between text-[10px] font-medium text-zinc-400 pt-3 px-1">
-              {(dailyChartData || []).map((point, idx) => (
-                <span key={idx}>{point.dateLabel}</span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions Section */}
+        {/* Quick Actions Bar */}
         <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-4">
           <h3 className="text-sm font-bold text-zinc-950">Quick Actions</h3>
 
-          {/* 5 Quick Action Icon Buttons */}
-          <div className="grid grid-cols-5 gap-2 text-center">
-            <button 
-              onClick={() => navigate('/add-product')}
-              className="flex flex-col items-center gap-2 group cursor-pointer"
-            >
-              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
-                <Plus size={20} className="stroke-[2.5]" />
-              </div>
-              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Add Product</span>
-            </button>
-
+          <div className="grid grid-cols-3 gap-3 text-center">
             <button 
               onClick={() => {
-                const url = `/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
+                const url = `https://threadzw.vercel.app/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
                 window.open(url, '_blank');
               }}
               className="flex flex-col items-center gap-2 group cursor-pointer"
@@ -437,16 +233,6 @@ export const Dashboard: React.FC = () => {
             </button>
 
             <button 
-              onClick={() => toast.info('Discount feature ready to create new promo code.')}
-              className="flex flex-col items-center gap-2 group cursor-pointer"
-            >
-              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
-                <Tag size={19} />
-              </div>
-              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Create Discount</span>
-            </button>
-
-            <button 
               onClick={() => navigate('/edit-shop')}
               className="flex flex-col items-center gap-2 group cursor-pointer"
             >
@@ -457,115 +243,283 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Primary Add Product Button */}
           <button 
             onClick={() => navigate('/add-product')}
-            className="w-full bg-[#bef500] text-black font-extrabold text-sm py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-xs"
+            className="w-full h-14 bg-[#D7FF00] text-black rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-wider text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
           >
-            <Plus size={18} className="stroke-[3]" />
-            <span>Add Product</span>
+            <Plus size={18} strokeWidth={3} /> Add Product
           </button>
         </div>
 
-        {/* Merchant Products Section (Real Data + Elegant Empty State) */}
-        {productsCount === 0 ? (
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 text-center space-y-4 shadow-2xs">
-            <div className="w-12 h-12 rounded-2xl bg-[#bef500]/20 text-zinc-900 border border-[#bef500]/30 flex items-center justify-center mx-auto">
-              <ShoppingBag size={22} />
+        {/* 4 Analytics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Card 1: Store Visitors */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-900">
+              <Users size={20} className="stroke-[2]" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-zinc-950">No products yet.</h3>
-              <p className="text-xs text-zinc-500 font-medium mt-1 max-w-xs mx-auto leading-relaxed">
-                Add your first product to activate your storefront catalog and accept WhatsApp orders.
-              </p>
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Store Visitors</span>
+              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{totalVisitors}</div>
             </div>
-            <button 
-              onClick={() => navigate('/add-product')}
-              className="px-6 py-2.5 bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
-            >
-              <Plus size={15} className="stroke-[2.5]" />
-              <span>Add your first product</span>
-            </button>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+              <TrendingUp size={14} />
+              <span>↑{visitorsChangePercent}% vs last week</span>
+            </div>
           </div>
-        ) : (
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-4">
+
+          {/* Card 2: WhatsApp Button Clicks */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[#D7FF00]/10 rounded-bl-full pointer-events-none" />
+            <div className="w-10 h-10 rounded-xl bg-[#D7FF00]/20 flex items-center justify-center text-zinc-950">
+              <MessageSquare size={20} className="stroke-[2]" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">WhatsApp Clicks</span>
+              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{whatsappClicks}</div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+              <TrendingUp size={14} />
+              <span>↑{whatsappClicksChangePercent}% vs last week</span>
+            </div>
+          </div>
+
+          {/* Card 3: Conversion Rate */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-900">
+              <Percent size={20} className="stroke-[2]" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Conversion Rate</span>
+              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{conversionRate}%</div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+              <TrendingUp size={14} />
+              <span>↑{conversionRateChangePercent}% vs last week</span>
+            </div>
+          </div>
+
+          {/* Card 4: Visit Shop Clicks */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-900">
+              <MapPin size={20} className="stroke-[2]" />
+            </div>
+            <div>
+              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Visit Shop Clicks</span>
+              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{visitShopClicks}</div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+              <TrendingUp size={14} />
+              <span>↑{visitShopClicksChangePercent}% vs last week</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Top Performing Products & Traffic Sources */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Top Performing Products */}
+          <div className="lg:col-span-2 bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-zinc-950">Top Products</h3>
+              <div>
+                <h3 className="text-base font-bold text-zinc-950">Top Performing Products</h3>
+                <p className="text-xs text-zinc-500">Ranked by WhatsApp clicks</p>
+              </div>
               <button 
                 onClick={() => navigate('/inventory')}
-                className="text-xs font-semibold text-zinc-500 hover:text-black cursor-pointer uppercase tracking-wider"
+                className="text-xs font-extrabold text-zinc-900 hover:text-black flex items-center gap-1 cursor-pointer"
               >
-                View all ({productsCount})
+                View all <ArrowUpRight size={14} />
               </button>
             </div>
 
             <div className="space-y-3">
-              {(topProducts.length > 0 ? topProducts : recentProducts).slice(0, 5).map((product) => {
-                const pImg = product.images?.[0] || product.image_url;
-                const isSoldOut = product.total_stock === 0 || product.status === 'sold_out';
-
-                return (
-                  <div key={product.id} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-zinc-100 overflow-hidden shrink-0 flex items-center justify-center text-zinc-400 font-bold text-[10px] border border-zinc-200">
-                        {pImg ? (
-                          <img 
-                            src={pImg} 
-                            alt={product.name} 
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
-                        ) : (
-                          <Package size={18} />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-bold text-zinc-900 truncate max-w-[170px]">{product.name}</div>
-                        <div className="text-zinc-400 text-[11px] flex items-center gap-1.5">
-                          {isSoldOut ? (
-                            <span className="text-rose-600 font-bold">Out of stock</span>
-                          ) : (
-                            <span>{product.total_stock || 0} in stock</span>
-                          )}
-                          <span>•</span>
-                          <span>{product.category || 'General'}</span>
-                        </div>
-                      </div>
+              {topProducts.map((p, idx) => (
+                <div key={p.id || idx} className="flex items-center justify-between p-3 rounded-xl hover:bg-zinc-50 transition-colors border border-zinc-100">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 text-xs font-extrabold text-zinc-400">0{idx + 1}</span>
+                    <div className="w-11 h-11 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200">
+                      {p.images && p.images[0] ? (
+                        <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <Package size={20} className="text-zinc-400" />
+                      )}
                     </div>
-                    <span className="font-extrabold text-zinc-950 text-xs">
-                      ${Number(product.price || 0).toFixed(2)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Recent Activity / Sales Log Card */}
-        {recentOrders.length > 0 && (
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-4 shadow-2xs space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Recent Sales & Orders</h3>
-            </div>
-            <div className="space-y-2">
-              {recentOrders.map((order, idx) => (
-                <div key={`${order.id}-${idx}`} className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-0 text-xs">
-                  <div>
-                    <div className="font-bold text-zinc-900">{order.title}</div>
-                    <div className="text-[10px] text-zinc-400 font-medium">
-                      {new Date(order.date).toLocaleDateString()}
+                    <div>
+                      <h4 className="text-sm font-bold text-zinc-900">{p.name}</h4>
+                      <span className="text-xs text-zinc-500 font-medium">USD ${(p.price || 0).toFixed(2)}</span>
                     </div>
                   </div>
-                  <span className="font-extrabold text-emerald-600">+${Number(order.amount).toFixed(2)}</span>
+                  <div className="text-right">
+                    <span className="text-sm font-black text-zinc-950">{p.whatsapp_clicks}</span>
+                    <span className="text-[10px] text-zinc-500 block uppercase font-medium">WhatsApp Clicks</span>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
+
+          {/* Traffic Sources */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-6 flex flex-col justify-between">
+            <div>
+              <h3 className="text-base font-bold text-zinc-950">Traffic Sources</h3>
+              <p className="text-xs text-zinc-500">Where visitors came from</p>
+            </div>
+
+            <div className="flex flex-col items-center justify-center my-auto py-4">
+              <div className="relative w-44 h-44 rounded-full border-[16px] border-[#D7FF00] flex items-center justify-center shadow-inner">
+                <div className="text-center">
+                  <span className="text-2xl font-black text-zinc-950">100%</span>
+                  <span className="text-[10px] text-zinc-500 uppercase block font-bold">Verified</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {trafficSources.map((src, i) => (
+                <div key={src.name} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-[#D7FF00]' : i === 1 ? 'bg-zinc-950' : i === 2 ? 'bg-zinc-400' : 'bg-zinc-200'}`} />
+                    <span className="font-bold text-zinc-800">{src.name}</span>
+                  </div>
+                  <span className="font-black text-zinc-950">{src.percentage}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Store Health & Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Store Health */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-zinc-950">Store Health</h3>
+                <p className="text-xs text-zinc-500">Catalog completeness status</p>
+              </div>
+              <button 
+                onClick={() => navigate('/inventory')}
+                className="text-xs font-extrabold text-zinc-900 hover:text-black flex items-center gap-1 cursor-pointer"
+              >
+                Manage <ArrowUpRight size={14} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <Package size={16} />
+                  </div>
+                  <span className="text-sm font-bold text-zinc-800">Products Live</span>
+                </div>
+                <span className="text-sm font-black text-zinc-950">{storeHealth.live}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center">
+                    <AlertCircle size={16} />
+                  </div>
+                  <span className="text-sm font-bold text-zinc-800">Out of Stock</span>
+                </div>
+                <span className="text-sm font-black text-rose-600">{storeHealth.outOfStock}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                    <Clock size={16} />
+                  </div>
+                  <span className="text-sm font-bold text-zinc-800">Draft Products</span>
+                </div>
+                <span className="text-sm font-black text-zinc-950">{storeHealth.draft}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
+                    <Users size={16} />
+                  </div>
+                  <span className="text-sm font-bold text-zinc-800">Missing Images</span>
+                </div>
+                <span className="text-sm font-black text-purple-600">{storeHealth.missingImages}</span>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+                    <ShoppingBag size={16} />
+                  </div>
+                  <span className="text-sm font-bold text-zinc-800">Low Stock</span>
+                </div>
+                <span className="text-sm font-black text-blue-600">{storeHealth.lowStock}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
+            <div>
+              <h3 className="text-base font-bold text-zinc-950">Recent Activity</h3>
+              <p className="text-xs text-zinc-500">Chronological visitor interactions</p>
+            </div>
+
+            <div className="space-y-4">
+              {recentActivity.map((act) => (
+                <div key={act.id} className="flex items-start gap-3 pb-3 border-b border-zinc-100 last:border-0 last:pb-0">
+                  <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0 mt-0.5">
+                    {act.type === 'whatsapp' ? <MessageSquare size={14} className="text-emerald-600" /> : <Users size={14} className="text-zinc-600" />}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-zinc-900">{act.title}</p>
+                    <span className="text-[10px] text-zinc-400 font-medium">{act.timeAgo}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Subscription Card */}
+        <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-zinc-950">Subscription</h3>
+            <span className="text-xs font-bold text-zinc-500">Starter Plan</span>
+          </div>
+
+          <div className="bg-zinc-50 border border-zinc-200/60 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Current Plan</span>
+                <h4 className="text-lg font-black text-zinc-950 mt-0.5">14-Day Free Trial</h4>
+              </div>
+              <div className="text-right">
+                <span className="text-2xl font-black text-zinc-950">11</span>
+                <span className="text-[10px] text-zinc-500 uppercase block font-bold">Days Remaining</span>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full bg-zinc-200 h-2.5 rounded-full overflow-hidden">
+              <div className="bg-[#D7FF00] h-full rounded-full w-[75%]" />
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
+              <span>Trial active</span>
+              <span>Trial ends in 11 days</span>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => navigate('/subscription')}
+            className="w-full h-14 bg-[#D7FF00] text-black rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-wider text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
+          >
+            Upgrade for $2.99 / month
+          </button>
+        </div>
       </main>
 
-      {/* Bottom Navigation */}
       <BottomNavBar />
     </div>
   );

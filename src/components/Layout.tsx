@@ -3,13 +3,13 @@ import { NavLink, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
-  ShoppingCart, 
-  User, 
+  Store, 
+  BarChart3, 
   Settings,
+  User,
   Bell,
   Menu,
   X,
-  CreditCard,
   Plus,
   ArrowUpRight
 } from 'lucide-react';
@@ -21,15 +21,13 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const navigate = useNavigate();
   const { session, profile, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-  
-  const isTerminal = location.pathname.startsWith('/terminal');
 
   const navItems = [
     { to: '/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-    { to: '/terminal', icon: <Settings size={20} />, label: 'Terminal' },
-    { to: '/inventory', icon: <Package size={20} />, label: 'Inventory' },
-    { to: '/orders', icon: <ShoppingCart size={20} />, label: 'Orders' },
-    { to: '/profile', icon: <User size={20} />, label: 'Node Account' },
+    { to: '/inventory', icon: <Package size={20} />, label: 'Products' },
+    { to: '/edit-shop', icon: <Store size={20} />, label: 'Store' },
+    { to: '/analytics', icon: <BarChart3 size={20} />, label: 'Analytics' },
+    { to: '/settings', icon: <Settings size={20} />, label: 'Settings' },
   ];
 
   return (
@@ -67,15 +65,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               className="w-full h-12 bg-[#151515] border border-white/5 rounded-xl flex items-center justify-between px-4 text-[12px] font-black uppercase tracking-widest hover:bg-white/5 transition-all group"
             >
               <span>Public Store</span>
-              <ArrowUpRight size={14} className="text-[#C6FF00] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              <ArrowUpRight size={14} className="text-[#D7FF00] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </button>
           )}
           
           <button 
-            onClick={() => navigate('/new-listing')}
-            className="w-full h-14 bg-[#C6FF00] text-black rounded-xl flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[13px] italic shadow-xl shadow-[#C6FF00]/10 hover:shadow-[#C6FF00]/20 transition-all active:scale-95"
+            onClick={() => navigate('/add-product')}
+            className="w-full h-14 bg-[#D7FF00] text-black rounded-xl flex items-center justify-center gap-2 font-black uppercase tracking-widest text-[13px] italic shadow-xl shadow-[#D7FF00]/10 hover:shadow-[#D7FF00]/20 transition-all active:scale-95"
           >
-            <Plus size={18} strokeWidth={3} /> Inject Unit
+            <Plus size={18} strokeWidth={3} /> Add Product
           </button>
         </div>
       </aside>
@@ -105,26 +103,6 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             {children}
           </div>
         </main>
-
-        {/* Mobile Bottom Nav */}
-        <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[50] w-full px-6 max-w-[400px]">
-           <nav className="bg-[#151515]/90 backdrop-blur-2xl rounded-[32px] h-[72px] flex items-center justify-around shadow-2xl border border-white/5 px-2">
-              {navItems.slice(0, 4).map((item) => (
-                <MobileNavItem 
-                  key={item.to} 
-                  to={item.to} 
-                  icon={item.icon} 
-                  isActive={location.pathname === item.to} 
-                />
-              ))}
-              <button 
-                onClick={() => navigate('/profile')}
-                className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${location.pathname === '/profile' ? 'bg-[#C6FF00] text-black' : 'text-zinc-500'}`}
-              >
-                <User size={20} />
-              </button>
-           </nav>
-        </div>
       </div>
 
       {/* Mobile Sidebar Overlay */}
@@ -160,7 +138,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                       navigate(item.to);
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl text-[14px] font-black uppercase tracking-widest italic ${location.pathname === item.to ? 'bg-[#C6FF00] text-black' : 'text-zinc-500 hover:bg-white/5'}`}
+                    className={`w-full flex items-center gap-4 p-4 rounded-2xl text-[14px] font-black uppercase tracking-widest italic ${location.pathname === item.to ? 'bg-[#D7FF00] text-black' : 'text-zinc-500 hover:bg-white/5'}`}
                   >
                     {item.icon} {item.label}
                   </button>
@@ -172,7 +150,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                   onClick={() => signOut()}
                   className="w-full h-14 border border-white/5 rounded-2xl text-zinc-500 font-black uppercase tracking-widest text-[11px] italic"
                 >
-                  Terminate Session
+                  Sign Out
                 </button>
               </div>
             </motion.div>
@@ -186,18 +164,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 const SidebarNavItem = ({ to, icon, label, isActive }: any) => (
   <NavLink
     to={to}
-    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-[14px] font-black uppercase tracking-widest italic transition-all ${isActive ? 'bg-[#C6FF00] text-black shadow-lg shadow-[#C6FF00]/10' : 'text-zinc-500 hover:bg-white/5 hover:text-white'}`}
+    className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-[14px] font-black uppercase tracking-widest italic transition-all ${isActive ? 'bg-[#D7FF00] text-black shadow-lg shadow-[#D7FF00]/10' : 'text-zinc-500 hover:bg-white/5 hover:text-white'}`}
   >
     {icon}
     <span>{label}</span>
-  </NavLink>
-);
-
-const MobileNavItem = ({ to, icon, isActive }: any) => (
-  <NavLink
-    to={to}
-    className={`flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all ${isActive ? 'bg-[#C6FF00] text-black shadow-xl shadow-[#C6FF00]/20' : 'text-zinc-500'}`}
-  >
-    {icon}
   </NavLink>
 );

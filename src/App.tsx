@@ -33,6 +33,7 @@ import { Login } from './screens/Login';
 import { NardoPayCheckout } from './screens/NardoPayCheckout';
 import { Subscription } from './screens/Subscription';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
+import { Analytics } from './screens/Analytics';
 
 
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription';
@@ -52,7 +53,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/add-product' || path.startsWith('/edit-product') || path === '/settings' || path === '/edit-shop') {
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/add-product' || path.startsWith('/edit-product') || path === '/settings' || path === '/edit-shop') {
     return { stage: 'dashboard' };
   }
   if (path === '/pricing') {
@@ -317,6 +318,7 @@ function AppContent() {
       cleanPath === '/dashboard' ||
       cleanPath.startsWith('/dashboard/') ||
       cleanPath === '/inventory' ||
+      cleanPath === '/analytics' ||
       cleanPath === '/settings' ||
       cleanPath === '/edit-shop' ||
       cleanPath === '/add-product' ||
@@ -574,6 +576,7 @@ function AppContent() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/inventory" element={<Inventory />} />
+        <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
         <Route path="/add-product" element={<AddProduct />} />

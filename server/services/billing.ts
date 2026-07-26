@@ -348,7 +348,7 @@ export class BillingService {
       .eq('key', 'currency')
       .maybeSingle();
 
-    const amount = priceSetting ? Number(priceSetting.value) : 7.00;
+    const amount = priceSetting ? Number(priceSetting.value) : 2.99;
     const currency = currencySetting ? String(currencySetting.value) : 'USD';
 
     // 3. Prepare payload for NardoPay API
