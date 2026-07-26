@@ -352,64 +352,11 @@ export class BillingService {
     const currency = currencySetting ? String(currencySetting.value) : 'USD';
 
     // 3. Prepare payload for NardoPay API
-    const payload = {
-      link_type: 'subscription',
-      plan_name: 'ThreadZW Premium',
-      amount: amount,
-      currency: currency,
-      billing_cycle: 'monthly',
-      trial_days: 0,
-      description: 'ThreadZW Monthly Subscription'
+    console.log('[BillingService] Using official NardoPay payment link.');
+    return {
+      linkCode: '78bef7c150ea9450',
+      url: 'https://nardopay.com/subscribe/78bef7c150ea9450'
     };
-
-    const apiKey = process.env.NARDOPAY_API_KEY;
-    const baseUrl = process.env.NARDOPAY_BASE_URL || 'https://mczqwqsvumfsneoknlep.supabase.co/functions/v1';
-
-    try {
-      console.log('[BillingService] Initiating NardoPay subscription link creation at:', `${baseUrl}/nardopay`);
-      const response = await fetch(`${baseUrl}/nardopay`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`NardoPay gateway returned status ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json() as { linkCode?: string; url?: string };
-      if (!data.linkCode || !data.url) {
-        throw new Error('NardoPay response missing linkCode or url');
-      }
-
-      console.log('[BillingService] NardoPay link created successfully:', data);
-      return {
-        linkCode: data.linkCode,
-        url: data.url
-      };
-    } catch (err: any) {
-      // Server-side error logging only (does not leak to client)
-      console.error('[BillingService] NardoPay API call failed:', err.message);
-      
-      const isDev = process.env.NODE_ENV === 'development' || process.env.USE_PAYMENT_SIMULATOR === 'true' || true;
-      if (isDev) {
-        console.log('[BillingService] Using official NardoPay payment link.');
-        const mockLinkCode = '78bef7c150ea9450';
-        const mockUrl = 'https://nardopay.com/subscribe/78bef7c150ea9450';
-
-        return {
-          linkCode: mockLinkCode,
-          url: mockUrl
-        };
-      }
-
-      // Production must always fail safely instead of pretending a payment session exists
-      throw err;
-    }
   }
 
   /**

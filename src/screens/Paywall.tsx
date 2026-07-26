@@ -317,81 +317,8 @@ export const Paywall: React.FC = () => {
     }
   };
 
-  const handleStartCheckout = async () => {
-    if (!user?.id) {
-      toast.error('Authentication details are missing. Please sign in.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { data: { session: activeSession } } = await supabase.auth.getSession();
-      const token = activeSession?.access_token;
-      
-      if (!token) {
-        throw new Error('Authentication token is missing. Please log in again.');
-      }
-
-      // Initiate secure backend subscription link creation
-      const response = await fetch('/api/billing/create-subscription', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const responseText = await response.text();
-      let data: any = {};
-      try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        console.error('Failed to parse JSON response:', responseText);
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate secure subscription session');
-      }
-
-      if (!data.linkCode) {
-        throw new Error('No subscription link code received from billing gateway');
-      }
-
-      if (data.url) {
-        setNardopayUrl(data.url);
-      }
-
-      // Load and initialize the official NardoPay widget
-      initializeNardoPayWidget();
-      const NardoPayWidgetClass = (window as any).NardoPay;
-      
-      const widget = new NardoPayWidgetClass({
-        linkCode: data.linkCode,
-        onSuccess: (res: any) => {
-          console.log('[Paywall] NardoPay subscription authorized successfully:', res);
-          setIsVerifying(true);
-          toast.success('Authorization received successfully!');
-        },
-        onError: (err: any) => {
-          console.error('[Paywall] NardoPay subscription failed:', err);
-          toast.error(err.message || 'Payment authorization declined');
-        },
-        onClose: () => {
-          console.log('[Paywall] NardoPay checkout modal dismissed');
-          toast.info('Checkout session closed');
-        }
-      });
-
-      // Open widget in modal mode
-      widget.open();
-
-    } catch (err: any) {
-      console.error('Error initiating subscription:', err);
-      toast.error(err.message || 'Unable to connect to NardoPay gateway');
-    } finally {
-      setLoading(false);
-    }
+  const handleStartCheckout = () => {
+    window.open('https://nardopay.com/subscribe/78bef7c150ea9450', '_blank');
   };
 
   const handleManualCheck = async () => {

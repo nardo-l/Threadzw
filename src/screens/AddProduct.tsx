@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  X, ArrowLeft, Plus, Trash2, Camera, Check, ChevronRight, Loader2, ChevronDown, Image as ImageIcon, Sparkles, Tag, Layers, HelpCircle, ArrowUp, ArrowDown, RefreshCw
+  X, ArrowLeft, Plus, Trash2, Camera, Check, ChevronRight, Loader2, ChevronDown, Image as ImageIcon, Sparkles, Tag, Layers, HelpCircle, ArrowUp, ArrowDown, RefreshCw, Upload, Shirt
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { uploadImage } from '../utils/uploadImage';
 import { useGlobalCategories } from '../hooks/useGlobalCategories';
-import { getSizesForCategory } from '../utils/sizes';
+import { getCategoryConfig } from '../utils/categoryConfig';
+import { SizeSelector } from '../components/SizeSelector';
 import { cropToSquare, enhanceLighting, compressAndOptimize } from '../utils/imageEnhancer';
 import { ProductCategoryCard } from '../components/ProductCategoryCard';
 
@@ -113,7 +114,7 @@ export const AddProduct: React.FC = () => {
   // Step 1: Basic Details
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Tops');
 
   // Step 2: Photos & Drag and Drop
   const [images, setImages] = useState<string[]>([]);
@@ -425,8 +426,12 @@ export const AddProduct: React.FC = () => {
         toast.error('Product name must be at least 3 characters.');
         return;
       }
-      if (!description.trim() || description.trim().length < 20) {
-        toast.error('Product description must be at least 20 characters.');
+      if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+        toast.error('Please enter a valid product price.');
+        return;
+      }
+      if (!description.trim() || description.trim().length < 2) {
+        toast.error('Please enter a product description.');
         return;
       }
       if (!selectedCategory) {
@@ -443,16 +448,11 @@ export const AddProduct: React.FC = () => {
     }
 
     if (step === 3) {
-      const hasSizes = getSizesForCategory(selectedCategory) !== null;
-      if (hasSizes) {
+      const config = getCategoryConfig(selectedCategory);
+      if (!config.skipSizes) {
         const activeSizes = Object.entries(sizeStock).filter(([_, val]) => val.active);
         if (activeSizes.length === 0) {
-          toast.error('Please configure at least one size variant & stock quantity.');
-          return;
-        }
-      } else {
-        if (!generalStock.trim() || isNaN(parseInt(generalStock)) || parseInt(generalStock) < 0) {
-          toast.error('Please provide a valid stock level.');
+          toast.error(config.isStorage ? 'Please select at least one storage option.' : 'Please configure at least one size.');
           return;
         }
       }
@@ -463,6 +463,18 @@ export const AddProduct: React.FC = () => {
         toast.error('Please add at least one color option.');
         return;
       }
+    }
+
+    // Navigation logic for accessories skipping sizes
+    const config = getCategoryConfig(selectedCategory);
+    if (step === 3 && config.skipSizes) {
+      // Automatically ensure "One Size" is active and jump directly to step 4 (Colours)
+      setSizeStock({
+        'One Size': { active: true, stock: 10 }
+      });
+      setDirection(1);
+      setStep(4);
+      return;
     }
 
     setDirection(1);
@@ -508,9 +520,9 @@ export const AddProduct: React.FC = () => {
       let configuredSizes = [];
       let totalStock = 0;
 
-      const hasSizes = getSizesForCategory(selectedCategory) !== null;
+      const config = getCategoryConfig(selectedCategory);
 
-      if (hasSizes) {
+      if (!config.skipSizes) {
         configuredSizes = Object.entries(sizeStock)
           .filter(([_, value]) => value.active)
           .map(([size, value]) => ({
@@ -519,7 +531,7 @@ export const AddProduct: React.FC = () => {
           }));
         totalStock = configuredSizes.reduce((sum, s) => sum + s.quantity, 0);
       } else {
-        const qty = parseInt(generalStock) || 10;
+        const qty = 10;
         configuredSizes = [{ size: 'One Size', quantity: qty }];
         totalStock = qty;
       }
@@ -631,29 +643,29 @@ export const AddProduct: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans overflow-y-auto select-none relative flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-zinc-950 font-sans overflow-y-auto select-none relative flex flex-col justify-between">
       
       {/* 3px Neon Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 h-[3px] bg-white/10 z-50 max-w-[430px] mx-auto">
+      <div className="fixed top-0 left-0 right-0 h-[3px] bg-zinc-100 z-50 max-w-[430px] mx-auto">
         <div 
-          className="h-full bg-[#25D366] transition-all duration-300"
+          className="h-full bg-[#C8FF00] transition-all duration-300"
           style={{ width: `${(step / 6) * 100}%` }}
         />
       </div>
 
       {/* HEADER */}
-      <div className="h-16 px-5 flex items-center justify-between border-b border-white/[0.04] bg-[#0a0a0a] z-40 relative max-w-[430px] w-full mx-auto">
+      <div className="h-16 px-5 flex items-center justify-between border-b border-zinc-200 bg-white z-40 relative max-w-[430px] w-full mx-auto">
         <div className="flex items-center gap-3">
           {step > 1 && (
             <button 
               type="button"
               onClick={goBack}
-              className="p-2 -ml-2 text-white/60 hover:text-white transition-colors cursor-pointer"
+              className="p-2 -ml-2 text-zinc-600 hover:text-black transition-colors cursor-pointer"
             >
               <ArrowLeft size={20} />
             </button>
           )}
-          <span className="text-[#25D366] text-[11px] font-black tracking-[2px] uppercase font-mono">
+          <span className="text-zinc-950 text-[11px] font-black tracking-[2px] uppercase font-mono">
             ADD PRODUCT
           </span>
         </div>
@@ -662,12 +674,12 @@ export const AddProduct: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowDiscardModal(true)}
-            className="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors cursor-pointer"
+            className="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-black transition-colors cursor-pointer"
           >
             <X size={20} />
           </button>
         ) : (
-          <span className="text-white/30 text-[10px] font-mono tracking-widest font-black uppercase bg-white/5 px-2.5 py-1 rounded-full border border-white/[0.04]">
+          <span className="text-zinc-800 text-[10px] font-mono tracking-widest font-black uppercase bg-zinc-100 px-2.5 py-1 rounded-full border border-zinc-200">
             Step {step} of 6
           </span>
         )}
@@ -726,6 +738,25 @@ export const AddProduct: React.FC = () => {
                       />
                     </div>
 
+                    {/* Section 1.5: Price */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-zinc-900 uppercase tracking-wider">Price (USD) <span className="text-red-500">*</span></label>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">$</span>
+                        <input 
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={price}
+                          onChange={e => setPrice(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full bg-zinc-50 border-2 border-zinc-200 focus:border-[#C8FF00] rounded-2xl p-4 pl-9 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-semibold shadow-sm"
+                        />
+                      </div>
+                    </div>
+
                     {/* Section 2: Product Description */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -770,10 +801,10 @@ export const AddProduct: React.FC = () => {
                   <div className="pt-4">
                     <button
                       type="button"
-                      disabled={name.trim().length < 3 || description.trim().length < 20 || !selectedCategory}
+                      disabled={name.trim().length < 3 || !price || parseFloat(price) <= 0 || description.trim().length < 2 || !selectedCategory}
                       onClick={goNext}
                       className={`w-full h-14 rounded-2xl font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg ${
-                        name.trim().length >= 3 && description.trim().length >= 20 && selectedCategory
+                        name.trim().length >= 3 && price && parseFloat(price) > 0 && description.trim().length >= 2 && selectedCategory
                           ? 'bg-[#C8FF00] text-black hover:bg-[#b8eb00] cursor-pointer active:scale-[0.98] shadow-[#C8FF00]/20'
                           : 'bg-zinc-200 text-zinc-400 cursor-not-allowed shadow-none'
                       }`}
@@ -790,9 +821,9 @@ export const AddProduct: React.FC = () => {
               {step === 2 && (
                 <div className="space-y-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 2 OF 6</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Product Gallery</h1>
-                    <p className="text-white/50 text-xs">Upload up to 6 high-res photos. Drag or shift to arrange display order.</p>
+                    <span className="text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Step 2 of 6</span>
+                    <h1 className="text-3xl font-black tracking-tight text-zinc-950 font-sans">Add product images.</h1>
+                    <p className="text-zinc-500 text-sm">Upload up to 10 images. The first image will be your cover photo.</p>
                   </div>
 
                   <div className="flex-1 flex flex-col justify-start space-y-4 py-2">
@@ -802,28 +833,26 @@ export const AddProduct: React.FC = () => {
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
                       onClick={triggerFilePicker}
-                      className={`h-40 w-full bg-white/[0.01] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center p-4 text-center transition-all cursor-pointer group relative overflow-hidden ${
-                        isDragOver ? 'border-[#25D366] bg-[#25D366]/5' : 'border-white/10 hover:border-white/20'
-                      }`}
+                      className="h-44 w-full bg-white border-2 border-dashed border-zinc-300 hover:border-zinc-400 rounded-3xl flex flex-col items-center justify-center p-6 text-center transition-all cursor-pointer group relative overflow-hidden shadow-sm"
                     >
                       {uploading ? (
                         <div className="w-full max-w-[240px] space-y-3 flex flex-col items-center">
-                          <Loader2 size={24} className="text-[#25D366] animate-spin" />
-                          <span className="text-[11px] font-bold text-white uppercase tracking-wider animate-pulse">Uploading to ThreadZW...</span>
-                          <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                            <div className="bg-[#25D366] h-full transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+                          <Loader2 size={24} className="text-zinc-950 animate-spin" />
+                          <span className="text-[11px] font-bold text-zinc-900 uppercase tracking-wider animate-pulse">Uploading to ThreadZW...</span>
+                          <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-[#C8FF00] h-full transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
                           </div>
-                          <span className="text-[10px] text-[#25D366] font-mono font-black">{uploadProgress}%</span>
+                          <span className="text-[10px] text-zinc-600 font-mono font-black">{uploadProgress}%</span>
                         </div>
                       ) : (
                         <>
-                          <div className="w-12 h-12 rounded-full bg-white/[0.03] group-hover:bg-[#25D366]/10 flex items-center justify-center text-white/40 group-hover:text-[#25D366] transition-all mb-2 border border-white/5">
-                            <Camera size={20} />
+                          <div className="w-14 h-14 rounded-full bg-zinc-100 group-hover:bg-[#C8FF00]/20 flex items-center justify-center text-zinc-700 transition-all mb-3 border border-zinc-200">
+                            <Upload size={24} />
                           </div>
-                          <span className="text-xs font-bold text-white group-hover:text-[#25D366] transition-colors">
-                            Drag & Drop or Click to Upload
+                          <span className="text-sm font-extrabold text-zinc-950 group-hover:text-black transition-colors">
+                            Tap to upload or drag and drop
                           </span>
-                          <p className="text-[10px] text-white/40 mt-1">PNG, JPG, or WebP up to 5MB (Max 6)</p>
+                          <p className="text-xs text-zinc-400 mt-1">PNG, JPG or WebP • Max 10MB each</p>
                         </>
                       )}
                     </div>
@@ -846,105 +875,41 @@ export const AddProduct: React.FC = () => {
                     />
 
                     {/* Previews grid */}
-                    {images.length > 0 && (
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Uploaded Previews ({images.length} / 6)</label>
-                        <div className="grid grid-cols-2 gap-2.5 max-h-64 overflow-y-auto no-scrollbar py-1">
-                          {images.map((img, idx) => (
-                            <div 
-                              key={`preview-${idx}`}
-                              className="aspect-[3/4] bg-neutral-900 border border-white/[0.08] rounded-xl overflow-hidden relative group"
-                            >
-                              <img src={img} className="w-full h-full object-cover" alt="" />
-                              
-                              {/* Label badge */}
-                              <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-black/75 backdrop-blur-3xs border border-white/10 text-[9px] font-mono text-white/90 font-black">
-                                {idx === 0 ? '🏆 Cover' : `#${idx + 1}`}
-                              </div>
-
-                              {/* Controls Overlay */}
-                              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                                <div className="flex justify-end gap-1.5">
-                                  {idx > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setAsCover(idx)}
-                                      className="w-6 h-6 rounded-md bg-black/80 hover:bg-black text-[9px] text-white flex items-center justify-center border border-white/10 cursor-pointer"
-                                      title="Make Cover"
-                                    >
-                                      ⭐
-                                    </button>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setReplacingIndex(idx);
-                                      setTimeout(() => {
-                                        replaceFileInputRef.current?.click();
-                                      }, 50);
-                                    }}
-                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-[#25D366] hover:text-black text-white flex items-center justify-center border border-white/10 cursor-pointer"
-                                    title="Replace Image"
-                                  >
-                                    <RefreshCw size={11} />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemovePhoto(idx)}
-                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-red-700 text-white flex items-center justify-center border border-white/10 cursor-pointer"
-                                    title="Remove Image"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                </div>
-
-                                <div className="flex justify-between">
-                                  <button
-                                    type="button"
-                                    disabled={idx === 0}
-                                    onClick={() => moveImage(idx, 'left')}
-                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-black text-white flex items-center justify-center border border-white/10 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                  >
-                                    ←
-                                  </button>
-                                  <button
-                                    type="button"
-                                    disabled={idx === images.length - 1}
-                                    onClick={() => moveImage(idx, 'right')}
-                                    className="w-6 h-6 rounded-md bg-black/80 hover:bg-black text-white flex items-center justify-center border border-white/10 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                  >
-                                    →
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* AI Image Tools Bar */}
-                        <div className="bg-white/[0.03] border border-white/10 rounded-xl p-2.5 flex items-center justify-between text-[11px] mt-2">
-                          <span className="text-white/70 font-bold flex items-center gap-1.5 text-[10px] uppercase tracking-wider">
-                            <Sparkles size={13} className="text-[#25D366]" /> Cover Photo Tools:
-                          </span>
-                          <div className="flex gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleCropSquare(0)}
-                              className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg font-extrabold text-[10px] cursor-pointer transition-all active:scale-95"
-                            >
-                              1:1 Square Crop
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleEnhanceLighting(0)}
-                              className="px-2.5 py-1 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] rounded-lg font-extrabold text-[10px] cursor-pointer transition-all active:scale-95 border border-[#25D366]/30"
-                            >
-                              Boost Lighting
-                            </button>
-                          </div>
-                        </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-bold text-zinc-900 uppercase tracking-wider">Uploaded images ({images.length}/10)</span>
                       </div>
-                    )}
+                      <div className="grid grid-cols-4 gap-2 max-h-56 overflow-y-auto no-scrollbar">
+                        {Array.from({ length: 8 }).map((_, idx) => {
+                          const img = images[idx];
+                          return (
+                            <div 
+                              key={`slot-${idx}`}
+                              className="aspect-[3/4] bg-zinc-100 border-2 border-zinc-200 rounded-xl overflow-hidden relative group flex items-center justify-center"
+                            >
+                              {img ? (
+                                <>
+                                  <img src={img} className="w-full h-full object-cover" alt="" />
+                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
+                                    <div className="flex justify-end gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemovePhoto(idx)}
+                                        className="w-5 h-5 rounded bg-black/80 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer"
+                                      >
+                                        <Trash2 size={10} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <span className="text-zinc-300 font-mono text-xs font-bold">{idx + 1}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Navigation footer */}
@@ -952,238 +917,86 @@ export const AddProduct: React.FC = () => {
                     <button
                       type="button"
                       onClick={goBack}
-                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                      className="w-24 h-14 rounded-2xl border-2 border-zinc-200 text-zinc-700 hover:text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer bg-white"
                     >
                       Back
                     </button>
                     <button
                       type="button"
                       onClick={goNext}
-                      className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
+                      className="flex-1 h-14 rounded-2xl bg-[#C8FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#C8FF00]/20 cursor-pointer hover:bg-[#b8eb00]"
                     >
                       <span>Continue</span>
-                      <ChevronRight size={14} />
+                      <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
               )}
 
               {/* ========================================================
-                  STEP 3: SIZES (PRESETS, ADD UNLIMITED, REORDER, STOCK)
+                  STEP 3: SIZES OR STORAGE OPTIONS
                  ======================================================== */}
               {step === 3 && (() => {
-                const standardSizes = getSizesForCategory(selectedCategory);
-                const hasSizes = standardSizes !== null;
+                const config = getCategoryConfig(selectedCategory);
+                const sizes = config.sizes;
 
                 return (
                   <div className="space-y-6 flex-1 flex flex-col justify-between">
                     <div className="space-y-1">
-                      <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 3 OF 6</span>
-                      <h1 className="text-2xl font-black tracking-tight text-white font-syne">Variants & Stock</h1>
-                      <p className="text-white/50 text-xs">
-                        {hasSizes 
-                          ? `Select the sizes you have in stock for "${selectedCategory}".` 
-                          : `Specify the stock quantity for "${selectedCategory}".`
-                        }
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Step 3 of 6</span>
+                        <span className="text-xs font-bold text-zinc-700 bg-zinc-100 px-3 py-1 rounded-full border border-zinc-200 inline-flex items-center gap-1">
+                          Need help? Size guide
+                        </span>
+                      </div>
+                      <h1 className="text-3xl font-black tracking-tight text-zinc-950 font-sans">
+                        {config.isStorage ? 'Storage Options.' : 'Select sizes.'}
+                      </h1>
+                      <p className="text-zinc-500 text-sm">
+                        {config.isStorage ? 'Choose the storage capacities available.' : 'Choose the sizes available for this product.'}
                       </p>
                     </div>
 
                     <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-96">
-                      {!hasSizes ? (
-                        <div className="space-y-3 p-4 bg-white/[0.01] border border-white/[0.04] rounded-xl animate-wipe">
-                          <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Total Stock Quantity</label>
-                          <input 
-                            type="number"
-                            min="0"
-                            value={generalStock}
-                            onChange={e => setGeneralStock(e.target.value)}
-                            placeholder="e.g. 10"
-                            className="w-full bg-white text-zinc-950 border border-zinc-200 focus:border-[#25D366] rounded-xl p-4 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-sm font-bold shadow-sm"
-                          />
-                          <p className="text-[11px] text-white/40 leading-relaxed font-sans">
-                            Since this category does not use standard sizes, please provide your current aggregate inventory count.
-                          </p>
+                      {/* Category card preview */}
+                      <div className="bg-white border-2 border-zinc-200 rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+                        <div className="w-10 h-10 rounded-xl bg-[#C8FF00]/20 text-zinc-950 flex items-center justify-center border border-[#C8FF00]/40">
+                          <Shirt size={20} />
                         </div>
-                      ) : (
-                        <div className="space-y-5 animate-wipe">
-                          {/* Horizontally scrollable row of size chips */}
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Available Sizes</label>
-                            
-                            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent -mx-1 px-1">
-                              {standardSizes.map((sz) => {
-                                const isAdded = sizeStock[sz]?.active;
-                                const isSelected = activeSizeEditing === sz;
-
-                                return (
-                                  <button
-                                    key={`chip-${sz}`}
-                                    type="button"
-                                    onClick={() => {
-                                      if (isAdded) {
-                                        // Edit quantity if already added
-                                        setActiveSizeEditing(sz);
-                                        setTempStockInput(String(sizeStock[sz].stock));
-                                      } else {
-                                        setActiveSizeEditing(sz);
-                                        setTempStockInput('');
-                                      }
-                                    }}
-                                    className={`px-4 py-2 rounded-full border text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 ${
-                                      isSelected
-                                        ? 'bg-[#25D366] text-black border-[#25D366] scale-105 shadow-md shadow-[#25D366]/15'
-                                        : isAdded
-                                        ? 'bg-white/10 text-white border-white/20 hover:bg-white/15'
-                                        : 'bg-white/5 text-white/70 border-white/10 hover:border-white/20 hover:bg-white/10'
-                                    }`}
-                                  >
-                                    {sz} {isAdded && `(${sizeStock[sz].stock})`}
-                                  </button>
-                                );
-                              })}
-
-                              {/* Add Custom Size Chip at the end */}
-                              {!showCustomSizeInput ? (
-                                <button
-                                  key="chip-custom"
-                                  type="button"
-                                  onClick={() => setShowCustomSizeInput(true)}
-                                  className="px-4 py-2 rounded-full border border-dashed border-white/20 text-white/60 hover:text-white hover:border-white/40 text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0 flex items-center gap-1 bg-transparent"
-                                >
-                                  <span>+ Custom</span>
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-
-                          {/* Custom Size Name Input Block */}
-                          {showCustomSizeInput && (
-                            <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl space-y-3 animate-fade-in">
-                              <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Add Custom Size Name</label>
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="e.g. XXXL or 49"
-                                  value={customSizeName}
-                                  onChange={e => setCustomSizeName(e.target.value)}
-                                  className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#25D366] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      handleAddCustomSizeName();
-                                    }
-                                  }}
-                                  autoFocus
-                                />
-                                <button
-                                  type="button"
-                                  onClick={handleAddCustomSizeName}
-                                  className="px-4 bg-[#25D366] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
-                                >
-                                  Next
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setShowCustomSizeInput(false);
-                                    setCustomSizeName('');
-                                  }}
-                                  className="px-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Selected Size / Stock Input Block */}
-                          {activeSizeEditing && !showCustomSizeInput && (
-                            <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded-xl space-y-3 animate-fade-in">
-                              <div className="flex justify-between items-center">
-                                <label className="text-[10px] font-mono uppercase tracking-wider text-[#25D366] block">
-                                  Stock Quantity for Size: <span className="font-sans font-black text-white text-sm ml-1">{activeSizeEditing}</span>
-                                </label>
-                                <span className="text-[9px] font-mono text-white/40 uppercase">Press Enter to save</span>
-                              </div>
-                              <div className="flex gap-2">
-                                <input 
-                                  type="number"
-                                  min="1"
-                                  value={tempStockInput}
-                                  onChange={e => setTempStockInput(e.target.value)}
-                                  placeholder="e.g. 15"
-                                  className="flex-1 bg-white text-zinc-950 border border-[#25D366] rounded-xl p-3 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-bold"
-                                  autoFocus
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      handleConfirmStock();
-                                    }
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={handleConfirmStock}
-                                  className="px-5 bg-[#25D366] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
-                                >
-                                  Save Quantity
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setActiveSizeEditing(null);
-                                    setTempStockInput('');
-                                  }}
-                                  className="px-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer transition-all"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Completed Size Chips */}
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Configured Variants</label>
-                            
-                            {Object.entries(sizeStock).filter(([_, details]) => details.active).length === 0 ? (
-                              <p className="text-xs text-white/30 italic text-center py-6 border border-dashed border-white/5 rounded-xl font-sans bg-white/[0.01]">
-                                No sizes added to inventory. Tap a size chip above to set its stock.
-                              </p>
-                            ) : (
-                              <div className="flex flex-wrap gap-2 p-3 bg-white/[0.01] border border-white/[0.04] rounded-xl">
-                                {Object.entries(sizeStock)
-                                  .filter(([_, details]) => details.active)
-                                  .map(([sz, details]) => (
-                                    <div 
-                                      key={`completed-${sz}`}
-                                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-zinc-900 text-xs font-extrabold shadow-sm border border-zinc-200 group transition-all hover:border-zinc-300"
-                                    >
-                                      <span 
-                                        onClick={() => {
-                                          setActiveSizeEditing(sz);
-                                          setTempStockInput(String(details.stock));
-                                        }}
-                                        className="cursor-pointer"
-                                        title="Click to edit quantity"
-                                      >
-                                        {sz} <span className="text-zinc-500 font-medium font-sans">({details.stock})</span>
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleRemoveSize(sz)}
-                                        className="text-zinc-400 hover:text-red-500 transition-colors p-0.5"
-                                        title="Remove variant"
-                                      >
-                                        <X size={12} className="stroke-[3]" />
-                                      </button>
-                                    </div>
-                                  ))}
-                              </div>
-                            )}
-                          </div>
+                        <div>
+                          <span className="text-xs font-black text-zinc-950 block">Category: {selectedCategory}</span>
+                          <span className="text-xs text-zinc-500 font-medium">
+                            {config.isStorage ? 'Select available storage variants.' : 'Choose all sizes that apply.'}
+                          </span>
                         </div>
-                      )}
+                      </div>
+
+                      <SizeSelector
+                        sizes={sizes}
+                        selectedSizes={sizeStock}
+                        isStorage={config.isStorage}
+                        onToggleSize={(sz) => {
+                          const isAdded = sizeStock[sz]?.active;
+                          if (isAdded) {
+                            handleRemoveSize(sz);
+                          } else {
+                            setSizeStock(prev => ({
+                              ...prev,
+                              [sz]: { active: true, stock: 10 }
+                            }));
+                          }
+                        }}
+                      />
+
+                      {/* Info banner */}
+                      <div className="p-4 bg-[#C8FF00]/10 border-2 border-[#C8FF00]/30 rounded-2xl flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-full bg-[#C8FF00] text-black flex items-center justify-center shrink-0 mt-0.5 font-black text-xs">
+                          i
+                        </div>
+                        <p className="text-xs font-bold text-zinc-900 leading-relaxed">
+                          You'll be able to set stock for each {config.isStorage ? 'storage option' : 'size'} in the next step.
+                        </p>
+                      </div>
                     </div>
 
                     {/* Navigation footer */}
@@ -1191,17 +1004,17 @@ export const AddProduct: React.FC = () => {
                       <button
                         type="button"
                         onClick={goBack}
-                        className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                        className="w-24 h-14 rounded-2xl border-2 border-zinc-200 text-zinc-700 hover:text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer bg-white"
                       >
                         Back
                       </button>
                       <button
                         type="button"
                         onClick={goNext}
-                        className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
+                        className="flex-1 h-14 rounded-2xl bg-[#C8FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#C8FF00]/20 cursor-pointer hover:bg-[#b8eb00]"
                       >
                         <span>Continue</span>
-                        <ChevronRight size={14} />
+                        <ChevronRight size={16} />
                       </button>
                     </div>
                   </div>
@@ -1209,77 +1022,76 @@ export const AddProduct: React.FC = () => {
               })()}
 
               {/* ========================================================
-                  STEP 4: COLOUR VARIATIONS (CHIPS, ADD, REMOVE, REORDER)
+                  STEP 4: COLOUR VARIATIONS
                  ======================================================== */}
               {step === 4 && (
                 <div className="space-y-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 4 OF 6</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Colour Options</h1>
-                    <p className="text-white/50 text-xs">Configure the color choices buyers can choose from on checkout.</p>
+                    <span className="text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Step 4 of 6</span>
+                    <h1 className="text-3xl font-black tracking-tight text-zinc-950 font-sans">Choose colours.</h1>
+                    <p className="text-zinc-500 text-sm">Select all the colours available for this product.</p>
                   </div>
 
-                  <div className="flex-1 space-y-4 py-2">
-                    {/* Add Color Input Row */}
-                    <div className="flex gap-2">
-                      <input 
-                        type="text"
-                        value={customColorInput}
-                        onChange={e => setCustomColorInput(e.target.value)}
-                        placeholder="Add colour (e.g. Sage Green)"
-                        className="flex-1 bg-white text-zinc-950 border border-zinc-200 focus:border-[#25D366] rounded-xl p-3.5 font-sans focus:outline-none transition-all placeholder:text-zinc-500 text-sm font-bold shadow-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddCustomColor}
-                        className="px-5 bg-[#25D366] hover:bg-[#b0e000] text-black rounded-xl font-bold text-xs flex items-center justify-center cursor-pointer shrink-0"
-                      >
-                        Add
-                      </button>
+                  <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-[420px]">
+                    {/* Tip banner */}
+                    <div className="p-3.5 bg-zinc-50 border-2 border-zinc-200 rounded-2xl flex items-center gap-2.5 text-xs text-zinc-700 font-bold">
+                      <div className="w-5 h-5 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center shrink-0 font-bold text-[10px]">!</div>
+                      <span>Tip: You can select multiple colours.</span>
                     </div>
 
-                    {/* Chips Display */}
+                    {/* Popular colors grid */}
                     <div className="space-y-3">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55 block">Active Colours (Arrange displays)</label>
-                      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto no-scrollbar">
-                        {selectedColors.map((col, idx) => (
-                          <div 
-                            key={`col-chip-${col}-${idx}`}
-                            className="bg-white/[0.03] border border-white/[0.08] rounded-xl p-3 flex items-center justify-between text-xs font-sans font-bold"
-                          >
-                            <span className="text-white font-bold">{col}</span>
-                            <div className="flex items-center gap-1.5">
-                              {/* Reorder Buttons */}
-                              <button
-                                type="button"
-                                disabled={idx === 0}
-                                onClick={() => moveColor(idx, 'left')}
-                                className="w-7 h-7 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center justify-center border border-white/5 cursor-pointer disabled:opacity-30"
-                                title="Move Up"
-                              >
-                                <ArrowUp size={12} />
-                              </button>
-                              <button
-                                type="button"
-                                disabled={idx === selectedColors.length - 1}
-                                onClick={() => moveColor(idx, 'right')}
-                                className="w-7 h-7 bg-white/5 hover:bg-white/10 text-white rounded-lg flex items-center justify-center border border-white/5 cursor-pointer disabled:opacity-30"
-                                title="Move Down"
-                              >
-                                <ArrowDown size={12} />
-                              </button>
-                              
-                              {/* Remove Button */}
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveColor(col)}
-                                className="w-7 h-7 bg-white/5 hover:bg-red-950 hover:text-red-400 text-white/55 hover:border-red-500/20 rounded-lg flex items-center justify-center border border-white/5 cursor-pointer"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                      <label className="text-xs font-extrabold text-zinc-900 uppercase tracking-wider block">Popular colours</label>
+                      <div className="grid grid-cols-5 gap-3">
+                        {[
+                          { name: 'Black', hex: '#000000', border: 'border-zinc-900' },
+                          { name: 'White', hex: '#FFFFFF', border: 'border-zinc-300' },
+                          { name: 'Grey', hex: '#808080', border: 'border-zinc-400' },
+                          { name: 'Navy', hex: '#1B2A4A', border: 'border-blue-950' },
+                          { name: 'Blue', hex: '#2563EB', border: 'border-blue-600' },
+                          { name: 'Red', hex: '#DC2626', border: 'border-red-600' },
+                          { name: 'Green', hex: '#16A34A', border: 'border-green-600' },
+                          { name: 'Olive', hex: '#556B2F', border: 'border-emerald-800' },
+                          { name: 'Brown', hex: '#78350F', border: 'border-amber-900' },
+                          { name: 'Beige', hex: '#F5F5DC', border: 'border-amber-200' },
+                          { name: 'Cream', hex: '#FFFDD0', border: 'border-amber-100' },
+                          { name: 'Yellow', hex: '#EAB308', border: 'border-yellow-500' },
+                          { name: 'Orange', hex: '#F97316', border: 'border-orange-500' },
+                          { name: 'Pink', hex: '#EC4899', border: 'border-pink-500' },
+                          { name: 'Purple', hex: '#9333EA', border: 'border-purple-600' },
+                          { name: 'Burgundy', hex: '#800020', border: 'border-rose-950' },
+                          { name: 'Sky Blue', hex: '#7DD3FC', border: 'border-sky-300' },
+                          { name: 'Denim Blue', hex: '#1E40AF', border: 'border-blue-800' },
+                          { name: 'Gold', hex: '#CA8A04', border: 'border-yellow-600' },
+                          { name: 'Silver', hex: '#D1D5DB', border: 'border-zinc-300' },
+                        ].map((c) => {
+                          const isSelected = selectedColors.includes(c.name);
+                          return (
+                            <button
+                              key={c.name}
+                              type="button"
+                              onClick={() => {
+                                if (isSelected) {
+                                  setSelectedColors(selectedColors.filter(col => col !== c.name));
+                                } else {
+                                  setSelectedColors([...selectedColors, c.name]);
+                                }
+                              }}
+                              className="flex flex-col items-center gap-1.5 cursor-pointer group"
+                            >
+                              <div className={`w-12 h-12 rounded-full relative flex items-center justify-center shadow-sm border-2 transition-all ${c.border} ${
+                                isSelected ? 'ring-2 ring-zinc-950 ring-offset-2 scale-105' : 'hover:scale-105'
+                              }`} style={{ backgroundColor: c.hex }}>
+                                {isSelected && (
+                                  <div className="w-6 h-6 rounded-full bg-zinc-950 text-[#C8FF00] flex items-center justify-center shadow-sm">
+                                    <Check size={14} className="stroke-[3]" />
+                                  </div>
+                                )}
+                              </div>
+                              <span className="text-[11px] font-bold text-zinc-800 text-center truncate w-full">{c.name}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1289,133 +1101,106 @@ export const AddProduct: React.FC = () => {
                     <button
                       type="button"
                       onClick={goBack}
-                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                      className="w-24 h-14 rounded-2xl border-2 border-zinc-200 text-zinc-700 hover:text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer bg-white"
                     >
                       Back
                     </button>
                     <button
                       type="button"
                       onClick={goNext}
-                      className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
+                      className="flex-1 h-14 rounded-2xl bg-[#C8FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#C8FF00]/20 cursor-pointer hover:bg-[#b8eb00]"
                     >
                       <span>Continue</span>
-                      <ChevronRight size={14} />
+                      <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
               )}
 
               {/* ========================================================
-                  STEP 5: DESCRIPTION & TECHNICAL SPECS
+                  STEP 5: STOCK BY SIZE
                  ======================================================== */}
               {step === 5 && (
                 <div className="space-y-6 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <span className="text-white/40 font-mono text-[10px] uppercase tracking-widest">STEP 5 OF 6</span>
-                    <h1 className="text-2xl font-black tracking-tight text-white font-syne">Garment Description</h1>
-                    <p className="text-white/50 text-xs">Describe key aesthetics and provide specific technical classifications.</p>
+                    <span className="text-[11px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Step 5 of 6</span>
+                    <h1 className="text-3xl font-black tracking-tight text-zinc-950 font-sans">Set stock.</h1>
+                    <p className="text-zinc-500 text-sm">Add the available stock for each size.</p>
                   </div>
 
-                  <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-[380px]">
-                    {/* Story / Description Text Box */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Product Narrative Description</label>
-                        <button
-                          type="button"
-                          onClick={handleGenerateAIDescription}
-                          disabled={aiGenerating}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] text-[10px] font-extrabold rounded-lg transition-all cursor-pointer border border-[#25D366]/30"
-                        >
-                          <Sparkles size={12} className={aiGenerating ? 'animate-spin' : ''} />
-                          {aiGenerating ? 'Generating...' : 'Auto-Generate with AI'}
-                        </button>
+                  <div className="flex-1 space-y-4 py-2 overflow-y-auto no-scrollbar max-h-[420px]">
+                    {/* Info banner */}
+                    <div className="p-4 bg-zinc-50 border-2 border-zinc-200 rounded-2xl flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-full bg-zinc-200 text-zinc-800 flex items-center justify-center shrink-0 font-bold text-xs">i</div>
+                      <p className="text-xs font-bold text-zinc-900 leading-relaxed">
+                        Customers will only be able to order what's in stock.
+                      </p>
+                    </div>
+
+                    {/* Category summary card */}
+                    <div className="p-4 bg-white border-2 border-zinc-200 rounded-2xl space-y-1 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-[#C8FF00]/20 text-zinc-950 flex items-center justify-center border border-[#C8FF00]/40">
+                          <Shirt size={16} />
+                        </div>
+                        <span className="text-xs font-black text-zinc-950">Category: {selectedCategory}</span>
                       </div>
-                      <textarea 
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        rows={3}
-                        placeholder="Detail materials, fitment notes, model reference, or drop context..."
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-4 text-zinc-950 font-sans focus:outline-none resize-none transition-all placeholder:text-zinc-400 text-xs leading-relaxed font-semibold"
-                      />
+                      <p className="text-xs text-zinc-500 font-medium pl-9">
+                        Selected sizes: {Object.entries(sizeStock).filter(([_, v]) => v.active).map(([k]) => k).join(', ') || 'None selected'}
+                      </p>
                     </div>
 
-                    {/* Material Option */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Material Composition</label>
-                      <input 
-                        type="text"
-                        value={material}
-                        onChange={e => setMaterial(e.target.value)}
-                        placeholder="e.g. 100% Cotton, 360gsm French Terry"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
-                      />
-                    </div>
-
-                    {/* Brand */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Brand / Designer</label>
-                      <input 
-                        type="text"
-                        value={brand}
-                        onChange={e => setBrand(e.target.value)}
-                        placeholder="e.g. Custom Boutique or Own Label"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
-                      />
-                    </div>
-
-                    {/* Features */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Key Features</label>
-                      <input 
-                        type="text"
-                        value={features}
-                        onChange={e => setFeatures(e.target.value)}
-                        placeholder="e.g. Heavyweight feel, Drop shoulder, Distressed hem"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
-                      />
-                    </div>
-
-                    {/* Care Instructions */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Care Instructions</label>
-                      <input 
-                        type="text"
-                        value={careInstructions}
-                        onChange={e => setCareInstructions(e.target.value)}
-                        placeholder="e.g. Machine wash cold, lay flat to dry"
-                        className="w-full bg-white border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-zinc-950 font-sans focus:outline-none transition-all placeholder:text-zinc-400 text-xs font-semibold"
-                      />
-                    </div>
-
-                    {/* Gender and Condition Row */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Gender Classification</label>
-                        <select
-                          value={gender}
-                          onChange={e => setGender(e.target.value)}
-                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
-                        >
-                          <option value="Unisex">Unisex</option>
-                          <option value="Men">Men</option>
-                          <option value="Women">Women</option>
-                          <option value="Kids">Kids</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-mono uppercase tracking-wider text-white/55">Condition Status</label>
-                        <select
-                          value={condition}
-                          onChange={e => setCondition(e.target.value)}
-                          className="w-full bg-[#121212] border border-white/[0.08] focus:border-[#25D366] rounded-xl p-3 text-white font-sans focus:outline-none transition-all text-xs"
-                        >
-                          <option value="New">New</option>
-                          <option value="Like New">Like New</option>
-                          <option value="Good">Good</option>
-                          <option value="Fair">Fair</option>
-                        </select>
+                    {/* Stock by size list */}
+                    <div className="space-y-3">
+                      <label className="text-xs font-extrabold text-zinc-900 uppercase tracking-wider block">Stock by size</label>
+                      <div className="space-y-2.5">
+                        {Object.entries(sizeStock).filter(([_, v]) => v.active).length === 0 ? (
+                          <div className="p-6 bg-zinc-50 border-2 border-zinc-200 rounded-2xl text-center text-xs text-zinc-500">
+                            No sizes selected in Step 3. Please go back or default stock will apply.
+                          </div>
+                        ) : (
+                          Object.entries(sizeStock)
+                            .filter(([_, v]) => v.active)
+                            .map(([sz, details]) => (
+                              <div 
+                                key={`stock-row-${sz}`}
+                                className="p-4 bg-white border-2 border-zinc-200 rounded-2xl flex items-center justify-between shadow-sm"
+                              >
+                                <span className="font-extrabold text-sm text-zinc-950 w-12">{sz}</span>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const current = details.stock;
+                                      if (current > 0) {
+                                        setSizeStock(prev => ({
+                                          ...prev,
+                                          [sz]: { ...details, stock: current - 1 }
+                                        }));
+                                      }
+                                    }}
+                                    className="w-10 h-10 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold flex items-center justify-center transition-colors cursor-pointer border border-zinc-200 text-lg"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="font-black text-base text-zinc-950 w-8 text-center">{details.stock}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const current = details.stock;
+                                      setSizeStock(prev => ({
+                                        ...prev,
+                                        [sz]: { ...details, stock: current + 1 }
+                                      }));
+                                    }}
+                                    className="w-10 h-10 rounded-xl bg-[#C8FF00]/20 hover:bg-[#C8FF00]/40 text-zinc-950 font-bold flex items-center justify-center transition-colors cursor-pointer border border-[#C8FF00]/50 text-lg"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1425,17 +1210,17 @@ export const AddProduct: React.FC = () => {
                     <button
                       type="button"
                       onClick={goBack}
-                      className="flex-1 h-12 rounded-xl border border-white/10 hover:border-white/20 text-white/80 hover:text-white font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer"
+                      className="w-24 h-14 rounded-2xl border-2 border-zinc-200 text-zinc-700 hover:text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center cursor-pointer bg-white"
                     >
                       Back
                     </button>
                     <button
                       type="button"
                       onClick={goNext}
-                      className="flex-1 h-12 rounded-xl bg-[#25D366] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#25D366]/10 cursor-pointer hover:bg-[#b0e000]"
+                      className="flex-1 h-14 rounded-2xl bg-[#C8FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-lg shadow-[#C8FF00]/20 cursor-pointer hover:bg-[#b8eb00]"
                     >
                       <span>Continue</span>
-                      <ChevronRight size={14} />
+                      <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
@@ -1470,13 +1255,13 @@ export const AddProduct: React.FC = () => {
 
                         {/* Specs overview line */}
                         <div className="flex flex-wrap gap-1.5 pt-1.5">
-                          {getSizesForCategory(selectedCategory) !== null ? (
+                          {!getCategoryConfig(selectedCategory).skipSizes ? (
                             <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-white/[0.08] px-2 py-0.5 rounded">
                               Sizes: {Object.entries(sizeStock).filter(([_, v]) => v.active).map(([k]) => k).join(', ')}
                             </span>
                           ) : (
                             <span className="text-[10px] font-mono uppercase bg-white/5 text-white/70 border border-white/[0.08] px-2 py-0.5 rounded">
-                              Size: Universal (Qty: {generalStock})
+                              Size: One Size
                             </span>
                           )}
 

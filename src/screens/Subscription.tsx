@@ -48,51 +48,8 @@ export const Subscription: React.FC = () => {
     fetchSubscription();
   }, [user]);
 
-  const handleUpgrade = async () => {
-    if (!user) return;
-    setUpgrading(true);
-    try {
-      const { data: { session: activeSession } } = await supabase.auth.getSession();
-      const token = activeSession?.access_token;
-
-      if (!token) {
-        throw new Error('Authentication session expired. Please log in again.');
-      }
-
-      // Create secure checkout session via backend billing API
-      const response = await fetch('/api/billing/create-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ shopId: shop?.id })
-      });
-
-      const responseText = await response.text();
-      let data: any = {};
-      try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch (e) {
-        console.error('Failed to parse JSON response:', responseText);
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to initialize payment gateway');
-      }
-
-      if (data.checkoutUrl) {
-        navigate(data.checkoutUrl);
-      } else {
-        navigate('/checkout/nardopay?session_id=SESSION-' + Date.now());
-      }
-    } catch (err: any) {
-      console.error('[SUBSCRIPTION] Payment initiation error:', err);
-      // Fallback navigation to NardoPay checkout
-      navigate('/checkout/nardopay?session_id=SESSION-' + Date.now());
-    } finally {
-      setUpgrading(false);
-    }
+  const handleUpgrade = () => {
+    window.open('https://nardopay.com/subscribe/78bef7c150ea9450', '_blank');
   };
 
   // Trial countdown calculation
