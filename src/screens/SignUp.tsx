@@ -81,13 +81,19 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     username: '',
     referralSource: '',
     businessType: 'Streetwear',
-    email: '',
-    password: '',
+    email: session?.user?.email || localStorage.getItem('threadzw_signup_email') || '',
+    password: localStorage.getItem('threadzw_signup_password') || '',
     whatsappNumber: '+263',
     vibe: 'Minimal',
     location: 'Harare',
     citySearch: '',
   });
+
+  useEffect(() => {
+    if (session?.user?.email && !formData.email) {
+      setFormData(prev => ({ ...prev, email: session.user.email || prev.email }));
+    }
+  }, [session]);
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -174,12 +180,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     e.preventDefault();
     setAuthError(null);
 
-    // If user is ALREADY logged in, proceed to Step 7 directly
-    if (session?.user) {
-      setStep(7);
-      return;
-    }
-
     const emailVal = formData.email.trim();
     const passVal = formData.password;
 
@@ -230,6 +230,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           });
         }
       }
+
+      localStorage.setItem('threadzw_signup_email', emailVal);
+      localStorage.setItem('threadzw_signup_password', passVal);
 
       toast.success('Account created successfully!');
       setStep(7); // Move to Trial Offer
@@ -724,92 +727,75 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
 
                 {/* Auth Form / Inputs */}
-                {session?.user ? (
-                  <div className="bg-[#111114] border border-[#C6FF00]/40 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center gap-2.5 text-xs text-zinc-300">
-                      <CheckCircle2 size={18} className="text-[#C6FF00]" />
-                      <span>Logged in as <strong>{session.user.email}</strong></span>
+                <form onSubmit={handleSignUp} className="space-y-3">
+                  {authError && (
+                    <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
+                      {authError}
                     </div>
+                  )}
 
+                  {/* Email Input */}
+                  <div>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => updateField('email', e.target.value)}
+                      placeholder="Email address"
+                      className="w-full bg-[#111114] border border-[#232326] rounded-xl px-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
+                    />
+                  </div>
+
+                  {/* Phone Number Input (+263 prefilled) */}
+                  <div>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.whatsappNumber}
+                      onChange={(e) => updateField('whatsappNumber', e.target.value)}
+                      placeholder="Phone number (+263...)"
+                      className="w-full bg-[#111114] border border-[#232326] rounded-xl px-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
+                    />
+                  </div>
+
+                  {/* Password Input */}
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={formData.password}
+                      onChange={(e) => updateField('password', e.target.value)}
+                      placeholder="Password"
+                      className="w-full bg-[#111114] border border-[#232326] rounded-xl pl-4 pr-10 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
+                    />
                     <button
                       type="button"
-                      onClick={() => setStep(7)}
-                      className="w-full py-3 bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl hover:opacity-90 cursor-pointer"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
                     >
-                      Continue With This Account
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
-                ) : (
-                  <form onSubmit={handleSignUp} className="space-y-3">
-                    {authError && (
-                      <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-mono">
-                        {authError}
-                      </div>
-                    )}
 
-                    {/* Email Input */}
-                    <div>
-                      <input
-                        type="email"
-                        required
-                        value={formData.email}
-                        onChange={(e) => updateField('email', e.target.value)}
-                        placeholder="Email address"
-                        className="w-full bg-[#111114] border border-[#232326] rounded-xl px-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
-                      />
-                    </div>
+                  {/* Terms */}
+                  <p className="text-[10px] text-zinc-500 text-center leading-relaxed">
+                    By continuing you agree to our{' '}
+                    <span className="text-[#C6FF00] underline cursor-pointer">Terms of Service</span> and{' '}
+                    <span className="text-[#C6FF00] underline cursor-pointer">Privacy Policy</span>.
+                  </p>
 
-                    {/* Phone Number Input (+263 prefilled) */}
-                    <div>
-                      <input
-                        type="tel"
-                        required
-                        value={formData.whatsappNumber}
-                        onChange={(e) => updateField('whatsappNumber', e.target.value)}
-                        placeholder="Phone number (+263...)"
-                        className="w-full bg-[#111114] border border-[#232326] rounded-xl px-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
-                      />
-                    </div>
-
-                    {/* Password Input */}
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={formData.password}
-                        onChange={(e) => updateField('password', e.target.value)}
-                        placeholder="Password"
-                        className="w-full bg-[#111114] border border-[#232326] rounded-xl pl-4 pr-10 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
-                      >
-                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-
-                    {/* Terms */}
-                    <p className="text-[10px] text-zinc-500 text-center leading-relaxed">
-                      By continuing you agree to our{' '}
-                      <span className="text-[#C6FF00] underline cursor-pointer">Terms of Service</span> and{' '}
-                      <span className="text-[#C6FF00] underline cursor-pointer">Privacy Policy</span>.
-                    </p>
-
-                    {/* Submit Button */}
-                    <div className="pt-1">
-                      <button
-                        type="submit"
-                        disabled={authLoading}
-                        className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)] disabled:opacity-50"
-                      >
-                        <span>{authLoading ? 'CREATING...' : 'CONTINUE'}</span>
-                        <ArrowRight size={20} className="stroke-[3]" />
-                      </button>
-                    </div>
-                  </form>
-                )}
+                  {/* Submit Button */}
+                  <div className="pt-1">
+                    <button
+                      type="submit"
+                      disabled={authLoading}
+                      className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)] disabled:opacity-50"
+                    >
+                      <span>{authLoading ? 'CREATING...' : 'CONTINUE'}</span>
+                      <ArrowRight size={20} className="stroke-[3]" />
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
 
