@@ -53,6 +53,17 @@ export interface DashboardData {
   refetch: () => Promise<void>;
 }
 
+function getTimeAgo(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+}
+
 export const useDashboard = (shopId?: string | null): DashboardData => {
   const [data, setData] = useState<Omit<DashboardData, 'loading' | 'error' | 'refetch'>>({
     productsCount: 0,
@@ -70,12 +81,7 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
     visitShopClicks: 0,
     visitShopClicksChangePercent: 0,
     topProducts: [],
-    trafficSources: [
-      { name: 'Instagram', percentage: 72, count: 233 },
-      { name: 'WhatsApp', percentage: 18, count: 58 },
-      { name: 'TikTok', percentage: 7, count: 23 },
-      { name: 'Direct', percentage: 3, count: 10 }
-    ],
+    trafficSources: [],
     storeHealth: {
       live: 0,
       outOfStock: 0,
@@ -112,6 +118,9 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
           .order('created_at', { ascending: false })
       ]);
 
+      if (productsRes.error) throw productsRes.error;
+      if (analyticsRes.error) throw analyticsRes.error;
+
       const products = productsRes.data || [];
       const events = analyticsRes.data || [];
 
@@ -147,9 +156,9 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
       const whatsappEvents = events.filter(e => e.event_type === 'whatsapp_click');
       const visitShopEvents = events.filter(e => e.event_type === 'map_open');
 
-      const totalVisitors = Math.max(visitorEvents.length, 324); // fallback baseline for realism if empty
-      const whatsappClicks = Math.max(whatsappEvents.length, 47);
-      const visitShopClicks = Math.max(visitShopEvents.length, 26);
+      const totalVisitors = visitorEvents.length;
+      const whatsappClicks = whatsappEvents.length;
+      const visitShopClicks = visitShopEvents.length;
 
       // Period comparisons
       let currVisitors = 0, prevVisitors = 0;
@@ -169,7 +178,6 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
           if (isCurr) currWhatsapp++;
           if (isPrev) prevWhatsapp++;
           
-          // Tally per product
           if (e.product_id) {
             productWhatsappMap.set(e.product_id, (productWhatsappMap.get(e.product_id) || 0) + 1);
           }
@@ -180,84 +188,100 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
         }
       });
 
-      const calcPct = (c: number, p: number) => (p === 0 ? (c > 0 ? 18 : 0) : Number((((c - p) / p) * 100).toFixed(1)));
+      const calcPct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : Number((((c - p) / p) * 100).toFixed(1)));
       
-      const visitorsChangePercent = calcPct(currVisitors || 324, prevVisitors || 275);
-      const whatsappClicksChangePercent = calcPct(currWhatsapp || 47, prevWhatsapp || 35);
-      const visitShopClicksChangePercent = calcPct(currVisits || 26, prevVisits || 22);
+      const visitorsChangePercent = calcPct(currVisitors, prevVisitors);
+      const whatsappClicksChangePercent = calcPct(currWhatsapp, prevWhatsapp);
+      const visitShopClicksChangePercent = calcPct(currVisits, prevVisits);
 
-      const conversionRateVal = totalVisitors > 0 ? ((whatsappClicks / totalVisitors) * 100).toFixed(1) : '14.5';
-      const currConv = currVisitors > 0 ? (currWhatsapp / currVisitors) * 100 : 14.5;
-      const prevConv = prevVisitors > 0 ? (prevWhatsapp / prevVisitors) * 100 : 13.0;
+      const conversionRateVal = totalVisitors > 0 ? ((whatsappClicks / totalVisitors) * 100).toFixed(1) : '0.0';
+      const currConv = currVisitors > 0 ? (currWhatsapp / currVisitors) * 100 : 0;
+      const prevConv = prevVisitors > 0 ? (prevWhatsapp / prevVisitors) * 100 : 0;
       const conversionRateChangePercent = calcPct(currConv, prevConv);
 
       // 3. TOP PERFORMING PRODUCTS BY WHATSAPP CLICKS
       const topProducts = products.map(p => ({
         ...p,
-        whatsapp_clicks: productWhatsappMap.get(p.id) || Math.floor(Math.random() * 35) + 5
+        whatsapp_clicks: productWhatsappMap.get(p.id) || 0
       })).sort((a, b) => b.whatsapp_clicks - a.whatsapp_clicks).slice(0, 5);
 
-      if (topProducts.length === 0) {
-        // Fallback mock products if none in DB
-        topProducts.push(
-          { id: '1', name: 'Black Hoodie', images: ['https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png'], whatsapp_clicks: 42 },
-          { id: '2', name: 'Oversized Tee', images: [], whatsapp_clicks: 31 },
-          { id: '3', name: 'Cargo Pants', images: [], whatsapp_clicks: 18 },
-          { id: '4', name: 'Air Force 1', images: [], whatsapp_clicks: 12 },
-          { id: '5', name: 'Cap', images: [], whatsapp_clicks: 9 }
+      // 4. TRAFFIC SOURCES BREAKDOWN
+      const referrerCounts: Record<string, number> = { Instagram: 0, WhatsApp: 0, TikTok: 0, Direct: 0, Other: 0 };
+      visitorEvents.forEach(e => {
+        const src = (e.metadata?.source || e.metadata?.referrer_label || 'direct').toLowerCase();
+        if (src.includes('instagram')) referrerCounts.Instagram++;
+        else if (src.includes('whatsapp') || src.includes('wa.me')) referrerCounts.WhatsApp++;
+        else if (src.includes('tiktok')) referrerCounts.TikTok++;
+        else if (src.includes('direct')) referrerCounts.Direct++;
+        else referrerCounts.Other++;
+      });
+
+      const totalRef = Object.values(referrerCounts).reduce((a, b) => a + b, 0);
+      const trafficSources: TrafficSourceStat[] = [
+        { name: 'Instagram', percentage: totalRef > 0 ? Math.round((referrerCounts.Instagram / totalRef) * 100) : 0, count: referrerCounts.Instagram },
+        { name: 'WhatsApp', percentage: totalRef > 0 ? Math.round((referrerCounts.WhatsApp / totalRef) * 100) : 0, count: referrerCounts.WhatsApp },
+        { name: 'TikTok', percentage: totalRef > 0 ? Math.round((referrerCounts.TikTok / totalRef) * 100) : 0, count: referrerCounts.TikTok },
+        { name: 'Direct', percentage: totalRef > 0 ? Math.round((referrerCounts.Direct / totalRef) * 100) : 0, count: referrerCounts.Direct }
+      ].filter(s => s.count > 0 || totalRef === 0);
+
+      if (trafficSources.length === 0 && totalRef === 0) {
+        trafficSources.push(
+          { name: 'Instagram', percentage: 0, count: 0 },
+          { name: 'WhatsApp', percentage: 0, count: 0 },
+          { name: 'TikTok', percentage: 0, count: 0 },
+          { name: 'Direct', percentage: 0, count: 0 }
         );
       }
 
-      // 4. TRAFFIC SOURCES BREAKDOWN
-      const referrerCounts: Record<string, number> = { Instagram: 0, WhatsApp: 0, TikTok: 0, Direct: 0 };
-      visitorEvents.forEach(e => {
-        const ref = e.metadata?.referrer_label || 'Direct';
-        if (ref.includes('Instagram')) referrerCounts.Instagram++;
-        else if (ref.includes('WhatsApp') || ref.includes('wa.me')) referrerCounts.WhatsApp++;
-        else if (ref.includes('TikTok')) referrerCounts.TikTok++;
-        else referrerCounts.Direct++;
+      // 5. RECENT ACTIVITY CHRONOLOGICAL EVENTS FROM REAL EVENTS
+      const recentActivity: ActivityItem[] = events.slice(0, 10).map((e, idx) => {
+        let title = 'Store activity recorded.';
+        let type: ActivityItem['type'] = 'view';
+        if (e.event_type === 'whatsapp_click') {
+          title = `Someone clicked WhatsApp (${e.metadata?.product_name || 'Product'}).`;
+          type = 'whatsapp';
+        } else if (e.event_type === 'map_open') {
+          title = 'Someone clicked Visit Shop.';
+          type = 'visit';
+        } else if (e.event_type === 'product_view') {
+          title = `Someone viewed ${e.metadata?.product_name || 'a product'}.`;
+          type = 'view';
+        } else if (e.event_type === 'shop_visit') {
+          title = 'Someone visited your storefront.';
+          type = 'view';
+        }
+        return {
+          id: e.id || String(idx),
+          title,
+          timeAgo: getTimeAgo(e.created_at),
+          type,
+          date: e.created_at
+        };
       });
-
-      const totalRef = Object.values(referrerCounts).reduce((a, b) => a + b, 0) || 1;
-      const trafficSources: TrafficSourceStat[] = [
-        { name: 'Instagram', percentage: Math.round((referrerCounts.Instagram / totalRef) * 100) || 72, count: referrerCounts.Instagram || 233 },
-        { name: 'WhatsApp', percentage: Math.round((referrerCounts.WhatsApp / totalRef) * 100) || 18, count: referrerCounts.WhatsApp || 58 },
-        { name: 'TikTok', percentage: Math.round((referrerCounts.TikTok / totalRef) * 100) || 7, count: referrerCounts.TikTok || 23 },
-        { name: 'Direct', percentage: Math.round((referrerCounts.Direct / totalRef) * 100) || 3, count: referrerCounts.Direct || 10 }
-      ];
-
-      // 5. RECENT ACTIVITY CHRONOLOGICAL EVENTS
-      const recentActivity: ActivityItem[] = [
-        { id: '1', title: 'Someone viewed your Hoodie.', timeAgo: '2 minutes ago', type: 'view', date: new Date().toISOString() },
-        { id: '2', title: 'Someone clicked WhatsApp.', timeAgo: '5 minutes ago', type: 'whatsapp', date: new Date().toISOString() },
-        { id: '3', title: 'Someone tapped Visit Shop.', timeAgo: '12 minutes ago', type: 'visit', date: new Date().toISOString() },
-        { id: '4', title: 'Product updated.', timeAgo: '1 hour ago', type: 'product_update', date: new Date().toISOString() },
-        { id: '5', title: 'New product published.', timeAgo: '3 hours ago', type: 'product_publish', date: new Date().toISOString() }
-      ];
 
       setData({
         productsCount,
-        liveProductsCount: live || 18,
-        outOfStockCount: outOfStock || 3,
-        draftCount: draft || 2,
-        missingImagesCount: missingImages || 1,
-        lowStockCount: lowStock || 4,
+        liveProductsCount: live,
+        outOfStockCount: outOfStock,
+        draftCount: draft,
+        missingImagesCount: missingImages,
+        lowStockCount: lowStock,
         totalVisitors,
-        visitorsChangePercent: visitorsChangePercent || 18,
+        visitorsChangePercent,
         whatsappClicks,
-        whatsappClicksChangePercent: whatsappClicksChangePercent || 32,
+        whatsappClicksChangePercent,
         conversionRate: conversionRateVal,
-        conversionRateChangePercent: conversionRateChangePercent || 8,
+        conversionRateChangePercent,
         visitShopClicks,
-        visitShopClicksChangePercent: visitShopClicksChangePercent || 19,
+        visitShopClicksChangePercent,
         topProducts,
         trafficSources,
         storeHealth: {
-          live: live || 18,
-          outOfStock: outOfStock || 3,
-          draft: draft || 2,
-          missingImages: missingImages || 1,
-          lowStock: lowStock || 4
+          live,
+          outOfStock,
+          draft,
+          missingImages,
+          lowStock
         },
         recentActivity
       });
