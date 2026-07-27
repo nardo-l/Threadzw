@@ -173,8 +173,9 @@ export const SubscriptionSuccess: React.FC = () => {
         console.log('[SubscriptionSuccess] Shop update result error:', shopUpdateErr);
       }
 
+      localStorage.setItem('threadzw_just_subscribed', 'true');
       setActivated(true);
-      toast.success('Subscription activated successfully!');
+      toast.success('Subscription activated successfully! Welcome to ThreadZW Pro 🚀');
     } catch (err: any) {
       console.error('[SubscriptionSuccess] Activation error:', err);
       const msg = err.message || "Something went wrong.\nPlease contact ThreadZW support.";

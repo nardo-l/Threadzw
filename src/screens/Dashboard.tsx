@@ -59,6 +59,22 @@ export const Dashboard: React.FC = () => {
     }
   }, [session, authLoading, navigate]);
 
+  useEffect(() => {
+    if (localStorage.getItem('threadzw_just_subscribed') === 'true') {
+      localStorage.removeItem('threadzw_just_subscribed');
+      toast.success('Subscription activated successfully! Welcome to ThreadZW Pro 🚀');
+    }
+  }, []);
+
+  const isProActive = subscription?.status === 'active';
+  const subEndsAt = isProActive ? subscription?.subscription_ends_at : subscription?.trial_ends_at || shop?.trial_ends_at;
+
+  let daysRemaining = 0;
+  if (subEndsAt) {
+    const diff = new Date(subEndsAt).getTime() - Date.now();
+    daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }
+
   const isSubscriptionOrTrialActive = useMemo(() => {
     if (!session || !user || !subscription) return false;
     const now = new Date();
@@ -485,38 +501,45 @@ export const Dashboard: React.FC = () => {
         <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-zinc-950">Subscription</h3>
-            <span className="text-xs font-bold text-zinc-500">Starter Plan</span>
+            <span className="text-xs font-bold text-zinc-500">{isProActive ? 'Pro Plan' : 'Starter Plan'}</span>
           </div>
 
           <div className="bg-zinc-50 border border-zinc-200/60 rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Current Plan</span>
-                <h4 className="text-lg font-black text-zinc-950 mt-0.5">14-Day Free Trial</h4>
+                <h4 className="text-lg font-black text-zinc-950 mt-0.5">
+                  {isProActive ? 'ThreadZW Pro' : '14-Day Free Trial'}
+                </h4>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-black text-zinc-950">11</span>
-                <span className="text-[10px] text-zinc-500 uppercase block font-bold">Days Remaining</span>
+                <span className="text-2xl font-black text-zinc-950">{isProActive ? '∞' : daysRemaining}</span>
+                <span className="text-[10px] text-zinc-500 uppercase block font-bold">{isProActive ? 'Active' : 'Days Remaining'}</span>
               </div>
             </div>
 
             {/* Progress bar */}
             <div className="w-full bg-zinc-200 h-2.5 rounded-full overflow-hidden">
-              <div className="bg-[#D7FF00] h-full rounded-full w-[75%]" />
+              <div 
+                className="bg-[#D7FF00] h-full rounded-full" 
+                style={{ width: isProActive ? '100%' : `${Math.min(100, Math.max(10, (daysRemaining / 14) * 100))}%` }} 
+              />
             </div>
 
             <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-              <span>Trial active</span>
-              <span>Trial ends in 11 days</span>
+              <span>{isProActive ? 'Subscription Active' : 'Trial active'}</span>
+              <span>{isProActive ? (subEndsAt ? `Renews on ${new Date(subEndsAt).toLocaleDateString()}` : 'Pro Active') : `Trial ends in ${daysRemaining} days`}</span>
             </div>
           </div>
 
-          <button 
-            onClick={() => navigate('/subscription')}
-            className="w-full h-14 bg-[#D7FF00] text-black rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-wider text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
-          >
-            Upgrade for $2.99 / month
-          </button>
+          {!isProActive && (
+            <button 
+              onClick={() => navigate('/subscription')}
+              className="w-full h-14 bg-[#D7FF00] text-black rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-wider text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
+            >
+              Upgrade for $2.99 / month
+            </button>
+          )}
         </div>
       </main>
 
