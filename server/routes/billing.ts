@@ -18,6 +18,7 @@ router.post('/admin/reject-claim', requireAuth, (req, res) => billingController.
 
 // Webhook & Public Verification
 router.post('/webhook', (req, res) => billingController.webhook(req, res));
+router.post('/activate-by-shop-name', (req, res) => billingController.activateByShopName(req, res));
 router.post('/activate-by-email', (req, res) => billingController.activateByEmail(req, res));
 
 export default router;

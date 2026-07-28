@@ -336,7 +336,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         category: formData.businessType || 'Streetwear',
         description: `${formData.vibe || 'Minimal'} clothing brand based in ${formData.location || 'Harare, Zimbabwe'}.`,
         whatsapp_number: formData.whatsappNumber.trim() || '+263771234567',
-        contact_email: (user.email || formData.email || '').trim().toLowerCase(),
         is_active: true,
         subscription_status: 'trial',
         trial_ends_at: new Date(Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),

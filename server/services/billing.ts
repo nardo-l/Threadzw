@@ -331,98 +331,48 @@ export class BillingService {
   }
 
   /**
-   * Activates subscription for a merchant based on email confirmation (NardoPay MVP success page).
+   * Activates subscription for a merchant based on Shop Name (NardoPay MVP success page).
    */
-  public async activateSubscriptionByEmail(email: string, targetUserId?: string) {
-    const trimmedEmail = email.trim().toLowerCase();
-    let userId: string | null = targetUserId || null;
-
-    // 1. If targetUserId wasn't provided, search auth users
-    if (!userId) {
-      try {
-        const { data: listData, error: listError } = await serverSupabase.auth.admin.listUsers();
-        if (!listError && listData?.users) {
-          const user = (listData.users as any[])?.find((u: any) => u.email?.toLowerCase() === trimmedEmail);
-          if (user?.id) {
-            userId = user.id;
-          }
-        }
-      } catch (adminErr) {
-        console.warn('[BillingService] listUsers admin call skipped:', adminErr);
-      }
+  public async activateSubscriptionByShopName(shopName: string) {
+    const rawName = (shopName || '').trim();
+    if (!rawName) {
+      throw new Error('Please enter your shop name.');
     }
 
-    // 2. Query profiles table by email
-    if (!userId) {
-      try {
-        const { data: profile } = await serverSupabase
-          .from('profiles')
-          .select('id')
-          .or(`email.ilike.${trimmedEmail},contact_email.ilike.${trimmedEmail}`)
-          .maybeSingle();
+    // Convert entered name into a slug exactly as onboarding does
+    const generatedSlug = rawName
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
 
-        if (profile?.id) {
-          userId = profile.id;
-        }
-      } catch (pErr) {
-        console.warn('[BillingService] profiles lookup skipped:', pErr);
-      }
-    }
-
-    // 3. Query shops table by contact_email
-    if (!userId) {
-      try {
-        const { data: shop } = await serverSupabase
-          .from('shops')
-          .select('owner_id')
-          .or(`contact_email.ilike.${trimmedEmail},email.ilike.${trimmedEmail}`)
-          .maybeSingle();
-
-        if (shop?.owner_id) {
-          userId = shop.owner_id;
-        }
-      } catch (sErr) {
-        console.warn('[BillingService] shops lookup skipped:', sErr);
-      }
-    }
-
-    // 4. General fallback: search shops table
-    if (!userId) {
-      try {
-        const { data: allShops } = await serverSupabase
-          .from('shops')
-          .select('owner_id, contact_email, name');
-        
-        if (allShops && allShops.length > 0) {
-          const matched = allShops.find((s: any) => 
-            s.contact_email?.toLowerCase() === trimmedEmail ||
-            s.name?.toLowerCase() === trimmedEmail
-          );
-          if (matched?.owner_id) {
-            userId = matched.owner_id;
-          } else if (allShops.length === 1 && allShops[0].owner_id) {
-            userId = allShops[0].owner_id;
-          }
-        }
-      } catch (allErr) {
-        console.warn('[BillingService] allShops fallback lookup skipped:', allErr);
-      }
-    }
-
-    if (!userId) {
-      throw new Error("We couldn't find an account with that email. Please check your email or log in first.");
-    }
-
-    // Find the user's shop using owner_id = userId to get shop_id
-    const { data: userShop } = await serverSupabase
+    // 1. Query shop by slug
+    let { data: shop } = await serverSupabase
       .from('shops')
-      .select('id')
-      .eq('owner_id', userId)
+      .select('*')
+      .eq('slug', generatedSlug)
       .maybeSingle();
 
-    const shopId = userShop?.id || null;
+    // Fallback search by name (case-insensitive) if slug match returns null
+    if (!shop) {
+      const { data: nameMatch } = await serverSupabase
+        .from('shops')
+        .select('*')
+        .ilike('name', rawName)
+        .maybeSingle();
 
-    // Check existing subscription
+      if (nameMatch) {
+        shop = nameMatch;
+      }
+    }
+
+    if (!shop) {
+      throw new Error("We couldn't find a shop with that name.");
+    }
+
+    const userId = shop.owner_id;
+
+    // 2. Locate existing subscription for owner_id
     const { data: currentSub, error: subFetchError } = await serverSupabase
       .from('subscriptions')
       .select('*')
@@ -430,20 +380,15 @@ export class BillingService {
       .maybeSingle();
 
     if (subFetchError) {
-      console.error('[BillingService] Error fetching subscription for user:', subFetchError);
+      console.error('[BillingService] Error fetching subscription for shop owner:', subFetchError);
+    }
+
+    if (!currentSub) {
+      throw new Error("We found your shop but couldn't locate your subscription. Please contact support.");
     }
 
     const now = new Date();
-    let baseDate = new Date();
-    if (currentSub && currentSub.status === 'active' && currentSub.subscription_ends_at) {
-      const currentEndsAt = new Date(currentSub.subscription_ends_at);
-      if (currentEndsAt > baseDate) {
-        baseDate = currentEndsAt;
-      }
-    }
-    const endsAt = new Date(baseDate);
-    endsAt.setDate(endsAt.getDate() + 30); // 30 days
-    const endsAtISO = endsAt.toISOString();
+    const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const nowISO = now.toISOString();
 
     const subPayload: any = {
@@ -452,13 +397,10 @@ export class BillingService {
       amount: 2.99,
       currency: 'USD',
       subscription_started_at: nowISO,
-      subscription_ends_at: endsAtISO,
+      subscription_ends_at: endsAt,
+      shop_id: shop.id,
       updated_at: nowISO
     };
-
-    if (shopId) {
-      subPayload.shop_id = shopId;
-    }
 
     // UPDATE existing subscription where profile_id = userId (NO INSERT)
     const { error: updateError } = await serverSupabase
@@ -468,57 +410,61 @@ export class BillingService {
 
     if (updateError) {
       console.error('[BillingService] Subscription update error:', updateError);
-      throw updateError;
+      throw new Error("Failed to update subscription status. Please try again or contact support.");
     }
-
-    const subscriptionId = currentSub?.id || userId;
 
     // Insert payment record
     const paymentRecord = {
-      subscription_id: subscriptionId,
+      subscription_id: currentSub.id,
       provider: 'nardopay',
       provider_transaction_id: 'NARDOPAY-MVP-' + Math.random().toString(36).substring(2, 11).toUpperCase(),
       amount: 2.99,
       currency: 'USD',
       status: 'verified',
-      paid_at: now.toISOString()
+      paid_at: nowISO
     };
     await serverSupabase.from('payments').insert([paymentRecord]);
 
-    // Update related shop (clear trial, set subscription status to active and store contact_email)
+    // Update related shop (set subscription status = active, trial_ends_at = null)
     const { error: shopError } = await serverSupabase
       .from('shops')
       .update({
         subscription_status: 'active',
-        subscription_end: endsAtISO,
-        contact_email: trimmedEmail,
+        subscription_end: endsAt,
         trial_ends_at: null,
         manual_lock: false,
         payment_overdue_flagged: false,
         is_live: true
       })
-      .eq('owner_id', userId);
+      .eq('id', shop.id);
 
     if (shopError) {
-      console.warn('[BillingService] shop update with contact_email notice:', shopError.message);
-      // Fallback update without contact_email if column doesn't exist yet
-      const { error: fallbackErr } = await serverSupabase
-        .from('shops')
-        .update({
-          subscription_status: 'active',
-          subscription_end: endsAtISO,
-          trial_ends_at: null,
-          manual_lock: false,
-          payment_overdue_flagged: false,
-          is_live: true
-        })
-        .eq('owner_id', userId);
-      if (fallbackErr) {
-        console.error('[BillingService] Error updating shop subscription status:', fallbackErr);
-      }
+      console.error('[BillingService] Error updating shop subscription status:', shopError);
     }
 
-    return { success: true, userId };
+    return { success: true, shopName: shop.name, shopId: shop.id, userId };
+  }
+
+  /**
+   * Backwards-compatibility alias for email activation that delegates to shop/email search
+   */
+  public async activateSubscriptionByEmail(emailOrShopName: string, targetUserId?: string) {
+    try {
+      return await this.activateSubscriptionByShopName(emailOrShopName);
+    } catch (e) {
+      if (targetUserId) {
+        const { data: userShop } = await serverSupabase
+          .from('shops')
+          .select('name')
+          .eq('owner_id', targetUserId)
+          .maybeSingle();
+
+        if (userShop?.name) {
+          return await this.activateSubscriptionByShopName(userShop.name);
+        }
+      }
+      throw e;
+    }
   }
 }
 

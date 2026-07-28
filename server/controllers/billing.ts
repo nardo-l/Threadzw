@@ -225,16 +225,37 @@ export class BillingController {
   }
 
   /**
-   * Activates subscription based on email confirmation (NardoPay MVP success page).
+   * Activates subscription based on Shop Name (NardoPay MVP success page).
+   */
+  public async activateByShopName(req: any, res: Response) {
+    try {
+      const { shopName, shop_name } = req.body;
+      const targetName = shopName || shop_name;
+      if (!targetName || typeof targetName !== 'string' || targetName.trim() === '') {
+        return res.status(400).json({ error: 'Please enter your shop name.' });
+      }
+
+      const result = await billingService.activateSubscriptionByShopName(targetName);
+      return res.status(200).json({ success: true, message: 'Subscription successfully activated.', data: result });
+    } catch (err: any) {
+      console.error('[BillingController] activateByShopName failed:', err);
+      const msg = err.message || "We couldn't find a shop with that name.";
+      return res.status(400).json({ error: msg });
+    }
+  }
+
+  /**
+   * Legacy email endpoint fallback
    */
   public async activateByEmail(req: any, res: Response) {
     try {
-      const { email, userId } = req.body;
-      if (!email || !email.includes('@')) {
-        return res.status(400).json({ error: 'Please enter a valid email address.' });
+      const { email, shopName, userId } = req.body;
+      const target = shopName || email;
+      if (!target) {
+        return res.status(400).json({ error: 'Please enter your shop name.' });
       }
 
-      await billingService.activateSubscriptionByEmail(email, userId);
+      await billingService.activateSubscriptionByEmail(target, userId);
       return res.status(200).json({ success: true, message: 'Subscription successfully activated.' });
     } catch (err: any) {
       console.error('[BillingController] activateByEmail failed:', err);

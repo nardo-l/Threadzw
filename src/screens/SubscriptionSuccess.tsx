@@ -1,49 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, Mail, Loader2, ArrowRight, Check } from 'lucide-react';
+import { CheckCircle2, Store, Loader2, ArrowRight, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 
 export const SubscriptionSuccess: React.FC = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [shopNameInput, setShopNameInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activated, setActivated] = useState(false);
 
   useEffect(() => {
-    async function initUserEmail() {
+    async function prefillUserShopName() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email && user.email.includes('@')) {
-          console.log('[SubscriptionSuccess] Found active user email from session:', user.email);
-          setEmail(user.email);
-          return;
+        if (user?.id) {
+          const { data: shop } = await supabase
+            .from('shops')
+            .select('name')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+
+          if (shop?.name) {
+            setShopNameInput(shop.name);
+          }
         }
       } catch (e) {
-        console.warn('[SubscriptionSuccess] Auth session check exception:', e);
-      }
-
-      try {
-        const savedEmail = localStorage.getItem('threadzw_signup_email');
-        console.log('[SubscriptionSuccess] Audit localStorage threadzw_signup_email:', savedEmail);
-        if (savedEmail && typeof savedEmail === 'string' && savedEmail.trim() !== '') {
-          setEmail(savedEmail);
-        }
-      } catch (parseErr) {
-        console.error('[SubscriptionSuccess] Error reading localStorage:', parseErr);
+        console.warn('[SubscriptionSuccess] Prefill shop name error:', e);
       }
     }
-    initUserEmail();
+    prefillUserShopName();
   }, []);
+
+  const generateSlug = (input: string): string => {
+    return input
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9_-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedEmail = email.trim().toLowerCase();
+    const rawShopName = shopNameInput.trim();
 
-    if (!trimmedEmail || !trimmedEmail.includes('@')) {
-      setErrorMsg('Please enter a valid email address.');
-      toast.error('Please enter a valid email address.');
+    if (!rawShopName) {
+      setErrorMsg('Please enter your shop name.');
+      toast.error('Please enter your shop name.');
       return;
     }
 
@@ -51,31 +56,21 @@ export const SubscriptionSuccess: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      console.log('[SubscriptionSuccess] Attempting activation for email:', trimmedEmail);
+      const generatedSlug = generateSlug(rawShopName);
+      console.log('[SubscriptionSuccess] Attempting activation for shop name:', rawShopName, 'slug:', generatedSlug);
 
-      // Check active user session if available
-      let currentUserId: string | null = null;
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) {
-          currentUserId = user.id;
-        }
-      } catch (_) {}
-
-      // Try API route first, passing both email and optional userId
+      // Try backend API first
       let apiSuccess = false;
       try {
-        const response = await fetch('/api/billing/activate-by-email', {
+        const response = await fetch('/api/billing/activate-by-shop-name', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email: trimmedEmail, userId: currentUserId }),
+          body: JSON.stringify({ shopName: rawShopName }),
         });
 
         const responseText = await response.text();
-        console.log('[SubscriptionSuccess] Raw API response text:', responseText);
-
         let data: any = {};
         if (responseText && responseText.trim() !== '') {
           data = JSON.parse(responseText);
@@ -84,74 +79,54 @@ export const SubscriptionSuccess: React.FC = () => {
         if (response.ok && !data.error) {
           apiSuccess = true;
         } else {
-          throw new Error(data.error || "We couldn't find an account with that email.");
+          throw new Error(data.error || "We couldn't find a shop with that name.");
         }
       } catch (apiErr: any) {
-        console.warn('[SubscriptionSuccess] API route activation notice, running direct client activation:', apiErr);
+        console.warn('[SubscriptionSuccess] API route notice, using direct client Supabase query:', apiErr);
 
-        let userId: string | null = currentUserId;
+        // Client-side fallback lookup
+        // 1. Query shop by slug
+        let { data: shop } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('slug', generatedSlug)
+          .maybeSingle();
 
-        if (!userId) {
-          // Query profiles by email or contact_email
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('id')
-            .or(`email.ilike.${trimmedEmail},contact_email.ilike.${trimmedEmail}`)
+        // Fallback search by name ilike
+        if (!shop) {
+          const { data: nameMatch } = await supabase
+            .from('shops')
+            .select('*')
+            .ilike('name', rawShopName)
             .maybeSingle();
 
-          if (profileData?.id) {
-            userId = profileData.id;
+          if (nameMatch) {
+            shop = nameMatch;
           }
         }
 
-        if (!userId) {
-          // Query shops by contact_email
-          const { data: shopsData } = await supabase
-            .from('shops')
-            .select('owner_id')
-            .or(`contact_email.ilike.${trimmedEmail},email.ilike.${trimmedEmail}`)
-            .maybeSingle();
-
-          if (shopsData && shopsData.owner_id) {
-            userId = shopsData.owner_id;
-          }
+        if (!shop) {
+          throw new Error("We couldn't find a shop with that name.");
         }
 
-        if (!userId) {
-          // Fallback: check any shops owned by user or general shop
-          const { data: allShops } = await supabase
-            .from('shops')
-            .select('id, owner_id');
+        const ownerId = shop.owner_id;
 
-          if (allShops && allShops.length > 0) {
-            userId = allShops[0].owner_id;
-          }
-        }
+        // 2. Query subscription for owner_id
+        const { data: existingSub } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('profile_id', ownerId)
+          .maybeSingle();
 
-        if (!userId) {
-          throw new Error("We couldn't find an account with that email address. Please log in first.");
+        if (!existingSub) {
+          throw new Error("We found your shop but couldn't locate your subscription. Please contact support.");
         }
 
         const now = new Date();
         const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
         const nowISO = now.toISOString();
 
-        // Query shop to get shop_id
-        const { data: userShop } = await supabase
-          .from('shops')
-          .select('id')
-          .eq('owner_id', userId)
-          .maybeSingle();
-
-        const shopId = userShop?.id || null;
-
-        // Check existing subscription
-        const { data: existingSub } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('profile_id', userId)
-          .maybeSingle();
-
+        // 3. Update existing subscription (NO INSERT)
         const subPayload: any = {
           status: 'active',
           plan: 'starter',
@@ -159,46 +134,42 @@ export const SubscriptionSuccess: React.FC = () => {
           currency: 'USD',
           subscription_started_at: nowISO,
           subscription_ends_at: endsAt,
+          shop_id: shop.id,
           updated_at: nowISO
         };
-
-        if (shopId) {
-          subPayload.shop_id = shopId;
-        }
 
         const { error: updateSubErr } = await supabase
           .from('subscriptions')
           .update(subPayload)
-          .eq('profile_id', userId);
+          .eq('profile_id', ownerId);
 
-        if (updateSubErr) throw updateSubErr;
+        if (updateSubErr) {
+          throw new Error("Failed to activate subscription. Please contact support.");
+        }
 
-        const subId = existingSub?.id || userId;
-
-        // Insert payment record
+        // Insert payment record for tracking
         await supabase.from('payments').insert([{
-          subscription_id: subId,
+          subscription_id: existingSub.id,
           provider: 'nardopay',
           provider_transaction_id: 'NARDOPAY-MVP-' + Math.random().toString(36).substring(2, 11).toUpperCase(),
           amount: 2.99,
           currency: 'USD',
           status: 'verified',
-          paid_at: now.toISOString()
+          paid_at: nowISO
         }]);
 
-        // Update shop status
+        // 4. Update matching shop
         await supabase
           .from('shops')
           .update({
             subscription_status: 'active',
             subscription_end: endsAt,
-            contact_email: trimmedEmail,
             trial_ends_at: null,
             manual_lock: false,
             payment_overdue_flagged: false,
             is_live: true
           })
-          .eq('owner_id', userId);
+          .eq('id', shop.id);
       }
 
       localStorage.setItem('threadzw_just_subscribed', 'true');
@@ -206,7 +177,7 @@ export const SubscriptionSuccess: React.FC = () => {
       toast.success('Subscription activated successfully! Welcome to ThreadZW Pro 🚀');
     } catch (err: any) {
       console.error('[SubscriptionSuccess] Activation error:', err);
-      const msg = err.message || "Something went wrong.\nPlease contact ThreadZW support.";
+      const msg = err.message || "We couldn't find a shop with that name.";
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
@@ -240,19 +211,19 @@ export const SubscriptionSuccess: React.FC = () => {
         {!activated ? (
           <div className="w-full max-w-[390px] mx-auto flex flex-col space-y-6 text-left px-2">
             
-            {/* Success Icon */}
+            {/* Success Illustration / Icon */}
             <div className="w-16 h-16 rounded-3xl bg-[#C6FF00]/10 border border-[#C6FF00]/30 flex items-center justify-center text-[#C6FF00] mx-auto mb-2">
               <CheckCircle2 size={36} className="animate-pulse" />
             </div>
 
-            {/* Heading & Description */}
+            {/* Title & Subtitle */}
             <div className="text-center space-y-3">
               <h1 className="text-3xl font-black uppercase tracking-tight text-white leading-none">
-                Payment Received <span className="inline-block">🎉</span>
+                Payment Successful
               </h1>
               <p className="text-xs text-zinc-400 font-medium leading-relaxed max-w-[330px] mx-auto">
-                Thank you for subscribing to ThreadZW.<br />
-                To activate your merchant account, enter the email address you used to create your ThreadZW account.
+                Your payment has been received.<br />
+                Activate your subscription by entering the shop name you created during onboarding.
               </p>
             </div>
 
@@ -267,22 +238,19 @@ export const SubscriptionSuccess: React.FC = () => {
             <form onSubmit={handleActivate} className="bg-[#111114] border border-[#232326] rounded-3xl p-6 space-y-5 shadow-2xl">
               <div className="space-y-2">
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-300">
-                  ThreadZW Account Email <span className="text-[#C6FF00]">*</span>
+                  Shop Name <span className="text-[#C6FF00]">*</span>
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
+                  <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
                   <input
-                    type="email"
+                    type="text"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your account email"
+                    value={shopNameInput}
+                    onChange={(e) => setShopNameInput(e.target.value)}
+                    placeholder="Enter your ThreadZW shop name"
                     className="w-full bg-[#18181b] border border-[#2d2d32] rounded-xl pl-10 pr-4 py-3.5 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00] transition-colors"
                   />
                 </div>
-                <p className="text-[10px] text-zinc-500 font-medium">
-                  This should be the email used on your ThreadZW account.
-                </p>
               </div>
 
               <button
@@ -293,7 +261,7 @@ export const SubscriptionSuccess: React.FC = () => {
                 {loading ? (
                   <>
                     <Loader2 className="animate-spin w-5 h-5" />
-                    <span>Verifying Account...</span>
+                    <span>Activating Shop...</span>
                   </>
                 ) : (
                   <>
@@ -304,16 +272,18 @@ export const SubscriptionSuccess: React.FC = () => {
               </button>
             </form>
 
-            <div className="text-center pt-2">
-              <p className="text-[10px] text-zinc-500">
-                Still need help?{' '}
+            <div className="text-center pt-2 space-y-1">
+              <p className="text-[11px] text-zinc-400 font-medium">
+                Need help finding your shop name?
+              </p>
+              <p className="text-[11px]">
                 <a
                   href="https://wa.me/263771234567"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[#C6FF00] font-bold hover:underline"
                 >
-                  Contact us on WhatsApp ↗
+                  Contact ThreadZW Support
                 </a>
               </p>
             </div>
