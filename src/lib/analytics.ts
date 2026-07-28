@@ -24,38 +24,63 @@ export interface TrackEventParams {
 }
 
 /**
+ * Reusable Visitor ID Helper.
+ * If user is logged in: visitorId = auth.user.id
+ * Otherwise: Generate UUID, store in localStorage, reuse on future visits.
+ */
+export async function getVisitorId(): Promise<string> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      return session.user.id;
+    }
+  } catch (_) {
+    // Auth check failed silently
+  }
+
+  let visitorId = localStorage.getItem('threadzw_visitor_id');
+  if (!visitorId) {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      visitorId = crypto.randomUUID();
+    } else {
+      visitorId = 'vis_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+    }
+    localStorage.setItem('threadzw_visitor_id', visitorId);
+  }
+  return visitorId;
+}
+
+/**
  * Reusable ThreadZW Analytics Service helper.
  * Writes analytics events to the "shop_analytics" table in Supabase.
- * Fails safely without breaking user experience or throwing UI errors.
+ * Prints detailed logs for every event.
  */
 export async function trackEvent(params: TrackEventParams) {
-  if (!params.shopId) return;
+  let visitorId = params.visitorId;
+  if (!visitorId) {
+    visitorId = await getVisitorId();
+  }
+
+  // Step 2 Log
+  console.log("TRACK FUNCTION EXECUTED", {
+    eventType: params.eventType,
+    shopId: params.shopId,
+    visitorId
+  });
+
+  if (!params.shopId) {
+    console.warn("TRACK FUNCTION SKIPPED: shopId is missing or undefined", {
+      eventType: params.eventType,
+      shopId: params.shopId
+    });
+    return;
+  }
 
   try {
-    let visitorId = params.visitorId;
-    if (!visitorId) {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.id) {
-          visitorId = session.user.id;
-        }
-      } catch (e) {
-        // Auth session check failed silently
-      }
-    }
-
-    if (!visitorId) {
-      visitorId = localStorage.getItem('threadzw_visitor_id');
-      if (!visitorId) {
-        visitorId = 'vis_' + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
-        localStorage.setItem('threadzw_visitor_id', visitorId);
-      }
-    }
-
     let source = params.source;
     if (!source) {
-      const ref = document.referrer || '';
-      const searchParams = new URLSearchParams(window.location.search);
+      const ref = typeof document !== 'undefined' ? document.referrer || '' : '';
+      const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
       const refParam = searchParams.get('ref') || searchParams.get('source') || '';
 
       const lowerRef = (ref + ' ' + refParam).toLowerCase();
@@ -69,19 +94,23 @@ export async function trackEvent(params: TrackEventParams) {
         source = 'facebook';
       } else if (lowerRef.includes('google')) {
         source = 'google';
-      } else if (ref === '' || ref.includes(window.location.hostname)) {
+      } else if (ref === '' || (typeof window !== 'undefined' && ref.includes(window.location.hostname))) {
         source = 'direct';
       } else {
         source = 'other';
       }
     }
 
-    const metadata = {
+    const metadata: Record<string, any> = {
       source,
       ...(params.metadata || {})
     };
 
-    const eventPayload = {
+    if (params.productId) {
+      metadata.product_id = params.productId;
+    }
+
+    const eventPayload: Record<string, any> = {
       shop_id: params.shopId,
       product_id: params.productId || null,
       event_type: params.eventType,
@@ -90,25 +119,37 @@ export async function trackEvent(params: TrackEventParams) {
       created_at: new Date().toISOString()
     };
 
-    setTimeout(async () => {
-      try {
-        const { error } = await supabase.from('shop_analytics').insert([eventPayload]);
-        if (error) {
-          console.error('Supabase shop_analytics insert warning:', error.message);
-        }
-      } catch (err) {
-        console.error('Network exception in trackEvent:', err);
-      }
-    }, 0);
+    // Step 3 Log: Immediately before Supabase insert
+    console.log("INSERT PAYLOAD", {
+      shop_id: eventPayload.shop_id,
+      event_type: eventPayload.event_type,
+      visitor_id: eventPayload.visitor_id,
+      metadata: eventPayload.metadata
+    });
 
-  } catch (err) {
-    console.error('Analytics wrapper exception:', err);
+    const { data, error } = await supabase.from('shop_analytics').insert([eventPayload]).select();
+
+    // Step 4 Log: Immediately after insert
+    console.log("SUPABASE RESULT", {
+      data,
+      error
+    });
+
+    if (error) {
+      console.error("ANALYTICS INSERT FAILED", error);
+    } else {
+      console.log("Insert Successful");
+    }
+
+    return { data, error };
+  } catch (err: any) {
+    console.error("ANALYTICS INSERT FAILED", err);
   }
 }
 
 // Explicit Wrapper Helpers
 export async function trackStoreView(shopId: string, referrerParam?: string) {
-  await trackEvent({
+  return await trackEvent({
     shopId,
     eventType: AnalyticsEventType.SHOP_VISIT,
     source: referrerParam
@@ -116,41 +157,50 @@ export async function trackStoreView(shopId: string, referrerParam?: string) {
 }
 
 export async function trackProductView(shopId: string, productId: string, productName?: string) {
-  await trackEvent({
+  return await trackEvent({
     shopId,
     productId,
     eventType: AnalyticsEventType.PRODUCT_VIEW,
-    metadata: productName ? { product_name: productName } : undefined
+    metadata: {
+      product_id: productId,
+      ...(productName ? { product_name: productName } : {})
+    }
   });
 }
 
 export async function trackWhatsAppClick(shopId: string, productId?: string | null, productName?: string) {
-  await trackEvent({
+  return await trackEvent({
     shopId,
     productId: productId || null,
     eventType: AnalyticsEventType.WHATSAPP_CLICK,
-    metadata: productName ? { product_name: productName } : undefined
+    metadata: {
+      ...(productId ? { product_id: productId } : {}),
+      ...(productName ? { product_name: productName } : {})
+    }
   });
 }
 
 export async function trackMapOpen(shopId: string) {
-  await trackEvent({
+  return await trackEvent({
     shopId,
     eventType: AnalyticsEventType.MAP_OPEN
   });
 }
 
 export async function trackWishlistAdd(shopId: string, productId: string, productName?: string) {
-  await trackEvent({
+  return await trackEvent({
     shopId,
     productId,
     eventType: AnalyticsEventType.WISHLIST_ADD,
-    metadata: productName ? { product_name: productName } : undefined
+    metadata: {
+      product_id: productId,
+      ...(productName ? { product_name: productName } : {})
+    }
   });
 }
 
 export async function trackCategoryClick(shopId: string, categoryName: string) {
-  await trackEvent({
+  return await trackEvent({
     shopId,
     eventType: AnalyticsEventType.CATEGORY_CLICK,
     metadata: { category_name: categoryName }
@@ -159,7 +209,7 @@ export async function trackCategoryClick(shopId: string, categoryName: string) {
 
 export async function trackSearchUsage(shopId: string, query: string) {
   if (!query || !query.trim()) return;
-  await trackEvent({
+  return await trackEvent({
     shopId,
     eventType: AnalyticsEventType.SEARCH_USAGE,
     metadata: { search_query: query.trim() }
@@ -175,11 +225,12 @@ export async function trackPurchaseIntent(
   size: string,
   color: string
 ) {
-  await trackEvent({
+  return await trackEvent({
     shopId,
     productId,
     eventType: AnalyticsEventType.WHATSAPP_CLICK,
     metadata: {
+      product_id: productId,
       product_name: productName,
       price,
       button_clicked: buttonClicked,
@@ -190,9 +241,9 @@ export async function trackPurchaseIntent(
 }
 
 export async function trackLandingPageView() {}
-export async function trackSignUpEvent(userId: string) {}
-export async function trackShopCreatedEvent(shopId: string, shopName: string) {}
-export async function trackProductCreatedEvent(shopId: string, productId: string) {}
+export async function trackSignUpEvent(_userId: string) {}
+export async function trackShopCreatedEvent(_shopId: string, _shopName: string) {}
+export async function trackProductCreatedEvent(_shopId: string, _productId: string) {}
 
 export async function createMerchantNotification(
   shopOwnerId: string,
@@ -220,3 +271,4 @@ export async function createMerchantNotification(
     console.error("Exception during notification creation:", err);
   }
 }
+

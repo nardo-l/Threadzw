@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { ArrowRight, MessageCircle, Heart, Sparkles, Grid, Share2 } from 'lucide-react';
 import { ProductImage, ShopLogo, ShopBanner } from '../ui/ShopImage';
 import { parseShopConfig } from '../../utils/configHelper';
+import { trackWhatsAppClick } from '../../lib/analytics';
 
 interface StorefrontHomeProps {
   shop: any;
@@ -180,6 +181,9 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                   href={`https://wa.me/${(shop.whatsapp_number || shop.whatsapp).replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => {
+                    trackWhatsAppClick(shop.id);
+                  }}
                   className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center border border-zinc-200/30 text-center"
                 >
                   Message Us
@@ -310,7 +314,10 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                         )}`}
                         target="_blank"
                         rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          trackWhatsAppClick(shop.id, p.id, p.name);
+                        }}
                         className="mt-2.5 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-current" /> WA Order

@@ -365,7 +365,7 @@ export const Paywall: React.FC = () => {
     if (currentSubscription.status === 'trial') {
       const ends = currentSubscription.trial_ends_at ? new Date(currentSubscription.trial_ends_at) : null;
       return ends && ends < new Date() 
-        ? `Your 14-day trial expired on ${ends.toLocaleDateString()}.`
+        ? `Your 7-day trial expired on ${ends.toLocaleDateString()}.`
         : `Your trial is active but restricted.`;
     }
     if (currentSubscription.status === 'active') {

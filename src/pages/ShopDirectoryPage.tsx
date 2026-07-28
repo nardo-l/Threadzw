@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { trackMapOpen } from '../lib/analytics';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, 
@@ -1028,7 +1029,16 @@ export const ShopDirectoryPage: React.FC = () => {
                             </div>
 
                             {/* Primary Button */}
-                            <button className="w-full mt-4 h-11 bg-[#000000] hover:bg-[#111111] text-[#BEF715] hover:text-white rounded-xl text-xs font-black tracking-wide flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-all">
+                            <button 
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (shop.id) {
+                                  await trackMapOpen(shop.id);
+                                }
+                                navigate(`/shop/${shop.slug}`);
+                              }}
+                              className="w-full mt-4 h-11 bg-[#000000] hover:bg-[#111111] text-[#BEF715] hover:text-white rounded-xl text-xs font-black tracking-wide flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                            >
                               <span>Visit Shop</span>
                               <ArrowRight size={13} className="stroke-[3] transition-transform group-hover:translate-x-1" />
                             </button>

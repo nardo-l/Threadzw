@@ -75,111 +75,9 @@ export const StorefrontPage: React.FC = () => {
     return validPages.includes(pageVal) ? pageVal : '404';
   }, [searchParams]);
 
-  // Traffic logging database integration helpers
-  const logStorefrontVisit = async (shopId: string, ownerId: string) => {
-    try {
-      const lastLogged = sessionStorage.getItem(`threadzw_visit_logged_${shopId}`);
-      if (lastLogged) return;
-      sessionStorage.setItem(`threadzw_visit_logged_${shopId}`, 'true');
-
-      const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('boutique_customer_id', customerId);
-
-      let source = 'Direct Link';
-      
-      const pageVal = searchParams.get('page');
-      const prodVal = searchParams.get('prod_id') || searchParams.get('product_id') || searchParams.get('product');
-      
-      if (prodVal || pageVal === 'product') {
-        source = 'Shared Product Link';
-      } else {
-        const ref = document.referrer || '';
-        if (ref.includes('google') || ref.includes('bing') || ref.includes('yahoo')) {
-          source = 'Search';
-        }
-      }
-
-      const visitPayload = {
-        shop_id: shopId,
-        owner_id: ownerId,
-        product_name: 'Visit Log',
-        size: 'None',
-        quantity: 0,
-        sale_price: 0,
-        total_price: 0,
-        status: 'visit',
-        source: source,
-        customer_identifier: customerId,
-        created_at: new Date().toISOString()
-      };
-
-      let payload: any = { ...visitPayload };
-      for (let attempt = 0; attempt < 10; attempt++) {
-        const { error } = await supabase.from('orders').insert([payload]);
-        if (!error) break;
-        const errMsg = error.message || '';
-        const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
-                      errMsg.match(/column "([^"]+)" does not exist/);
-        if (match && match[1]) {
-          delete payload[match[1]];
-        } else {
-          break;
-        }
-      }
-    } catch (_) {}
-  };
-
-  const logInteractiveVisit = async (shopId: string, ownerId: string, source: string) => {
-    try {
-      const key = `zw_source_logged_${shopId}_${source}`;
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, 'true');
-
-      const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
-      localStorage.setItem('boutique_customer_id', customerId);
-
-      const visitPayload = {
-        shop_id: shopId,
-        owner_id: ownerId,
-        product_name: 'Visit Log',
-        size: 'None',
-        quantity: 0,
-        sale_price: 0,
-        total_price: 0,
-        status: 'visit',
-        source: source,
-        customer_identifier: customerId,
-        created_at: new Date().toISOString()
-      };
-
-      let payload: any = { ...visitPayload };
-      for (let attempt = 0; attempt < 10; attempt++) {
-        const { error } = await supabase.from('orders').insert([payload]);
-        if (!error) break;
-        const errMsg = error.message || '';
-        const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
-                      errMsg.match(/column "([^"]+)" does not exist/);
-        if (match && match[1]) {
-          delete payload[match[1]];
-        } else {
-          break;
-        }
-      }
-    } catch (_) {}
-  };
-
   // Navigate helper maintaining slug structure
   const navigateToPage = useCallback((pageName: StorefrontPageType, params?: Record<string, string>) => {
     console.log(`[ROUTE TRANSITION] Transitioning page from '${activePage}' to '${pageName}'`, params || {});
-    
-    // Dynamic traffic source click tracking
-    if (shop) {
-      if (pageName === 'categories') {
-        logInteractiveVisit(shop.id, shop.owner_id, 'Categories');
-      } else if (pageName === 'home' || pageName === 'shop') {
-        logInteractiveVisit(shop.id, shop.owner_id, 'Homepage');
-      }
-    }
 
     const nextParams = new URLSearchParams();
     nextParams.set('page', pageName);
@@ -354,7 +252,7 @@ export const StorefrontPage: React.FC = () => {
       }
 
       // Log initial storefront entry visit
-      logStorefrontVisit(shopResult.id, shopResult.owner_id);
+      trackStoreView(shopResult.id);
 
     } catch (err) {
       console.error(err);

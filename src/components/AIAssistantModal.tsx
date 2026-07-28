@@ -30,7 +30,7 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({ isOpen, onCl
     "How do I add a new product?",
     "Why isn't my storefront visible?",
     "How do I share my store link?",
-    "How does the 14-day trial work?"
+    "How does the 7-day trial work?"
   ];
 
   const handleSend = async (qText?: string) => {

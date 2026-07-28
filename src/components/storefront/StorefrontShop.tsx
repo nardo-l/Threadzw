@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
 import { supabase } from '../../lib/supabase';
+import { trackWhatsAppClick } from '../../lib/analytics';
 
 interface StorefrontShopProps {
   shop: any;
@@ -326,7 +327,10 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                         )}`}
                         target="_blank"
                         rel="noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          trackWhatsAppClick(shop.id, p.id, p.name);
+                        }}
                         className="mt-2 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-colors duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-current" /> Order WA

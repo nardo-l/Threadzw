@@ -175,7 +175,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               <span className="text-4xl font-black text-white">$2.99</span>
               <span className="text-zinc-500 font-bold text-sm">/month</span>
             </div>
-            <p className="text-xs text-zinc-400">14-day free trial included for every new shop.</p>
+            <p className="text-xs text-zinc-400">7-day free trial included for every new shop.</p>
           </div>
 
           <div className="space-y-3 text-left">

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, MessageCircle, MapPin, Send, Instagram, Facebook, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { trackWhatsAppClick } from '../../lib/analytics';
 
 interface StorefrontContactProps {
   shop: any;
@@ -60,6 +61,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
             href={`https://wa.me/${cleanWhatsApp}`}
             target="_blank"
             rel="noreferrer"
+            onClick={() => trackWhatsAppClick(shop.id)}
             className="flex items-center gap-3.5 group cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/15 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500/20 transition-colors">

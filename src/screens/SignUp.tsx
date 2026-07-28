@@ -46,6 +46,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
 import { uploadImage } from '../utils/uploadImage';
+import { FREE_TRIAL_DAYS } from '../lib/plans';
 import { 
   Storefront3DIllustration, 
   ShopSign3DIllustration, 
@@ -327,7 +328,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         whatsapp_number: formData.whatsappNumber.trim() || '+263771234567',
         is_active: true,
         subscription_status: 'trial',
-        trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        trial_ends_at: new Date(Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),
         logo_url: logoUrl,
         banner_url: bannerUrl
       };

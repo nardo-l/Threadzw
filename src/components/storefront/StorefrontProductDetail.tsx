@@ -6,7 +6,7 @@ import { ProductImage, ShopLogo } from '../ui/ShopImage';
 import { parseShopConfig } from '../../utils/configHelper';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
-import { trackPurchaseIntent, createMerchantNotification, trackWhatsAppClick } from '../../lib/analytics';
+import { trackPurchaseIntent, createMerchantNotification, trackWhatsAppClick, trackProductView, trackMapOpen } from '../../lib/analytics';
 
 // Helper to safely insert orders even if some columns don't exist on remote table yet
 async function safeInsertOrder(orderPayload: any) {
@@ -185,6 +185,13 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
     setActiveImgIdx(0);
   }, [product, sizesList, coloursList]);
 
+  // Track product_view on mount or product change
+  useEffect(() => {
+    if (shop?.id && product?.id) {
+      trackProductView(shop.id, product.id, product.name);
+    }
+  }, [shop?.id, product?.id, product?.name]);
+
   // Related products
   const relatedProducts = useMemo(() => {
     return allProducts
@@ -246,6 +253,10 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
   const handleBuyNow = async () => {
     if (isSoldOut) return;
     setShowBuySheet(true);
+
+    if (shop?.id) {
+      await trackMapOpen(shop.id);
+    }
 
     const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('boutique_customer_id', customerId);

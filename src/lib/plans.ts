@@ -1,4 +1,6 @@
-// THREADZW PRICING: $2.99/month | 14-day trial — do not change without updating all instances
+// THREADZW PRICING: $2.99/month | 7-day trial (Single Source of Truth)
+export const FREE_TRIAL_DAYS = 7;
+
 export interface PlanDetails {
   name: string;
   monthly: {
@@ -22,10 +24,11 @@ export const PLANS: Record<string, PlanDetails> = {
 };
 
 export const getPlanAmount = (plan: string, billingCycle: string, isFirstPeriod: boolean) => {
-  // THREADZW PRICING: $2.99/month | 14-day trial — do not change without updating all instances
+  // THREADZW PRICING: $2.99/month | 7-day trial
   return 2.99;
 };
 
 export const formatAmount = (amount: number) => `$${amount.toFixed(2)}`;
+
 
 

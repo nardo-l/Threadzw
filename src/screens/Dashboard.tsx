@@ -30,6 +30,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
+import { FREE_TRIAL_DAYS } from '../lib/plans';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -509,7 +510,7 @@ export const Dashboard: React.FC = () => {
               <div>
                 <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Current Plan</span>
                 <h4 className="text-lg font-black text-zinc-950 mt-0.5">
-                  {isProActive ? 'ThreadZW Pro' : '14-Day Free Trial'}
+                  {isProActive ? 'ThreadZW Pro' : '7-Day Free Trial'}
                 </h4>
               </div>
               <div className="text-right">
@@ -522,7 +523,7 @@ export const Dashboard: React.FC = () => {
             <div className="w-full bg-zinc-200 h-2.5 rounded-full overflow-hidden">
               <div 
                 className="bg-[#D7FF00] h-full rounded-full" 
-                style={{ width: isProActive ? '100%' : `${Math.min(100, Math.max(10, (daysRemaining / 14) * 100))}%` }} 
+                style={{ width: isProActive ? '100%' : `${Math.min(100, Math.max(10, (daysRemaining / FREE_TRIAL_DAYS) * 100))}%` }} 
               />
             </div>
 
