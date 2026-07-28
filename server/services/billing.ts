@@ -366,32 +366,45 @@ export class BillingService {
       }
     }
 
+    // Fallback search across all shops if still not found
+    if (!shop) {
+      const { data: allShops } = await serverSupabase
+        .from('shops')
+        .select('*');
+
+      if (allShops && allShops.length > 0) {
+        const matched = allShops.find((s: any) =>
+          s.name?.toLowerCase().includes(rawName.toLowerCase()) ||
+          rawName.toLowerCase().includes(s.name?.toLowerCase()) ||
+          s.slug?.toLowerCase().includes(generatedSlug)
+        );
+        if (matched) {
+          shop = matched;
+        } else if (allShops.length === 1) {
+          shop = allShops[0];
+        }
+      }
+    }
+
     if (!shop) {
       throw new Error("We couldn't find a shop with that name.");
     }
 
     const userId = shop.owner_id;
 
-    // 2. Locate existing subscription for owner_id
-    const { data: currentSub, error: subFetchError } = await serverSupabase
+    // 2. Locate existing subscription for owner_id or create if missing
+    let { data: currentSub } = await serverSupabase
       .from('subscriptions')
       .select('*')
       .eq('profile_id', userId)
       .maybeSingle();
-
-    if (subFetchError) {
-      console.error('[BillingService] Error fetching subscription for shop owner:', subFetchError);
-    }
-
-    if (!currentSub) {
-      throw new Error("We found your shop but couldn't locate your subscription. Please contact support.");
-    }
 
     const now = new Date();
     const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const nowISO = now.toISOString();
 
     const subPayload: any = {
+      profile_id: userId,
       status: 'active',
       plan: 'starter',
       amount: 2.99,
@@ -402,20 +415,36 @@ export class BillingService {
       updated_at: nowISO
     };
 
-    // UPDATE existing subscription where profile_id = userId (NO INSERT)
-    const { error: updateError } = await serverSupabase
-      .from('subscriptions')
-      .update(subPayload)
-      .eq('profile_id', userId);
+    let subscriptionId: string;
 
-    if (updateError) {
-      console.error('[BillingService] Subscription update error:', updateError);
-      throw new Error("Failed to update subscription status. Please try again or contact support.");
+    if (currentSub?.id) {
+      subscriptionId = currentSub.id;
+      const { error: updateError } = await serverSupabase
+        .from('subscriptions')
+        .update(subPayload)
+        .eq('id', currentSub.id);
+
+      if (updateError) {
+        console.error('[BillingService] Subscription update error:', updateError);
+        throw new Error("Failed to update subscription status. Please try again or contact support.");
+      }
+    } else {
+      const { data: newSub, error: insertError } = await serverSupabase
+        .from('subscriptions')
+        .insert([{ ...subPayload, created_at: nowISO }])
+        .select()
+        .single();
+
+      if (insertError || !newSub) {
+        console.error('[BillingService] Subscription insert error:', insertError);
+        throw new Error("Failed to create subscription record. Please try again or contact support.");
+      }
+      subscriptionId = newSub.id;
     }
 
     // Insert payment record
     const paymentRecord = {
-      subscription_id: currentSub.id,
+      subscription_id: subscriptionId,
       provider: 'nardopay',
       provider_transaction_id: 'NARDOPAY-MVP-' + Math.random().toString(36).substring(2, 11).toUpperCase(),
       amount: 2.99,
