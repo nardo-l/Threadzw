@@ -134,6 +134,16 @@ export const SubscriptionSuccess: React.FC = () => {
 
         const now = new Date();
         const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        const nowISO = now.toISOString();
+
+        // Query shop to get shop_id
+        const { data: userShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', userId)
+          .maybeSingle();
+
+        const shopId = userShop?.id || null;
 
         // Check existing subscription
         const { data: existingSub } = await supabase
@@ -142,35 +152,28 @@ export const SubscriptionSuccess: React.FC = () => {
           .eq('profile_id', userId)
           .maybeSingle();
 
-        const subPayload = {
-          profile_id: userId,
+        const subPayload: any = {
           status: 'active',
           plan: 'starter',
           amount: 2.99,
           currency: 'USD',
-          subscription_started_at: now.toISOString(),
+          subscription_started_at: nowISO,
           subscription_ends_at: endsAt,
-          updated_at: now.toISOString()
+          updated_at: nowISO
         };
 
-        let subId: string;
-
-        if (existingSub?.id) {
-          const { error: updateSubErr } = await supabase
-            .from('subscriptions')
-            .update(subPayload)
-            .eq('id', existingSub.id);
-          if (updateSubErr) throw updateSubErr;
-          subId = existingSub.id;
-        } else {
-          const { data: newSub, error: insertSubErr } = await supabase
-            .from('subscriptions')
-            .insert([{ ...subPayload, created_at: now.toISOString() }])
-            .select()
-            .single();
-          if (insertSubErr || !newSub) throw (insertSubErr || new Error('Failed to create subscription record'));
-          subId = newSub.id;
+        if (shopId) {
+          subPayload.shop_id = shopId;
         }
+
+        const { error: updateSubErr } = await supabase
+          .from('subscriptions')
+          .update(subPayload)
+          .eq('profile_id', userId);
+
+        if (updateSubErr) throw updateSubErr;
+
+        const subId = existingSub?.id || userId;
 
         // Insert payment record
         await supabase.from('payments').insert([{

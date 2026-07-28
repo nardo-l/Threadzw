@@ -35,7 +35,16 @@ export class BillingService {
       }
     }
 
-    // 2. Load current subscription to see if it exists
+    // 2. Fetch user's shop to get shop_id
+    const { data: userShop } = await db
+      .from('shops')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle();
+
+    const shopId = userShop?.id || null;
+
+    // 3. Load current subscription to see if it exists
     const { data: currentSub, error: subFetchError } = await db
       .from('subscriptions')
       .select('*')
@@ -46,7 +55,7 @@ export class BillingService {
       console.error('[BillingService] Error fetching subscription in service:', subFetchError);
     }
 
-    // 3. Monthly Subscription Period (1 month)
+    // 4. Monthly Subscription Period (1 month)
     let baseDate = new Date();
     if (currentSub && currentSub.status === 'active' && currentSub.subscription_ends_at) {
       const currentEndsAt = new Date(currentSub.subscription_ends_at);
@@ -57,50 +66,31 @@ export class BillingService {
     const endsAt = new Date(baseDate);
     endsAt.setMonth(endsAt.getMonth() + 1);
     const endsAtISO = endsAt.toISOString();
+    const nowISO = new Date().toISOString();
 
-    let subscriptionId: string;
+    // 5. Update existing subscription where profile_id = userId (NO INSERT)
+    const updatePayload: any = {
+      status: 'active',
+      subscription_started_at: nowISO,
+      subscription_ends_at: endsAtISO,
+      updated_at: nowISO
+    };
 
-    if (currentSub) {
-      subscriptionId = currentSub.id;
-      // Update existing subscription using production schema only
-      const updatePayload = {
-        status: 'active',
-        subscription_started_at: new Date().toISOString(),
-        subscription_ends_at: endsAtISO,
-        updated_at: new Date().toISOString()
-      };
-      console.log('[BillingService] Updating subscription for profile_id:', userId, JSON.stringify(updatePayload, null, 2));
-      const { error: subUpdateError } = await db
-        .from('subscriptions')
-        .update(updatePayload)
-        .eq('profile_id', userId);
-
-      if (subUpdateError) {
-        throw new Error('Failed to activate subscription: ' + subUpdateError.message);
-      }
-    } else {
-      // Insert new subscription using production schema only
-      const subPayload = {
-        profile_id: userId,
-        status: 'active',
-        trial_ends_at: new Date().toISOString(),
-        subscription_started_at: new Date().toISOString(),
-        subscription_ends_at: endsAtISO,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      console.log('[BillingService] Inserting new subscription payload with profile_id:', userId, JSON.stringify(subPayload, null, 2));
-      const { data: newSub, error: subInsertError } = await db
-        .from('subscriptions')
-        .insert([subPayload])
-        .select()
-        .single();
-
-      if (subInsertError || !newSub) {
-        throw new Error('Failed to create subscription record: ' + (subInsertError?.message || 'Unknown error'));
-      }
-      subscriptionId = newSub.id;
+    if (shopId) {
+      updatePayload.shop_id = shopId;
     }
+
+    console.log('[BillingService] Updating subscription for profile_id:', userId, JSON.stringify(updatePayload, null, 2));
+    const { error: subUpdateError } = await db
+      .from('subscriptions')
+      .update(updatePayload)
+      .eq('profile_id', userId);
+
+    if (subUpdateError) {
+      throw new Error('Failed to activate subscription: ' + subUpdateError.message);
+    }
+
+    const subscriptionId = currentSub?.id || userId;
 
     // 4. Load currency from app_settings
     const { data: currencySetting, error: currencyError } = await db
@@ -185,7 +175,7 @@ export class BillingService {
     // 1. Fetch shop owner details to get userId
     const { data: shopData, error: shopFetchError } = await serverSupabase
       .from('shops')
-      .select('owner_id, name')
+      .select('id, owner_id, name')
       .eq('id', claim.shop_id)
       .single();
 
@@ -194,6 +184,7 @@ export class BillingService {
     }
 
     const userId = shopData.owner_id;
+    const shopId = shopData.id;
 
     // 2. Set subscription to active in database
     const { data: currentSub, error: subFetchError } = await serverSupabase
@@ -206,47 +197,27 @@ export class BillingService {
       console.error('Error fetching subscription in adminApproveClaim:', subFetchError);
     }
 
-    let subscriptionId: string;
+    const subUpdatePayload: any = {
+      status: 'active',
+      subscription_started_at: nowStr,
+      subscription_ends_at: endRenewal,
+      updated_at: nowStr
+    };
 
-    if (currentSub) {
-      subscriptionId = currentSub.id;
-      // Update existing subscription using production schema only
-      const { error: subUpdateError } = await serverSupabase
-        .from('subscriptions')
-        .update({
-          status: 'active',
-          subscription_started_at: nowStr,
-          subscription_ends_at: endRenewal,
-          updated_at: nowStr
-        })
-        .eq('profile_id', userId);
-
-      if (subUpdateError) {
-        throw new Error('Failed to update subscription to active: ' + subUpdateError.message);
-      }
-    } else {
-      // Insert new subscription using production schema only
-      const subPayload = {
-        profile_id: userId,
-        status: 'active',
-        trial_ends_at: nowStr,
-        subscription_started_at: nowStr,
-        subscription_ends_at: endRenewal,
-        created_at: nowStr,
-        updated_at: nowStr
-      };
-      console.log('[BillingService] Admin approve claim inserting new subscription payload:', subPayload);
-      const { data: newSub, error: subInsertError } = await serverSupabase
-        .from('subscriptions')
-        .insert([subPayload])
-        .select()
-        .single();
-
-      if (subInsertError || !newSub) {
-        throw new Error('Failed to insert active subscription: ' + (subInsertError?.message || 'Unknown error'));
-      }
-      subscriptionId = newSub.id;
+    if (shopId) {
+      subUpdatePayload.shop_id = shopId;
     }
+
+    const { error: subUpdateError } = await serverSupabase
+      .from('subscriptions')
+      .update(subUpdatePayload)
+      .eq('profile_id', userId);
+
+    if (subUpdateError) {
+      throw new Error('Failed to update subscription to active: ' + subUpdateError.message);
+    }
+
+    const subscriptionId = currentSub?.id || userId;
 
     // 3. Mark the payment claim as verified
     const { error: claimErr } = await serverSupabase
@@ -442,6 +413,15 @@ export class BillingService {
       throw new Error("We couldn't find an account with that email. Please check your email or log in first.");
     }
 
+    // Find the user's shop using owner_id = userId to get shop_id
+    const { data: userShop } = await serverSupabase
+      .from('shops')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle();
+
+    const shopId = userShop?.id || null;
+
     // Check existing subscription
     const { data: currentSub, error: subFetchError } = await serverSupabase
       .from('subscriptions')
@@ -464,36 +444,34 @@ export class BillingService {
     const endsAt = new Date(baseDate);
     endsAt.setDate(endsAt.getDate() + 30); // 30 days
     const endsAtISO = endsAt.toISOString();
+    const nowISO = now.toISOString();
 
-    const subPayload = {
-      profile_id: userId,
+    const subPayload: any = {
       status: 'active',
       plan: 'starter',
       amount: 2.99,
       currency: 'USD',
-      subscription_started_at: now.toISOString(),
+      subscription_started_at: nowISO,
       subscription_ends_at: endsAtISO,
-      updated_at: now.toISOString()
+      updated_at: nowISO
     };
 
-    let subscriptionId: string;
-
-    if (currentSub) {
-      subscriptionId = currentSub.id;
-      const { error: updateError } = await serverSupabase
-        .from('subscriptions')
-        .update(subPayload)
-        .eq('id', currentSub.id);
-      if (updateError) throw updateError;
-    } else {
-      const { data: newSub, error: insertError } = await serverSupabase
-        .from('subscriptions')
-        .insert([{ ...subPayload, created_at: now.toISOString() }])
-        .select()
-        .single();
-      if (insertError || !newSub) throw (insertError || new Error('Failed to create subscription record'));
-      subscriptionId = newSub.id;
+    if (shopId) {
+      subPayload.shop_id = shopId;
     }
+
+    // UPDATE existing subscription where profile_id = userId (NO INSERT)
+    const { error: updateError } = await serverSupabase
+      .from('subscriptions')
+      .update(subPayload)
+      .eq('profile_id', userId);
+
+    if (updateError) {
+      console.error('[BillingService] Subscription update error:', updateError);
+      throw updateError;
+    }
+
+    const subscriptionId = currentSub?.id || userId;
 
     // Insert payment record
     const paymentRecord = {

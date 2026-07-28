@@ -89,36 +89,47 @@ export const NardoPayCheckout: React.FC = () => {
 
       const now = new Date();
       const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+      const nowISO = now.toISOString();
 
-      const { data: existingSub } = await supabase
-        .from('subscriptions')
+      // Find user's shop using owner_id = user.id
+      const { data: userShop } = await supabase
+        .from('shops')
         .select('id')
-        .eq('profile_id', user.id)
+        .eq('owner_id', user.id)
         .maybeSingle();
 
-      const subPayload = {
-        profile_id: user.id,
+      const shopId = userShop?.id || null;
+
+      const subPayload: any = {
         status: 'active',
         plan: 'pro',
         amount: 1.00,
         currency: 'USD',
-        subscription_started_at: now.toISOString(),
-        subscription_ends_at: endsAt
+        subscription_started_at: nowISO,
+        subscription_ends_at: endsAt,
+        updated_at: nowISO
       };
 
-      console.log('[SUBSCRIPTION] Inserting/updating subscription payload with user.id:', user.id, subPayload);
-
-      if (existingSub?.id) {
-        const { error: updateError } = await supabase.from('subscriptions').update(subPayload).eq('id', existingSub.id);
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase.from('subscriptions').insert([subPayload]);
-        if (insertError) throw insertError;
+      if (shopId) {
+        subPayload.shop_id = shopId;
       }
+
+      console.log('[SUBSCRIPTION] Updating subscription payload with user.id:', user.id, subPayload);
+
+      const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update(subPayload)
+        .eq('profile_id', user.id);
+
+      if (updateError) throw updateError;
 
       await supabase.from('shops').update({
         subscription_status: 'active',
-        subscription_end: endsAt
+        subscription_end: endsAt,
+        trial_ends_at: null,
+        manual_lock: false,
+        payment_overdue_flagged: false,
+        is_live: true
       }).eq('owner_id', user.id);
 
       setSuccess(true);
