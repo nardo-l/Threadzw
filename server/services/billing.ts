@@ -390,6 +390,9 @@ export class BillingService {
       throw new Error("We couldn't find a shop with that name.");
     }
 
+    console.log("Service Role client created successfully.");
+    console.log("Shop found.");
+
     const userId = shop.owner_id;
 
     // STEP 1 & 2: Query subscription using .single() and log requested details
@@ -399,17 +402,12 @@ export class BillingService {
       .eq("profile_id", userId)
       .single();
 
+    console.log("Subscription found.");
     console.log("SUBSCRIPTION FOUND", subscription, subQueryErr);
-
-    console.log("DEBUG SUBSCRIPTION UPDATE CHECK:");
-    console.log("auth.uid() / owner_id:", userId);
-    console.log("owner_id:", userId);
-    console.log("profile_id from subscription row:", subscription?.profile_id);
-    console.log("subscription.id:", subscription?.id);
 
     if (!subscription || subQueryErr) {
       console.error("No subscription found for owner.", subQueryErr);
-      throw new Error("No subscription found for owner.");
+      throw new Error(`No subscription found for owner: ${subQueryErr?.message || 'unknown error'}`);
     }
 
     const now = new Date();
@@ -433,6 +431,7 @@ export class BillingService {
       .eq("id", subscription.id)
       .select();
 
+    console.log("Subscription updated.");
     console.log("UPDATE RESULT:", { updateData, updateError });
 
     if (updateError) {
@@ -455,7 +454,10 @@ export class BillingService {
       status: 'verified',
       paid_at: nowISO
     };
-    await serverSupabase.from('payments').insert([paymentRecord]);
+    const { error: paymentErr } = await serverSupabase.from('payments').insert([paymentRecord]);
+    if (paymentErr) {
+      console.error("Payment insert error:", paymentErr);
+    }
 
     // Update shop
     const { data: shopUpdateData, error: shopError } = await serverSupabase
@@ -471,10 +473,26 @@ export class BillingService {
       .eq('id', shop.id)
       .select();
 
+    console.log("Shop updated.");
     console.log("SHOP UPDATE RESULT:", { shopUpdateData, shopError });
 
     if (shopError) {
-      console.error("Shop update error:", shopError);
+      console.error("COMPLETE SUPABASE SHOP ERROR:", JSON.stringify(shopError, null, 2));
+      throw new Error(`Failed to update shop: ${shopError.message}`);
+    }
+
+    // Final verification query
+    const { data: finalVerify, error: finalVerifyErr } = await serverSupabase
+      .from("subscriptions")
+      .select("*")
+      .eq("id", subscription.id)
+      .single();
+
+    console.log("Final verification query:", { finalVerify, finalVerifyErr });
+
+    if (finalVerifyErr || !finalVerify || finalVerify.status !== 'active') {
+      console.error("COMPLETE SUPABASE FINAL VERIFICATION ERROR:", JSON.stringify(finalVerifyErr, null, 2));
+      throw new Error(`Final verification failed: ${finalVerifyErr?.message || 'Subscription not active'}`);
     }
 
     return { success: true, shopName: shop.name, shopId: shop.id, userId };
