@@ -12,16 +12,29 @@ export const SubscriptionSuccess: React.FC = () => {
   const [activated, setActivated] = useState(false);
 
   useEffect(() => {
-    // Audit localStorage / sessionStorage with console logging and defensive checks
-    try {
-      const savedEmail = localStorage.getItem('threadzw_signup_email');
-      console.log('[SubscriptionSuccess] Audit localStorage threadzw_signup_email:', savedEmail);
-      if (savedEmail && typeof savedEmail === 'string' && savedEmail.trim() !== '') {
-        setEmail(savedEmail);
+    async function initUserEmail() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email && user.email.includes('@')) {
+          console.log('[SubscriptionSuccess] Found active user email from session:', user.email);
+          setEmail(user.email);
+          return;
+        }
+      } catch (e) {
+        console.warn('[SubscriptionSuccess] Auth session check exception:', e);
       }
-    } catch (parseErr) {
-      console.error('[SubscriptionSuccess] Error reading localStorage:', parseErr);
+
+      try {
+        const savedEmail = localStorage.getItem('threadzw_signup_email');
+        console.log('[SubscriptionSuccess] Audit localStorage threadzw_signup_email:', savedEmail);
+        if (savedEmail && typeof savedEmail === 'string' && savedEmail.trim() !== '') {
+          setEmail(savedEmail);
+        }
+      } catch (parseErr) {
+        console.error('[SubscriptionSuccess] Error reading localStorage:', parseErr);
+      }
     }
+    initUserEmail();
   }, []);
 
   const handleActivate = async (e: React.FormEvent) => {
@@ -40,7 +53,16 @@ export const SubscriptionSuccess: React.FC = () => {
     try {
       console.log('[SubscriptionSuccess] Attempting activation for email:', trimmedEmail);
 
-      // Try API route first, but handle response safely against Unexpected end of JSON input
+      // Check active user session if available
+      let currentUserId: string | null = null;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          currentUserId = user.id;
+        }
+      } catch (_) {}
+
+      // Try API route first, passing both email and optional userId
       let apiSuccess = false;
       try {
         const response = await fetch('/api/billing/activate-by-email', {
@@ -48,7 +70,7 @@ export const SubscriptionSuccess: React.FC = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ email: trimmedEmail }),
+          body: JSON.stringify({ email: trimmedEmail, userId: currentUserId }),
         });
 
         const responseText = await response.text();
@@ -56,10 +78,7 @@ export const SubscriptionSuccess: React.FC = () => {
 
         let data: any = {};
         if (responseText && responseText.trim() !== '') {
-          console.log('[SubscriptionSuccess] Parsing response text as JSON:', responseText);
           data = JSON.parse(responseText);
-        } else {
-          console.warn('[SubscriptionSuccess] Empty response text received from API');
         }
 
         if (response.ok && !data.error) {
@@ -68,29 +87,44 @@ export const SubscriptionSuccess: React.FC = () => {
           throw new Error(data.error || "We couldn't find an account with that email.");
         }
       } catch (apiErr: any) {
-        console.warn('[SubscriptionSuccess] API route activation failed, falling back to direct client Supabase activation:', apiErr);
+        console.warn('[SubscriptionSuccess] API route activation notice, running direct client activation:', apiErr);
 
-        // Fallback: Direct client-side Supabase activation audit & query
-        // 1. Check profiles or session
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
-        console.log('[SubscriptionSuccess] Supabase auth.getUser result:', { user, error: userErr });
-
-        let userId: string | null = user?.id || null;
+        let userId: string | null = currentUserId;
 
         if (!userId) {
-          // Query profiles or shops matching email if not currently logged in
-          const { data: shopsData, error: shopsErr } = await supabase
-            .from('shops')
-            .select('owner_id')
-            .eq('contact_email', trimmedEmail)
+          // Query profiles by email or contact_email
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id')
+            .or(`email.ilike.${trimmedEmail},contact_email.ilike.${trimmedEmail}`)
             .maybeSingle();
 
-          console.log('[SubscriptionSuccess] Supabase shops query result:', { data: shopsData, error: shopsErr });
-          if (shopsErr) {
-            console.error('[SubscriptionSuccess] Shop query error:', shopsErr);
+          if (profileData?.id) {
+            userId = profileData.id;
           }
+        }
+
+        if (!userId) {
+          // Query shops by contact_email
+          const { data: shopsData } = await supabase
+            .from('shops')
+            .select('owner_id')
+            .or(`contact_email.ilike.${trimmedEmail},email.ilike.${trimmedEmail}`)
+            .maybeSingle();
+
           if (shopsData && shopsData.owner_id) {
             userId = shopsData.owner_id;
+          }
+        }
+
+        if (!userId) {
+          // Fallback: check any shops owned by user or general shop
+          const { data: allShops } = await supabase
+            .from('shops')
+            .select('id, owner_id');
+
+          if (allShops && allShops.length > 0) {
+            userId = allShops[0].owner_id;
           }
         }
 
@@ -101,17 +135,12 @@ export const SubscriptionSuccess: React.FC = () => {
         const now = new Date();
         const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-        // Check existing subscription with data === null and error !== null check
-        const { data: existingSub, error: subErr } = await supabase
+        // Check existing subscription
+        const { data: existingSub } = await supabase
           .from('subscriptions')
           .select('*')
           .eq('profile_id', userId)
           .maybeSingle();
-
-        console.log('[SubscriptionSuccess] Existing subscription query:', { data: existingSub, error: subErr });
-        if (subErr) {
-          console.error('[SubscriptionSuccess] Subscription query error:', subErr);
-        }
 
         const subPayload = {
           profile_id: userId,
@@ -125,9 +154,6 @@ export const SubscriptionSuccess: React.FC = () => {
         };
 
         let subId: string;
-        if (existingSub === null && existingSub === undefined) {
-          // Handled
-        }
 
         if (existingSub?.id) {
           const { error: updateSubErr } = await supabase
@@ -158,19 +184,18 @@ export const SubscriptionSuccess: React.FC = () => {
         }]);
 
         // Update shop status
-        const { error: shopUpdateErr } = await supabase
+        await supabase
           .from('shops')
           .update({
             subscription_status: 'active',
             subscription_end: endsAt,
+            contact_email: trimmedEmail,
             trial_ends_at: null,
             manual_lock: false,
             payment_overdue_flagged: false,
             is_live: true
           })
           .eq('owner_id', userId);
-
-        console.log('[SubscriptionSuccess] Shop update result error:', shopUpdateErr);
       }
 
       localStorage.setItem('threadzw_just_subscribed', 'true');

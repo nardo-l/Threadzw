@@ -223,12 +223,22 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           .maybeSingle();
 
         if (!existingProfile) {
-          await supabase.from('profiles').insert({
+          const { error: profileInsErr } = await supabase.from('profiles').insert({
             id: data.user.id,
             full_name: formData.shopName || emailVal.split('@')[0],
+            email: emailVal.trim().toLowerCase(),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
+
+          if (profileInsErr) {
+            await supabase.from('profiles').insert({
+              id: data.user.id,
+              full_name: formData.shopName || emailVal.split('@')[0],
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          }
         }
       }
 
@@ -326,6 +336,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         category: formData.businessType || 'Streetwear',
         description: `${formData.vibe || 'Minimal'} clothing brand based in ${formData.location || 'Harare, Zimbabwe'}.`,
         whatsapp_number: formData.whatsappNumber.trim() || '+263771234567',
+        contact_email: (user.email || formData.email || '').trim().toLowerCase(),
         is_active: true,
         subscription_status: 'trial',
         trial_ends_at: new Date(Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString(),

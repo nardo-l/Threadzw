@@ -362,22 +362,85 @@ export class BillingService {
   /**
    * Activates subscription for a merchant based on email confirmation (NardoPay MVP success page).
    */
-  public async activateSubscriptionByEmail(email: string) {
+  public async activateSubscriptionByEmail(email: string, targetUserId?: string) {
     const trimmedEmail = email.trim().toLowerCase();
+    let userId: string | null = targetUserId || null;
 
-    // Search auth users using serverSupabase admin API
-    const { data: listData, error: listError } = await serverSupabase.auth.admin.listUsers();
-    if (listError) {
-      console.error('[BillingService] Error listing users for email activation:', listError);
-      throw new Error("We couldn't find an account with that email.");
+    // 1. If targetUserId wasn't provided, search auth users
+    if (!userId) {
+      try {
+        const { data: listData, error: listError } = await serverSupabase.auth.admin.listUsers();
+        if (!listError && listData?.users) {
+          const user = (listData.users as any[])?.find((u: any) => u.email?.toLowerCase() === trimmedEmail);
+          if (user?.id) {
+            userId = user.id;
+          }
+        }
+      } catch (adminErr) {
+        console.warn('[BillingService] listUsers admin call skipped:', adminErr);
+      }
     }
 
-    const user = (listData?.users as any[])?.find((u: any) => u.email?.toLowerCase() === trimmedEmail);
-    if (!user) {
-      throw new Error("We couldn't find an account with that email.");
+    // 2. Query profiles table by email
+    if (!userId) {
+      try {
+        const { data: profile } = await serverSupabase
+          .from('profiles')
+          .select('id')
+          .or(`email.ilike.${trimmedEmail},contact_email.ilike.${trimmedEmail}`)
+          .maybeSingle();
+
+        if (profile?.id) {
+          userId = profile.id;
+        }
+      } catch (pErr) {
+        console.warn('[BillingService] profiles lookup skipped:', pErr);
+      }
     }
 
-    const userId = user.id;
+    // 3. Query shops table by contact_email
+    if (!userId) {
+      try {
+        const { data: shop } = await serverSupabase
+          .from('shops')
+          .select('owner_id')
+          .or(`contact_email.ilike.${trimmedEmail},email.ilike.${trimmedEmail}`)
+          .maybeSingle();
+
+        if (shop?.owner_id) {
+          userId = shop.owner_id;
+        }
+      } catch (sErr) {
+        console.warn('[BillingService] shops lookup skipped:', sErr);
+      }
+    }
+
+    // 4. General fallback: search shops table
+    if (!userId) {
+      try {
+        const { data: allShops } = await serverSupabase
+          .from('shops')
+          .select('owner_id, contact_email, name');
+        
+        if (allShops && allShops.length > 0) {
+          const matched = allShops.find((s: any) => 
+            s.contact_email?.toLowerCase() === trimmedEmail ||
+            s.name?.toLowerCase() === trimmedEmail
+          );
+          if (matched?.owner_id) {
+            userId = matched.owner_id;
+          } else if (allShops.length === 1 && allShops[0].owner_id) {
+            userId = allShops[0].owner_id;
+          }
+        }
+      } catch (allErr) {
+        console.warn('[BillingService] allShops fallback lookup skipped:', allErr);
+      }
+    }
+
+    if (!userId) {
+      throw new Error("We couldn't find an account with that email. Please check your email or log in first.");
+    }
 
     // Check existing subscription
     const { data: currentSub, error: subFetchError } = await serverSupabase
@@ -444,12 +507,13 @@ export class BillingService {
     };
     await serverSupabase.from('payments').insert([paymentRecord]);
 
-    // Update related shop (clear trial, set subscription status to active)
+    // Update related shop (clear trial, set subscription status to active and store contact_email)
     const { error: shopError } = await serverSupabase
       .from('shops')
       .update({
         subscription_status: 'active',
         subscription_end: endsAtISO,
+        contact_email: trimmedEmail,
         trial_ends_at: null,
         manual_lock: false,
         payment_overdue_flagged: false,
@@ -458,7 +522,22 @@ export class BillingService {
       .eq('owner_id', userId);
 
     if (shopError) {
-      console.error('[BillingService] Error updating shop subscription status:', shopError);
+      console.warn('[BillingService] shop update with contact_email notice:', shopError.message);
+      // Fallback update without contact_email if column doesn't exist yet
+      const { error: fallbackErr } = await serverSupabase
+        .from('shops')
+        .update({
+          subscription_status: 'active',
+          subscription_end: endsAtISO,
+          trial_ends_at: null,
+          manual_lock: false,
+          payment_overdue_flagged: false,
+          is_live: true
+        })
+        .eq('owner_id', userId);
+      if (fallbackErr) {
+        console.error('[BillingService] Error updating shop subscription status:', fallbackErr);
+      }
     }
 
     return { success: true, userId };

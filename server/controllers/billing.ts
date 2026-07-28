@@ -229,12 +229,12 @@ export class BillingController {
    */
   public async activateByEmail(req: any, res: Response) {
     try {
-      const { email } = req.body;
+      const { email, userId } = req.body;
       if (!email || !email.includes('@')) {
         return res.status(400).json({ error: 'Please enter a valid email address.' });
       }
 
-      await billingService.activateSubscriptionByEmail(email);
+      await billingService.activateSubscriptionByEmail(email, userId);
       return res.status(200).json({ success: true, message: 'Subscription successfully activated.' });
     } catch (err: any) {
       console.error('[BillingController] activateByEmail failed:', err);
