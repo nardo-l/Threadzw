@@ -334,6 +334,13 @@ export class BillingService {
    * Activates subscription for a merchant based on Shop Name (NardoPay MVP success page).
    */
   public async activateSubscriptionByShopName(shopName: string) {
+    console.log("========== ACTIVATION START ==========");
+    console.log("SHOP NAME RECEIVED:", shopName);
+    console.log(
+      "SERVICE ROLE KEY EXISTS:",
+      Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
+    );
+
     const rawName = (shopName || '').trim();
     if (!rawName) {
       throw new Error('Please enter your shop name.');
@@ -386,11 +393,17 @@ export class BillingService {
       }
     }
 
+    console.log("SHOP LOOKUP RESULT:", {
+      found: Boolean(shop),
+      shopId: shop?.id,
+      ownerId: shop?.owner_id,
+      shopName: shop?.name,
+      slug: shop?.slug
+    });
+
     if (!shop) {
       throw new Error("We couldn't find a shop with that name.");
     }
-
-    console.log("SHOP FOUND");
 
     // 2. Retrieve shop.id and shop.owner_id
     const userId = shop.owner_id;
@@ -406,7 +419,13 @@ export class BillingService {
         .eq("profile_id", userId)
         .maybeSingle();
 
-    console.log("SUBSCRIPTION FOUND", { subscription, subscriptionError });
+    console.log("SUBSCRIPTION LOOKUP RESULT:", {
+      found: Boolean(subscription),
+      subscriptionId: subscription?.id,
+      profileId: subscription?.profile_id,
+      currentStatus: subscription?.status,
+      currentShopId: subscription?.shop_id
+    });
 
     // 4. If no subscription exists, return an explicit error.
     if (!subscription || subscriptionError) {
@@ -424,6 +443,12 @@ export class BillingService {
       updated_at: nowISO
     };
 
+    console.log("SUBSCRIPTION UPDATE START:", {
+      subscriptionId: subscription.id,
+      shopId: shop.id,
+      status: "active"
+    });
+
     console.log("SUBSCRIPTION UPDATE PAYLOAD:", updatePayload);
 
     // 5. Update the subscription using the subscription PRIMARY KEY.
@@ -435,35 +460,48 @@ export class BillingService {
         .select()
         .single();
 
-    console.log("SUBSCRIPTION UPDATE RESULT:", { updatedSubscription, updateError });
+    console.log("SUBSCRIPTION UPDATE RESULT:", {
+      data: updatedSubscription,
+      error: updateError
+    });
 
     // 6. If "updateError" exists, STOP and return the complete error.
     if (updateError || !updatedSubscription) {
-      console.error("COMPLETE SUPABASE SUBSCRIPTION UPDATE ERROR:", JSON.stringify(updateError, null, 2));
+      console.error("SUBSCRIPTION UPDATE FAILED:", updateError);
       throw new Error(`Failed to update subscription: ${updateError?.message || 'zero rows updated'}`);
     }
 
-    // 7. Verify the update with a fresh SELECT
-    const { data: verifiedSubscription, error: verificationError } =
+    // 7. Verify directly with a fresh SELECT
+    const { data: verifiedSubscription, error: verifyError } =
       await serverSupabase
         .from("subscriptions")
         .select("*")
         .eq("id", subscription.id)
         .single();
 
-    console.log("SUBSCRIPTION VERIFICATION RESULT:", { verifiedSubscription, verificationError });
+    console.log("SUBSCRIPTION VERIFICATION:", {
+      data: verifiedSubscription,
+      error: verifyError
+    });
+
+    console.log("ACTIVATION CHECK:", {
+      statusIsActive: verifiedSubscription?.status === "active",
+      shopIdMatches: verifiedSubscription?.shop_id === shop.id,
+      hasStartDate: Boolean(verifiedSubscription?.subscription_started_at),
+      hasEndDate: Boolean(verifiedSubscription?.subscription_ends_at)
+    });
 
     // 8. Do not report success unless verifiedSubscription satisfies criteria
     if (
-      verificationError ||
+      verifyError ||
       !verifiedSubscription ||
       verifiedSubscription.status !== "active" ||
       verifiedSubscription.shop_id !== shop.id ||
       !verifiedSubscription.subscription_started_at ||
       !verifiedSubscription.subscription_ends_at
     ) {
-      console.error("COMPLETE SUPABASE FINAL VERIFICATION ERROR:", JSON.stringify(verificationError, null, 2));
-      throw new Error(`Subscription verification failed: ${verificationError?.message || 'Subscription not active or missing required fields'}`);
+      console.error("COMPLETE SUPABASE FINAL VERIFICATION ERROR:", JSON.stringify(verifyError, null, 2));
+      throw new Error(`Subscription verification failed: ${verifyError?.message || 'Subscription not active or missing required fields'}`);
     }
 
     // Insert payment record
@@ -483,11 +521,8 @@ export class BillingService {
       .from('shops')
       .update({
         subscription_status: 'active',
-        subscription_end: verifiedSubscription.subscription_ends_at,
         trial_ends_at: null,
-        payment_overdue_flagged: false,
-        manual_lock: false,
-        is_live: true
+        is_active: true
       })
       .eq('id', shop.id)
       .select();
