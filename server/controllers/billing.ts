@@ -228,6 +228,7 @@ export class BillingController {
    * Activates subscription based on Shop Name (NardoPay MVP success page).
    */
   public async activateByShopName(req: any, res: Response) {
+    console.log("ACTIVATION ENDPOINT HIT");
     try {
       const { shopName, shop_name } = req.body;
       const targetName = shopName || shop_name;

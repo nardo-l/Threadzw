@@ -346,7 +346,7 @@ export class BillingService {
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
 
-    // 1. Query shop by slug
+    // 1. Find the shop using the entered shop name/slug.
     let { data: shop } = await serverSupabase
       .from('shops')
       .select('*')
@@ -390,70 +390,80 @@ export class BillingService {
       throw new Error("We couldn't find a shop with that name.");
     }
 
-    console.log("Service Role client created successfully.");
-    console.log("Shop found.");
+    console.log("SHOP FOUND");
 
+    // 2. Retrieve shop.id and shop.owner_id
     const userId = shop.owner_id;
+    if (!userId) {
+      throw new Error("Shop owner not found.");
+    }
 
-    const now = new Date();
-    const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    const nowISO = now.toISOString();
-
-    // Query existing subscription for this owner
-    let { data: subscription, error: subQueryErr } = await serverSupabase
-      .from("subscriptions")
-      .select("*")
-      .eq("profile_id", userId)
-      .maybeSingle();
-
-    console.log("Subscription lookup result:", { subscription, subQueryErr });
-
-    // If no subscription row exists, upsert a new active subscription row
-    if (!subscription) {
-      console.log("No existing subscription row found for profile_id:", userId, ". Creating/upserting active subscription...");
-      const newSubPayload = {
-        profile_id: userId,
-        shop_id: shop.id,
-        status: "active",
-        plan: "starter",
-        amount: 2.99,
-        currency: "USD",
-        subscription_started_at: nowISO,
-        subscription_ends_at: endsAt,
-        updated_at: nowISO
-      };
-
-      const { data: createdSub, error: createSubErr } = await serverSupabase
+    // 3. Find the existing subscription
+    const { data: subscription, error: subscriptionError } =
+      await serverSupabase
         .from("subscriptions")
-        .upsert(newSubPayload)
-        .select()
-        .single();
+        .select("*")
+        .eq("profile_id", userId)
+        .maybeSingle();
 
-      if (createSubErr || !createdSub) {
-        console.error("Failed to create subscription row:", createSubErr);
-        throw new Error(`Failed to initialize subscription: ${createSubErr?.message || 'unknown error'}`);
-      }
-      subscription = createdSub;
-    } else {
-      // Update existing subscription row
-      const updatePayload = {
-        status: "active",
-        shop_id: shop.id,
-        subscription_started_at: nowISO,
-        subscription_ends_at: endsAt,
-        updated_at: nowISO
-      };
+    console.log("SUBSCRIPTION FOUND", { subscription, subscriptionError });
 
-      const { data: updateData, error: updateError } = await serverSupabase
+    // 4. If no subscription exists, return an explicit error.
+    if (!subscription || subscriptionError) {
+      throw new Error(`No subscription found for owner: ${subscriptionError?.message || 'unknown error'}`);
+    }
+
+    const nowISO = new Date().toISOString();
+    const endsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const updatePayload = {
+      status: "active",
+      shop_id: shop.id,
+      subscription_started_at: nowISO,
+      subscription_ends_at: endsAt,
+      updated_at: nowISO
+    };
+
+    console.log("SUBSCRIPTION UPDATE PAYLOAD:", updatePayload);
+
+    // 5. Update the subscription using the subscription PRIMARY KEY.
+    const { data: updatedSubscription, error: updateError } =
+      await serverSupabase
         .from("subscriptions")
         .update(updatePayload)
         .eq("id", subscription.id)
-        .select();
+        .select()
+        .single();
 
-      if (updateError || !updateData || updateData.length === 0) {
-        console.error("Failed to update subscription row:", updateError);
-        throw new Error(`Failed to update subscription: ${updateError?.message || 'zero rows updated'}`);
-      }
+    console.log("SUBSCRIPTION UPDATE RESULT:", { updatedSubscription, updateError });
+
+    // 6. If "updateError" exists, STOP and return the complete error.
+    if (updateError || !updatedSubscription) {
+      console.error("COMPLETE SUPABASE SUBSCRIPTION UPDATE ERROR:", JSON.stringify(updateError, null, 2));
+      throw new Error(`Failed to update subscription: ${updateError?.message || 'zero rows updated'}`);
+    }
+
+    // 7. Verify the update with a fresh SELECT
+    const { data: verifiedSubscription, error: verificationError } =
+      await serverSupabase
+        .from("subscriptions")
+        .select("*")
+        .eq("id", subscription.id)
+        .single();
+
+    console.log("SUBSCRIPTION VERIFICATION RESULT:", { verifiedSubscription, verificationError });
+
+    // 8. Do not report success unless verifiedSubscription satisfies criteria
+    if (
+      verificationError ||
+      !verifiedSubscription ||
+      verifiedSubscription.status !== "active" ||
+      verifiedSubscription.shop_id !== shop.id ||
+      !verifiedSubscription.subscription_started_at ||
+      !verifiedSubscription.subscription_ends_at
+    ) {
+      console.error("COMPLETE SUPABASE FINAL VERIFICATION ERROR:", JSON.stringify(verificationError, null, 2));
+      throw new Error(`Subscription verification failed: ${verificationError?.message || 'Subscription not active or missing required fields'}`);
     }
 
     // Insert payment record
@@ -466,47 +476,33 @@ export class BillingService {
       status: 'verified',
       paid_at: nowISO
     };
-    const { error: paymentErr } = await serverSupabase.from('payments').insert([paymentRecord]);
-    if (paymentErr) {
-      console.error("Payment insert error:", paymentErr);
-    }
+    await serverSupabase.from('payments').insert([paymentRecord]);
 
-    // Update shop
+    // 9. Only after the subscription verification succeeds, update the shop:
     const { data: shopUpdateData, error: shopError } = await serverSupabase
       .from('shops')
       .update({
         subscription_status: 'active',
-        subscription_end: endsAt,
+        subscription_end: verifiedSubscription.subscription_ends_at,
         trial_ends_at: null,
-        manual_lock: false,
         payment_overdue_flagged: false,
+        manual_lock: false,
         is_live: true
       })
       .eq('id', shop.id)
       .select();
 
-    console.log("Shop updated.");
     console.log("SHOP UPDATE RESULT:", { shopUpdateData, shopError });
 
-    if (shopError) {
-      console.error("COMPLETE SUPABASE SHOP ERROR:", JSON.stringify(shopError, null, 2));
-      throw new Error(`Failed to update shop: ${shopError.message}`);
+    // 10. Verify the shop update as well.
+    if (shopError || !shopUpdateData || shopUpdateData.length === 0) {
+      console.error("COMPLETE SUPABASE SHOP UPDATE ERROR:", JSON.stringify(shopError, null, 2));
+      throw new Error(`Failed to update shop: ${shopError?.message || 'zero rows updated'}`);
     }
 
-    // Final verification query
-    const { data: finalVerify, error: finalVerifyErr } = await serverSupabase
-      .from("subscriptions")
-      .select("*")
-      .eq("id", subscription.id)
-      .single();
+    console.log("FINAL ACTIVATION SUCCESS");
 
-    console.log("Final verification query:", { finalVerify, finalVerifyErr });
-
-    if (finalVerifyErr || !finalVerify || finalVerify.status !== 'active') {
-      console.error("COMPLETE SUPABASE FINAL VERIFICATION ERROR:", JSON.stringify(finalVerifyErr, null, 2));
-      throw new Error(`Final verification failed: ${finalVerifyErr?.message || 'Subscription not active'}`);
-    }
-
+    // 11. Only after both verification steps succeed should the API return success: true
     return { success: true, shopName: shop.name, shopId: shop.id, userId };
   }
 
