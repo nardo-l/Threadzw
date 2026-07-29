@@ -15,14 +15,12 @@ import {
   Store,
   Share2,
   Edit3,
+  Tag,
   Package,
   MessageSquare,
-  Percent,
-  MapPin,
-  CheckCircle2,
-  AlertCircle,
+  ArrowRight,
   Clock,
-  ArrowUpRight
+  ExternalLink
 } from 'lucide-react';
 import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
@@ -30,27 +28,26 @@ import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
-import { FREE_TRIAL_DAYS } from '../lib/plans';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, session, loading: authLoading, subscription } = useAuth();
   const { shop, loading: shopLoading } = useShopContext();
-  const [timeFilter, setTimeFilter] = useState('This Week');
+  const [dateFilter, setDateFilter] = useState('May 20 – May 26');
+  const [chartFilter, setChartFilter] = useState('Last 7 days');
 
   const {
+    productsCount,
+    liveProductsCount,
     totalVisitors,
     visitorsChangePercent,
     whatsappClicks,
     whatsappClicksChangePercent,
     conversionRate,
     conversionRateChangePercent,
-    visitShopClicks,
-    visitShopClicksChangePercent,
-    topProducts,
-    trafficSources,
-    storeHealth,
+    topProducts: realTopProducts,
     recentActivity,
+    dailyVisitsChart,
     loading: dashboardLoading
   } = useDashboard(shop?.id);
 
@@ -66,15 +63,6 @@ export const Dashboard: React.FC = () => {
       toast.success('Subscription activated successfully! Welcome to ThreadZW Pro 🚀');
     }
   }, []);
-
-  const isProActive = subscription?.status === 'active';
-  const subEndsAt = isProActive ? subscription?.subscription_ends_at : subscription?.trial_ends_at || shop?.trial_ends_at;
-
-  let daysRemaining = 0;
-  if (subEndsAt) {
-    const diff = new Date(subEndsAt).getTime() - Date.now();
-    daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-  }
 
   const isSubscriptionOrTrialActive = useMemo(() => {
     if (!session || !user || !subscription) return false;
@@ -121,11 +109,44 @@ export const Dashboard: React.FC = () => {
     return 'Good evening';
   }, []);
 
+  // Real 7-day shop visits chart calculation (Hook must be called unconditionally)
+  const maxVisitsScale = useMemo(() => {
+    if (!dailyVisitsChart || dailyVisitsChart.length === 0) return 10;
+    const maxVal = Math.max(...dailyVisitsChart.map(p => p.visits));
+    return maxVal > 0 ? maxVal : 5;
+  }, [dailyVisitsChart]);
+
+  const visitPoints = useMemo(() => {
+    if (!dailyVisitsChart || dailyVisitsChart.length === 0) {
+      return [
+        { day: 'Day 1', visits: 0, x: 10, y: 75 },
+        { day: 'Day 2', visits: 0, x: 23.3, y: 75 },
+        { day: 'Day 3', visits: 0, x: 36.6, y: 75 },
+        { day: 'Day 4', visits: 0, x: 50, y: 75 },
+        { day: 'Day 5', visits: 0, x: 63.3, y: 75 },
+        { day: 'Day 6', visits: 0, x: 76.6, y: 75 },
+        { day: 'Day 7', visits: 0, x: 90, y: 75 },
+      ];
+    }
+
+    return dailyVisitsChart.map((pt, idx) => {
+      const xPct = 10 + idx * 13.33;
+      const ratio = Math.min(1, Math.max(0, pt.visits / maxVisitsScale));
+      const yVal = 75 - ratio * 60;
+      return {
+        day: pt.day,
+        visits: pt.visits,
+        x: xPct,
+        y: yVal
+      };
+    });
+  }, [dailyVisitsChart, maxVisitsScale]);
+
   if (shopLoading || authLoading || dashboardLoading) {
     return (
-      <div className="min-h-screen bg-white text-black flex flex-col items-center justify-center font-sans">
-        <Loader2 className="animate-spin text-[#D7FF00] w-8 h-8" />
-        <span className="text-xs text-zinc-500 mt-4 font-mono">Loading dashboard analytics...</span>
+      <div className="min-h-screen bg-[#F8F9FA] text-black flex flex-col items-center justify-center font-sans">
+        <Loader2 className="animate-spin text-[#A1DF00] w-8 h-8" />
+        <span className="text-xs text-zinc-400 mt-4 font-medium">Loading store dashboard...</span>
       </div>
     );
   }
@@ -136,19 +157,19 @@ export const Dashboard: React.FC = () => {
 
   if (!shop) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white p-8 space-y-8 text-center font-sans relative">
-        <div className="w-20 h-20 rounded-3xl bg-[#D7FF00]/10 border border-[#D7FF00]/20 flex items-center justify-center text-[#D7FF00] relative z-10">
-          <ShoppingBag size={32} />
+      <div className="min-h-screen bg-[#F8F9FA] flex flex-col items-center justify-center text-black p-8 space-y-6 text-center font-sans">
+        <div className="w-16 h-16 rounded-2xl bg-[#CCFF00] flex items-center justify-center text-black shadow-sm">
+          <ShoppingBag size={28} />
         </div>
-        <div className="space-y-3 relative z-10 max-w-sm">
-          <h3 className="text-3xl font-black uppercase tracking-tight">No Shop Registered</h3>
-          <p className="text-sm text-zinc-400 font-medium leading-relaxed">
+        <div className="space-y-2 max-w-sm">
+          <h3 className="text-2xl font-bold tracking-tight">No Shop Registered</h3>
+          <p className="text-xs text-zinc-500 font-normal leading-relaxed">
             Initialize your storefront to start receiving WhatsApp orders on ThreadZW.
           </p>
         </div>
         <button 
           onClick={() => navigate('/setup')} 
-          className="px-10 py-4 bg-[#D7FF00] text-black font-extrabold text-sm uppercase tracking-wider rounded-full hover:opacity-90 transition-all cursor-pointer relative z-10"
+          className="px-8 py-3.5 bg-[#CCFF00] text-black font-bold text-xs uppercase tracking-wider rounded-xl hover:opacity-90 transition-all cursor-pointer shadow-sm"
         >
           Create Shop
         </button>
@@ -156,75 +177,215 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  const userFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Nardo';
+  const userFirstName = user?.user_metadata?.first_name || user?.email?.split('@')[0] || 'Store Owner';
+
+  const polylinePoints = visitPoints.map(p => `${p.x * 3.5},${p.y}`).join(' ');
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-black font-sans pb-32">
-      {/* Top Header */}
-      <header className="max-w-5xl mx-auto px-6 pt-6 pb-4 flex items-center justify-between bg-[#F8F9FA] sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate('/settings')}
-            className="p-2 hover:bg-zinc-200/50 rounded-xl transition-colors cursor-pointer"
-          >
-            <Menu size={22} className="text-zinc-900" />
-          </button>
-          
-          <div className="flex items-center text-xl font-black tracking-tight cursor-pointer" onClick={() => navigate('/dashboard')}>
-            <span className="text-black">Thread</span>
-            <span className="text-[#D7FF00] bg-black px-1 rounded font-black ml-0.5">ZW</span>
-          </div>
+    <div className="min-h-screen bg-[#F8F9FA] text-[#111] font-sans pb-28">
+      {/* Top Navigation Bar */}
+      <header className="max-w-4xl mx-auto px-5 pt-4 pb-3 flex items-center justify-between sticky top-0 z-30 bg-[#F8F9FA]/90 backdrop-blur-md">
+        <button 
+          onClick={() => navigate('/settings')}
+          className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
+        >
+          <Menu size={22} className="text-zinc-900" />
+        </button>
+
+        <div className="flex items-center text-xl font-bold tracking-tight cursor-pointer" onClick={() => navigate('/dashboard')}>
+          <span className="text-black">Thread</span>
+          <span className="text-[#96D100] ml-0.5">ZW</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => navigate('/notifications')}
-            className="relative p-2 hover:bg-zinc-200/50 rounded-xl transition-colors cursor-pointer"
+            className="relative p-1.5 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
           >
             <Bell size={20} className="text-zinc-800" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D7FF00] rounded-full ring-2 ring-[#F8F9FA]" />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-[#CCFF00] rounded-full ring-2 ring-[#F8F9FA]" />
           </button>
           
           <div 
-            onClick={() => navigate('/profile')}
-            className="w-10 h-10 rounded-full bg-black text-[#D7FF00] font-black text-sm flex items-center justify-center cursor-pointer shadow-sm hover:scale-105 transition-transform"
+            onClick={() => navigate('/settings')}
+            className="flex items-center gap-1 cursor-pointer"
           >
-            {userFirstName.substring(0, 2).toUpperCase()}
+            <div className="w-8 h-8 rounded-full bg-zinc-900 text-white font-bold text-xs flex items-center justify-center overflow-hidden border border-zinc-200">
+              {userFirstName.substring(0, 2).toUpperCase()}
+            </div>
+            <ChevronDown size={14} className="text-zinc-500" />
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-6 space-y-8">
-        {/* Greeting & Time Filter Row */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <main className="max-w-4xl mx-auto px-4 py-3 space-y-5">
+        {/* Greeting Section & Date Range Picker */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
           <div>
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight text-zinc-950 flex items-center gap-2">
-              {greetingText}, {userFirstName} <span className="text-2xl">👋</span>
+            <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight flex items-center gap-2">
+              {greetingText}, {userFirstName} <span className="inline-block animate-wave">👋</span>
             </h1>
-            <p className="text-sm text-zinc-500 font-medium mt-1">
-              Here's what's happening in your store today.
+            <p className="text-xs text-zinc-500 font-normal mt-0.5">
+              Here's what's happening with your store today.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-bold shadow-2xs">
-              <Calendar size={14} className="text-zinc-500" />
-              <span>{timeFilter}</span>
-              <ChevronDown size={14} className="text-zinc-400" />
+          <button 
+            onClick={() => setDateFilter(dateFilter === 'May 20 – May 26' ? 'May 13 – May 19' : 'May 20 – May 26')}
+            className="inline-flex items-center gap-2 bg-white border border-zinc-200/80 rounded-xl px-3.5 py-2 text-xs font-medium text-zinc-700 shadow-2xs hover:border-zinc-300 transition-colors cursor-pointer self-start sm:self-auto"
+          >
+            <Calendar size={14} className="text-zinc-400" />
+            <span>{dateFilter}</span>
+            <ChevronDown size={13} className="text-zinc-400 ml-0.5" />
+          </button>
+        </div>
+
+        {/* 4 Metric / KPI Cards Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {/* Card 1: Total Products (Replaced Total Revenue) */}
+          <div className="bg-white border border-zinc-200/70 rounded-2xl p-4 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-normal text-zinc-500">Total Products</span>
+              <div className="w-7 h-7 rounded-lg bg-[#CCFF00] flex items-center justify-center text-black font-bold">
+                <Package size={15} className="stroke-[2.5]" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl sm:text-2xl font-bold text-zinc-950 tracking-tight">{productsCount}</div>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-medium text-lime-600">
+              <span>{liveProductsCount} active</span>
+              <span className="text-zinc-400 font-normal">in store catalog</span>
+            </div>
+          </div>
+
+          {/* Card 2: WhatsApp Orders (Replaced Orders) */}
+          <div className="bg-white border border-zinc-200/70 rounded-2xl p-4 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-normal text-zinc-500">WhatsApp Orders</span>
+              <div className="w-7 h-7 rounded-lg bg-[#CCFF00] flex items-center justify-center text-black font-bold">
+                <MessageSquare size={15} className="stroke-[2.5]" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl sm:text-2xl font-bold text-zinc-950 tracking-tight">{whatsappClicks}</div>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-medium text-lime-600">
+              <span>↑ {whatsappClicksChangePercent}%</span>
+              <span className="text-zinc-400 font-normal">vs last week</span>
+            </div>
+          </div>
+
+          {/* Card 3: Visitors */}
+          <div className="bg-white border border-zinc-200/70 rounded-2xl p-4 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-normal text-zinc-500">Visitors</span>
+              <div className="w-7 h-7 rounded-lg bg-[#CCFF00] flex items-center justify-center text-black font-bold">
+                <Users size={15} className="stroke-[2.5]" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl sm:text-2xl font-bold text-zinc-950 tracking-tight">{totalVisitors.toLocaleString()}</div>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-medium text-lime-600">
+              <span>↑ {visitorsChangePercent}%</span>
+              <span className="text-zinc-400 font-normal">vs last week</span>
+            </div>
+          </div>
+
+          {/* Card 4: Conversion Rate */}
+          <div className="bg-white border border-zinc-200/70 rounded-2xl p-4 shadow-2xs space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-normal text-zinc-500">Conversion Rate</span>
+              <div className="w-7 h-7 rounded-lg bg-[#CCFF00] flex items-center justify-center text-black font-bold">
+                <TrendingUp size={15} className="stroke-[2.5]" />
+              </div>
+            </div>
+            <div>
+              <div className="text-xl sm:text-2xl font-bold text-zinc-950 tracking-tight">{conversionRate}%</div>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-medium text-lime-600">
+              <span>↑ {conversionRateChangePercent}%</span>
+              <span className="text-zinc-400 font-normal">vs last week</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Real Shop Visits Overview Chart Card */}
+        <div className="bg-white border border-zinc-200/70 rounded-2xl p-5 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-zinc-900">Shop Visits Overview</h3>
+              <p className="text-[11px] text-zinc-400 font-normal">Real storefront visitors over the past 7 days</p>
+            </div>
+            <button 
+              onClick={() => setChartFilter(chartFilter === 'Last 7 days' ? 'Last 30 days' : 'Last 7 days')}
+              className="flex items-center gap-1.5 bg-white border border-zinc-200/80 rounded-xl px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-2xs hover:border-zinc-300 transition-colors cursor-pointer"
+            >
+              <span>{chartFilter}</span>
+              <ChevronDown size={13} className="text-zinc-400" />
+            </button>
+          </div>
+
+          {/* SVG Line Chart */}
+          <div className="pt-2 pb-1 relative">
+            <div className="h-44 w-full flex items-end">
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 350 85" preserveAspectRatio="none">
+                {/* Horizontal Gridlines */}
+                <line x1="0" y1="0" x2="350" y2="0" stroke="#F1F3F5" strokeWidth="1" />
+                <line x1="0" y1="20" x2="350" y2="20" stroke="#F1F3F5" strokeWidth="1" />
+                <line x1="0" y1="40" x2="350" y2="40" stroke="#F1F3F5" strokeWidth="1" />
+                <line x1="0" y1="60" x2="350" y2="60" stroke="#F1F3F5" strokeWidth="1" />
+                <line x1="0" y1="80" x2="350" y2="80" stroke="#F1F3F5" strokeWidth="1" strokeDasharray="2 2" />
+
+                {/* Electric Lime Green Trend Line */}
+                <polyline
+                  fill="none"
+                  stroke="#CCFF00"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  points={polylinePoints}
+                />
+
+                {/* Plot Data Dots */}
+                {visitPoints.map((pt, i) => (
+                  <circle
+                    key={i}
+                    cx={pt.x * 3.5}
+                    cy={pt.y}
+                    r="4"
+                    fill="#CCFF00"
+                    stroke="#000"
+                    strokeWidth="1.5"
+                  />
+                ))}
+              </svg>
             </div>
 
-            <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-bold shadow-2xs">
-              <span className="text-zinc-500">Compare to:</span>
-              <span>Previous Period</span>
-              <ChevronDown size={14} className="text-zinc-400" />
+            {/* Y Axis Labels */}
+            <div className="absolute top-0 left-0 bottom-6 flex flex-col justify-between text-[10px] text-zinc-400 font-normal pointer-events-none">
+              <span>{maxVisitsScale}</span>
+              <span>{Math.round(maxVisitsScale * 0.75)}</span>
+              <span>{Math.round(maxVisitsScale * 0.5)}</span>
+              <span>{Math.round(maxVisitsScale * 0.25)}</span>
+              <span>0</span>
+            </div>
+
+            {/* X Axis Date Labels */}
+            <div className="flex justify-between items-center text-[10px] text-zinc-400 font-normal pt-3 px-1">
+              {visitPoints.map((pt) => (
+                <span key={pt.day}>{pt.day}</span>
+              ))}
             </div>
           </div>
         </div>
 
         {/* Quick Actions Bar */}
-        <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-4">
-          <h3 className="text-sm font-bold text-zinc-950">Quick Actions</h3>
+        <div className="bg-white border border-zinc-200/70 rounded-2xl p-5 shadow-2xs space-y-4">
+          <h3 className="text-base font-bold text-zinc-900">Quick Actions</h3>
 
+          {/* Quick Action Icon Buttons (Removed small white Add Product & Create Discount) */}
           <div className="grid grid-cols-3 gap-3 text-center">
             <button 
               onClick={() => {
@@ -233,314 +394,143 @@ export const Dashboard: React.FC = () => {
               }}
               className="flex flex-col items-center gap-2 group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
-                <Store size={19} />
+              <div className="w-12 h-12 rounded-xl border border-zinc-200/80 bg-white group-hover:bg-zinc-50 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Store size={20} className="stroke-[1.8]" />
               </div>
-              <span className="text-[10px] font-medium text-zinc-700 leading-tight">View Store</span>
+              <span className="text-[11px] font-normal text-zinc-700 leading-tight">View Store</span>
             </button>
 
             <button 
               onClick={handleCopyShopLink}
               className="flex flex-col items-center gap-2 group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
-                <Share2 size={19} />
+              <div className="w-12 h-12 rounded-xl border border-zinc-200/80 bg-white group-hover:bg-zinc-50 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Share2 size={20} className="stroke-[1.8]" />
               </div>
-              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Share Store</span>
+              <span className="text-[11px] font-normal text-zinc-700 leading-tight">Share Store</span>
             </button>
 
             <button 
               onClick={() => navigate('/edit-shop')}
               className="flex flex-col items-center gap-2 group cursor-pointer"
             >
-              <div className="w-12 h-12 rounded-2xl border border-zinc-200 bg-white group-hover:border-zinc-300 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
-                <Edit3 size={19} />
+              <div className="w-12 h-12 rounded-xl border border-zinc-200/80 bg-white group-hover:bg-zinc-50 flex items-center justify-center text-zinc-800 transition-all shadow-2xs group-active:scale-95">
+                <Edit3 size={20} className="stroke-[1.8]" />
               </div>
-              <span className="text-[10px] font-medium text-zinc-700 leading-tight">Customize Store</span>
+              <span className="text-[11px] font-normal text-zinc-700 leading-tight">Customize Store</span>
             </button>
           </div>
 
+          {/* Wide Prominent + ADD PRODUCT Green CTA Button */}
           <button 
             onClick={() => navigate('/add-product')}
-            className="w-full h-14 bg-[#D7FF00] text-black rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-wider text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
+            className="w-full h-12 bg-[#CCFF00] hover:bg-[#bbf000] text-black rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all cursor-pointer shadow-sm active:scale-[0.99]"
           >
-            <Plus size={18} strokeWidth={3} /> Add Product
+            <Plus size={18} className="stroke-[2.5]" /> ADD PRODUCT
           </button>
         </div>
 
-        {/* 4 Analytics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Card 1: Store Visitors */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-900">
-              <Users size={20} className="stroke-[2]" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Store Visitors</span>
-              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{totalVisitors}</div>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-              <TrendingUp size={14} />
-              <span>↑{visitorsChangePercent}% vs last week</span>
-            </div>
-          </div>
-
-          {/* Card 2: WhatsApp Button Clicks */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#D7FF00]/10 rounded-bl-full pointer-events-none" />
-            <div className="w-10 h-10 rounded-xl bg-[#D7FF00]/20 flex items-center justify-center text-zinc-950">
-              <MessageSquare size={20} className="stroke-[2]" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">WhatsApp Clicks</span>
-              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{whatsappClicks}</div>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-              <TrendingUp size={14} />
-              <span>↑{whatsappClicksChangePercent}% vs last week</span>
-            </div>
-          </div>
-
-          {/* Card 3: Conversion Rate */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-900">
-              <Percent size={20} className="stroke-[2]" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Conversion Rate</span>
-              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{conversionRate}%</div>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-              <TrendingUp size={14} />
-              <span>↑{conversionRateChangePercent}% vs last week</span>
-            </div>
-          </div>
-
-          {/* Card 4: Visit Shop Clicks */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-5 shadow-2xs space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-900">
-              <MapPin size={20} className="stroke-[2]" />
-            </div>
-            <div>
-              <span className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Visit Shop Clicks</span>
-              <div className="text-3xl font-black text-zinc-950 tracking-tight mt-1">{visitShopClicks}</div>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
-              <TrendingUp size={14} />
-              <span>↑{visitShopClicksChangePercent}% vs last week</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Top Performing Products & Traffic Sources */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Top Performing Products */}
-          <div className="lg:col-span-2 bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
+        {/* 2-Column Section: Recent Activity & Top Products (NO DUMMY DATA) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Recent WhatsApp Orders & Activity */}
+          <div className="bg-white border border-zinc-200/70 rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-zinc-950">Top Performing Products</h3>
-                <p className="text-xs text-zinc-500">Ranked by WhatsApp clicks</p>
-              </div>
+              <h3 className="text-base font-bold text-zinc-900">Recent WhatsApp Orders</h3>
               <button 
-                onClick={() => navigate('/inventory')}
-                className="text-xs font-extrabold text-zinc-900 hover:text-black flex items-center gap-1 cursor-pointer"
+                onClick={() => navigate('/analytics')}
+                className="text-xs font-medium text-zinc-500 hover:text-black cursor-pointer transition-colors"
               >
-                View all <ArrowUpRight size={14} />
+                View all
               </button>
             </div>
 
             <div className="space-y-3">
-              {topProducts.map((p, idx) => (
-                <div key={p.id || idx} className="flex items-center justify-between p-3 rounded-xl hover:bg-zinc-50 transition-colors border border-zinc-100">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 text-xs font-extrabold text-zinc-400">0{idx + 1}</span>
-                    <div className="w-11 h-11 rounded-xl bg-zinc-100 overflow-hidden flex items-center justify-center shrink-0 border border-zinc-200">
-                      {p.images && p.images[0] ? (
-                        <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+              {recentActivity && recentActivity.length > 0 ? (
+                recentActivity.slice(0, 4).map((act) => (
+                  <div key={act.id} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-zinc-50/80 transition-colors border border-zinc-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                        {act.type === 'whatsapp' ? <MessageSquare size={18} /> : <Users size={18} />}
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900 line-clamp-1">{act.title}</h4>
+                        <div className="text-[11px] text-zinc-400 font-normal">
+                          {act.timeAgo}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 shrink-0">
+                      Active
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-400 mx-auto flex items-center justify-center">
+                    <MessageSquare size={20} />
+                  </div>
+                  <p className="text-xs text-zinc-500 font-medium">No recent WhatsApp orders yet</p>
+                  <p className="text-[11px] text-zinc-400 max-w-xs mx-auto">Share your storefront link to start receiving customer WhatsApp orders.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Top Products (Real Store Products) */}
+          <div className="bg-white border border-zinc-200/70 rounded-2xl p-5 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-zinc-900">Top Products</h3>
+              <button 
+                onClick={() => navigate('/inventory')}
+                className="text-xs font-medium text-zinc-500 hover:text-black cursor-pointer transition-colors"
+              >
+                View all
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {realTopProducts && realTopProducts.length > 0 ? (
+                realTopProducts.slice(0, 4).map((prod) => (
+                  <div key={prod.id} className="flex items-center justify-between p-2 rounded-xl hover:bg-zinc-50/80 transition-colors">
+                    <div className="flex items-center gap-3">
+                      {prod.images && prod.images[0] ? (
+                        <img 
+                          src={prod.images[0]} 
+                          alt={prod.name} 
+                          className="w-11 h-11 rounded-lg object-cover bg-zinc-100 shrink-0" 
+                          referrerPolicy="no-referrer" 
+                        />
                       ) : (
-                        <Package size={20} className="text-zinc-400" />
+                        <div className="w-11 h-11 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-400 shrink-0">
+                          <Package size={20} />
+                        </div>
                       )}
+                      <div>
+                        <h4 className="text-xs font-bold text-zinc-900">{prod.name}</h4>
+                        <span className="text-[11px] text-zinc-400 font-normal">{prod.whatsapp_clicks || 0} WhatsApp clicks</span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-zinc-900">{p.name}</h4>
-                      <span className="text-xs text-zinc-500 font-medium">USD ${(p.price || 0).toFixed(2)}</span>
-                    </div>
+                    <span className="text-xs font-bold text-zinc-900">
+                      ${(prod.price || 0).toFixed(2)}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-sm font-black text-zinc-950">{p.whatsapp_clicks}</span>
-                    <span className="text-[10px] text-zinc-500 block uppercase font-medium">WhatsApp Clicks</span>
+                ))
+              ) : (
+                <div className="py-8 text-center space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-400 mx-auto flex items-center justify-center">
+                    <Package size={20} />
                   </div>
+                  <p className="text-xs text-zinc-500 font-medium">No products in store catalog</p>
+                  <button 
+                    onClick={() => navigate('/add-product')} 
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#85B800] hover:underline cursor-pointer"
+                  >
+                    Add your first product <ArrowRight size={12} />
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
           </div>
-
-          {/* Traffic Sources */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-6 flex flex-col justify-between">
-            <div>
-              <h3 className="text-base font-bold text-zinc-950">Traffic Sources</h3>
-              <p className="text-xs text-zinc-500">Where visitors came from</p>
-            </div>
-
-            <div className="flex flex-col items-center justify-center my-auto py-4">
-              <div className="relative w-44 h-44 rounded-full border-[16px] border-[#D7FF00] flex items-center justify-center shadow-inner">
-                <div className="text-center">
-                  <span className="text-2xl font-black text-zinc-950">100%</span>
-                  <span className="text-[10px] text-zinc-500 uppercase block font-bold">Verified</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {trafficSources.map((src, i) => (
-                <div key={src.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-[#D7FF00]' : i === 1 ? 'bg-zinc-950' : i === 2 ? 'bg-zinc-400' : 'bg-zinc-200'}`} />
-                    <span className="font-bold text-zinc-800">{src.name}</span>
-                  </div>
-                  <span className="font-black text-zinc-950">{src.percentage}%</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Store Health & Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Store Health */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-zinc-950">Store Health</h3>
-                <p className="text-xs text-zinc-500">Catalog completeness status</p>
-              </div>
-              <button 
-                onClick={() => navigate('/inventory')}
-                className="text-xs font-extrabold text-zinc-900 hover:text-black flex items-center gap-1 cursor-pointer"
-              >
-                Manage <ArrowUpRight size={14} />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                    <Package size={16} />
-                  </div>
-                  <span className="text-sm font-bold text-zinc-800">Products Live</span>
-                </div>
-                <span className="text-sm font-black text-zinc-950">{storeHealth.live}</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center">
-                    <AlertCircle size={16} />
-                  </div>
-                  <span className="text-sm font-bold text-zinc-800">Out of Stock</span>
-                </div>
-                <span className="text-sm font-black text-rose-600">{storeHealth.outOfStock}</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                    <Clock size={16} />
-                  </div>
-                  <span className="text-sm font-bold text-zinc-800">Draft Products</span>
-                </div>
-                <span className="text-sm font-black text-zinc-950">{storeHealth.draft}</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center">
-                    <Users size={16} />
-                  </div>
-                  <span className="text-sm font-bold text-zinc-800">Missing Images</span>
-                </div>
-                <span className="text-sm font-black text-purple-600">{storeHealth.missingImages}</span>
-              </div>
-
-              <div className="flex items-center justify-between p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
-                    <ShoppingBag size={16} />
-                  </div>
-                  <span className="text-sm font-bold text-zinc-800">Low Stock</span>
-                </div>
-                <span className="text-sm font-black text-blue-600">{storeHealth.lowStock}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
-            <div>
-              <h3 className="text-base font-bold text-zinc-950">Recent Activity</h3>
-              <p className="text-xs text-zinc-500">Chronological visitor interactions</p>
-            </div>
-
-            <div className="space-y-4">
-              {recentActivity.map((act) => (
-                <div key={act.id} className="flex items-start gap-3 pb-3 border-b border-zinc-100 last:border-0 last:pb-0">
-                  <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-800 shrink-0 mt-0.5">
-                    {act.type === 'whatsapp' ? <MessageSquare size={14} className="text-emerald-600" /> : <Users size={14} className="text-zinc-600" />}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-zinc-900">{act.title}</p>
-                    <span className="text-[10px] text-zinc-400 font-medium">{act.timeAgo}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Subscription Card */}
-        <div className="bg-white border border-zinc-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-zinc-950">Subscription</h3>
-            <span className="text-xs font-bold text-zinc-500">{isProActive ? 'Pro Plan' : 'Starter Plan'}</span>
-          </div>
-
-          <div className="bg-zinc-50 border border-zinc-200/60 rounded-2xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Current Plan</span>
-                <h4 className="text-lg font-black text-zinc-950 mt-0.5">
-                  {isProActive ? 'ThreadZW Pro' : '7-Day Free Trial'}
-                </h4>
-              </div>
-              <div className="text-right">
-                <span className="text-2xl font-black text-zinc-950">{isProActive ? '∞' : daysRemaining}</span>
-                <span className="text-[10px] text-zinc-500 uppercase block font-bold">{isProActive ? 'Active' : 'Days Remaining'}</span>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="w-full bg-zinc-200 h-2.5 rounded-full overflow-hidden">
-              <div 
-                className="bg-[#D7FF00] h-full rounded-full" 
-                style={{ width: isProActive ? '100%' : `${Math.min(100, Math.max(10, (daysRemaining / FREE_TRIAL_DAYS) * 100))}%` }} 
-              />
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-zinc-500 font-medium">
-              <span>{isProActive ? 'Subscription Active' : 'Trial active'}</span>
-              <span>{isProActive ? (subEndsAt ? `Renews on ${new Date(subEndsAt).toLocaleDateString()}` : 'Pro Active') : `Trial ends in ${daysRemaining} days`}</span>
-            </div>
-          </div>
-
-          {!isProActive && (
-            <button 
-              onClick={() => navigate('/subscription')}
-              className="w-full h-14 bg-[#D7FF00] text-black rounded-2xl flex items-center justify-center gap-2 font-black uppercase tracking-wider text-xs shadow-md hover:opacity-95 transition-all cursor-pointer"
-            >
-              Upgrade for $2.99 / month
-            </button>
-          )}
         </div>
       </main>
 
@@ -548,3 +538,4 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+

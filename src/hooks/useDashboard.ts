@@ -23,6 +23,12 @@ export interface ActivityItem {
   date: string;
 }
 
+export interface DailyVisitPoint {
+  day: string;
+  visits: number;
+  fullDate: string;
+}
+
 export interface DashboardData {
   productsCount: number;
   liveProductsCount: number;
@@ -47,6 +53,7 @@ export interface DashboardData {
   trafficSources: TrafficSourceStat[];
   storeHealth: StoreHealthStats;
   recentActivity: ActivityItem[];
+  dailyVisitsChart: DailyVisitPoint[];
   
   loading: boolean;
   error: string | null;
@@ -89,7 +96,8 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
       missingImages: 0,
       lowStock: 0
     },
-    recentActivity: []
+    recentActivity: [],
+    dailyVisitsChart: []
   });
 
   const [loading, setLoading] = useState<boolean>(true);
@@ -152,28 +160,34 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
       const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
 
-      const visitorEvents = events.filter(e => e.event_type === 'shop_visit' || e.event_type === 'product_view' || e.event_type === 'landing_page_view');
+      // Only count valid shop_visit events with a non-empty visitor_id for Shop Visitors
+      const validShopVisitEvents = events.filter(e => e.event_type === 'shop_visit' && Boolean(e.visitor_id));
       const whatsappEvents = events.filter(e => e.event_type === 'whatsapp_click');
       const visitShopEvents = events.filter(e => e.event_type === 'map_open');
 
-      const totalVisitors = visitorEvents.length;
+      // Total Unique Visitors = COUNT(DISTINCT visitor_id) from valid shop_visit events
+      const uniqueVisitorsSet = new Set(validShopVisitEvents.map(e => e.visitor_id));
+      const totalVisitors = uniqueVisitorsSet.size;
       const whatsappClicks = whatsappEvents.length;
       const visitShopClicks = visitShopEvents.length;
 
-      // Period comparisons
-      let currVisitors = 0, prevVisitors = 0;
+      // Period comparisons (Current 7 days vs Previous 7 days)
+      const currVisitorsSet = new Set<string>();
+      const prevVisitorsSet = new Set<string>();
       let currWhatsapp = 0, prevWhatsapp = 0;
       let currVisits = 0, prevVisits = 0;
 
       events.forEach(e => {
+        if (!e.created_at) return;
         const d = new Date(e.created_at);
         const isCurr = d >= sevenDaysAgo && d <= now;
         const isPrev = d >= fourteenDaysAgo && d < sevenDaysAgo;
 
-        if (e.event_type === 'shop_visit' || e.event_type === 'product_view' || e.event_type === 'landing_page_view') {
-          if (isCurr) currVisitors++;
-          if (isPrev) prevVisitors++;
+        if (e.event_type === 'shop_visit' && e.visitor_id) {
+          if (isCurr) currVisitorsSet.add(e.visitor_id);
+          if (isPrev) prevVisitorsSet.add(e.visitor_id);
         }
+
         if (e.event_type === 'whatsapp_click') {
           if (isCurr) currWhatsapp++;
           if (isPrev) prevWhatsapp++;
@@ -182,19 +196,32 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
             productWhatsappMap.set(e.product_id, (productWhatsappMap.get(e.product_id) || 0) + 1);
           }
         }
+
         if (e.event_type === 'map_open') {
           if (isCurr) currVisits++;
           if (isPrev) prevVisits++;
         }
       });
 
-      const calcPct = (c: number, p: number) => (p === 0 ? (c > 0 ? 100 : 0) : Number((((c - p) / p) * 100).toFixed(1)));
+      const currVisitors = currVisitorsSet.size;
+      const prevVisitors = prevVisitorsSet.size;
+
+      const calcPct = (c: number, p: number) => {
+        if (isNaN(c) || isNaN(p)) return 0;
+        if (p === 0) return c > 0 ? 100 : 0;
+        const res = ((c - p) / p) * 100;
+        return isNaN(res) || !isFinite(res) ? 0 : Number(res.toFixed(1));
+      };
       
       const visitorsChangePercent = calcPct(currVisitors, prevVisitors);
       const whatsappClicksChangePercent = calcPct(currWhatsapp, prevWhatsapp);
       const visitShopClicksChangePercent = calcPct(currVisits, prevVisits);
 
-      const conversionRateVal = totalVisitors > 0 ? ((whatsappClicks / totalVisitors) * 100).toFixed(1) : '0.0';
+      // Conversion Rate = WhatsApp Clicks / Unique Shop Visitors * 100
+      const conversionRateVal = totalVisitors > 0 
+        ? ((whatsappClicks / totalVisitors) * 100).toFixed(1) 
+        : '0.0';
+
       const currConv = currVisitors > 0 ? (currWhatsapp / currVisitors) * 100 : 0;
       const prevConv = prevVisitors > 0 ? (prevWhatsapp / prevVisitors) * 100 : 0;
       const conversionRateChangePercent = calcPct(currConv, prevConv);
@@ -207,7 +234,7 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
 
       // 4. TRAFFIC SOURCES BREAKDOWN
       const referrerCounts: Record<string, number> = { Instagram: 0, WhatsApp: 0, TikTok: 0, Direct: 0, Other: 0 };
-      visitorEvents.forEach(e => {
+      events.forEach(e => {
         const src = (e.metadata?.source || e.metadata?.referrer_label || 'direct').toLowerCase();
         if (src.includes('instagram')) referrerCounts.Instagram++;
         else if (src.includes('whatsapp') || src.includes('wa.me')) referrerCounts.WhatsApp++;
@@ -259,6 +286,30 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
         };
       });
 
+      // 6. REAL 7-DAY SHOP VISITS CHART DATA (Unique Visitors per day)
+      const dailyVisitsChart: DailyVisitPoint[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const targetDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = targetDate.toISOString().split('T')[0];
+        const dayLabel = targetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        const dayVisitorSet = new Set<string>();
+        events.forEach(e => {
+          if (e.event_type === 'shop_visit' && e.visitor_id && e.created_at) {
+            const eDate = new Date(e.created_at).toISOString().split('T')[0];
+            if (eDate === dateStr) {
+              dayVisitorSet.add(e.visitor_id);
+            }
+          }
+        });
+
+        dailyVisitsChart.push({
+          day: dayLabel,
+          visits: dayVisitorSet.size,
+          fullDate: dateStr
+        });
+      }
+
       setData({
         productsCount,
         liveProductsCount: live,
@@ -283,7 +334,8 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
           missingImages,
           lowStock
         },
-        recentActivity
+        recentActivity,
+        dailyVisitsChart
       });
 
     } catch (err: any) {

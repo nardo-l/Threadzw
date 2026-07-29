@@ -1,5 +1,5 @@
 // src/components/storefront/StorefrontProductDetail.tsx
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, MessageCircle, ArrowLeft, ZoomIn, ZoomOut, Heart, HelpCircle, X, Compass, Truck, Map, MapPin, Star, Camera, Image, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react';
 import { ProductImage, ShopLogo } from '../ui/ShopImage';
@@ -185,9 +185,12 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
     setActiveImgIdx(0);
   }, [product, sizesList, coloursList]);
 
-  // Track product_view on mount or product change
+  // Track product_view on mount or product change with guard
+  const trackedProductViewRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (shop?.id && product?.id) {
+    if (shop?.id && product?.id && trackedProductViewRef.current !== product.id) {
+      trackedProductViewRef.current = product.id;
       trackProductView(shop.id, product.id, product.name);
     }
   }, [shop?.id, product?.id, product?.name]);
@@ -220,8 +223,6 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
       selectedSize || 'M',
       selectedColor || 'Black'
     );
-
-    await trackWhatsAppClick(shop.id, product.id, product.name);
     
     await createMerchantNotification(
       shop.owner_id,

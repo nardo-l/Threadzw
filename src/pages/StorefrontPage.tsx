@@ -1,5 +1,5 @@
 // src/pages/StorefrontPage.tsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, X, ShoppingBag, Search, Home, Grid, Heart, User, ShieldAlert, ArrowRight, MapPin, Copy, Clock, Truck, MessageSquare, Map, Compass, Share2 } from 'lucide-react';
@@ -251,9 +251,6 @@ export const StorefrontPage: React.FC = () => {
         setSavedAddress('');
       }
 
-      // Log initial storefront entry visit
-      trackStoreView(shopResult.id);
-
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : String(err));
@@ -293,7 +290,9 @@ export const StorefrontPage: React.FC = () => {
     });
   }, [shop, activePage, searchParams, products]);
 
-  // Redesigned Funnel Analytics Event Tracker
+  // Redesigned Funnel Analytics Event Tracker with Component-Level Guard
+  const trackedStoreViewsRef = useRef<{ shopId?: string; productId?: string }>({});
+
   useEffect(() => {
     if (!shop?.id) return;
 
@@ -302,12 +301,16 @@ export const StorefrontPage: React.FC = () => {
       if (q.trim()) {
         trackSearchUsage(shop.id, q);
       } else {
-        const urlRef = searchParams.get('ref') || undefined;
-        trackStoreView(shop.id, urlRef);
+        if (trackedStoreViewsRef.current.shopId !== shop.id) {
+          trackedStoreViewsRef.current.shopId = shop.id;
+          const urlRef = searchParams.get('ref') || undefined;
+          trackStoreView(shop.id, urlRef);
+        }
       }
     } else if (activePage === 'product') {
       const prodId = searchParams.get('productId');
-      if (prodId) {
+      if (prodId && trackedStoreViewsRef.current.productId !== prodId) {
+        trackedStoreViewsRef.current.productId = prodId;
         const prod = products.find(p => p.id === prodId);
         trackProductView(shop.id, prodId, prod?.name || 'Listing Item');
       }

@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import billingRouter from './server/routes/billing';
 import aiRouter from './server/routes/ai';
+import notificationsRouter from './server/routes/notifications';
 
 dotenv.config();
 
@@ -212,6 +213,36 @@ async function startServer() {
 
   // --- AI & MERCHANT PRODUCTIVITY SERVICES ---
   app.use('/api/ai', aiRouter);
+
+  // --- DAILY SHOP SUMMARY CRON & NOTIFICATIONS ---
+  app.use('/api/cron', notificationsRouter);
+  app.use('/api/notifications', notificationsRouter);
+
+  // Server-side background runner for 19:00 Africa/Harare daily summary
+  setInterval(async () => {
+    try {
+      const harareTimeStr = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Africa/Harare',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      }).format(new Date());
+
+      const [hourStr, minuteStr] = harareTimeStr.split(':');
+      const hour = parseInt(hourStr, 10);
+      const minute = parseInt(minuteStr, 10);
+
+      // Trigger during the 19:00 - 19:15 window once per day
+      if (hour === 19 && minute < 15) {
+        console.log(`[BACKGROUND CRON TRIGGER] Executing 19:00 Africa/Harare daily shop summary...`);
+        await fetch(`http://localhost:${PORT}/api/cron/daily-summary`).catch(err => {
+          console.warn('[BACKGROUND CRON TRIGGER] Local fetch failed:', err.message);
+        });
+      }
+    } catch (e) {
+      // Ignore background interval errors
+    }
+  }, 15 * 60 * 1000); // Check every 15 minutes
 
   // --- VITE MIDDLEWARE ---
   if (process.env.NODE_ENV !== 'production') {
