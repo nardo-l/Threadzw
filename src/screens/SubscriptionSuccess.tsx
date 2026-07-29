@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, Store, Loader2, ArrowRight, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useShopContext } from '../context/ShopContext';
 
 export const SubscriptionSuccess: React.FC = () => {
   const navigate = useNavigate();
+  const { refreshSubscription, user } = useAuth();
+  const { refreshShop } = useShopContext();
+
   const [shopNameInput, setShopNameInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -33,15 +38,6 @@ export const SubscriptionSuccess: React.FC = () => {
     prefillUserShopName();
   }, []);
 
-  const generateSlug = (input: string): string => {
-    return input
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9_-]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
-
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
     const rawShopName = shopNameInput.trim();
@@ -56,120 +52,49 @@ export const SubscriptionSuccess: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      const generatedSlug = generateSlug(rawShopName);
-      console.log('[SubscriptionSuccess] Attempting activation for shop name:', rawShopName, 'slug:', generatedSlug);
+      console.log('[SubscriptionSuccess] Calling server API to activate subscription for shop name:', rawShopName);
 
-      // Try backend API first
-      let apiSuccess = false;
-      try {
-        const response = await fetch('/api/billing/activate-by-shop-name', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ shopName: rawShopName }),
-        });
+      const response = await fetch('/api/billing/activate-by-shop-name', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ shopName: rawShopName }),
+      });
 
-        const responseText = await response.text();
-        let data: any = {};
-        if (responseText && responseText.trim() !== '') {
+      const responseText = await response.text();
+      let data: any = {};
+      if (responseText && responseText.trim() !== '') {
+        try {
           data = JSON.parse(responseText);
+        } catch (jsonErr) {
+          console.error('[SubscriptionSuccess] Response JSON parse error:', jsonErr);
         }
+      }
 
-        if (response.ok && !data.error) {
-          apiSuccess = true;
-        } else {
-          throw new Error(data.error || "We couldn't find a shop with that name.");
-        }
-      } catch (apiErr: any) {
-        console.warn('[SubscriptionSuccess] API route notice, using direct client Supabase query:', apiErr);
+      if (!response.ok || !data.success || data.error) {
+        const errMsg = data.error || "We couldn't find a shop with that name.";
+        throw new Error(errMsg);
+      }
 
-        // Client-side fallback lookup
-        // 1. Query shop by slug
-        let { data: shop } = await supabase
-          .from('shops')
-          .select('*')
-          .eq('slug', generatedSlug)
+      // Refresh application context states
+      if (refreshShop) {
+        await refreshShop();
+      }
+      if (refreshSubscription) {
+        await refreshSubscription();
+      }
+
+      // Verify on Supabase client
+      const ownerUserId = data.data?.userId || user?.id;
+      if (ownerUserId) {
+        const { data: verifiedSub } = await supabase
+          .from('subscriptions')
+          .select('status')
+          .eq('profile_id', ownerUserId)
           .maybeSingle();
 
-        // Fallback search by name ilike
-        if (!shop) {
-          const { data: nameMatch } = await supabase
-            .from('shops')
-            .select('*')
-            .ilike('name', rawShopName)
-            .maybeSingle();
-
-          if (nameMatch) {
-            shop = nameMatch;
-          }
-        }
-
-        if (!shop) {
-          throw new Error("We couldn't find a shop with that name.");
-        }
-
-        const ownerId = shop.owner_id;
-
-        // 2. Query subscription for owner_id
-        const { data: existingSub } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('profile_id', ownerId)
-          .maybeSingle();
-
-        if (!existingSub) {
-          throw new Error("We found your shop but couldn't locate your subscription. Please contact support.");
-        }
-
-        const now = new Date();
-        const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-        const nowISO = now.toISOString();
-
-        // 3. Update existing subscription (NO INSERT)
-        const subPayload: any = {
-          status: 'active',
-          plan: 'starter',
-          amount: 2.99,
-          currency: 'USD',
-          subscription_started_at: nowISO,
-          subscription_ends_at: endsAt,
-          shop_id: shop.id,
-          updated_at: nowISO
-        };
-
-        const { error: updateSubErr } = await supabase
-          .from('subscriptions')
-          .update(subPayload)
-          .eq('profile_id', ownerId);
-
-        if (updateSubErr) {
-          throw new Error("Failed to activate subscription. Please contact support.");
-        }
-
-        // Insert payment record for tracking
-        await supabase.from('payments').insert([{
-          subscription_id: existingSub.id,
-          provider: 'nardopay',
-          provider_transaction_id: 'NARDOPAY-MVP-' + Math.random().toString(36).substring(2, 11).toUpperCase(),
-          amount: 2.99,
-          currency: 'USD',
-          status: 'verified',
-          paid_at: nowISO
-        }]);
-
-        // 4. Update matching shop
-        await supabase
-          .from('shops')
-          .update({
-            subscription_status: 'active',
-            subscription_end: endsAt,
-            trial_ends_at: null,
-            manual_lock: false,
-            payment_overdue_flagged: false,
-            is_live: true
-          })
-          .eq('id', shop.id);
+        console.log('[SubscriptionSuccess] Verification query on client Supabase:', verifiedSub);
       }
 
       localStorage.setItem('threadzw_just_subscribed', 'true');
@@ -177,9 +102,10 @@ export const SubscriptionSuccess: React.FC = () => {
       toast.success('Subscription activated successfully! Welcome to ThreadZW Pro 🚀');
     } catch (err: any) {
       console.error('[SubscriptionSuccess] Activation error:', err);
-      const msg = err.message || "We couldn't find a shop with that name.";
+      const msg = err.message || "Activation failed. Please check your shop name and try again.";
       setErrorMsg(msg);
       toast.error(msg);
+      setActivated(false);
     } finally {
       setLoading(false);
     }

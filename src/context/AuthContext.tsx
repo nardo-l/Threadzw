@@ -12,6 +12,7 @@ interface AuthContextType {
   sessionExpired: boolean
   signOut: () => Promise<void>
   fetchProfile: (userId: string) => Promise<void>
+  refreshSubscription: () => Promise<void>
   updateProfile: (updates: any) => Promise<{ error: any | null }>
   uploadAvatar: (file: File) => Promise<{ error: any | null, publicUrl: string | null }>
   updatePassword: (password: string) => Promise<{ error: any | null }>
@@ -253,6 +254,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  const refreshSubscription = async () => {
+    const currentUserId = session?.user?.id;
+    if (!currentUserId) return;
+    try {
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('profile_id', currentUserId)
+        .maybeSingle();
+      if (data) {
+        setSubscription(data);
+      }
+    } catch (e) {
+      console.error("refreshSubscription error:", e);
+    }
+  }
+
   const fetchProfile = async (userId: string) => {
     try {
       const { data } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
@@ -369,6 +387,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionExpired,
       signOut,
       fetchProfile,
+      refreshSubscription,
       updateProfile,
       uploadAvatar,
       updatePassword,

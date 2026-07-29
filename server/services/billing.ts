@@ -395,53 +395,65 @@ export class BillingService {
 
     const userId = shop.owner_id;
 
-    // STEP 1 & 2: Query subscription using .single() and log requested details
-    const { data: subscription, error: subQueryErr } = await serverSupabase
-      .from("subscriptions")
-      .select("*")
-      .eq("profile_id", userId)
-      .single();
-
-    console.log("Subscription found.");
-    console.log("SUBSCRIPTION FOUND", subscription, subQueryErr);
-
-    if (!subscription || subQueryErr) {
-      console.error("No subscription found for owner.", subQueryErr);
-      throw new Error(`No subscription found for owner: ${subQueryErr?.message || 'unknown error'}`);
-    }
-
     const now = new Date();
     const endsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     const nowISO = now.toISOString();
 
-    const updatePayload = {
-      status: "active",
-      shop_id: shop.id,
-      subscription_started_at: nowISO,
-      subscription_ends_at: endsAt,
-      updated_at: nowISO
-    };
-
-    console.log("SUBSCRIPTION UPDATE PAYLOAD:", updatePayload);
-
-    // STEP 3 & 4: Perform UPDATE using subscription primary key ("id")
-    const { data: updateData, error: updateError } = await serverSupabase
+    // Query existing subscription for this owner
+    let { data: subscription, error: subQueryErr } = await serverSupabase
       .from("subscriptions")
-      .update(updatePayload)
-      .eq("id", subscription.id)
-      .select();
+      .select("*")
+      .eq("profile_id", userId)
+      .maybeSingle();
 
-    console.log("Subscription updated.");
-    console.log("UPDATE RESULT:", { updateData, updateError });
+    console.log("Subscription lookup result:", { subscription, subQueryErr });
 
-    if (updateError) {
-      console.error("COMPLETE SUPABASE ERROR:", JSON.stringify(updateError, null, 2));
-      throw new Error(`Failed to update subscription: ${updateError.message}`);
-    }
+    // If no subscription row exists, upsert a new active subscription row
+    if (!subscription) {
+      console.log("No existing subscription row found for profile_id:", userId, ". Creating/upserting active subscription...");
+      const newSubPayload = {
+        profile_id: userId,
+        shop_id: shop.id,
+        status: "active",
+        plan: "starter",
+        amount: 2.99,
+        currency: "USD",
+        subscription_started_at: nowISO,
+        subscription_ends_at: endsAt,
+        updated_at: nowISO
+      };
 
-    if (!updateData || updateData.length === 0) {
-      console.log("UPDATE matched zero rows.");
-      throw new Error("UPDATE matched zero rows.");
+      const { data: createdSub, error: createSubErr } = await serverSupabase
+        .from("subscriptions")
+        .upsert(newSubPayload)
+        .select()
+        .single();
+
+      if (createSubErr || !createdSub) {
+        console.error("Failed to create subscription row:", createSubErr);
+        throw new Error(`Failed to initialize subscription: ${createSubErr?.message || 'unknown error'}`);
+      }
+      subscription = createdSub;
+    } else {
+      // Update existing subscription row
+      const updatePayload = {
+        status: "active",
+        shop_id: shop.id,
+        subscription_started_at: nowISO,
+        subscription_ends_at: endsAt,
+        updated_at: nowISO
+      };
+
+      const { data: updateData, error: updateError } = await serverSupabase
+        .from("subscriptions")
+        .update(updatePayload)
+        .eq("id", subscription.id)
+        .select();
+
+      if (updateError || !updateData || updateData.length === 0) {
+        console.error("Failed to update subscription row:", updateError);
+        throw new Error(`Failed to update subscription: ${updateError?.message || 'zero rows updated'}`);
+      }
     }
 
     // Insert payment record
