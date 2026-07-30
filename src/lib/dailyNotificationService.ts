@@ -74,14 +74,29 @@ export async function registerWebPushSubscription(
     await navigator.serviceWorker.ready;
 
     // 3. Fetch VAPID public key from backend
-    const keyRes = await fetch('/api/notifications/vapid-key');
-    const { publicKey } = await keyRes.json();
+    const vapidUrl = '/api/notifications/vapid-key';
+    console.log('[NOTIF INVESTIGATION] Fetching VAPID key URL:', vapidUrl);
+    const keyRes = await fetch(vapidUrl);
+    console.log('[NOTIF INVESTIGATION] VAPID key response STATUS:', keyRes.status);
+    const keyRaw = await keyRes.text();
+    console.log('[NOTIF INVESTIGATION] VAPID key RAW RESPONSE:', keyRaw);
 
-    if (!publicKey) {
+    let keyData: any = null;
+    if (keyRaw.trim().length > 0) {
+      try {
+        keyData = JSON.parse(keyRaw);
+      } catch (e) {
+        console.error('[NOTIF INVESTIGATION] Failed to parse JSON from VAPID response:', e, keyRaw);
+      }
+    }
+
+    const publicKey = keyData?.publicKey;
+
+    if (!keyRes.ok || !publicKey) {
       return {
         success: false,
         supported: true,
-        message: 'Could not fetch VAPID key from server.'
+        message: keyData?.error || 'Could not fetch VAPID key from server.'
       };
     }
 
@@ -97,7 +112,9 @@ export async function registerWebPushSubscription(
     }
 
     // 5. Send subscription to server
-    const subRes = await fetch('/api/notifications/subscribe', {
+    const subUrl = '/api/notifications/subscribe';
+    console.log('[NOTIF INVESTIGATION] Sending subscription URL:', subUrl);
+    const subRes = await fetch(subUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -107,11 +124,31 @@ export async function registerWebPushSubscription(
       })
     });
 
-    const subData = await subRes.json();
+    console.log('[NOTIF INVESTIGATION] Subscribe response STATUS:', subRes.status);
+    const subRaw = await subRes.text();
+    console.log('[NOTIF INVESTIGATION] Subscribe RAW RESPONSE:', subRaw);
+
+    let subData: any = null;
+    if (subRaw.trim().length > 0) {
+      try {
+        subData = JSON.parse(subRaw);
+      } catch (e) {
+        console.error('[NOTIF INVESTIGATION] Failed to parse JSON from subscribe response:', e, subRaw);
+      }
+    }
+
+    if (!subRes.ok) {
+      return {
+        success: false,
+        supported: true,
+        message: subData?.error || `Subscription registration failed with status ${subRes.status}`
+      };
+    }
+
     return {
       success: true,
       supported: true,
-      message: subData.message || 'Web Push Notifications registered successfully!'
+      message: subData?.message || 'Web Push Notifications registered successfully!'
     };
   } catch (err: any) {
     console.error('Error registering Web Push subscription:', err);
@@ -131,13 +168,35 @@ export async function sendTestWebPushNotification(
   shopId?: string
 ): Promise<{ success: boolean; message: string; pushCount?: number }> {
   try {
-    const res = await fetch('/api/notifications/test-push', {
+    const testUrl = '/api/notifications/test-push';
+    console.log('[NOTIF INVESTIGATION] Test push request URL:', testUrl);
+    const res = await fetch(testUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, shopId })
     });
-    const data = await res.json();
-    return data;
+
+    console.log('[NOTIF INVESTIGATION] Test push response STATUS:', res.status);
+    const raw = await res.text();
+    console.log('[NOTIF INVESTIGATION] Test push RAW RESPONSE:', raw);
+
+    let data: any = null;
+    if (raw.trim().length > 0) {
+      try {
+        data = JSON.parse(raw);
+      } catch (e) {
+        console.error('[NOTIF INVESTIGATION] Failed to parse JSON from test push response:', e, raw);
+      }
+    }
+
+    if (!res.ok) {
+      return {
+        success: false,
+        message: data?.error || `Test push failed with status ${res.status}`
+      };
+    }
+
+    return data || { success: true, message: 'Test notification sent.' };
   } catch (err: any) {
     return {
       success: false,

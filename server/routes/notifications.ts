@@ -377,7 +377,11 @@ async function processShopDailySummary(shop: any, force: boolean = false) {
  * Returns VAPID Public Key for client subscription registration
  */
 router.get('/vapid-key', (req: Request, res: Response) => {
-  return res.json({ publicKey: vapidPublicKey });
+  try {
+    return res.setHeader('Content-Type', 'application/json').status(200).json({ success: true, publicKey: vapidPublicKey });
+  } catch (err: any) {
+    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Failed to retrieve VAPID key' });
+  }
 });
 
 /**
@@ -385,67 +389,80 @@ router.get('/vapid-key', (req: Request, res: Response) => {
  * Registers a user's browser Web Push Subscription
  */
 router.post('/subscribe', async (req: Request, res: Response) => {
-  const { userId, shopId, subscription } = req.body;
+  try {
+    const { userId, shopId, subscription } = req.body || {};
 
-  if (!subscription || !subscription.endpoint) {
-    return res.status(400).json({ error: 'Valid PushSubscription object required' });
-  }
-
-  // Save to memory store
-  pushSubscriptionStore.set(subscription.endpoint, {
-    user_id: userId || 'anonymous',
-    shop_id: shopId,
-    subscription,
-    created_at: new Date().toISOString()
-  });
-
-  // Save to Supabase push_subscriptions table
-  if (userId) {
-    try {
-      await supabase.from('push_subscriptions').upsert({
-        user_id: userId,
-        shop_id: shopId || null,
-        endpoint: subscription.endpoint,
-        p256dh: subscription.keys?.p256dh || '',
-        auth: subscription.keys?.auth || '',
-        subscription_json: JSON.stringify(subscription),
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'endpoint' });
-    } catch (err) {
-      // Table might not exist yet, in-memory store is active
+    if (!subscription || !subscription.endpoint) {
+      return res.setHeader('Content-Type', 'application/json').status(400).json({ success: false, error: 'Valid PushSubscription object required' });
     }
-  }
 
-  console.log(`[WEB PUSH SUB] Saved subscription for user ${userId || 'anonymous'}`);
-  return res.json({ success: true, message: 'Web Push Subscription registered successfully' });
+    // Save to memory store
+    pushSubscriptionStore.set(subscription.endpoint, {
+      user_id: userId || 'anonymous',
+      shop_id: shopId,
+      subscription,
+      created_at: new Date().toISOString()
+    });
+
+    // Save to Supabase push_subscriptions table
+    if (userId) {
+      try {
+        await supabase.from('push_subscriptions').upsert({
+          user_id: userId,
+          shop_id: shopId || null,
+          endpoint: subscription.endpoint,
+          p256dh: subscription.keys?.p256dh || '',
+          auth: subscription.keys?.auth || '',
+          subscription_json: JSON.stringify(subscription),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'endpoint' });
+      } catch (err) {
+        console.warn('[WEB PUSH SUB] Supabase upsert error:', err);
+      }
+    }
+
+    console.log(`[WEB PUSH SUB] Saved subscription for user ${userId || 'anonymous'}`);
+    return res.setHeader('Content-Type', 'application/json').status(200).json({ success: true, message: 'Web Push Subscription registered successfully' });
+  } catch (err: any) {
+    console.error('[WEB PUSH SUB] Server route error:', err);
+    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Failed to process push subscription' });
+  }
 });
 
 /**
- * POST /api/notifications/test-push
+ * POST /api/notifications/test-push and /api/notifications/test
  * Dispatches a test Web Push notification to the user's registered browser/device
  */
-router.post('/test-push', async (req: Request, res: Response) => {
-  const { userId, shopId } = req.body;
+const handleTestPush = async (req: Request, res: Response) => {
+  try {
+    const { userId, shopId } = req.body || {};
 
-  if (!userId) {
-    return res.status(400).json({ error: 'userId is required for test push' });
+    if (!userId) {
+      return res.setHeader('Content-Type', 'application/json').status(400).json({ success: false, error: 'userId is required for test push' });
+    }
+
+    const testTitle = 'ThreadZW 📊';
+    const testBody = `Your shop today\n\n👀 37 visitors\n💬 4 WhatsApp clicks\n🛍️ 12 product views\n❤️ 3 wishlist saves\n\n🔥 Most viewed: Oversized Black Hoodie\n📈 Visitors: +23% vs yesterday`;
+
+    const pushCount = await sendWebPushToUser(userId, {
+      title: testTitle,
+      body: testBody,
+      url: '/dashboard'
+    });
+
+    return res.setHeader('Content-Type', 'application/json').status(200).json({
+      success: true,
+      message: pushCount > 0 ? `Web Push delivered to ${pushCount} active device(s)` : 'No active Web Push device subscriptions found for this user. Make sure push permission is enabled.',
+      pushCount
+    });
+  } catch (err: any) {
+    console.error('[TEST PUSH] Server route error:', err);
+    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Failed to dispatch test push' });
   }
+};
 
-  const testTitle = 'ThreadZW 📊';
-  const testBody = `Your shop today\n\n👀 37 visitors\n💬 4 WhatsApp clicks\n🛍️ 12 product views\n❤️ 3 wishlist saves\n\n🔥 Most viewed: Oversized Black Hoodie\n📈 Visitors: +23% vs yesterday`;
-
-  const pushCount = await sendWebPushToUser(userId, {
-    title: testTitle,
-    body: testBody,
-    url: '/dashboard'
-  });
-
-  return res.json({
-    success: true,
-    message: pushCount > 0 ? `Web Push delivered to ${pushCount} active device(s)` : 'No active Web Push device subscriptions found for this user. Make sure push permission is enabled.',
-    pushCount
-  });
-});
+router.post('/test-push', handleTestPush);
+router.post('/test', handleTestPush);
 
 /**
  * CRON Endpoint: GET/POST /api/cron/daily-summary
@@ -465,7 +482,7 @@ router.all('/daily-summary', async (req: Request, res: Response) => {
 
     if (error || !shops) {
       console.error('Failed to fetch shops for daily summary cron:', error?.message);
-      return res.status(500).json({ error: error?.message || 'Failed to fetch shops' });
+      return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: error?.message || 'Failed to fetch shops' });
     }
 
     const results = [];
@@ -481,7 +498,7 @@ router.all('/daily-summary', async (req: Request, res: Response) => {
 
     console.log(`[DAILY SUMMARY CRON COMPLETE] processed ${shops.length} shops`);
 
-    return res.json({
+    return res.setHeader('Content-Type', 'application/json').status(200).json({
       success: true,
       timestamp: new Date().toISOString(),
       processedShopsCount: shops.length,
@@ -489,7 +506,7 @@ router.all('/daily-summary', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error('Fatal error in daily summary cron endpoint:', err);
-    return res.status(500).json({ error: err?.message || 'Daily summary cron failed' });
+    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Daily summary cron failed' });
   }
 });
 
@@ -498,9 +515,9 @@ router.all('/daily-summary', async (req: Request, res: Response) => {
  * Manually trigger daily summary notification for a specific shop
  */
 router.post('/test-summary', async (req: Request, res: Response) => {
-  const { shopId } = req.body;
+  const { shopId } = req.body || {};
   if (!shopId) {
-    return res.status(400).json({ error: 'shopId is required' });
+    return res.setHeader('Content-Type', 'application/json').status(400).json({ success: false, error: 'shopId is required' });
   }
 
   try {
@@ -511,13 +528,13 @@ router.post('/test-summary', async (req: Request, res: Response) => {
       .maybeSingle();
 
     if (error || !shop) {
-      return res.status(404).json({ error: 'Shop not found' });
+      return res.setHeader('Content-Type', 'application/json').status(404).json({ success: false, error: 'Shop not found' });
     }
 
     const result = await processShopDailySummary(shop, true);
-    return res.json({ success: true, result });
+    return res.setHeader('Content-Type', 'application/json').status(200).json({ success: true, result });
   } catch (err: any) {
-    return res.status(500).json({ error: err?.message || 'Test failed' });
+    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Test failed' });
   }
 });
 
