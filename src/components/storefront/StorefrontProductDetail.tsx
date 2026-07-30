@@ -191,6 +191,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
   useEffect(() => {
     if (shop?.id && product?.id && trackedProductViewRef.current !== product.id) {
       trackedProductViewRef.current = product.id;
+      console.log("TRACK START", { shopId: shop?.id, eventType: 'product_view' });
       trackProductView(shop.id, product.id, product.name);
     }
   }, [shop?.id, product?.id, product?.name]);
@@ -214,6 +215,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
     const orderRef = `#${prefix}-${randomId}`;
 
     // Log professional purchase intent event and notify
+    console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
     await trackPurchaseIntent(
       shop.id, 
       product.id, 
@@ -256,6 +258,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
     setShowBuySheet(true);
 
     if (shop?.id) {
+      console.log("TRACK START", { shopId: shop?.id, eventType: 'map_open' });
       await trackMapOpen(shop.id);
     }
 
@@ -267,6 +270,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
     const orderRef = `#${prefix}-${randomId}`;
 
     // Log professional purchase intent event and notify
+    console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
     await trackPurchaseIntent(
       shop.id, 
       product.id, 

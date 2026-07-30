@@ -61,7 +61,7 @@ export async function trackEvent(params: TrackEventParams) {
     visitorId = await getVisitorId();
   }
 
-  // Step 2 Log
+  // Step 3 Log: Inside every tracking function
   console.log("TRACK FUNCTION EXECUTED", {
     eventType: params.eventType,
     shopId: params.shopId,
@@ -112,38 +112,31 @@ export async function trackEvent(params: TrackEventParams) {
 
     const eventPayload: Record<string, any> = {
       shop_id: params.shopId,
-      product_id: params.productId || null,
       event_type: params.eventType,
       visitor_id: visitorId,
-      metadata: metadata,
-      created_at: new Date().toISOString()
+      metadata: metadata
     };
 
-    // Step 3 Log: Immediately before Supabase insert
-    console.log("INSERT PAYLOAD", {
-      shop_id: eventPayload.shop_id,
-      event_type: eventPayload.event_type,
-      visitor_id: eventPayload.visitor_id,
-      metadata: eventPayload.metadata
-    });
+    // Step 4 Log: Immediately before insert
+    console.log("INSERT PAYLOAD", eventPayload);
 
     const { data, error } = await supabase.from('shop_analytics').insert([eventPayload]).select();
 
-    // Step 4 Log: Immediately after insert
+    // Step 5 Log: Immediately after insert
     console.log("SUPABASE RESULT", {
       data,
       error
     });
 
     if (error) {
-      console.error("ANALYTICS INSERT FAILED", error);
+      console.error("ANALYTICS INSERT FAILED - FULL ERROR:", JSON.stringify(error, null, 2), error);
     } else {
-      console.log("Insert Successful");
+      console.log("Insert Successful:", data);
     }
 
     return { data, error };
   } catch (err: any) {
-    console.error("ANALYTICS INSERT FAILED", err);
+    console.error("ANALYTICS INSERT FAILED WITH EXCEPTION:", err);
   }
 }
 

@@ -298,11 +298,13 @@ export const StorefrontPage: React.FC = () => {
     if (activePage === 'home' || activePage === 'shop') {
       const q = searchParams.get('q') || searchParams.get('search') || '';
       if (q.trim()) {
+        console.log("TRACK START", { shopId: shop?.id, eventType: 'search_usage' });
         trackSearchUsage(shop.id, q);
       } else {
         if (trackedStoreViewsRef.current.shopId !== shop.id) {
           trackedStoreViewsRef.current.shopId = shop.id;
           const urlRef = searchParams.get('ref') || undefined;
+          console.log("TRACK START", { shopId: shop?.id, eventType: 'shop_visit' });
           trackStoreView(shop.id, urlRef);
         }
       }
@@ -311,12 +313,14 @@ export const StorefrontPage: React.FC = () => {
       if (prodId && trackedStoreViewsRef.current.productId !== prodId) {
         trackedStoreViewsRef.current.productId = prodId;
         const prod = products.find(p => p.id === prodId);
+        console.log("TRACK START", { shopId: shop?.id, eventType: 'product_view' });
         trackProductView(shop.id, prodId, prod?.name || 'Listing Item');
       }
     } else if (activePage === 'categories') {
+      console.log("TRACK START", { shopId: shop?.id, eventType: 'category_click' });
       trackCategoryClick(shop.id, searchParams.get('category') || 'All Categories');
     }
-  }, [activePage, searchParams, shop?.id, products]);
+  }, [activePage, searchParams, shop?.id, products, loading]);
 
   // Save Cart to local storage helper
   const handleSaveCart = (newCart: CartItem[]) => {
@@ -418,6 +422,7 @@ export const StorefrontPage: React.FC = () => {
       // Track wishlist action
       if (shop?.id) {
         const prod = products.find(p => p.id === productId);
+        console.log("TRACK START", { shopId: shop?.id, eventType: 'wishlist_add' });
         trackWishlistAdd(shop.id, productId, prod?.name || 'Listing');
       }
     }

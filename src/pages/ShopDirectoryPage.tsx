@@ -1033,6 +1033,7 @@ export const ShopDirectoryPage: React.FC = () => {
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 if (shop.id) {
+                                  console.log("TRACK START", { shopId: shop.id, eventType: 'map_open' });
                                   await trackMapOpen(shop.id);
                                 }
                                 navigate(`/shop/${shop.slug}`);

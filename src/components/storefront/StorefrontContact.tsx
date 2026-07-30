@@ -61,7 +61,10 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
             href={`https://wa.me/${cleanWhatsApp}`}
             target="_blank"
             rel="noreferrer"
-            onClick={() => trackWhatsAppClick(shop.id)}
+            onClick={() => {
+              console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
+              trackWhatsAppClick(shop.id);
+            }}
             className="flex items-center gap-3.5 group cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/15 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-500/20 transition-colors">

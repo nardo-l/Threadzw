@@ -26,6 +26,7 @@ import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
+import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 
@@ -239,6 +240,13 @@ export const Dashboard: React.FC = () => {
             <ChevronDown size={13} className="text-zinc-400 ml-0.5" />
           </button>
         </div>
+
+        {/* Shop Setup Checklist */}
+        <ShopSetupChecklist 
+          shop={shop}
+          productsCount={productsCount}
+          isSubscriptionOrTrialActive={isSubscriptionOrTrialActive}
+        />
 
         {/* 4 Metric / KPI Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">

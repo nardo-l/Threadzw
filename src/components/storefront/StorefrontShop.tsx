@@ -329,6 +329,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                         rel="noreferrer"
                         onClick={(e) => {
                           e.stopPropagation();
+                          console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
                           trackWhatsAppClick(shop.id, p.id, p.name);
                         }}
                         className="mt-2 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-colors duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"

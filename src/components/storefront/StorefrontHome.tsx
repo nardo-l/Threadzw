@@ -182,6 +182,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                   target="_blank"
                   rel="noreferrer"
                   onClick={() => {
+                    console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
                     trackWhatsAppClick(shop.id);
                   }}
                   className="flex-1 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-semibold text-xs rounded-xl transition-colors cursor-pointer flex items-center justify-center border border-zinc-200/30 text-center"
@@ -316,6 +317,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                         rel="noreferrer"
                         onClick={(e) => {
                           e.stopPropagation();
+                          console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
                           trackWhatsAppClick(shop.id, p.id, p.name);
                         }}
                         className="mt-2.5 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
