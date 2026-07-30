@@ -218,6 +218,14 @@ async function startServer() {
   app.use('/api/cron', notificationsRouter);
   app.use('/api/notifications', notificationsRouter);
 
+  // Fallback for unmatched /api routes so they return JSON 404 instead of falling into Vite middleware (which causes 405 Method Not Allowed)
+  app.use('/api/*', (req, res) => {
+    res.setHeader('Content-Type', 'application/json').status(404).json({
+      success: false,
+      error: `API endpoint ${req.method} ${req.originalUrl} not found`
+    });
+  });
+
   // Server-side background runner for 19:00 Africa/Harare daily summary
   setInterval(async () => {
     try {

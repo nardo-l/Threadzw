@@ -430,21 +430,51 @@ router.post('/subscribe', async (req: Request, res: Response) => {
 });
 
 /**
- * POST /api/notifications/test-push and /api/notifications/test
+ * POST / GET /api/notifications/test-push and /api/notifications/test
  * Dispatches a test Web Push notification to the user's registered browser/device
  */
 const handleTestPush = async (req: Request, res: Response) => {
   try {
-    const { userId, shopId } = req.body || {};
+    const userId = req.body?.userId || req.query?.userId || req.body?.user_id || req.query?.user_id;
+    const shopId = req.body?.shopId || req.query?.shopId || req.body?.shop_id || req.query?.shop_id;
 
-    if (!userId) {
+    let targetUserId = userId;
+
+    if (!targetUserId && shopId) {
+      try {
+        const { data: shop } = await supabase.from('shops').select('owner_id').eq('id', shopId).maybeSingle();
+        if (shop?.owner_id) targetUserId = shop.owner_id;
+      } catch (e) {
+        // ignore fallback errors
+      }
+    }
+
+    if (!targetUserId) {
+      for (const subItem of pushSubscriptionStore.values()) {
+        if (subItem.user_id && subItem.user_id !== 'anonymous') {
+          targetUserId = subItem.user_id;
+          break;
+        }
+      }
+    }
+
+    if (!targetUserId) {
+      try {
+        const { data: firstShop } = await supabase.from('shops').select('owner_id').limit(1).maybeSingle();
+        if (firstShop?.owner_id) targetUserId = firstShop.owner_id;
+      } catch (e) {
+        // ignore fallback errors
+      }
+    }
+
+    if (!targetUserId) {
       return res.setHeader('Content-Type', 'application/json').status(400).json({ success: false, error: 'userId is required for test push' });
     }
 
     const testTitle = 'ThreadZW 📊';
     const testBody = `Your shop today\n\n👀 37 visitors\n💬 4 WhatsApp clicks\n🛍️ 12 product views\n❤️ 3 wishlist saves\n\n🔥 Most viewed: Oversized Black Hoodie\n📈 Visitors: +23% vs yesterday`;
 
-    const pushCount = await sendWebPushToUser(userId, {
+    const pushCount = await sendWebPushToUser(targetUserId, {
       title: testTitle,
       body: testBody,
       url: '/dashboard'
@@ -461,8 +491,8 @@ const handleTestPush = async (req: Request, res: Response) => {
   }
 };
 
-router.post('/test-push', handleTestPush);
-router.post('/test', handleTestPush);
+router.all('/test-push', handleTestPush);
+router.all('/test', handleTestPush);
 
 /**
  * CRON Endpoint: GET/POST /api/cron/daily-summary
