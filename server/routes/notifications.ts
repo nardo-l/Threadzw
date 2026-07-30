@@ -11,6 +11,11 @@ const router = Router();
 let vapidPublicKey = process.env.VAPID_PUBLIC_KEY || '';
 let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
 
+console.log('SUPABASE_URL exists:', !!(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL));
+console.log('SUPABASE_SERVICE_ROLE_KEY exists:', !!(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY));
+console.log('VAPID_PUBLIC_KEY exists:', !!process.env.VAPID_PUBLIC_KEY);
+console.log('VAPID_PRIVATE_KEY exists:', !!process.env.VAPID_PRIVATE_KEY);
+
 if (!vapidPublicKey || !vapidPrivateKey) {
   // Generate valid default VAPID Keys
   const keys = webpush.generateVAPIDKeys();

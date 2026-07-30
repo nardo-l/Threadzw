@@ -29,4 +29,13 @@ app.use('/api/*', (req, res) => {
   });
 });
 
+// Global Express Error Handler to prevent 500 HTML responses in Serverless
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[SERVERLESS EXPRESS ERROR]', err);
+  res.setHeader('Content-Type', 'application/json').status(500).json({
+    success: false,
+    error: err?.message || 'Internal Server Error'
+  });
+});
+
 export default app;
