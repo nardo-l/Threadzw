@@ -25,7 +25,6 @@ import { StorefrontCart } from '../components/storefront/StorefrontCart';
 import { StorefrontCheckout } from '../components/storefront/StorefrontCheckout';
 import { StorefrontOrderSuccess } from '../components/storefront/StorefrontOrderSuccess';
 import { StorefrontTrackOrder } from '../components/storefront/StorefrontTrackOrder';
-import { StorefrontAccount } from '../components/storefront/StorefrontAccount';
 import { StorefrontWishlist } from '../components/storefront/StorefrontWishlist';
 import { StorefrontAbout } from '../components/storefront/StorefrontAbout';
 import { StorefrontContact } from '../components/storefront/StorefrontContact';
@@ -98,7 +97,7 @@ export const StorefrontPage: React.FC = () => {
     if (activePage === 'product') navigateToPage('shop');
     else if (activePage === 'checkout') navigateToPage('cart');
     else if (activePage === 'success') navigateToPage('home');
-    else if (activePage === 'wishlist') navigateToPage('account');
+    else if (activePage === 'wishlist') navigateToPage('home');
     else navigateToPage('home');
   };
 
@@ -755,15 +754,6 @@ export const StorefrontPage: React.FC = () => {
             initialOrderRef={searchParams.get('orderRef') || ''}
           />
         );
-      case 'account':
-        return (
-          <StorefrontAccount
-            shop={shop}
-            onNavigateToPage={navigateToPage}
-            savedAddress={savedAddress}
-            onSaveAddress={handleSaveAddress}
-          />
-        );
       case 'wishlist':
         return (
           <StorefrontWishlist
@@ -997,14 +987,19 @@ export const StorefrontPage: React.FC = () => {
           </button>
 
           <button
-            onClick={() => navigateToPage('account')}
-            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer transition-colors ${
-              activePage === 'account' ? 'text-zinc-900 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
+            onClick={() => navigateToPage('wishlist')}
+            className={`flex flex-col items-center justify-center flex-grow h-full gap-0.5 cursor-pointer relative transition-colors ${
+              activePage === 'wishlist' ? 'text-zinc-900 font-bold' : 'text-zinc-400 hover:text-zinc-600 font-medium'
             }`}
           >
-            <User className="w-5 h-5" />
-            <span className="text-[10px]">Account</span>
-            {activePage === 'account' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
+            <Heart className="w-5 h-5" />
+            {wishlist.length > 0 && (
+              <div className="absolute top-1 right-5 bg-rose-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                {wishlist.length}
+              </div>
+            )}
+            <span className="text-[10px]">Wishlist</span>
+            {activePage === 'wishlist' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
           </button>
         </nav>
 

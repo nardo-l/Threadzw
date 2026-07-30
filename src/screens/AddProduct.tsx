@@ -1443,18 +1443,18 @@ export const AddProduct: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate('/inventory')}
+                  onClick={() => navigate('/dashboard')}
                   className="w-full h-14 rounded-2xl bg-white border-2 border-zinc-200 text-zinc-900 font-extrabold text-sm uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer hover:border-zinc-300 active:scale-[0.98] shadow-sm"
                 >
-                  Go to Products
+                  Go to Dashboard
                 </button>
                 <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() => navigate('/shop')}
-                    className="text-xs font-bold text-zinc-600 hover:text-black inline-flex items-center gap-1 transition-colors cursor-pointer"
+                    onClick={() => navigate('/dashboard')}
+                    className="text-xs font-bold text-zinc-600 hover:text-black inline-flex items-center gap-1 transition-colors cursor-pointer uppercase tracking-wider"
                   >
-                    <span>View Store →</span>
+                    <span>Go to Dashboard →</span>
                   </button>
                 </div>
               </div>
