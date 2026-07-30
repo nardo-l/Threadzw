@@ -1285,19 +1285,19 @@ export const AddProduct: React.FC = () => {
                           <Sparkles size={16} />
                         </div>
                         <div className="text-left">
-                          <span className="text-xs font-bold text-white block">Feature on Home</span>
-                          <span className="text-[10px] text-white/40">Place this garment inside your homepage catalog hero.</span>
+                          <span className="text-xs font-bold text-black block">Feature on Home</span>
+                          <span className="text-[10px] text-zinc-600 font-medium">Place this garment inside your homepage catalog hero.</span>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setIsFeatured(!isFeatured)}
                         className={`w-12 h-6 rounded-full relative transition-all ${
-                          isFeatured ? 'bg-[#25D366]' : 'bg-white/10'
+                          isFeatured ? 'bg-[#25D366]' : 'bg-zinc-200 border border-zinc-300'
                         }`}
                       >
                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-black transition-all ${
-                          isFeatured ? 'left-7 bg-black' : 'left-1 bg-white/60'
+                          isFeatured ? 'left-7 bg-black' : 'left-1 bg-white'
                         }`} />
                       </button>
                     </div>
@@ -1309,19 +1309,19 @@ export const AddProduct: React.FC = () => {
                           <Check size={16} />
                         </div>
                         <div className="text-left">
-                          <span className="text-xs font-bold text-white block">Mark as Available</span>
-                          <span className="text-[10px] text-white/40">Disable this to set item as Sold Out.</span>
+                          <span className="text-xs font-bold text-black block">Upload to shopfront</span>
+                          <span className="text-[10px] text-zinc-600 font-medium">Publish item directly to your storefront catalog.</span>
                         </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => setProductStatus(productStatus === 'active' ? 'sold_out' : 'active')}
                         className={`w-12 h-6 rounded-full relative transition-all ${
-                          productStatus === 'active' ? 'bg-[#25D366]' : 'bg-white/10'
+                          productStatus === 'active' ? 'bg-[#25D366]' : 'bg-zinc-200 border border-zinc-300'
                         }`}
                       >
                         <div className={`absolute top-1 w-4 h-4 rounded-full bg-black transition-all ${
-                          productStatus === 'active' ? 'left-7 bg-black' : 'left-1 bg-white/60'
+                          productStatus === 'active' ? 'left-7 bg-black' : 'left-1 bg-white'
                         }`} />
                       </button>
                     </div>

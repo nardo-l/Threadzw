@@ -27,6 +27,7 @@ import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
+import { SubscriptionCountdownBanner } from '../components/dashboard/SubscriptionCountdownBanner';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 
@@ -220,6 +221,9 @@ export const Dashboard: React.FC = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-3 space-y-5">
+        {/* Countdown Timer Banner for Free Trial / Subscription Renewal */}
+        <SubscriptionCountdownBanner />
+
         {/* Greeting Section & Date Range Picker */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
           <div>

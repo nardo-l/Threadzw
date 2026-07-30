@@ -1223,19 +1223,19 @@ export const EditProduct: React.FC = () => {
                   {/* Featured toggle option */}
                   <div className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl pb-3.5 font-sans">
                     <div className="space-y-0.5">
-                      <span className="text-[13px] font-bold text-white block">⭐ Feature this product</span>
-                      <p className="text-white/35 text-[11px] leading-tight">Shows at top of your storefront</p>
+                      <span className="text-[13px] font-bold text-black block">⭐ Feature on Home</span>
+                      <p className="text-zinc-600 text-[11px] leading-tight font-medium">Shows at top of your storefront</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setIsFeatured(!isFeatured)}
                       className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                        isFeatured ? 'bg-[#bef715] border-[#bef715]' : 'bg-white/5 border-white/10'
+                        isFeatured ? 'bg-[#bef715] border-[#bef715]' : 'bg-zinc-200 border-zinc-300'
                       }`}
                     >
                       <div 
                         className={`w-5.5 h-5 rounded-[6px] transition-all bg-black ${
-                          isFeatured ? 'translate-x-5.5' : 'translate-x-0 bg-white/20'
+                          isFeatured ? 'translate-x-5.5' : 'translate-x-0 bg-white'
                         }`}
                       />
                     </button>
@@ -1244,19 +1244,19 @@ export const EditProduct: React.FC = () => {
                   {/* Product Availability Toggle */}
                   <div className="flex items-center justify-between p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl pb-3.5 font-sans">
                     <div className="space-y-0.5">
-                      <span className="text-[13px] font-bold text-white block">✅ Mark as Available</span>
-                      <p className="text-white/35 text-[11px] leading-tight">Disable this to set item as Sold Out</p>
+                      <span className="text-[13px] font-bold text-black block">✅ Upload to shopfront</span>
+                      <p className="text-zinc-600 text-[11px] leading-tight font-medium">Disable this to set item as Sold Out</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setProductStatus(productStatus === 'active' ? 'sold_out' : 'active')}
                       className={`w-12 h-6.5 rounded-lg border flex items-center p-0.5 transition-all cursor-pointer ${
-                        productStatus === 'active' ? 'bg-[#bef715] border-[#bef715]' : 'bg-white/5 border-white/10'
+                        productStatus === 'active' ? 'bg-[#bef715] border-[#bef715]' : 'bg-zinc-200 border-zinc-300'
                       }`}
                     >
                       <div 
                         className={`w-5.5 h-5 rounded-[6px] transition-all bg-black ${
-                          productStatus === 'active' ? 'translate-x-5.5' : 'translate-x-0 bg-white/20'
+                          productStatus === 'active' ? 'translate-x-5.5' : 'translate-x-0 bg-white'
                         }`}
                       />
                     </button>
