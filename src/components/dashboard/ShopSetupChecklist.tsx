@@ -9,7 +9,6 @@ import {
   Store, 
   Package, 
   Bell, 
-  Crown, 
   Share2, 
   Sparkles, 
   X, 
@@ -134,14 +133,6 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
       }
     },
     {
-      id: 'pro',
-      title: 'Upgrade to Pro',
-      subtitle: 'Unlock unlimited products, analytics & custom domain',
-      completed: isProActive,
-      icon: Crown,
-      onClick: () => navigate('/subscription')
-    },
-    {
       id: 'share',
       title: 'Share your Shop',
       subtitle: 'Share your store link on WhatsApp or Instagram',
@@ -149,7 +140,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
       icon: Share2,
       onClick: handleShareShop
     }
-  ], [isProfileComplete, isProductAdded, isNotificationsEnabled, isProActive, isShopShared, navigate]);
+  ], [isProfileComplete, isProductAdded, isNotificationsEnabled, isShopShared, navigate]);
 
   const completedCount = tasks.filter(t => t.completed).length;
   const totalTasks = tasks.length;
