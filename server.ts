@@ -7,6 +7,7 @@ import { createClient } from '@supabase/supabase-js';
 import billingRouter from './server/routes/billing';
 import aiRouter from './server/routes/ai';
 import notificationsRouter from './server/routes/notifications';
+import { initDailySummaryScheduler } from './server/services/DailySummaryScheduler';
 
 dotenv.config();
 
@@ -261,6 +262,9 @@ async function startServer() {
     app.use(express.static(distPath));
     app.get('*', (req, res) => { res.sendFile(path.join(distPath, 'index.html')); });
   }
+
+  // Initialize ThreadZW Daily Summary Scheduler
+  initDailySummaryScheduler();
 
   app.listen(PORT, '0.0.0.0', () => { console.log(`Server running on http://localhost:${PORT}`); });
 }

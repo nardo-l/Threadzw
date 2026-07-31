@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import webpush from 'web-push';
+import { runDailySummaryJob } from '../services/DailySummaryScheduler';
 
 dotenv.config();
 
@@ -578,42 +579,27 @@ router.all('/test', handleTestPush);
  */
 router.all('/daily-summary', async (req: Request, res: Response) => {
   const isForce = req.query.force === 'true' || req.body?.force === true;
-
-  console.log(`[DAILY SUMMARY CRON EXECUTION START] force=${isForce}, time=${new Date().toISOString()}`);
+  console.log(`[DAILY SUMMARY ROUTE] force=${isForce}, time=${new Date().toISOString()}`);
 
   try {
-    // Fetch all registered active shops
-    const { data: shops, error } = await supabase
-      .from('shops')
-      .select('id, name, owner_id');
-
-    if (error || !shops) {
-      console.error('Failed to fetch shops for daily summary cron:', error?.message);
-      return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: error?.message || 'Failed to fetch shops' });
-    }
-
-    const results = [];
-    for (const shop of shops) {
-      try {
-        const resObj = await processShopDailySummary(shop, isForce);
-        results.push({ shopId: shop.id, shopName: shop.name, ...resObj });
-      } catch (shopErr: any) {
-        console.error(`Error processing shop ${shop.id}:`, shopErr);
-        results.push({ shopId: shop.id, status: 'failed', error: shopErr?.message });
-      }
-    }
-
-    console.log(`[DAILY SUMMARY CRON COMPLETE] processed ${shops.length} shops`);
-
-    return res.setHeader('Content-Type', 'application/json').status(200).json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      processedShopsCount: shops.length,
-      results
-    });
+    const jobResult = await runDailySummaryJob({ force: isForce });
+    return res.setHeader('Content-Type', 'application/json').status(jobResult.success ? 200 : 500).json(jobResult);
   } catch (err: any) {
-    console.error('Fatal error in daily summary cron endpoint:', err);
-    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Daily summary cron failed' });
+    console.error('Fatal error in daily summary route endpoint:', err);
+    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Daily summary job failed' });
+  }
+});
+
+router.all('/run-daily-summary', async (req: Request, res: Response) => {
+  const isForce = req.query.force === 'true' || req.body?.force === true;
+  console.log(`[RUN DAILY SUMMARY ROUTE] force=${isForce}, time=${new Date().toISOString()}`);
+
+  try {
+    const jobResult = await runDailySummaryJob({ force: isForce });
+    return res.setHeader('Content-Type', 'application/json').status(jobResult.success ? 200 : 500).json(jobResult);
+  } catch (err: any) {
+    console.error('Fatal error in run daily summary route endpoint:', err);
+    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Daily summary job failed' });
   }
 });
 

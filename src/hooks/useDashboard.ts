@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { AnalyticsService } from '../lib/AnalyticsService';
 
 export interface TrafficSourceStat {
   name: string;
@@ -113,7 +114,7 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
     setError(null);
 
     try {
-      const [productsRes, analyticsRes] = await Promise.all([
+      const [productsRes, analyticsRes, todayAnalytics] = await Promise.all([
         supabase
           .from('products')
           .select('*')
@@ -123,7 +124,8 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
           .from('shop_analytics')
           .select('*')
           .eq('shop_id', shopId)
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }),
+        AnalyticsService.getTodayAnalytics(shopId)
       ]);
 
       if (productsRes.error) throw productsRes.error;
