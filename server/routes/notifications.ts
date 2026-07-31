@@ -175,7 +175,7 @@ async function processShopDailySummary(shop: any, force: boolean = false) {
     const { data: pref } = await supabase
       .from('notification_preferences')
       .select('*')
-      .eq('user_id', ownerId)
+      .eq('profile_id', ownerId)
       .maybeSingle();
 
     if (pref) {

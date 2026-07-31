@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
 
 export interface NotificationPreference {
-  user_id: string;
+  profile_id: string;
+  user_id?: string;
   shop_id?: string;
   daily_summary_enabled: boolean;
   timezone: string;
@@ -243,6 +244,7 @@ export function calculateComparisonText(today: number, yesterday: number): strin
  */
 export async function getNotificationPreferences(userId: string): Promise<NotificationPreference> {
   const defaultPref: NotificationPreference = {
+    profile_id: userId,
     user_id: userId,
     daily_summary_enabled: true,
     timezone: 'Africa/Harare',
@@ -255,7 +257,7 @@ export async function getNotificationPreferences(userId: string): Promise<Notifi
     const { data, error } = await supabase
       .from('notification_preferences')
       .select('*')
-      .eq('user_id', userId)
+      .eq('profile_id', userId)
       .maybeSingle();
 
     if (error || !data) {
@@ -264,7 +266,8 @@ export async function getNotificationPreferences(userId: string): Promise<Notifi
     }
 
     return {
-      user_id: data.user_id,
+      profile_id: data.profile_id || userId,
+      user_id: data.profile_id || userId,
       shop_id: data.shop_id,
       daily_summary_enabled: data.daily_summary_enabled ?? true,
       timezone: data.timezone || 'Africa/Harare',
@@ -288,7 +291,7 @@ export async function saveNotificationPreferences(
 
   try {
     const payload = {
-      user_id: userId,
+      profile_id: userId,
       shop_id: shopId || null,
       daily_summary_enabled: dailySummaryEnabled,
       timezone: timezone,
@@ -297,7 +300,7 @@ export async function saveNotificationPreferences(
 
     const { error } = await supabase
       .from('notification_preferences')
-      .upsert(payload, { onConflict: 'user_id' });
+      .upsert(payload, { onConflict: 'profile_id' });
 
     if (error) {
       console.warn('Could not save to notification_preferences table, saving to localStorage:', error.message);
@@ -306,7 +309,7 @@ export async function saveNotificationPreferences(
     return true;
   } catch (err) {
     localStorage.setItem(`threadzw_notif_pref_${userId}`, JSON.stringify({
-      user_id: userId,
+      profile_id: userId,
       daily_summary_enabled: dailySummaryEnabled,
       timezone
     }));
