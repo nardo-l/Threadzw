@@ -106,14 +106,4 @@ export interface Sale {
   offlinePending?: boolean;
 }
 
-export enum NotificationType {
-  DAILY_SUMMARY = 'daily_summary',
-  NEW_ORDER = 'new_order',
-  NEW_WHATSAPP_CLICK = 'new_whatsapp_click',
-  VISITOR_MILESTONE = 'visitor_milestone',
-  TRIAL_EXPIRING = 'trial_expiring',
-  SUBSCRIPTION_ACTIVE = 'subscription_active',
-  ANNOUNCEMENT = 'announcement',
-  PROMOTION = 'promotion',
-  SYSTEM = 'system',
-}
+

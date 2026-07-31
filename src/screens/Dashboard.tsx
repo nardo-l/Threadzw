@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Loader2, 
   Menu,
-  Bell,
   ChevronDown,
   Calendar,
   ShoppingBag, 
@@ -200,14 +199,6 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button 
-            onClick={() => navigate('/notifications')}
-            className="relative p-1.5 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
-          >
-            <Bell size={20} className="text-zinc-800" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-[#CCFF00] rounded-full ring-2 ring-[#F8F9FA]" />
-          </button>
-          
           <div 
             onClick={() => navigate('/settings')}
             className="flex items-center gap-1 cursor-pointer"

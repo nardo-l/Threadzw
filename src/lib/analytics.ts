@@ -239,29 +239,12 @@ export async function trackShopCreatedEvent(_shopId: string, _shopName: string) 
 export async function trackProductCreatedEvent(_shopId: string, _productId: string) {}
 
 export async function createMerchantNotification(
-  shopOwnerId: string,
-  type: 'new_purchase_intent' | 'new_whatsapp_intent' | 'milestone_reached' | 'low_stock' | 'announcement',
-  title: string,
-  body: string,
-  data: Record<string, any> = {}
+  _shopOwnerId: string,
+  _type: string,
+  _title: string,
+  _body: string,
+  _data: Record<string, any> = {}
 ) {
-  if (!shopOwnerId) return;
-  try {
-    const { error } = await supabase.from('notifications').insert([{
-      user_id: shopOwnerId,
-      type: type,
-      title,
-      body,
-      data: data,
-      read: false,
-      created_at: new Date().toISOString()
-    }]);
-    
-    if (error) {
-      console.error("Could not insert notification into Supabase:", error.message);
-    }
-  } catch (err) {
-    console.error("Exception during notification creation:", err);
-  }
+  // Notifications removed per user request
 }
 

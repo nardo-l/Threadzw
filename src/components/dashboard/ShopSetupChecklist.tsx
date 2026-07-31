@@ -8,18 +8,15 @@ import {
   ChevronRight, 
   Store, 
   Package, 
-  Bell, 
   Share2, 
   Sparkles, 
   X, 
-  Smartphone,
   Loader2,
   PartyPopper,
   Check
 } from 'lucide-react';
 import { Shop } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { registerWebPushSubscription } from '../../lib/dailyNotificationService';
 import { toast } from 'sonner';
 
 interface ShopSetupChecklistProps {
@@ -36,18 +33,6 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   const navigate = useNavigate();
   const { user, subscription } = useAuth();
 
-  const [showNotifModal, setShowNotifModal] = useState(false);
-  const [registeringPush, setRegisteringPush] = useState(false);
-  const [pushErrorMsg, setPushErrorMsg] = useState<string | null>(null);
-  
-  // Track notifications enabled state
-  const [pushEnabled, setPushEnabled] = useState<boolean>(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      return Notification.permission === 'granted';
-    }
-    return false;
-  });
-
   // Track shop shared state
   const [shopShared, setShopShared] = useState<boolean>(() => {
     if (!shop?.id) return false;
@@ -59,15 +44,6 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
     if (!shop?.id) return false;
     return localStorage.getItem(`threadzw_checklist_dismissed_${shop.id}`) === 'true';
   });
-
-  // Check if push permission updates
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'granted') {
-        setPushEnabled(true);
-      }
-    }
-  }, []);
 
   // 1. Profile completion check
   const isProfileComplete = useMemo(() => {
@@ -85,10 +61,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   // 2. Product added check
   const isProductAdded = productsCount > 0;
 
-  // 3. Daily notifications enabled check
-  const isNotificationsEnabled = pushEnabled || (shop?.id ? localStorage.getItem(`threadzw_notif_enabled_${shop.id}`) === 'true' : false);
-
-  // 4. Upgrade to Pro check
+  // 3. Upgrade to Pro check
   const isProActive = useMemo(() => {
     if (isSubscriptionOrTrialActive) return true;
     if (subscription?.status === 'active' || subscription?.status === 'trial') return true;
@@ -96,7 +69,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
     return false;
   }, [isSubscriptionOrTrialActive, subscription, shop]);
 
-  // 5. Share shop check
+  // 4. Share shop check
   const isShopShared = shopShared;
 
   // Calculate overall progress
@@ -118,21 +91,6 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
       onClick: () => navigate('/inventory')
     },
     {
-      id: 'notif',
-      title: 'Enable Daily Notifications',
-      subtitle: 'Receive 19:00 daily briefing on sales & visits',
-      completed: isNotificationsEnabled,
-      icon: Bell,
-      onClick: () => {
-        if (isNotificationsEnabled) {
-          toast.info('Daily notifications are already enabled!');
-        } else {
-          setPushErrorMsg(null);
-          setShowNotifModal(true);
-        }
-      }
-    },
-    {
       id: 'share',
       title: 'Share your Shop',
       subtitle: 'Share your store link on WhatsApp or Instagram',
@@ -140,7 +98,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
       icon: Share2,
       onClick: handleShareShop
     }
-  ], [isProfileComplete, isProductAdded, isNotificationsEnabled, isShopShared, navigate]);
+  ], [isProfileComplete, isProductAdded, isShopShared, navigate]);
 
   const completedCount = tasks.filter(t => t.completed).length;
   const totalTasks = tasks.length;
@@ -183,38 +141,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
     }
   }
 
-  // Handle Enable Notifications inside Modal
-  async function handleEnablePushNotifications() {
-    if (!user?.id) {
-      toast.error('User session required');
-      return;
-    }
 
-    setRegisteringPush(true);
-    setPushErrorMsg(null);
-
-    try {
-      const res = await registerWebPushSubscription(user.id, shop?.id || undefined);
-      if (res.success) {
-        setPushEnabled(true);
-        if (shop?.id) {
-          localStorage.setItem(`threadzw_notif_enabled_${shop.id}`, 'true');
-        }
-        toast.success('Web Push Notifications registered successfully!');
-        setShowNotifModal(false);
-      } else {
-        if (res.message.includes('denied')) {
-          setPushErrorMsg('Notification permission was blocked in browser settings. Please click the lock icon next to your browser URL bar to allow notifications.');
-        } else {
-          setPushErrorMsg(res.message);
-        }
-      }
-    } catch (err: any) {
-      setPushErrorMsg(err?.message || 'Error enabling notifications');
-    } finally {
-      setRegisteringPush(false);
-    }
-  }
 
   // Handle Dismiss Completed Banner
   const handleDismiss = () => {
@@ -359,79 +286,6 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
           );
         })}
       </div>
-
-      {/* Enable Daily Notifications Modal */}
-      {showNotifModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl border border-zinc-100 relative">
-            <button 
-              onClick={() => setShowNotifModal(false)}
-              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-black rounded-full hover:bg-zinc-100 transition-colors cursor-pointer"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-[#CCFF00] text-black font-black flex items-center justify-center shrink-0 shadow-xs">
-                <Bell size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-extrabold text-zinc-900 tracking-tight">
-                  Daily 19:00 Shop Summary
-                </h3>
-                <p className="text-xs text-zinc-500 font-medium">
-                  Stay updated on your store performance every evening
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4 space-y-3">
-              <div className="flex items-start gap-2.5">
-                <Smartphone size={16} className="text-[#96D100] mt-0.5 shrink-0" />
-                <p className="text-xs text-zinc-700 font-normal leading-relaxed">
-                  Every evening at <strong>19:00 (Africa/Harare)</strong>, ThreadZW sends a push briefing directly to your browser or device containing:
-                </p>
-              </div>
-              <ul className="text-xs text-zinc-600 space-y-1.5 pl-6 list-disc font-medium">
-                <li>Total daily store visitors & comparison vs yesterday</li>
-                <li>WhatsApp order click counts</li>
-                <li>Product page views & most saved items</li>
-              </ul>
-            </div>
-
-            {pushErrorMsg && (
-              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs font-medium leading-relaxed">
-                {pushErrorMsg}
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowNotifModal(false)}
-                className="flex-1 py-3 px-4 border border-zinc-200 text-zinc-700 font-bold text-xs uppercase tracking-wider rounded-xl hover:bg-zinc-50 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleEnablePushNotifications}
-                disabled={registeringPush}
-                className="flex-1 py-3 px-4 bg-[#CCFF00] hover:bg-[#bbee00] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.98]"
-              >
-                {registeringPush ? (
-                  <Loader2 size={16} className="animate-spin text-black" />
-                ) : (
-                  <>
-                    <Bell size={15} />
-                    <span>Enable Notifications</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

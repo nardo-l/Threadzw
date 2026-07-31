@@ -2,7 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import billingRouter from '../server/routes/billing';
 import aiRouter from '../server/routes/ai';
-import notificationsRouter from '../server/routes/notifications';
 
 dotenv.config();
 
@@ -18,8 +17,6 @@ app.get('/api/health', (req, res) => {
 // --- ROUTERS ---
 app.use('/api/billing', billingRouter);
 app.use('/api/ai', aiRouter);
-app.use('/api/cron', notificationsRouter);
-app.use('/api/notifications', notificationsRouter);
 
 // Fallback for unmatched /api routes
 app.use('/api/*', (req, res) => {

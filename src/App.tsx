@@ -17,7 +17,6 @@ import { Settings } from './screens/Settings';
 import { ShopEdit } from './screens/ShopEdit';
 import { SalesSystem } from './screens/SalesSystem';
 import { Support } from './screens/Support';
-import { Notifications } from './screens/Notifications';
 import { Search } from './screens/Search';
 import { ProductDetail } from './screens/ProductDetail';
 import { AuthProvider, useAuth } from './context/AuthContext';
