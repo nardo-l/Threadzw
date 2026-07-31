@@ -25,9 +25,9 @@ if (!vapidPublicKey || !vapidPrivateKey) {
 
 try {
   webpush.setVapidDetails(
-    'mailto:support@threadzw.co.zw',
-    vapidPublicKey,
-    vapidPrivateKey
+    "mailto:your-email@example.com",
+    process.env.VAPID_PUBLIC_KEY!,
+    process.env.VAPID_PRIVATE_KEY!
   );
 } catch (err: any) {
   console.warn('Error setting VAPID details:', err?.message);
@@ -383,7 +383,9 @@ async function processShopDailySummary(shop: any, force: boolean = false) {
  */
 router.get('/vapid-key', (req: Request, res: Response) => {
   try {
-    return res.setHeader('Content-Type', 'application/json').status(200).json({ success: true, publicKey: vapidPublicKey });
+    return res.setHeader('Content-Type', 'application/json').status(200).json({
+      publicKey: process.env.VAPID_PUBLIC_KEY
+    });
   } catch (err: any) {
     return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Failed to retrieve VAPID key' });
   }
