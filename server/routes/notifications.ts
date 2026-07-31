@@ -404,6 +404,7 @@ router.post('/subscribe', async (req: Request, res: Response) => {
     }
 
     // Save to memory store
+    console.log('[DEBUG SUBSCRIBE] Storing subscription for userId:', userId, 'endpoint:', subscription.endpoint);
     pushSubscriptionStore.set(subscription.endpoint, {
       user_id: userId || 'anonymous',
       shop_id: shopId,
@@ -442,6 +443,34 @@ router.post('/subscribe', async (req: Request, res: Response) => {
  */
 const handleTestPush = async (req: Request, res: Response) => {
   try {
+    // 4. Verify each dependency individually before sending the push
+    const vapidPubKey = process.env.VAPID_PUBLIC_KEY;
+    const vapidPrivKey = process.env.VAPID_PRIVATE_KEY;
+    const supUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    const supKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!vapidPubKey || !vapidPrivKey) {
+      return res.setHeader('Content-Type', 'application/json').status(500).json({
+        success: false,
+        error: 'Missing VAPID keys (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)',
+        stack: process.env.NODE_ENV !== 'production' ? 'VAPID keys not configured' : undefined
+      });
+    }
+
+    if (!supUrl || !supKey) {
+      return res.setHeader('Content-Type', 'application/json').status(500).json({
+        success: false,
+        error: 'Missing Supabase configuration (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)',
+        stack: process.env.NODE_ENV !== 'production' ? 'Supabase environment variables not configured' : undefined
+      });
+    }
+
+    // Test database connection / query
+    const { error: dbTestErr } = await supabase.from('shops').select('id').limit(1);
+    if (dbTestErr) {
+      console.warn('[TEST PUSH] Database connectivity warning during test:', dbTestErr.message);
+    }
+
     const userId = req.body?.userId || req.query?.userId || req.body?.user_id || req.query?.user_id;
     const shopId = req.body?.shopId || req.query?.shopId || req.body?.shop_id || req.query?.shop_id;
 
@@ -475,7 +504,44 @@ const handleTestPush = async (req: Request, res: Response) => {
     }
 
     if (!targetUserId) {
-      return res.setHeader('Content-Type', 'application/json').status(400).json({ success: false, error: 'userId is required for test push' });
+      return res.setHeader('Content-Type', 'application/json').status(400).json({
+        success: false,
+        error: 'userId is required for test push and no fallback user/shop found'
+      });
+    }
+
+    // 5. Lookup user's push subscription
+    console.log('[DEBUG TEST-PUSH] Looking up subscriptions for targetUserId:', targetUserId, 'store size:', pushSubscriptionStore.size);
+    let hasSubscription = false;
+    for (const subItem of pushSubscriptionStore.values()) {
+      console.log('[DEBUG TEST-PUSH] Store item user_id:', subItem.user_id, 'endpoint:', subItem.subscription?.endpoint);
+      if (subItem.user_id === targetUserId) {
+        hasSubscription = true;
+        break;
+      }
+    }
+
+    if (!hasSubscription) {
+      try {
+        const { data: subData } = await supabase
+          .from('push_subscriptions')
+          .select('endpoint')
+          .eq('user_id', targetUserId)
+          .limit(1);
+        if (subData && subData.length > 0) {
+          hasSubscription = true;
+        }
+      } catch (e) {
+        // ignore table missing or query error
+      }
+    }
+
+    if (!hasSubscription) {
+      return res.setHeader('Content-Type', 'application/json').status(200).json({
+        success: true,
+        message: 'No active push subscription found.',
+        pushCount: 0
+      });
     }
 
     const testTitle = 'ThreadZW 📊';
@@ -489,12 +555,16 @@ const handleTestPush = async (req: Request, res: Response) => {
 
     return res.setHeader('Content-Type', 'application/json').status(200).json({
       success: true,
-      message: pushCount > 0 ? `Web Push delivered to ${pushCount} active device(s)` : 'No active Web Push device subscriptions found for this user. Make sure push permission is enabled.',
+      message: pushCount > 0 ? `Web Push delivered to ${pushCount} active device(s)` : 'No active push subscription found.',
       pushCount
     });
   } catch (err: any) {
-    console.error('[TEST PUSH] Server route error:', err);
-    return res.setHeader('Content-Type', 'application/json').status(500).json({ success: false, error: err?.message || 'Failed to dispatch test push' });
+    console.error('[TEST PUSH CRITICAL ERROR]', err);
+    return res.setHeader('Content-Type', 'application/json').status(500).json({
+      success: false,
+      error: err?.message || 'Failed to dispatch test push',
+      stack: process.env.NODE_ENV !== 'production' ? err?.stack : undefined
+    });
   }
 };
 
