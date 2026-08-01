@@ -81,6 +81,9 @@ export const ShopDirectoryPage: React.FC = () => {
   const [dbLoading, setDbLoading] = useState<boolean>(true);
   const [dbError, setDbError] = useState<string | null>(null);
 
+  // Failed logo tracking map for graceful fallback
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
+
   // Live Statistics state calculated directly from Supabase
   const [liveStats, setLiveStats] = useState({
     shopsCount: 0,
@@ -93,9 +96,18 @@ export const ShopDirectoryPage: React.FC = () => {
 
   // Search, Filters & Sorting
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
   const [selectedCats, setSelectedCats] = useState<string[]>(['All']);
   const [selectedCities, setSelectedCities] = useState<string[]>(['All']);
   const [sortBy, setSortBy] = useState<string>('Popular');
+
+  // Debounce search query input by 300ms
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   // Sidebar expand/collapse triggers
   const [showAllCats, setShowAllCats] = useState<boolean>(false);
@@ -117,17 +129,15 @@ export const ShopDirectoryPage: React.FC = () => {
     }
   }, []);
 
-  // Fetch real shops and live statistics from Supabase
+  // Fetch real shops and live statistics from Supabase using explicit column selection
   const fetchLiveShopsAndStats = async () => {
     setDbLoading(true);
     setDbError(null);
     try {
-      console.log('[ShopDirectory] Fetching real stores and statistics from Supabase...');
-      
-      // 1. Fetch real shops without referencing non-existent columns (e.g. handle)
+      // 1. Fetch real shops with ONLY required columns (No select('*'))
       const { data: shopsData, error: shopsErr } = await supabase
         .from('shops')
-        .select('*')
+        .select('id, name, slug, description, logo_url, banner_url, location, address, category, categories, is_active, created_at')
         .order('created_at', { ascending: false });
 
       if (shopsErr) {
@@ -136,13 +146,13 @@ export const ShopDirectoryPage: React.FC = () => {
 
       const rawShops = shopsData || [];
 
-      // 2. Fetch products to calculate total live products count & per-shop counts
+      // 2. Fetch product-shop relations in a single lightweight query to count products per shop
       const { data: productsData, error: productsErr } = await supabase
         .from('products')
         .select('id, shop_id');
 
       if (productsErr) {
-        console.warn('[ShopDirectory] Products count fetch warning:', productsErr);
+        // Non-fatal warning handled gracefully
       }
 
       const rawProducts = productsData || [];
@@ -154,10 +164,10 @@ export const ShopDirectoryPage: React.FC = () => {
       });
       setProductCounts(countsMap);
 
-      // 3. Compute distinct cities from live shop locations
+      // 3. Compute distinct cities from live shop locations efficiently
       const distinctCities = new Set<string>();
       rawShops.forEach((s: any) => {
-        const cityStr = (s.location || s.address || s.town || '').trim();
+        const cityStr = (s.location || s.address || '').trim();
         if (cityStr) {
           distinctCities.add(cityStr);
         }
@@ -172,7 +182,7 @@ export const ShopDirectoryPage: React.FC = () => {
 
       setDbShops(rawShops);
     } catch (err: any) {
-      console.error('[ShopDirectoryPage] Supabase error:', err);
+      console.error('Supabase fetch error:', err);
       setDbError(err?.message || 'Failed to retrieve active shops.');
     } finally {
       setDbLoading(false);
@@ -187,17 +197,17 @@ export const ShopDirectoryPage: React.FC = () => {
   const allShops = useMemo(() => {
     return dbShops.map((s, idx) => {
       const categoryStr = s.category || (Array.isArray(s.categories) && s.categories[0]) || 'Streetwear';
-      const cityStr = (s.location || s.address || s.town || 'Harare').trim() || 'Harare';
+      const cityStr = (s.location || s.address || 'Harare').trim() || 'Harare';
       const countFromProducts = productCounts[s.id] !== undefined 
         ? productCounts[s.id] 
-        : (s.product_count || 0);
+        : 0;
 
       return {
         id: s.id,
         name: s.name || 'Unnamed Shop',
         slug: s.slug || s.id,
         description: s.description || 'Active ThreadZW storefront brand.',
-        logo_url: s.logo_url || s.avatar_url || null,
+        logo_url: s.logo_url || null,
         banner_url: s.banner_url || FASHION_BANNERS[idx % FASHION_BANNERS.length],
         location: cityStr,
         category: categoryStr,
@@ -229,11 +239,11 @@ export const ShopDirectoryPage: React.FC = () => {
     return Array.from(set);
   }, [allShops]);
 
-  // Filtering Logic against real database fields
+  // Filtering Logic against debounced query
   const filteredShops = useMemo(() => {
     return allShops.filter(shop => {
       // 1. Search Query against Shop name, Description, Category, City (location), Slug
-      const query = searchQuery.toLowerCase().trim();
+      const query = debouncedSearchQuery.toLowerCase().trim();
       const matchesSearch = !query || 
         shop.name.toLowerCase().includes(query) ||
         shop.description.toLowerCase().includes(query) ||
@@ -255,7 +265,7 @@ export const ShopDirectoryPage: React.FC = () => {
 
       return matchesSearch && matchesCategory && matchesCity;
     });
-  }, [allShops, searchQuery, selectedCats, selectedCities]);
+  }, [allShops, debouncedSearchQuery, selectedCats, selectedCities]);
 
   // Sorting Logic
   const sortedAndFilteredShops = useMemo(() => {
@@ -284,7 +294,7 @@ export const ShopDirectoryPage: React.FC = () => {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCats, selectedCities, sortBy]);
+  }, [debouncedSearchQuery, selectedCats, selectedCities, sortBy]);
 
   // Filter toggle helpers
   const handleCategoryToggle = (cat: string) => {
@@ -323,11 +333,28 @@ export const ShopDirectoryPage: React.FC = () => {
     }
   };
 
+  // Routing navigation helper with slug/id validation
+  const handleVisitShop = (shop: ShopRecord, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    const validTarget = shop.slug?.trim() || shop.id?.trim();
+    if (validTarget) {
+      if (shop.id) {
+        trackMapOpen(shop.id).catch(() => {});
+      }
+      navigate(`/shop/${validTarget}`);
+    }
+  };
+
   // Custom Checkbox sub-component
   const CustomCheckbox: React.FC<{ checked: boolean; onChange: () => void; label: string }> = ({ checked, onChange, label }) => (
     <div 
       onClick={onChange}
-      className="flex items-center gap-3 cursor-pointer select-none group text-sm text-zinc-700 hover:text-black py-1.5"
+      className="flex items-center gap-3 cursor-pointer select-none group text-sm text-zinc-700 hover:text-black py-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black rounded"
+      tabIndex={0}
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={label}
+      onKeyDown={(e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onChange(); } }}
     >
       <div 
         className={`w-5 h-5 rounded border flex items-center justify-center transition-all shrink-0 ${
@@ -388,6 +415,10 @@ export const ShopDirectoryPage: React.FC = () => {
           <div 
             onClick={() => navigate('/')}
             className="flex items-center gap-1 cursor-pointer select-none active:opacity-90 hover:opacity-95 transition-opacity"
+            role="button"
+            aria-label="ThreadZW Home"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate('/'); }}
           >
             <span className="text-xl font-black tracking-tighter uppercase font-sans">
               THREAD<span className="text-[#BEF715]">ZW</span>
@@ -401,6 +432,7 @@ export const ShopDirectoryPage: React.FC = () => {
               placeholder="Search shops, products or locations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search stores, products or locations"
               className="w-full bg-transparent border-none text-white placeholder-zinc-500 focus:outline-none focus:ring-0 text-xs py-2 pr-8"
             />
             <Search size={15} className="absolute right-4 text-zinc-500 pointer-events-none" />
@@ -440,6 +472,7 @@ export const ShopDirectoryPage: React.FC = () => {
               onClick={() => navigate('/login')}
               className="p-2 hover:text-white transition-colors cursor-pointer relative"
               title="Shopping Cart"
+              aria-label="Shopping Cart"
             >
               <ShoppingBag size={18} className="stroke-[2.5]" />
             </button>
@@ -447,6 +480,7 @@ export const ShopDirectoryPage: React.FC = () => {
             <button
               onClick={() => navigate('/login')}
               className="p-1 px-3 py-1.5 rounded-md border border-zinc-800 text-xs font-bold text-white uppercase tracking-wider hover:bg-zinc-900 active:scale-95 transition-all cursor-pointer"
+              aria-label="Login"
             >
               LOGIN
             </button>
@@ -494,6 +528,7 @@ export const ShopDirectoryPage: React.FC = () => {
               <svg 
                 viewBox="0 0 200 200" 
                 className="w-56 h-56 text-zinc-200 fill-zinc-100/40 stroke-zinc-300 stroke-1.5 transition-colors duration-500 group-hover:text-zinc-300/40"
+                aria-label="Zimbabwe map illustration"
               >
                 <path d="M 90,40 L 112,42 L 138,50 L 152,65 L 165,85 L 158,112 L 140,135 L 122,152 L 100,165 L 75,160 L 55,145 L 42,120 L 38,92 L 50,70 L 72,55 Z" />
                 <line x1="120" y1="70" x2="65" y2="125" className="stroke-dashed stroke-zinc-300 stroke-[1] stroke-dasharray-[2]" />
@@ -534,60 +569,75 @@ export const ShopDirectoryPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. FOUR BENTO STATISTICS CARDS (Calculated Live from Supabase) */}
+      {/* 3. FOUR BENTO STATISTICS CARDS (Calculated Live from Supabase / Skeleton Loading) */}
       <section className="w-full py-10 bg-zinc-50/40 border-b border-[#ECECEC]">
         <div className="w-full max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             
-            {/* Card 1: Shops */}
-            <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
-                🏪
-              </div>
-              <div>
-                <span className="block text-2xl font-black text-black leading-none">
-                  {dbLoading ? '...' : liveStats.shopsCount}
-                </span>
-                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Shops</span>
-              </div>
-            </div>
+            {dbLoading ? (
+              /* Skeleton Bento Stat Cards */
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 animate-pulse">
+                  <div className="w-12 h-12 rounded-xl bg-zinc-100 shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-6 w-14 bg-zinc-200 rounded" />
+                    <div className="h-3 w-16 bg-zinc-100 rounded" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <>
+                {/* Card 1: Shops */}
+                <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
+                  <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs shrink-0">
+                    🏪
+                  </div>
+                  <div>
+                    <span className="block text-2xl font-black text-black leading-none">
+                      {liveStats.shopsCount}
+                    </span>
+                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Shops</span>
+                  </div>
+                </div>
 
-            {/* Card 2: Products */}
-            <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
-                🛍️
-              </div>
-              <div>
-                <span className="block text-2xl font-black text-black leading-none">
-                  {dbLoading ? '...' : liveStats.productsCount.toLocaleString()}
-                </span>
-                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Products</span>
-              </div>
-            </div>
+                {/* Card 2: Products */}
+                <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
+                  <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs shrink-0">
+                    🛍️
+                  </div>
+                  <div>
+                    <span className="block text-2xl font-black text-black leading-none">
+                      {liveStats.productsCount.toLocaleString()}
+                    </span>
+                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Products</span>
+                  </div>
+                </div>
 
-            {/* Card 3: Cities */}
-            <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
-                📍
-              </div>
-              <div>
-                <span className="block text-2xl font-black text-black leading-none">
-                  {dbLoading ? '...' : liveStats.citiesCount}
-                </span>
-                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Cities</span>
-              </div>
-            </div>
+                {/* Card 3: Cities */}
+                <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
+                  <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs shrink-0">
+                    📍
+                  </div>
+                  <div>
+                    <span className="block text-2xl font-black text-black leading-none">
+                      {liveStats.citiesCount}
+                    </span>
+                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Cities</span>
+                  </div>
+                </div>
 
-            {/* Card 4: Built By Zimbabweans */}
-            <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
-                👥
-              </div>
-              <div>
-                <span className="block text-md font-black text-black leading-none uppercase tracking-tight py-0.5">Built By</span>
-                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Zimbabweans</span>
-              </div>
-            </div>
+                {/* Card 4: Built By Zimbabweans */}
+                <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
+                  <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs shrink-0">
+                    👥
+                  </div>
+                  <div>
+                    <span className="block text-md font-black text-black leading-none uppercase tracking-tight py-0.5">Built By</span>
+                    <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Zimbabweans</span>
+                  </div>
+                </div>
+              </>
+            )}
 
           </div>
         </div>
@@ -702,6 +752,7 @@ export const ShopDirectoryPage: React.FC = () => {
                     placeholder="Search shops, categories or cities..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Filter stores by name, category, or city"
                     className="w-full bg-transparent border-none text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-0 text-xs py-2 pr-8 text-ellipsis"
                   />
                   <Search size={14} className="absolute right-4 text-zinc-400 pointer-events-none" />
@@ -714,6 +765,7 @@ export const ShopDirectoryPage: React.FC = () => {
                   <button 
                     onClick={() => setIsMobileFilterOpen(true)}
                     className="lg:hidden h-10 px-4 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black flex items-center gap-2 cursor-pointer"
+                    aria-label="Open mobile filter options"
                   >
                     <Filter size={14} />
                     Filters
@@ -725,6 +777,7 @@ export const ShopDirectoryPage: React.FC = () => {
                     <select 
                       value={sortBy}
                       onChange={(e) => setSortBy(e.target.value)}
+                      aria-label="Sort shops list"
                       className="h-10 px-3 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-xs font-bold text-zinc-900 focus:outline-none focus:border-zinc-400 cursor-pointer"
                     >
                       <option value="Popular">Popular</option>
@@ -742,15 +795,27 @@ export const ShopDirectoryPage: React.FC = () => {
               {/* GRID CARDS AREA */}
               <div className="space-y-8">
                 {dbLoading ? (
-                  /* Loading Spinner */
-                  <div className="py-24 flex flex-col items-center justify-center space-y-4 bg-white">
-                    <div className="relative w-11 h-11 flex items-center justify-center">
-                      <div className="absolute inset-0 border-3 border-zinc-100 rounded-full" />
-                      <div className="absolute inset-0 border-3 border-t-black rounded-full animate-spin" />
-                    </div>
-                    <p className="text-xs font-bold tracking-widest text-zinc-400 uppercase animate-pulse">
-                      Cataloging ThreadZW stores...
-                    </p>
+                  /* Skeleton Shop Cards Grid */
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {Array.from({ length: 6 }).map((_, idx) => (
+                      <div key={idx} className="bg-white border border-[#ECECEC] rounded-[24px] overflow-hidden animate-pulse">
+                        <div className="aspect-[16/9] w-full bg-zinc-100" />
+                        <div className="px-5 pb-5 pt-3 space-y-4">
+                          <div className="flex items-center gap-3.5 -mt-8 relative z-10">
+                            <div className="w-14 h-14 rounded-full bg-zinc-200 border-3 border-white shadow shrink-0" />
+                            <div className="pt-8 space-y-2 flex-1">
+                              <div className="h-4 w-28 bg-zinc-200 rounded" />
+                              <div className="h-3 w-20 bg-zinc-100 rounded" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="h-3 w-full bg-zinc-100 rounded" />
+                            <div className="h-3 w-3/4 bg-zinc-100 rounded" />
+                          </div>
+                          <div className="h-10 w-full bg-zinc-100 rounded-xl" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : dbError ? (
                   /* Real DB Error State */
@@ -797,23 +862,33 @@ export const ShopDirectoryPage: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  /* List Grid */
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {paginatedShops.map((shop, i) => (
+                  /* List Grid with Smooth Fade-in */
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
+                  >
+                    {paginatedShops.map((shop, i) => {
+                      const logoHasFailed = failedLogos[shop.id];
+                      return (
                         <div 
                           key={shop.id}
-                          onClick={() => navigate(`/shop/${shop.slug}`)}
-                          className="group bg-white border border-[#ECECEC] rounded-[24px] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-zinc-350"
+                          onClick={(e) => handleVisitShop(shop, e)}
+                          className="group bg-white border border-[#ECECEC] rounded-[24px] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-zinc-350 [content-visibility:auto]"
                         >
                           
-                          {/* 1. Cover Banner Image (Aspect 16/9) */}
-                          <div className="relative aspect-[16/9] w-full bg-zinc-50 overflow-hidden border-b border-[#ECECEC]">
+                          {/* 1. Cover Banner Image (Aspect 16/9 with fallback) */}
+                          <div className="relative aspect-[16/9] w-full bg-zinc-100 overflow-hidden border-b border-[#ECECEC]">
                             <img 
                               src={shop.banner_url || FASHION_BANNERS[i % FASHION_BANNERS.length]} 
                               alt={`${shop.name} Fashion Banner`}
                               loading="lazy"
+                              decoding="async"
                               referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = FASHION_BANNERS[i % FASHION_BANNERS.length];
+                              }}
                               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                             />
                             
@@ -827,11 +902,16 @@ export const ShopDirectoryPage: React.FC = () => {
                               
                               {/* Circle Overlapping Logo */}
                               <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black border-3 border-white shadow overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                {shop.logo_url ? (
+                                {shop.logo_url && !logoHasFailed ? (
                                   <img 
                                     src={shop.logo_url} 
-                                    alt={`${shop.name} Avatar`}
+                                    alt={`${shop.name} Logo`}
+                                    loading="lazy"
+                                    decoding="async"
                                     referrerPolicy="no-referrer"
+                                    onError={() => {
+                                      setFailedLogos(prev => ({ ...prev, [shop.id]: true }));
+                                    }}
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
@@ -886,16 +966,9 @@ export const ShopDirectoryPage: React.FC = () => {
 
                             {/* Primary Button */}
                             <button 
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                if (shop.id) {
-                                  try {
-                                    await trackMapOpen(shop.id);
-                                  } catch (_) {}
-                                }
-                                navigate(`/shop/${shop.slug}`);
-                              }}
-                              className="w-full mt-4 h-11 bg-[#000000] hover:bg-[#111111] text-[#BEF715] hover:text-white rounded-xl text-xs font-black tracking-wide flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-all cursor-pointer"
+                              onClick={(e) => handleVisitShop(shop, e)}
+                              className="w-full mt-4 h-11 bg-[#000000] hover:bg-[#111111] text-[#BEF715] hover:text-white rounded-xl text-xs font-black tracking-wide flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98] transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-black"
+                              aria-label={`Visit store ${shop.name}`}
                             >
                               <span>Visit Shop</span>
                               <ArrowRight size={13} className="stroke-[3] transition-transform group-hover:translate-x-1" />
@@ -904,48 +977,51 @@ export const ShopDirectoryPage: React.FC = () => {
                           </div>
 
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
+                  </motion.div>
+                )}
 
-                    {/* PAGINATION */}
-                    {totalPages > 1 && (
-                      <div className="pt-10 flex items-center justify-center gap-2 select-none">
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                          disabled={currentPage === 1}
-                          className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all cursor-pointer"
+                {/* PAGINATION */}
+                {totalPages > 1 && (
+                  <div className="pt-10 flex items-center justify-center gap-2 select-none">
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all cursor-pointer"
+                      aria-label="Previous page"
+                    >
+                      ← Prev
+                    </button>
+                    
+                    {Array.from({ length: totalPages }).map((_, idx) => {
+                      const pageNum = idx + 1;
+                      const isActive = pageNum === currentPage;
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          aria-label={`Page ${pageNum}`}
+                          className={`w-9 h-9 rounded-lg text-xs font-black transition-all cursor-pointer ${
+                            isActive 
+                              ? 'bg-black text-[#BEF715] border border-black shadow-sm' 
+                              : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:text-black'
+                          }`}
                         >
-                          ← Prev
+                          {pageNum}
                         </button>
-                        
-                        {Array.from({ length: totalPages }).map((_, idx) => {
-                          const pageNum = idx + 1;
-                          const isActive = pageNum === currentPage;
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={`w-9 h-9 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                                isActive 
-                                  ? 'bg-black text-[#BEF715] border border-black shadow-sm' 
-                                  : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:text-black'
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
+                      );
+                    })}
 
-                        <button 
-                          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                          disabled={currentPage === totalPages}
-                          className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all cursor-pointer"
-                        >
-                          Next →
-                        </button>
-                      </div>
-                    )}
-                  </>
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all cursor-pointer"
+                      aria-label="Next page"
+                    >
+                      Next →
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -974,6 +1050,7 @@ export const ShopDirectoryPage: React.FC = () => {
           <button 
             onClick={() => navigate('/signup')}
             className="w-full md:w-auto shrink-0 h-14 bg-[#BEF715] hover:bg-[#a6df0c] text-black font-extrabold text-sm rounded-full px-8 flex items-center justify-center gap-2 shadow transition-all cursor-pointer active:scale-98 tracking-wider uppercase"
+            aria-label="Start your shop on ThreadZW"
           >
             <span>Start Your Shop</span>
             <ArrowRight size={16} className="stroke-[2.5]" />
@@ -1012,6 +1089,7 @@ export const ShopDirectoryPage: React.FC = () => {
                 <button 
                   onClick={() => setIsMobileFilterOpen(false)}
                   className="p-1 text-zinc-400 hover:text-black focus:outline-none cursor-pointer"
+                  aria-label="Close mobile filters"
                 >
                   <X size={18} className="stroke-[2.5]" />
                 </button>
