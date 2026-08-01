@@ -61,7 +61,14 @@ export async function trackEvent(params: TrackEventParams) {
     visitorId = await getVisitorId();
   }
 
-  // Step 3 Log: Inside every tracking function
+  // Forensic Log: TRACK START
+  console.log("TRACK START", {
+    eventType: params.eventType,
+    shopId: params.shopId,
+    productId: params.productId
+  });
+
+  // Forensic Log: TRACK FUNCTION EXECUTED
   console.log("TRACK FUNCTION EXECUTED", {
     eventType: params.eventType,
     shopId: params.shopId,
@@ -114,29 +121,30 @@ export async function trackEvent(params: TrackEventParams) {
       shop_id: params.shopId,
       event_type: params.eventType,
       visitor_id: visitorId,
-      metadata: metadata
+      metadata: metadata,
+      created_at: new Date().toISOString()
     };
 
-    // Step 4 Log: Immediately before insert
+    // Forensic Log: INSERT PAYLOAD
     console.log("INSERT PAYLOAD", eventPayload);
 
     const { data, error } = await supabase.from('shop_analytics').insert([eventPayload]).select();
 
-    // Step 5 Log: Immediately after insert
+    // Forensic Log: SUPABASE RESULT
     console.log("SUPABASE RESULT", {
       data,
       error
     });
 
     if (error) {
-      console.error("ANALYTICS INSERT FAILED - FULL ERROR:", JSON.stringify(error, null, 2), error);
+      console.error("ANALYTICS INSERT FAILED", error);
     } else {
       console.log("Insert Successful:", data);
     }
 
     return { data, error };
   } catch (err: any) {
-    console.error("ANALYTICS INSERT FAILED WITH EXCEPTION:", err);
+    console.error("ANALYTICS INSERT FAILED", err);
   }
 }
 
