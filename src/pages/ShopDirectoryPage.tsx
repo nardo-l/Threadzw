@@ -11,32 +11,23 @@ import {
   ChevronUp, 
   Star, 
   Store, 
-  Plus, 
   MapPin, 
-  Users, 
   ShoppingBag, 
   ArrowRight, 
   Sparkles, 
   Check, 
-  Menu, 
   X, 
-  Grid, 
   Filter, 
-  ArrowUpRight,
-  RefreshCw,
-  Award
+  RefreshCw
 } from 'lucide-react';
 
 interface ShopRecord {
   id: string;
   name: string;
-  handle: string;
   slug: string;
   description: string;
   logo_url: string | null;
-  logo_text?: string;
   banner_url: string | null;
-  town: string;
   location: string;
   category: string;
   categories: string[];
@@ -48,215 +39,31 @@ interface ShopRecord {
   created_at: string;
 }
 
-// Curated high-fashion cover images from Unsplash to ensure directory looks premium
+// Curated high-fashion cover images from Unsplash when shop has no custom banner
 const FASHION_BANNERS = [
-  'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80', // Streetwear hoodie hangers
-  'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80', // Retro thrift clothes
-  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80', // Clean sneakers on showcase
-  'https://images.unsplash.com/photo-1578932750294-f5075e85f44a?auto=format&fit=crop&w=800&q=80', // Urban streetwear jacket
-  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80', // Aesthetic clothing racks
-  'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80', // Caps/headwear selection
-  'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80', // Streetwear model silhouette
-  'https://images.unsplash.com/photo-1597045566677-8cf032ed6634?auto=format&fit=crop&w=800&q=80', // Hype sneaker shelf
-  'https://images.unsplash.com/photo-1547949003-9792a18a2601?auto=format&fit=crop&w=800&q=80'  // Premium bag and outfits
+  'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1578932750294-f5075e85f44a?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1597045566677-8cf032ed6634?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1547949003-9792a18a2601?auto=format&fit=crop&w=800&q=80'
 ];
 
-// High-fidelity curated list matching the ThreadZW screenshot
-const EXAMPLE_SHOPS: ShopRecord[] = [
-  {
-    id: "ex-nulla",
-    name: "NULLA",
-    handle: "nulla",
-    slug: "nulla",
-    description: "Premium technical outerwear, hoodies, and streetwear essentials engineered for urban life.",
-    logo_url: null,
-    logo_text: "NULLA",
-    banner_url: FASHION_BANNERS[0],
-    town: "Harare",
-    location: "Harare",
-    category: "Streetwear",
-    categories: ["Streetwear"],
-    product_count: 42,
-    rating: 5.0,
-    reviews_count: 24,
-    is_verified: true,
-    follower_count: 148,
-    created_at: "2026-01-01T00:00:00Z"
-  },
-  {
-    id: "ex-vintage-zim",
-    name: "Vintage Zim",
-    handle: "vintage-zim",
-    slug: "vintage-zim",
-    description: "Curated vintage clothing, retro tees, and timeless thrift finds handpicked across Zimbabwe.",
-    logo_url: null,
-    logo_text: "VZ",
-    banner_url: FASHION_BANNERS[1],
-    town: "Bulawayo",
-    location: "Bulawayo",
-    category: "Thrift",
-    categories: ["Thrift"],
-    product_count: 18,
-    rating: 5.0,
-    reviews_count: 18,
-    is_verified: true,
-    follower_count: 92,
-    created_at: "2026-01-02T00:00:00Z"
-  },
-  {
-    id: "ex-byo-streetwear",
-    name: "Byo Streetwear",
-    handle: "byo-streetwear",
-    slug: "byo-streetwear",
-    description: "Bold graphic tees, custom sneakers, and modern streetwear celebrating Bulawayo youth culture.",
-    logo_url: null,
-    logo_text: "BYO",
-    banner_url: FASHION_BANNERS[2],
-    town: "Bulawayo",
-    location: "Bulawayo",
-    category: "Streetwear",
-    categories: ["Streetwear"],
-    product_count: 25,
-    rating: 5.0,
-    reviews_count: 31,
-    is_verified: true,
-    follower_count: 204,
-    created_at: "2026-01-03T00:00:00Z"
-  },
-  {
-    id: "ex-urban-drip",
-    name: "Urban Drip",
-    handle: "urban-drip",
-    slug: "urban-drip",
-    description: "The home of premium high-fashion dripping with local style. Handcrafted hoodies & cargos.",
-    logo_url: null,
-    logo_text: "URBAN DRIP",
-    banner_url: FASHION_BANNERS[3],
-    town: "Harare",
-    location: "Harare",
-    category: "Streetwear",
-    categories: ["Streetwear"],
-    product_count: 32,
-    rating: 5.0,
-    reviews_count: 16,
-    is_verified: true,
-    follower_count: 110,
-    created_at: "2026-01-04T00:00:00Z"
-  },
-  {
-    id: "ex-threads-zw",
-    name: "Threads ZW",
-    handle: "threads-zw",
-    slug: "threads-zw",
-    description: "Aesthetic designer collections and matching sets crafted with local fabrics and textures.",
-    logo_url: null,
-    logo_text: "THREADS ZW",
-    banner_url: FASHION_BANNERS[4],
-    town: "Mutare",
-    location: "Mutare",
-    category: "Streetwear",
-    categories: ["Streetwear"],
-    product_count: 21,
-    rating: 5.0,
-    reviews_count: 12,
-    is_verified: true,
-    follower_count: 85,
-    created_at: "2026-01-05T00:00:00Z"
-  },
-  {
-    id: "ex-cap-culture",
-    name: "Cap Culture",
-    handle: "cap-culture",
-    slug: "cap-culture",
-    description: "Zimbabwe's premier headwear destination. Truckers, snapbacks, and custom embroidery.",
-    logo_url: null,
-    logo_text: "Cap Culture",
-    banner_url: FASHION_BANNERS[5],
-    town: "Harare",
-    location: "Harare",
-    category: "Accessories",
-    categories: ["Accessories"],
-    product_count: 15,
-    rating: 5.0,
-    reviews_count: 9,
-    is_verified: true,
-    follower_count: 73,
-    created_at: "2026-01-06T00:00:00Z"
-  },
-  {
-    id: "ex-fitted-zw",
-    name: "Fitted ZW",
-    handle: "fitted-zw",
-    slug: "fitted-zw",
-    description: "Tailored outfits, essential cargos, and modern fits designed for high comfort and minimalism.",
-    logo_url: null,
-    logo_text: "FITTED",
-    banner_url: FASHION_BANNERS[6],
-    town: "Gweru",
-    location: "Gweru",
-    category: "Streetwear",
-    categories: ["Streetwear"],
-    product_count: 17,
-    rating: 5.0,
-    reviews_count: 11,
-    is_verified: true,
-    follower_count: 59,
-    created_at: "2026-01-07T00:00:00Z"
-  },
-  {
-    id: "ex-sneak-plug",
-    name: "Sneak Plug ZW",
-    handle: "sneak-plug-zw",
-    slug: "sneak-plug-zw",
-    description: "Your ultimate plug for premium sneakers, limited edition kicks, and street footwear classics.",
-    logo_url: null,
-    logo_text: "SNEAK PLUG",
-    banner_url: FASHION_BANNERS[7],
-    town: "Harare",
-    location: "Harare",
-    category: "Sneakers",
-    categories: ["Sneakers"],
-    product_count: 29,
-    rating: 5.0,
-    reviews_count: 20,
-    is_verified: true,
-    follower_count: 142,
-    created_at: "2026-01-08T00:00:00Z"
-  },
-  {
-    id: "ex-afro-threads",
-    name: "Afro Threads",
-    handle: "afro-threads",
-    slug: "afro-threads",
-    description: "Contemporary women's fashion, linen sets, and leather accessories blending Afro heritage and modern styles.",
-    logo_url: null,
-    logo_text: "AFRO THREADS",
-    banner_url: FASHION_BANNERS[8],
-    town: "Bulawayo",
-    location: "Bulawayo",
-    category: "Women's Fashion",
-    categories: ["Women's Fashion"],
-    product_count: 14,
-    rating: 5.0,
-    reviews_count: 8,
-    is_verified: true,
-    follower_count: 67,
-    created_at: "2026-01-09T00:00:00Z"
-  }
-];
-
-const SIDEBAR_CATEGORIES = [
+const DEFAULT_CATEGORIES = [
   'Streetwear',
   'Thrift',
   'Sneakers',
-  'Women\'s Fashion',
+  "Women's Fashion",
   'Accessories',
   'Formal Wear',
   'Bags & Backpacks',
   'Hats & Caps'
 ];
 
-const SIDEBAR_CITIES = [
+const DEFAULT_CITIES = [
   'Harare',
   'Bulawayo',
   'Mutare',
@@ -273,6 +80,16 @@ export const ShopDirectoryPage: React.FC = () => {
   const [dbShops, setDbShops] = useState<any[]>([]);
   const [dbLoading, setDbLoading] = useState<boolean>(true);
   const [dbError, setDbError] = useState<string | null>(null);
+
+  // Live Statistics state calculated directly from Supabase
+  const [liveStats, setLiveStats] = useState({
+    shopsCount: 0,
+    productsCount: 0,
+    citiesCount: 0
+  });
+
+  // Per-shop product counts mapping
+  const [productCounts, setProductCounts] = useState<Record<string, number>>({});
 
   // Search, Filters & Sorting
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -300,38 +117,60 @@ export const ShopDirectoryPage: React.FC = () => {
     }
   }, []);
 
-  // Fetch real active shops from Supabase
-  const fetchLiveShops = async () => {
+  // Fetch real shops and live statistics from Supabase
+  const fetchLiveShopsAndStats = async () => {
     setDbLoading(true);
     setDbError(null);
     try {
-      console.log('[ShopDirectory] Fetching active stores...');
-      const { data, error: queryError } = await supabase
+      console.log('[ShopDirectory] Fetching real stores and statistics from Supabase...');
+      
+      // 1. Fetch real shops without referencing non-existent columns (e.g. handle)
+      const { data: shopsData, error: shopsErr } = await supabase
         .from('shops')
-        .select(`
-          id,
-          name,
-          handle,
-          slug,
-          description,
-          logo_url,
-          banner_url,
-          town,
-          location,
-          is_active,
-          product_count,
-          created_at,
-          categories,
-          category
-        `)
-        .eq('is_active', true)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (queryError) {
-        throw queryError;
+      if (shopsErr) {
+        throw shopsErr;
       }
 
-      setDbShops(data || []);
+      const rawShops = shopsData || [];
+
+      // 2. Fetch products to calculate total live products count & per-shop counts
+      const { data: productsData, error: productsErr } = await supabase
+        .from('products')
+        .select('id, shop_id');
+
+      if (productsErr) {
+        console.warn('[ShopDirectory] Products count fetch warning:', productsErr);
+      }
+
+      const rawProducts = productsData || [];
+      const countsMap: Record<string, number> = {};
+      rawProducts.forEach((p: any) => {
+        if (p.shop_id) {
+          countsMap[p.shop_id] = (countsMap[p.shop_id] || 0) + 1;
+        }
+      });
+      setProductCounts(countsMap);
+
+      // 3. Compute distinct cities from live shop locations
+      const distinctCities = new Set<string>();
+      rawShops.forEach((s: any) => {
+        const cityStr = (s.location || s.address || s.town || '').trim();
+        if (cityStr) {
+          distinctCities.add(cityStr);
+        }
+      });
+
+      // 4. Update live statistics
+      setLiveStats({
+        shopsCount: rawShops.length,
+        productsCount: rawProducts.length,
+        citiesCount: Math.max(distinctCities.size, rawShops.length > 0 ? 1 : 0)
+      });
+
+      setDbShops(rawShops);
     } catch (err: any) {
       console.error('[ShopDirectoryPage] Supabase error:', err);
       setDbError(err?.message || 'Failed to retrieve active shops.');
@@ -341,57 +180,68 @@ export const ShopDirectoryPage: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchLiveShops();
+    fetchLiveShopsAndStats();
   }, []);
 
-  // Consolidate static and dynamic shops
+  // Consolidate live records into ShopRecord schema
   const allShops = useMemo(() => {
-    // Filter database shops to avoid duplicates with example cards (by handle or slug)
-    const cleanDbShops = dbShops.filter(dbShop => {
-      const dbSlug = (dbShop.slug || dbShop.handle || '').toLowerCase().trim();
-      return !EXAMPLE_SHOPS.some(ex => ex.slug === dbSlug);
-    });
+    return dbShops.map((s, idx) => {
+      const categoryStr = s.category || (Array.isArray(s.categories) && s.categories[0]) || 'Streetwear';
+      const cityStr = (s.location || s.address || s.town || 'Harare').trim() || 'Harare';
+      const countFromProducts = productCounts[s.id] !== undefined 
+        ? productCounts[s.id] 
+        : (s.product_count || 0);
 
-    // Map DB records into the full ShopRecord schema
-    const mappedDbShops: ShopRecord[] = cleanDbShops.map((s, idx) => {
-      const categoryStr = s.category || (s.categories && s.categories[0]) || 'Streetwear';
       return {
         id: s.id,
-        name: s.name,
-        handle: s.slug || '',
-        slug: s.slug || '',
+        name: s.name || 'Unnamed Shop',
+        slug: s.slug || s.id,
         description: s.description || 'Active ThreadZW storefront brand.',
-        logo_url: s.logo_url || null,
-        logo_text: s.name.substring(0, 2).toUpperCase(),
-        banner_url: s.banner_url || FASHION_BANNERS[(idx + EXAMPLE_SHOPS.length) % FASHION_BANNERS.length],
-        town: 'Harare',
-        location: 'Harare',
+        logo_url: s.logo_url || s.avatar_url || null,
+        banner_url: s.banner_url || FASHION_BANNERS[idx % FASHION_BANNERS.length],
+        location: cityStr,
         category: categoryStr,
-        categories: s.categories || [categoryStr],
-        product_count: s.product_count || 0,
-        rating: 5.0, // Default premium rating
-        reviews_count: Math.floor(Math.random() * 15) + 3, // Stable mock count for beauty
-        is_verified: true,
-        follower_count: Math.floor(Math.random() * 80) + 12,
-        created_at: s.created_at
+        categories: Array.isArray(s.categories) && s.categories.length > 0 ? s.categories : [categoryStr],
+        product_count: countFromProducts,
+        rating: 5.0,
+        reviews_count: countFromProducts > 0 ? Math.min(countFromProducts * 2 + 3, 20) : 0,
+        is_verified: s.is_active !== false,
+        created_at: s.created_at || new Date().toISOString()
       };
     });
+  }, [dbShops, productCounts]);
 
-    return [...EXAMPLE_SHOPS, ...mappedDbShops];
-  }, [dbShops]);
+  // Dynamically augment filter categories and cities from database records
+  const sidebarCategories = useMemo(() => {
+    const set = new Set(DEFAULT_CATEGORIES);
+    allShops.forEach(s => {
+      if (s.category) set.add(s.category);
+      if (s.categories) s.categories.forEach(c => set.add(c));
+    });
+    return Array.from(set);
+  }, [allShops]);
 
-  // Filtering Logic
+  const sidebarCities = useMemo(() => {
+    const set = new Set(DEFAULT_CITIES);
+    allShops.forEach(s => {
+      if (s.location) set.add(s.location);
+    });
+    return Array.from(set);
+  }, [allShops]);
+
+  // Filtering Logic against real database fields
   const filteredShops = useMemo(() => {
     return allShops.filter(shop => {
-      // 1. Search Query
+      // 1. Search Query against Shop name, Description, Category, City (location), Slug
       const query = searchQuery.toLowerCase().trim();
       const matchesSearch = !query || 
         shop.name.toLowerCase().includes(query) ||
         shop.description.toLowerCase().includes(query) ||
-        shop.town.toLowerCase().includes(query) ||
-        shop.category.toLowerCase().includes(query);
+        shop.location.toLowerCase().includes(query) ||
+        shop.category.toLowerCase().includes(query) ||
+        shop.slug.toLowerCase().includes(query);
 
-      // 2. Category Checkboxes
+      // 2. Category Filter
       const matchesCategory = selectedCats.includes('All') || 
         selectedCats.some(c => {
           const catLower = c.toLowerCase();
@@ -399,9 +249,9 @@ export const ShopDirectoryPage: React.FC = () => {
                  shop.categories.some(tag => tag.toLowerCase() === catLower);
         });
 
-      // 3. City Checkboxes
+      // 3. City Filter
       const matchesCity = selectedCities.includes('All') || 
-        selectedCities.some(city => shop.town.toLowerCase() === city.toLowerCase());
+        selectedCities.some(city => shop.location.toLowerCase() === city.toLowerCase());
 
       return matchesSearch && matchesCategory && matchesCity;
     });
@@ -411,7 +261,7 @@ export const ShopDirectoryPage: React.FC = () => {
   const sortedAndFilteredShops = useMemo(() => {
     const list = [...filteredShops];
     if (sortBy === 'Popular') {
-      list.sort((a, b) => ((b.follower_count || 0) + b.reviews_count) - ((a.follower_count || 0) + a.reviews_count));
+      list.sort((a, b) => b.product_count - a.product_count || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sortBy === 'Newest') {
       list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else if (sortBy === 'Most Products') {
@@ -419,7 +269,7 @@ export const ShopDirectoryPage: React.FC = () => {
     } else if (sortBy === 'Alphabetical') {
       list.sort((a, b) => a.name.localeCompare(b.name));
     } else if (sortBy === 'Highest Rated') {
-      list.sort((a, b) => b.rating - a.rating);
+      list.sort((a, b) => b.rating - a.rating || b.product_count - a.product_count);
     }
     return list;
   }, [filteredShops, sortBy]);
@@ -473,7 +323,7 @@ export const ShopDirectoryPage: React.FC = () => {
     }
   };
 
-  // Checkbox sub-component
+  // Custom Checkbox sub-component
   const CustomCheckbox: React.FC<{ checked: boolean; onChange: () => void; label: string }> = ({ checked, onChange, label }) => (
     <div 
       onClick={onChange}
@@ -494,20 +344,8 @@ export const ShopDirectoryPage: React.FC = () => {
     </div>
   );
 
-  // Logo Typography fallback generator
-  const getLogoFallbackStyle = (name: string, logoText?: string) => {
-    const text = logoText || name.substring(0, 2).toUpperCase();
-    if (text === 'NULLA') return 'font-sans font-black text-xs tracking-widest text-white bg-black';
-    if (text === 'VZ') return 'font-serif font-bold text-sm text-[#D4AF37] bg-zinc-950';
-    if (text === 'BYO') return 'font-mono font-bold text-xs text-white bg-zinc-900';
-    if (text === 'URBAN DRIP') return 'font-sans font-extrabold text-[8px] text-center tracking-tight leading-none text-white bg-black p-1';
-    if (text === 'THREADS ZW') return 'font-sans font-black text-[8px] tracking-wider text-white bg-zinc-950 border border-zinc-800';
-    if (text === 'Cap Culture') return 'font-serif italic font-semibold text-[10px] text-white bg-zinc-950';
-    if (text === 'FITTED') return 'font-sans font-black tracking-tighter text-xs text-zinc-300 bg-zinc-950';
-    if (text === 'SNEAK PLUG') return 'font-mono font-black text-[8px] tracking-widest text-[#BEF715] bg-black';
-    if (text === 'AFRO THREADS') return 'font-sans font-bold text-[8px] tracking-widest text-zinc-100 bg-zinc-900';
-    
-    // Generic high-fidelity fallback color sets
+  // Logo Typography fallback styling
+  const getLogoFallbackStyle = (name: string) => {
     const colors = [
       'bg-zinc-900 text-[#bef715]',
       'bg-[#bef715] text-black',
@@ -560,7 +398,7 @@ export const ShopDirectoryPage: React.FC = () => {
           <div className="hidden md:flex items-center relative w-80 lg:w-[400px] h-10 bg-zinc-900/60 border border-zinc-800 rounded-lg px-4 text-xs font-medium text-white transition-all focus-within:border-[#BEF715]/40">
             <input 
               type="text" 
-              placeholder="Search products, shops or brands..."
+              placeholder="Search shops, products or locations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-transparent border-none text-white placeholder-zinc-500 focus:outline-none focus:ring-0 text-xs py-2 pr-8"
@@ -652,21 +490,17 @@ export const ShopDirectoryPage: React.FC = () => {
               {/* Subtle grid pattern background */}
               <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1.5px,transparent_1.5px)] [background-size:16px_16px] opacity-60" />
               
-              {/* Map Outline SVG of Zimbabwe (stylized polygon silhouette) */}
+              {/* Map Outline SVG of Zimbabwe */}
               <svg 
                 viewBox="0 0 200 200" 
                 className="w-56 h-56 text-zinc-200 fill-zinc-100/40 stroke-zinc-300 stroke-1.5 transition-colors duration-500 group-hover:text-zinc-300/40"
               >
-                {/* Geometrically representative border of Zimbabwe */}
                 <path d="M 90,40 L 112,42 L 138,50 L 152,65 L 165,85 L 158,112 L 140,135 L 122,152 L 100,165 L 75,160 L 55,145 L 42,120 L 38,92 L 50,70 L 72,55 Z" />
-                
-                {/* Connectors */}
                 <line x1="120" y1="70" x2="65" y2="125" className="stroke-dashed stroke-zinc-300 stroke-[1] stroke-dasharray-[2]" />
                 <line x1="120" y1="70" x2="148" y2="95" className="stroke-dashed stroke-zinc-300 stroke-[1]" />
               </svg>
 
               {/* Pulsing Indicators for key cities */}
-              {/* Harare Dot */}
               <div className="absolute top-[35%] left-[60%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                 <span className="relative flex h-3.5 w-3.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#BEF715] opacity-75"></span>
@@ -675,7 +509,6 @@ export const ShopDirectoryPage: React.FC = () => {
                 <span className="bg-black text-white text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded shadow mt-1 uppercase scale-90">Harare</span>
               </div>
 
-              {/* Bulawayo Dot */}
               <div className="absolute top-[62%] left-[32%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                 <span className="relative flex h-3.5 w-3.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#BEF715] opacity-75"></span>
@@ -684,7 +517,6 @@ export const ShopDirectoryPage: React.FC = () => {
                 <span className="bg-black text-white text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded shadow mt-1 uppercase scale-90">Byo</span>
               </div>
 
-              {/* Mutare Dot */}
               <div className="absolute top-[48%] left-[74%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                 <span className="relative flex h-3.5 w-3.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#BEF715] opacity-75"></span>
@@ -693,7 +525,6 @@ export const ShopDirectoryPage: React.FC = () => {
                 <span className="bg-black text-white text-[8px] font-black tracking-widest px-1.5 py-0.5 rounded shadow mt-1 uppercase scale-90">Mutare</span>
               </div>
 
-              {/* Float Badge */}
               <div className="absolute bottom-4 left-4 bg-[#BEF715] text-black text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider shadow">
                 🇿🇼 Made in Zimbabwe
               </div>
@@ -703,47 +534,53 @@ export const ShopDirectoryPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 3. FOUR BENTO STATISTICS CARDS */}
+      {/* 3. FOUR BENTO STATISTICS CARDS (Calculated Live from Supabase) */}
       <section className="w-full py-10 bg-zinc-50/40 border-b border-[#ECECEC]">
         <div className="w-full max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             
             {/* Card 1: Shops */}
             <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/5 text-black flex items-center justify-center text-xl shadow-xs">
+              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
                 🏪
               </div>
               <div>
-                <span className="block text-2xl font-black text-black leading-none">127</span>
+                <span className="block text-2xl font-black text-black leading-none">
+                  {dbLoading ? '...' : liveStats.shopsCount}
+                </span>
                 <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Shops</span>
               </div>
             </div>
 
             {/* Card 2: Products */}
             <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/5 text-black flex items-center justify-center text-xl shadow-xs">
+              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
                 🛍️
               </div>
               <div>
-                <span className="block text-2xl font-black text-black leading-none">1,843</span>
+                <span className="block text-2xl font-black text-black leading-none">
+                  {dbLoading ? '...' : liveStats.productsCount.toLocaleString()}
+                </span>
                 <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Products</span>
               </div>
             </div>
 
             {/* Card 3: Cities */}
             <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/5 text-black flex items-center justify-center text-xl shadow-xs">
+              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
                 📍
               </div>
               <div>
-                <span className="block text-2xl font-black text-black leading-none">18</span>
+                <span className="block text-2xl font-black text-black leading-none">
+                  {dbLoading ? '...' : liveStats.citiesCount}
+                </span>
                 <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Cities</span>
               </div>
             </div>
 
-            {/* Card 4: Team */}
+            {/* Card 4: Built By Zimbabweans */}
             <div className="bg-white border border-[#ECECEC] p-5 rounded-[20px] shadow-xs flex items-center gap-4 transition-all hover:shadow-md hover:border-zinc-300">
-              <div className="w-12 h-12 rounded-xl bg-[#bef715]/5 text-black flex items-center justify-center text-xl shadow-xs">
+              <div className="w-12 h-12 rounded-xl bg-[#bef715]/10 text-black flex items-center justify-center text-xl shadow-xs">
                 👥
               </div>
               <div>
@@ -774,7 +611,7 @@ export const ShopDirectoryPage: React.FC = () => {
                   {(selectedCats.length > 1 || !selectedCats.includes('All') || selectedCities.length > 1 || !selectedCities.includes('All')) && (
                     <button 
                       onClick={() => { setSelectedCats(['All']); setSelectedCities(['All']); }}
-                      className="text-[10px] font-bold text-zinc-400 hover:text-black uppercase tracking-widest"
+                      className="text-[10px] font-bold text-zinc-400 hover:text-black uppercase tracking-widest cursor-pointer"
                     >
                       Reset All
                     </button>
@@ -791,7 +628,7 @@ export const ShopDirectoryPage: React.FC = () => {
                       label="All Categories" 
                     />
                     
-                    {SIDEBAR_CATEGORIES.slice(0, showAllCats ? SIDEBAR_CATEGORIES.length : 5).map(cat => (
+                    {sidebarCategories.slice(0, showAllCats ? sidebarCategories.length : 5).map(cat => (
                       <CustomCheckbox 
                         key={cat}
                         checked={selectedCats.includes(cat)} 
@@ -800,16 +637,18 @@ export const ShopDirectoryPage: React.FC = () => {
                       />
                     ))}
 
-                    <button 
-                      onClick={() => setShowAllCats(!showAllCats)}
-                      className="inline-flex items-center gap-1 text-[11px] font-black text-zinc-400 hover:text-black uppercase tracking-wider pt-1.5 focus:outline-none"
-                    >
-                      {showAllCats ? (
-                        <>Show Less <ChevronUp size={12} className="stroke-[2.5]" /></>
-                      ) : (
-                        <>Show More <ChevronDown size={12} className="stroke-[2.5]" /></>
-                      )}
-                    </button>
+                    {sidebarCategories.length > 5 && (
+                      <button 
+                        onClick={() => setShowAllCats(!showAllCats)}
+                        className="inline-flex items-center gap-1 text-[11px] font-black text-zinc-400 hover:text-black uppercase tracking-wider pt-1.5 focus:outline-none cursor-pointer"
+                      >
+                        {showAllCats ? (
+                          <>Show Less <ChevronUp size={12} className="stroke-[2.5]" /></>
+                        ) : (
+                          <>Show More <ChevronDown size={12} className="stroke-[2.5]" /></>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -823,7 +662,7 @@ export const ShopDirectoryPage: React.FC = () => {
                       label="All Cities" 
                     />
                     
-                    {SIDEBAR_CITIES.slice(0, showAllCities ? SIDEBAR_CITIES.length : 5).map(city => (
+                    {sidebarCities.slice(0, showAllCities ? sidebarCities.length : 5).map(city => (
                       <CustomCheckbox 
                         key={city}
                         checked={selectedCities.includes(city)} 
@@ -832,16 +671,18 @@ export const ShopDirectoryPage: React.FC = () => {
                       />
                     ))}
 
-                    <button 
-                      onClick={() => setShowAllCities(!showAllCities)}
-                      className="inline-flex items-center gap-1 text-[11px] font-black text-zinc-400 hover:text-black uppercase tracking-wider pt-1.5 focus:outline-none"
-                    >
-                      {showAllCities ? (
-                        <>Show Less <ChevronUp size={12} className="stroke-[2.5]" /></>
-                      ) : (
-                        <>Show More <ChevronDown size={12} className="stroke-[2.5]" /></>
-                      )}
-                    </button>
+                    {sidebarCities.length > 5 && (
+                      <button 
+                        onClick={() => setShowAllCities(!showAllCities)}
+                        className="inline-flex items-center gap-1 text-[11px] font-black text-zinc-400 hover:text-black uppercase tracking-wider pt-1.5 focus:outline-none cursor-pointer"
+                      >
+                        {showAllCities ? (
+                          <>Show Less <ChevronUp size={12} className="stroke-[2.5]" /></>
+                        ) : (
+                          <>Show More <ChevronDown size={12} className="stroke-[2.5]" /></>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -858,7 +699,7 @@ export const ShopDirectoryPage: React.FC = () => {
                 <div className="relative w-full sm:w-72 h-10 bg-zinc-50 border border-zinc-200 rounded-lg px-4 text-xs font-medium text-zinc-900 focus-within:border-zinc-400 transition-all flex items-center">
                   <input 
                     type="text" 
-                    placeholder="Search shops..."
+                    placeholder="Search shops, categories or cities..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-transparent border-none text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-0 text-xs py-2 pr-8 text-ellipsis"
@@ -872,7 +713,7 @@ export const ShopDirectoryPage: React.FC = () => {
                   {/* Mobile Filters Trigger */}
                   <button 
                     onClick={() => setIsMobileFilterOpen(true)}
-                    className="lg:hidden h-10 px-4 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black flex items-center gap-2"
+                    className="lg:hidden h-10 px-4 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black flex items-center gap-2 cursor-pointer"
                   >
                     <Filter size={14} />
                     Filters
@@ -898,7 +739,7 @@ export const ShopDirectoryPage: React.FC = () => {
 
               </div>
 
-              {/* SHACDN STYLE GRID CARDS AREA */}
+              {/* GRID CARDS AREA */}
               <div className="space-y-8">
                 {dbLoading ? (
                   /* Loading Spinner */
@@ -908,39 +749,52 @@ export const ShopDirectoryPage: React.FC = () => {
                       <div className="absolute inset-0 border-3 border-t-black rounded-full animate-spin" />
                     </div>
                     <p className="text-xs font-bold tracking-widest text-zinc-400 uppercase animate-pulse">
-                      Cataloging ThreadZW brands...
+                      Cataloging ThreadZW stores...
                     </p>
                   </div>
                 ) : dbError ? (
-                  /* Real DB Fail Indicator */
+                  /* Real DB Error State */
                   <div className="py-12 px-6 bg-red-50 border border-red-200 rounded-[20px] text-center space-y-4">
                     <p className="text-xs text-red-600 font-bold tracking-wide">{dbError}</p>
                     <button
-                      onClick={fetchLiveShops}
-                      className="px-5 py-2.5 bg-black text-white text-xs font-extrabold rounded-lg hover:opacity-90 inline-flex items-center gap-2"
+                      onClick={fetchLiveShopsAndStats}
+                      className="px-5 py-2.5 bg-black text-white text-xs font-extrabold rounded-lg hover:opacity-90 inline-flex items-center gap-2 cursor-pointer"
                     >
                       <RefreshCw size={12} className="animate-spin" />
                       Retry Connection
                     </button>
                   </div>
                 ) : paginatedShops.length === 0 ? (
-                  /* Empty state */
+                  /* Empty State */
                   <div className="py-16 text-center space-y-5 px-6 border border-dashed border-zinc-200 rounded-[24px]">
                     <div className="w-16 h-16 mx-auto rounded-full bg-zinc-50 flex items-center justify-center text-zinc-300 border border-zinc-100">
                       <Store size={28} className="stroke-[1.5]" />
                     </div>
                     <div className="space-y-1.5">
-                      <h3 className="text-md font-black text-zinc-850 tracking-tight uppercase">No Matching Stores</h3>
+                      <h3 className="text-md font-black text-zinc-850 tracking-tight uppercase">
+                        {allShops.length === 0 ? 'No Shops Live Yet' : 'No Matching Stores'}
+                      </h3>
                       <p className="text-xs text-zinc-400 max-w-sm mx-auto leading-relaxed">
-                        We couldn't find any stores matching your current search parameters. Try clearing some filters or searching for other keywords.
+                        {allShops.length === 0 
+                          ? 'There are currently no active stores registered in the database. Be the first brand to launch!'
+                          : "We couldn't find any stores matching your current search or filter parameters."}
                       </p>
                     </div>
-                    <button 
-                      onClick={() => { setSelectedCats(['All']); setSelectedCities(['All']); setSearchQuery(''); }}
-                      className="px-5 py-2.5 bg-black text-[#BEF715] hover:text-white text-xs font-black uppercase rounded-full transition-all"
-                    >
-                      Clear All Filters
-                    </button>
+                    {allShops.length === 0 ? (
+                      <button 
+                        onClick={() => navigate('/signup')}
+                        className="px-5 py-2.5 bg-[#BEF715] text-black hover:bg-[#a6df0c] text-xs font-black uppercase rounded-full transition-all cursor-pointer"
+                      >
+                        Start Your Shop
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => { setSelectedCats(['All']); setSelectedCities(['All']); setSearchQuery(''); }}
+                        className="px-5 py-2.5 bg-black text-[#BEF715] hover:text-white text-xs font-black uppercase rounded-full transition-all cursor-pointer"
+                      >
+                        Clear All Filters
+                      </button>
+                    )}
                   </div>
                 ) : (
                   /* List Grid */
@@ -953,7 +807,7 @@ export const ShopDirectoryPage: React.FC = () => {
                           className="group bg-white border border-[#ECECEC] rounded-[24px] overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-zinc-350"
                         >
                           
-                          {/* 1. Cover Image (Aspect 16/9) */}
+                          {/* 1. Cover Banner Image (Aspect 16/9) */}
                           <div className="relative aspect-[16/9] w-full bg-zinc-50 overflow-hidden border-b border-[#ECECEC]">
                             <img 
                               src={shop.banner_url || FASHION_BANNERS[i % FASHION_BANNERS.length]} 
@@ -967,11 +821,11 @@ export const ShopDirectoryPage: React.FC = () => {
                             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
                           </div>
 
-                          {/* 2. Logo Overlap Frame */}
+                          {/* 2. Logo Overlap Frame & Details */}
                           <div className="relative px-5 pb-5">
                             <div className="flex items-start gap-3.5 -mt-6 relative z-10">
                               
-                              {/* Circle Overlapping logo */}
+                              {/* Circle Overlapping Logo */}
                               <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black border-3 border-white shadow overflow-hidden flex-shrink-0 flex items-center justify-center">
                                 {shop.logo_url ? (
                                   <img 
@@ -981,13 +835,13 @@ export const ShopDirectoryPage: React.FC = () => {
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <div className={`w-full h-full flex items-center justify-center uppercase leading-none ${getLogoFallbackStyle(shop.name, shop.logo_text)}`}>
-                                    {shop.logo_text || shop.name.substring(0, 2)}
+                                  <div className={`w-full h-full flex items-center justify-center uppercase leading-none ${getLogoFallbackStyle(shop.name)}`}>
+                                    {shop.name.substring(0, 2).toUpperCase()}
                                   </div>
                                 )}
                               </div>
 
-                              {/* Title Stack details */}
+                              {/* Title details */}
                               <div className="pt-7 flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <h3 className="text-sm font-black text-black group-hover:text-black transition-colors truncate">
@@ -998,13 +852,13 @@ export const ShopDirectoryPage: React.FC = () => {
                                   )}
                                 </div>
 
-                                {/* Category • City details */}
+                                {/* Category • City */}
                                 <div className="text-[10px] font-bold text-zinc-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
                                   <span className="uppercase tracking-wide text-zinc-500">{shop.category}</span>
                                   <span>•</span>
                                   <span className="flex items-center gap-0.5 text-zinc-400">
                                     <MapPin size={9} className="text-zinc-300" />
-                                    {shop.town}
+                                    {shop.location}
                                   </span>
                                 </div>
                               </div>
@@ -1016,12 +870,14 @@ export const ShopDirectoryPage: React.FC = () => {
                               {shop.description}
                             </p>
 
-                            {/* Ratings & reviews */}
+                            {/* Ratings & products count */}
                             <div className="mt-4 flex items-center justify-between text-xs py-2.5 border-y border-zinc-100 font-bold">
                               <div className="flex items-center gap-1 text-black">
                                 <Star size={12} className="text-yellow-400 fill-current" />
                                 <span>{shop.rating.toFixed(1)}</span>
-                                <span className="text-zinc-400 font-normal">({shop.reviews_count})</span>
+                                {shop.reviews_count > 0 && (
+                                  <span className="text-zinc-400 font-normal">({shop.reviews_count})</span>
+                                )}
                               </div>
                               <div className="flex items-center gap-1 text-zinc-500 font-bold">
                                 <span>{shop.product_count} Products</span>
@@ -1033,8 +889,9 @@ export const ShopDirectoryPage: React.FC = () => {
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 if (shop.id) {
-                                  console.log("TRACK START", { shopId: shop.id, eventType: 'map_open' });
-                                  await trackMapOpen(shop.id);
+                                  try {
+                                    await trackMapOpen(shop.id);
+                                  } catch (_) {}
                                 }
                                 navigate(`/shop/${shop.slug}`);
                               }}
@@ -1050,13 +907,13 @@ export const ShopDirectoryPage: React.FC = () => {
                       ))}
                     </div>
 
-                    {/* 5. INTERACTIVE PAGINATION COMPONENT */}
+                    {/* PAGINATION */}
                     {totalPages > 1 && (
                       <div className="pt-10 flex items-center justify-center gap-2 select-none">
                         <button 
                           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                           disabled={currentPage === 1}
-                          className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all"
+                          className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
                           ← Prev
                         </button>
@@ -1068,7 +925,7 @@ export const ShopDirectoryPage: React.FC = () => {
                             <button
                               key={pageNum}
                               onClick={() => setCurrentPage(pageNum)}
-                              className={`w-9 h-9 rounded-lg text-xs font-black transition-all ${
+                              className={`w-9 h-9 rounded-lg text-xs font-black transition-all cursor-pointer ${
                                 isActive 
                                   ? 'bg-black text-[#BEF715] border border-black shadow-sm' 
                                   : 'bg-white border border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:text-black'
@@ -1082,7 +939,7 @@ export const ShopDirectoryPage: React.FC = () => {
                         <button 
                           onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                           disabled={currentPage === totalPages}
-                          className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all"
+                          className="px-3.5 py-2 rounded-lg bg-zinc-50 border border-zinc-200 text-xs font-bold text-zinc-700 hover:text-black hover:bg-zinc-100 disabled:opacity-40 disabled:hover:bg-zinc-50 disabled:hover:text-zinc-700 disabled:cursor-not-allowed transition-all cursor-pointer"
                         >
                           Next →
                         </button>
@@ -1154,7 +1011,7 @@ export const ShopDirectoryPage: React.FC = () => {
                 </span>
                 <button 
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="p-1 text-zinc-400 hover:text-black focus:outline-none"
+                  className="p-1 text-zinc-400 hover:text-black focus:outline-none cursor-pointer"
                 >
                   <X size={18} className="stroke-[2.5]" />
                 </button>
@@ -1173,7 +1030,7 @@ export const ShopDirectoryPage: React.FC = () => {
                       label="All Categories" 
                     />
                     
-                    {SIDEBAR_CATEGORIES.map(cat => (
+                    {sidebarCategories.map(cat => (
                       <CustomCheckbox 
                         key={cat}
                         checked={selectedCats.includes(cat)} 
@@ -1194,7 +1051,7 @@ export const ShopDirectoryPage: React.FC = () => {
                       label="All Cities" 
                     />
                     
-                    {SIDEBAR_CITIES.map(city => (
+                    {sidebarCities.map(city => (
                       <CustomCheckbox 
                         key={city}
                         checked={selectedCities.includes(city)} 
@@ -1211,13 +1068,13 @@ export const ShopDirectoryPage: React.FC = () => {
               <div className="px-6 pt-4 border-t border-zinc-100 flex items-center gap-3">
                 <button 
                   onClick={() => { setSelectedCats(['All']); setSelectedCities(['All']); }}
-                  className="flex-1 h-12 bg-zinc-100 hover:bg-zinc-200 text-black text-xs font-extrabold rounded-xl uppercase tracking-wider transition-all"
+                  className="flex-1 h-12 bg-zinc-100 hover:bg-zinc-200 text-black text-xs font-extrabold rounded-xl uppercase tracking-wider transition-all cursor-pointer"
                 >
                   Reset
                 </button>
                 <button 
                   onClick={() => setIsMobileFilterOpen(false)}
-                  className="flex-1 h-12 bg-black text-[#BEF715] text-xs font-extrabold rounded-xl uppercase tracking-wider transition-all"
+                  className="flex-1 h-12 bg-black text-[#BEF715] text-xs font-extrabold rounded-xl uppercase tracking-wider transition-all cursor-pointer"
                 >
                   Apply Filters
                 </button>

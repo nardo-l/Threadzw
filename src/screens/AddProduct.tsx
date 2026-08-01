@@ -613,18 +613,60 @@ export const AddProduct: React.FC = () => {
   };
 
   const handleResetForm = () => {
+    // Reset flow and navigation controls
+    setStep(1);
+    setDirection(1);
+    setUploading(false);
+    setUploadProgress(0);
+    setReplacingIndex(null);
+    setProductStatus('active');
+    setShowDiscardModal(false);
+    setPublishing(false);
+    setIsSuccess(false);
+    setProductId(null);
+    setAiGenerating(false);
+
+    // Step 1: Basic Details
     setName('');
     setPrice('');
+    if (globalCategories && globalCategories.length > 0) {
+      setSelectedCategory(globalCategories[0].name);
+    } else {
+      setSelectedCategory('Tops');
+    }
+
+    // Step 2: Photos
     setImages([]);
+    setIsDragOver(false);
+
+    // Step 3: Sizes & Stock
+    setActiveSizeEditing(null);
+    setTempStockInput('');
+    setShowCustomSizeInput(false);
+    setCustomSizeName('');
+    setSizeStock({});
+    setGeneralStock('10');
+
+    // Step 4: Colours
     setSelectedColors(['Midnight Black']);
+    setCustomColorInput('');
+
+    // Step 5: Description & Specs
     setDescription('');
     setBrand('');
     setMaterial('');
     setGender('Unisex');
     setCondition('New');
+    setFeatures('');
+    setCareInstructions('');
+
+    // Step 6: Review & Publish
     setIsFeatured(false);
-    setStep(1);
-    setIsSuccess(false);
+
+    // Reset file input element values
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
+    if (replaceFileInputRef.current) replaceFileInputRef.current.value = '';
   };
 
   const slideVariants = {
@@ -1481,6 +1523,7 @@ export const AddProduct: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowDiscardModal(false);
+                  handleResetForm();
                   navigate('/inventory');
                 }}
                 className="flex-1 h-10 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold leading-none cursor-pointer transition-colors"
