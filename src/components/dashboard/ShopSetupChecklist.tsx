@@ -48,14 +48,15 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   // 1. Profile completion check
   const isProfileComplete = useMemo(() => {
     if (!shop) return false;
-    if (shop.setup_complete) return true;
     const hasName = Boolean(shop.name && shop.name.trim().length > 0);
     const hasDesc = Boolean(shop.description && shop.description.trim().length > 0);
     const hasLogo = Boolean(shop.logo_url || shop.avatar_url);
     const hasBanner = Boolean(shop.banner_url);
-    const hasLocation = Boolean(shop.location);
-    const hasWhatsapp = Boolean(shop.whatsapp_number || shop.instagram);
-    return hasName && hasDesc && (hasLogo || hasBanner) && (hasLocation || hasWhatsapp);
+    const hasLocation = Boolean(shop.location && shop.location.trim().length > 0);
+    const hasContact = Boolean((shop.whatsapp_number && shop.whatsapp_number.trim().length > 0) || (shop.instagram && shop.instagram.trim().length > 0));
+    const hasCategory = Boolean(shop.category && shop.category.trim().length > 0);
+
+    return hasName && hasDesc && hasLogo && hasBanner && hasLocation && hasContact && hasCategory;
   }, [shop]);
 
   // 2. Product added check
@@ -109,35 +110,31 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   async function handleShareShop() {
     if (!shop) return;
     const slugOrId = shop.slug ? shop.slug.trim() : shop.id.trim();
-    const url = `https://threadzw.vercel.app/shop/${slugOrId}?page=home`;
+    const url = `https://threadzw.vercel.app/shop/${slugOrId}`;
 
-    let success = false;
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: shop.name || 'ThreadZW Shop',
-          text: `Check out ${shop.name || 'our shop'} on ThreadZW!`,
-          url: url,
-        });
-        success = true;
-      } catch (err) {
-        // User cancelled or share dismissed
-      }
-    }
-
-    if (!success) {
-      try {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(url);
-        toast.success('Shop link copied to clipboard!');
-        success = true;
-      } catch (err) {
-        toast.error('Could not copy shop link');
+        toast.success('Store link copied to clipboard.');
+      } else {
+        const textArea = document.createElement('textarea');
+        textArea.value = url;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          toast.success('Store link copied to clipboard.');
+        } catch (e) {
+          throw new Error('Clipboard write failed');
+        }
+        document.body.removeChild(textArea);
       }
-    }
 
-    if (success) {
       localStorage.setItem(`threadzw_shop_shared_${shop.id}`, 'true');
       setShopShared(true);
+    } catch (err) {
+      toast.error("Couldn't copy the link. Please try again.");
     }
   }
 
