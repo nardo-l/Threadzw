@@ -250,7 +250,7 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
                 <span className="text-xs font-bold uppercase font-sans">Free</span>
               </div>
 
-              {/* Harare Delivery */}
+              {/* Same City Delivery */}
               <div
                 onClick={() => onChangeShippingMethod('harare')}
                 className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
@@ -262,8 +262,8 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
                 <div className="flex items-center gap-3">
                   <Truck className="w-4 h-4 shrink-0" />
                   <div>
-                    <span className="text-[11px] font-bold block font-sans">Harare Courier Delivery</span>
-                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Delivered to your Harare coordinates</span>
+                    <span className="text-[11px] font-bold block font-sans">Same City Courier Delivery</span>
+                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Delivered to coordinates in your city</span>
                   </div>
                 </div>
                 <span className="text-xs font-bold font-sans">$5.00</span>

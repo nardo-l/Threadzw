@@ -1376,7 +1376,7 @@ export const ShopEdit = () => {
                     markChanged();
                   }}
                   rows={3}
-                  placeholder="e.g. Same-day delivery via courier in Harare, or bus pickup nationwide."
+                  placeholder="e.g. Same-day delivery via courier in your city, or bus pickup nationwide."
                   className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
                 />
               </div>
@@ -1384,7 +1384,7 @@ export const ShopEdit = () => {
               {/* Extended Delivery Options */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Harare Delivery</label>
+                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Same City Delivery</label>
                   <input 
                     value={harareDelivery}
                     onChange={e => {

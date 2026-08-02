@@ -49,7 +49,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({
   // Shipping Method Label
   const shippingLabel = useMemo(() => {
     if (shippingMethod === 'pickup') return 'Showroom Pickup';
-    if (shippingMethod === 'harare') return 'Harare Courier Dispatch ($5)';
+    if (shippingMethod === 'harare') return 'Same City Courier Dispatch ($5)';
     return 'Zimbabwe Express Courier ($7)';
   }, [shippingMethod]);
 

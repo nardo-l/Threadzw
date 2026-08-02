@@ -698,14 +698,14 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
                         <span className="font-medium">Store Pickup: {(shopConfig?.pickup_available || shop?.pickup_available) ? (shopConfig?.pickup_label || 'Available') : 'Not Available'}</span>
                       </div>
 
-                      {/* Harare Delivery */}
+                      {/* Same City Delivery */}
                       <div className={`px-2.5 py-1.5 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all ${
                         shopConfig?.harare_delivery
                           ? 'bg-indigo-50 border-indigo-200 text-indigo-800'
                           : 'bg-zinc-50 border-zinc-150 text-zinc-400 line-through opacity-60'
                       }`}>
                         <span>📍</span>
-                        <span className="font-medium">Harare: {shopConfig?.harare_delivery || 'Not Configured'}</span>
+                        <span className="font-medium">Same City: {shopConfig?.harare_delivery || 'Not Configured'}</span>
                       </div>
 
                       {/* Nationwide Courier */}
