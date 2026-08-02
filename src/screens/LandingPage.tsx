@@ -108,13 +108,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             <span>START FREE</span>
             <ArrowRight className="w-5 h-5 stroke-[2.5]" />
           </button>
-
-          <button
-            onClick={() => window.open('https://threadzw.vercel.app/shop/him-clothing?page=home', '_blank')}
-            className="w-full h-14 bg-transparent hover:bg-zinc-900/50 text-white font-extrabold text-base rounded-full border border-zinc-800 hover:border-zinc-700 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] uppercase tracking-wider"
-          >
-            <span>VIEW DEMO SHOP</span>
-          </button>
         </motion.div>
 
         {/* Floating Phone Storefront Preview */}
