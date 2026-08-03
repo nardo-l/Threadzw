@@ -214,9 +214,17 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
   // Skip Navigation
   const handleSkip = () => {
-    if (step === 10) setStep(11);
-    else if (step === 11) triggerStoreCreation();
-    else if (step < 11) setStep(prev => prev + 1);
+    if (step === 9) setStep(10);
+    else if (step === 10) {
+      if (session?.user) {
+        setStep(11);
+        triggerStoreCreation();
+      } else {
+        toast.error('Please create an account to save and publish your shop.');
+      }
+    } else if (step < 11) {
+      setStep(prev => prev + 1);
+    }
   };
 
   // Auth Error Translation
@@ -515,7 +523,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       </header>
 
       {/* Main Content Area */}
-      <main className={`flex-1 flex flex-col items-center justify-start px-4 pt-2 max-w-md mx-auto w-full z-10 ${step < 7 ? 'pb-32' : 'pb-16'}`}>
+      <main className={`flex-1 flex flex-col items-center justify-start px-4 pt-2 max-w-md mx-auto w-full z-10 ${step < 9 ? 'pb-32' : 'pb-16'}`}>
         
         {/* Progress Tracker Bar */}
         {step < 11 && (
@@ -783,8 +791,261 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             )}
 
-            {/* STEP 05: Save Account Intro */}
+            {/* STEP 05: What best describes your shop? (Vibe) */}
             {step === 5 && (
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <HoodieFashion3DIllustration />
+
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHAT BEST<br />
+                    DESCRIBES<br />
+                    <span className="text-[#C6FF00]">YOUR SHOP?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Choose the style that best represents your business.
+                  </p>
+                </div>
+
+                {/* Large premium cards */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { label: 'Clothing Brand', icon: ShoppingBag },
+                    { label: 'Sneakers', icon: Zap },
+                    { label: 'Accessories', icon: Sliders },
+                    { label: 'Vintage', icon: RefreshCw },
+                    { label: 'Sportswear', icon: Zap },
+                    { label: 'Boutique', icon: Sparkles },
+                    { label: 'Streetwear', icon: Layers },
+                    { label: 'Other', icon: Sparkles }
+                  ].map((style, sIdx) => {
+                    const isSelected = formData.vibe === style.label || formData.businessType === style.label;
+                    const IconComp = style.icon;
+                    return (
+                      <button
+                        key={sIdx}
+                        type="button"
+                        onClick={() => {
+                          updateField('vibe', style.label);
+                          updateField('businessType', style.label);
+                        }}
+                        className={`p-3.5 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
+                            : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
+                        }`}
+                      >
+                        <IconComp size={16} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
+                        <span className="font-bold text-xs tracking-tight">{style.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (!formData.vibe) {
+                        updateField('vibe', 'Clothing Brand');
+                      }
+                      setStep(6);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 06: Where are you located? */}
+            {step === 6 && (
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <ZimbabweMap3DIllustration />
+
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    WHERE ARE<br />
+                    YOU <span className="text-[#C6FF00]">LOCATED?</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Customers nearby can discover your shop.
+                  </p>
+                </div>
+
+                {/* Search field */}
+                <div className="relative">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
+                  <input
+                    type="text"
+                    value={formData.citySearch}
+                    onChange={(e) => updateField('citySearch', e.target.value)}
+                    placeholder="Search your city"
+                    className="w-full bg-[#111114] border border-[#232326] rounded-xl pl-10 pr-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
+                  />
+                </div>
+
+                {/* Suggested cities list */}
+                <div className="space-y-1.5 max-h-[180px] overflow-y-auto overscroll-contain touch-pan-y no-scrollbar">
+                  {['Bulawayo', 'Harare', 'Mutare', 'Gweru', 'Masvingo', 'Chinhoyi', 'Other']
+                    .filter(c => !formData.citySearch || c.toLowerCase().includes(formData.citySearch.toLowerCase()))
+                    .map((city, cIdx) => {
+                      const isSelected = formData.location === city;
+                      return (
+                        <button
+                          key={cIdx}
+                          type="button"
+                          onClick={() => updateField('location', city)}
+                          className={`w-full p-2.5 rounded-xl border flex items-center gap-2.5 text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
+                              : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
+                          }`}
+                        >
+                          <MapPin size={15} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
+                          <span className="font-semibold text-xs tracking-tight">{city}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      if (!formData.location) {
+                        updateField('location', 'Harare');
+                      }
+                      setStep(7);
+                    }}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 07: Upload Logo */}
+            {step === 7 && (
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <LogoUpload3DIllustration />
+
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    UPLOAD YOUR<br />
+                    <span className="text-[#C6FF00]">LOGO.</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Your logo appears across your storefront and builds trust with customers.
+                  </p>
+                </div>
+
+                {/* Large upload area */}
+                <div className="space-y-1.5">
+                  <label className="w-full bg-[#111114] border border-dashed border-[#232326] hover:border-[#C6FF00] rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center">
+                    <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
+                    {logoPreview ? (
+                      <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#27272A]">
+                        <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#1A1A20] flex items-center justify-center text-[#C6FF00] group-hover:scale-110 transition-transform">
+                        <Upload size={20} />
+                      </div>
+                    )}
+                    <span className="font-extrabold text-xs text-white uppercase tracking-wide">
+                      {logoPreview ? 'Change Logo' : '⬆ Tap to Upload'}
+                    </span>
+                    <div className="text-[11px] text-zinc-400 space-y-0.5 font-medium">
+                      <p>Supported formats: <span className="text-zinc-300">PNG • JPG • SVG</span></p>
+                      <p>Recommended: <span className="text-zinc-300">Square image (1024×1024)</span></p>
+                    </div>
+                  </label>
+                  <p className="text-[11px] text-zinc-500 font-medium px-1">
+                    You can change this later.
+                  </p>
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => setStep(8)}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 08: Upload Banner */}
+            {step === 8 && (
+              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
+                {/* 3D Illustration */}
+                <BannerUpload3DIllustration />
+
+                {/* Typography */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
+                    UPLOAD YOUR<br />
+                    <span className="text-[#C6FF00]">BANNER.</span>
+                  </h1>
+                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
+                    Show customers what makes your brand unique.
+                  </p>
+                </div>
+
+                {/* Large upload area */}
+                <div className="space-y-1.5">
+                  <label className="w-full bg-[#111114] border border-dashed border-[#232326] hover:border-[#C6FF00] rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center">
+                    <input type="file" accept="image/*" onChange={handleBannerSelect} className="hidden" />
+                    {bannerPreview ? (
+                      <div className="relative w-full h-20 rounded-xl overflow-hidden border border-[#27272A]">
+                        <img src={bannerPreview} alt="Banner Preview" className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-[#1A1A20] flex items-center justify-center text-[#C6FF00] group-hover:scale-110 transition-transform">
+                        <Camera size={20} />
+                      </div>
+                    )}
+                    <span className="font-extrabold text-xs text-white uppercase tracking-wide">
+                      {bannerPreview ? 'Change Banner' : '🖼 Tap to Upload Banner'}
+                    </span>
+                    <p className="text-[11px] text-zinc-400 font-medium">
+                      Recommended size: <span className="text-zinc-300">1600 × 600 px</span>
+                    </p>
+                  </label>
+                  <p className="text-[11px] text-zinc-500 font-medium px-1">
+                    This becomes the hero image of your storefront.
+                  </p>
+                </div>
+
+                {/* Bottom CTA Button */}
+                <div className="pt-2">
+                  <button
+                    onClick={() => setStep(9)}
+                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
+                  >
+                    <span>CONTINUE</span>
+                    <ArrowRight size={20} className="stroke-[3]" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 09: Save Account Intro */}
+            {step === 9 && (
               <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-6 text-left px-2">
                 {/* 3D Illustration */}
                 <SafeVault3DIllustration />
@@ -804,7 +1065,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 {/* Bottom CTA Button */}
                 <div className="pt-4">
                   <button
-                    onClick={() => setStep(6)}
+                    onClick={() => setStep(10)}
                     className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
                   >
                     <span>CONTINUE</span>
@@ -814,8 +1075,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             )}
 
-            {/* STEP 06: Create Account / Auth */}
-            {step === 6 && (
+            {/* STEP 10: Create Account / Auth */}
+            {step === 10 && (
               <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <MailAccount3DIllustration />
@@ -901,325 +1162,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             )}
 
-            {/* STEP 07: What's your shop called? */}
-            {step === 7 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-6 text-left px-2">
-                {/* 3D Illustration */}
-                <ShopSign3DIllustration shopName={formData.shopName} />
-
-                {/* Typography */}
-                <div className="space-y-2">
-                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
-                    WHAT'S YOUR<br />
-                    <span className="text-[#C6FF00]">SHOP NAME?</span>
-                  </h1>
-                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
-                    This is what customers will see.
-                  </p>
-                </div>
-
-                {/* Large rounded text field */}
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={formData.shopName}
-                    onChange={(e) => {
-                      updateField('shopName', e.target.value);
-                      const slug = e.target.value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').substring(0, 32);
-                      updateField('username', slug);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (!formData.shopName.trim()) {
-                          updateField('shopName', 'Nulla Clothing');
-                          updateField('username', 'nulla-clothing');
-                        }
-                        setStep(8);
-                      }
-                    }}
-                    placeholder="e.g. Nulla Clothing"
-                    className="w-full bg-[#111114] border border-[#232326] px-4 py-3.5 text-base font-bold text-white placeholder:text-zinc-600 focus:border-[#C6FF00] focus:outline-none rounded-2xl transition-all"
-                  />
-                  <p className="text-xs text-zinc-500 font-medium px-1">
-                    You can change this later.
-                  </p>
-                </div>
-
-                {/* Bottom CTA Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      if (!formData.shopName.trim()) {
-                        updateField('shopName', 'Nulla Clothing');
-                        updateField('username', 'nulla-clothing');
-                      }
-                      setStep(8);
-                    }}
-                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
-                  >
-                    <span>CONTINUE</span>
-                    <ArrowRight size={20} className="stroke-[3]" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 08: What best describes your shop? */}
-            {step === 8 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
-                {/* 3D Illustration */}
-                <HoodieFashion3DIllustration />
-
-                {/* Typography */}
-                <div className="space-y-1">
-                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
-                    WHAT BEST<br />
-                    DESCRIBES<br />
-                    <span className="text-[#C6FF00]">YOUR SHOP?</span>
-                  </h1>
-                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
-                    Choose the style that best represents your business.
-                  </p>
-                </div>
-
-                {/* Large premium cards */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  {[
-                    { label: 'Clothing Brand', icon: ShoppingBag },
-                    { label: 'Sneakers', icon: Zap },
-                    { label: 'Accessories', icon: Sliders },
-                    { label: 'Vintage', icon: RefreshCw },
-                    { label: 'Sportswear', icon: Zap },
-                    { label: 'Boutique', icon: Sparkles },
-                    { label: 'Streetwear', icon: Layers },
-                    { label: 'Other', icon: Sparkles }
-                  ].map((style, sIdx) => {
-                    const isSelected = formData.vibe === style.label || formData.businessType === style.label;
-                    const IconComp = style.icon;
-                    return (
-                      <button
-                        key={sIdx}
-                        type="button"
-                        onClick={() => {
-                          updateField('vibe', style.label);
-                          updateField('businessType', style.label);
-                        }}
-                        className={`p-3.5 rounded-xl border flex items-center gap-2.5 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
-                            : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
-                        }`}
-                      >
-                        <IconComp size={16} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
-                        <span className="font-bold text-xs tracking-tight">{style.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Bottom CTA Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      if (!formData.vibe) {
-                        updateField('vibe', 'Clothing Brand');
-                      }
-                      setStep(9);
-                    }}
-                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
-                  >
-                    <span>CONTINUE</span>
-                    <ArrowRight size={20} className="stroke-[3]" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 09: Where are you located? */}
-            {step === 9 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
-                {/* 3D Illustration */}
-                <ZimbabweMap3DIllustration />
-
-                {/* Typography */}
-                <div className="space-y-1">
-                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
-                    WHERE ARE<br />
-                    YOU <span className="text-[#C6FF00]">LOCATED?</span>
-                  </h1>
-                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
-                    Customers nearby can discover your shop.
-                  </p>
-                </div>
-
-                {/* Search field */}
-                <div className="relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={18} />
-                  <input
-                    type="text"
-                    value={formData.citySearch}
-                    onChange={(e) => updateField('citySearch', e.target.value)}
-                    placeholder="Search your city"
-                    className="w-full bg-[#111114] border border-[#232326] rounded-xl pl-10 pr-4 py-3 text-sm font-normal text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#C6FF00]"
-                  />
-                </div>
-
-                {/* Suggested cities list */}
-                <div className="space-y-1.5 max-h-[180px] overflow-y-auto overscroll-contain touch-pan-y no-scrollbar">
-                  {['Bulawayo', 'Harare', 'Mutare', 'Gweru', 'Masvingo', 'Chinhoyi', 'Other']
-                    .filter(c => !formData.citySearch || c.toLowerCase().includes(formData.citySearch.toLowerCase()))
-                    .map((city, cIdx) => {
-                      const isSelected = formData.location === city;
-                      return (
-                        <button
-                          key={cIdx}
-                          type="button"
-                          onClick={() => updateField('location', city)}
-                          className={`w-full p-2.5 rounded-xl border flex items-center gap-2.5 text-left transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-black border-[#C6FF00] text-white shadow-[0_0_12px_rgba(198,255,0,0.2)]'
-                              : 'bg-[#111114] border-[#222225] text-zinc-300 hover:border-zinc-500'
-                          }`}
-                        >
-                          <MapPin size={15} className={isSelected ? 'text-[#C6FF00]' : 'text-zinc-400'} />
-                          <span className="font-semibold text-xs tracking-tight">{city}</span>
-                        </button>
-                      );
-                    })}
-                </div>
-
-                {/* Bottom CTA Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      if (!formData.location) {
-                        updateField('location', 'Harare');
-                      }
-                      setStep(10);
-                    }}
-                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
-                  >
-                    <span>CONTINUE</span>
-                    <ArrowRight size={20} className="stroke-[3]" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 10: Upload Logo */}
-            {step === 10 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
-                {/* 3D Illustration */}
-                <LogoUpload3DIllustration />
-
-                {/* Typography */}
-                <div className="space-y-1">
-                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
-                    UPLOAD YOUR<br />
-                    <span className="text-[#C6FF00]">LOGO.</span>
-                  </h1>
-                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
-                    Your logo appears across your storefront and builds trust with customers.
-                  </p>
-                </div>
-
-                {/* Large upload area */}
-                <div className="space-y-1.5">
-                  <label className="w-full bg-[#111114] border border-dashed border-[#232326] hover:border-[#C6FF00] rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center">
-                    <input type="file" accept="image/*" onChange={handleLogoSelect} className="hidden" />
-                    {logoPreview ? (
-                      <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-[#27272A]">
-                        <img src={logoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#1A1A20] flex items-center justify-center text-[#C6FF00] group-hover:scale-110 transition-transform">
-                        <Upload size={20} />
-                      </div>
-                    )}
-                    <span className="font-extrabold text-xs text-white uppercase tracking-wide">
-                      {logoPreview ? 'Change Logo' : '⬆ Tap to Upload'}
-                    </span>
-                    <div className="text-[11px] text-zinc-400 space-y-0.5 font-medium">
-                      <p>Supported formats: <span className="text-zinc-300">PNG • JPG • SVG</span></p>
-                      <p>Recommended: <span className="text-zinc-300">Square image (1024×1024)</span></p>
-                    </div>
-                  </label>
-                  <p className="text-[11px] text-zinc-500 font-medium px-1">
-                    You can change this later.
-                  </p>
-                </div>
-
-                {/* Bottom CTA Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => setStep(11)}
-                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
-                  >
-                    <span>CONTINUE</span>
-                    <ArrowRight size={20} className="stroke-[3]" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 11: Upload Banner */}
+            {/* STEP 11: Your Shop is Ready */}
             {step === 11 && (
-              <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
-                {/* 3D Illustration */}
-                <BannerUpload3DIllustration />
-
-                {/* Typography */}
-                <div className="space-y-1">
-                  <h1 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white leading-[1.05]">
-                    UPLOAD YOUR<br />
-                    <span className="text-[#C6FF00]">BANNER.</span>
-                  </h1>
-                  <p className="text-xs sm:text-sm text-zinc-400 font-normal">
-                    Show customers what makes your brand unique.
-                  </p>
-                </div>
-
-                {/* Large upload area */}
-                <div className="space-y-1.5">
-                  <label className="w-full bg-[#111114] border border-dashed border-[#232326] hover:border-[#C6FF00] rounded-2xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center gap-2 group text-center">
-                    <input type="file" accept="image/*" onChange={handleBannerSelect} className="hidden" />
-                    {bannerPreview ? (
-                      <div className="relative w-full h-20 rounded-xl overflow-hidden border border-[#27272A]">
-                        <img src={bannerPreview} alt="Banner Preview" className="w-full h-full object-cover" />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#1A1A20] flex items-center justify-center text-[#C6FF00] group-hover:scale-110 transition-transform">
-                        <Camera size={20} />
-                      </div>
-                    )}
-                    <span className="font-extrabold text-xs text-white uppercase tracking-wide">
-                      {bannerPreview ? 'Change Banner' : '🖼 Tap to Upload Banner'}
-                    </span>
-                    <p className="text-[11px] text-zinc-400 font-medium">
-                      Recommended size: <span className="text-zinc-300">1600 × 600 px</span>
-                    </p>
-                  </label>
-                  <p className="text-[11px] text-zinc-500 font-medium px-1">
-                    This becomes the hero image of your storefront.
-                  </p>
-                </div>
-
-                {/* Bottom CTA Button */}
-                <div className="pt-2">
-                  <button
-                    onClick={() => setStep(12)}
-                    className="w-full py-4 px-6 rounded-2xl bg-[#C6FF00] text-black font-extrabold text-sm uppercase tracking-wider flex items-center justify-between hover:opacity-95 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_20px_rgba(198,255,0,0.2)]"
-                  >
-                    <span>CONTINUE</span>
-                    <ArrowRight size={20} className="stroke-[3]" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* STEP 12: Your Shop is Ready */}
-            {step === 12 && (
               <div className="w-full max-w-[390px] mx-auto flex flex-col justify-start space-y-4 text-left px-2">
                 {/* 3D Illustration */}
                 <ShopReady3DIllustration />
@@ -1277,7 +1221,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       </main>
 
       {/* Bottom Navigation Shell for initial setup steps */}
-      {step < 7 && (
+      {step < 9 && (
         <footer className="fixed bottom-0 left-0 right-0 w-full z-50 flex justify-between items-center px-6 md:px-16 py-5 bg-black/95 backdrop-blur-md border-t border-[#232323]">
           {step > 1 ? (
             <button
@@ -1292,7 +1236,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             <div />
           )}
 
-          {step > 1 && step < 7 && (
+          {step > 1 && step < 9 && (
             <button
               type="button"
               onClick={() => {
@@ -1304,24 +1248,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   setStep(3);
                   return;
                 }
-                if (step === 6) {
-                  if (session?.user) {
-                    setStep(7);
-                  } else {
-                    const formEl = document.querySelector('form');
-                    if (formEl) {
-                      formEl.requestSubmit ? formEl.requestSubmit() : formEl.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                    } else {
-                      toast.error('Please enter your email and password to create your account.');
-                    }
-                  }
-                  return;
-                }
                 setStep(prev => prev + 1);
               }}
               className="bg-[#bef500] text-black font-extrabold text-xs uppercase tracking-widest px-8 py-3.5 rounded-xl flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-[0_0_15px_rgba(190,245,0,0.2)]"
             >
-              {step === 6 ? 'Create Account' : 'Continue'}
+              Continue
               <ArrowRight size={16} />
             </button>
           )}
