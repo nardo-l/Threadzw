@@ -70,25 +70,64 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const { session, profile } = useAuth();
   const { refreshShop } = useShopContext();
 
-  // Active Step (1 to 12)
+  // Active Step (1 to 11)
   const [step, setStep] = useState<number>(() => {
-    if (initialStep !== undefined) return Math.min(12, Math.max(1, initialStep));
+    if (initialStep !== undefined) return Math.min(11, Math.max(1, initialStep));
+    try {
+      const savedStep = localStorage.getItem('threadzw_onboarding_step');
+      if (savedStep) {
+        const num = parseInt(savedStep, 10);
+        if (!isNaN(num) && num >= 1 && num <= 11) return num;
+      }
+    } catch (e) {}
     return 1;
   });
 
-  // Onboarding Data State
-  const [formData, setFormData] = useState({
-    shopName: '',
-    username: '',
-    referralSource: '',
-    businessType: 'Streetwear',
-    email: session?.user?.email || localStorage.getItem('threadzw_signup_email') || '',
-    password: localStorage.getItem('threadzw_signup_password') || '',
-    whatsappNumber: '+263',
-    vibe: 'Minimal',
-    location: 'Harare',
-    citySearch: '',
+  // Onboarding Data State persisted temporarily
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('threadzw_onboarding_form');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          shopName: parsed.shopName || '',
+          username: parsed.username || '',
+          referralSource: parsed.referralSource || '',
+          businessType: parsed.businessType || 'Streetwear',
+          email: parsed.email || localStorage.getItem('threadzw_signup_email') || '',
+          password: parsed.password || localStorage.getItem('threadzw_signup_password') || '',
+          whatsappNumber: parsed.whatsappNumber || '+263',
+          vibe: parsed.vibe || 'Minimal',
+          location: parsed.location || 'Harare',
+          citySearch: parsed.citySearch || '',
+        };
+      }
+    } catch (e) {}
+    return {
+      shopName: '',
+      username: '',
+      referralSource: '',
+      businessType: 'Streetwear',
+      email: session?.user?.email || localStorage.getItem('threadzw_signup_email') || '',
+      password: localStorage.getItem('threadzw_signup_password') || '',
+      whatsappNumber: '+263',
+      vibe: 'Minimal',
+      location: 'Harare',
+      citySearch: '',
+    };
   });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('threadzw_onboarding_form', JSON.stringify(formData));
+    } catch (e) {}
+  }, [formData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('threadzw_onboarding_step', String(step));
+    } catch (e) {}
+  }, [step]);
 
   useEffect(() => {
     if (session?.user?.email && !formData.email) {
@@ -106,13 +145,17 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // File states
+  // File states with temporary localStorage persistence for previews
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(() => {
+    return localStorage.getItem('threadzw_onboarding_logo') || null;
+  });
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(() => {
+    return localStorage.getItem('threadzw_onboarding_banner') || null;
+  });
 
-  // Step 12 Building progress state
+  // Step 11 Building progress state
   const [buildPercent, setBuildPercent] = useState<number>(0);
   const [buildStepIndex, setBuildStepIndex] = useState<number>(0);
   const [isBuilding, setIsBuilding] = useState<boolean>(false);
@@ -131,7 +174,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const result = uploadEvent.target?.result as string;
+        setLogoPreview(result);
+        try {
+          localStorage.setItem('threadzw_onboarding_logo', result);
+        } catch (err) {}
+      };
+      reader.readAsDataURL(file);
       toast.success('Logo selected!');
     }
   };
@@ -141,14 +192,22 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setBannerFile(file);
-      setBannerPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onload = (uploadEvent) => {
+        const result = uploadEvent.target?.result as string;
+        setBannerPreview(result);
+        try {
+          localStorage.setItem('threadzw_onboarding_banner', result);
+        } catch (err) {}
+      };
+      reader.readAsDataURL(file);
       toast.success('Banner selected!');
     }
   };
 
   // Back Button Navigation
   const handleBack = () => {
-    if (step > 1 && step < 12 && !isBuilding) {
+    if (step > 1 && step < 11 && !isBuilding) {
       setStep(prev => prev - 1);
     }
   };
@@ -157,7 +216,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const handleSkip = () => {
     if (step === 10) setStep(11);
     else if (step === 11) triggerStoreCreation();
-    else if (step < 12) setStep(prev => prev + 1);
+    else if (step < 11) setStep(prev => prev + 1);
   };
 
   // Auth Error Translation
@@ -176,7 +235,20 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     return message;
   };
 
-  // Handle Supabase Sign Up (Step 6)
+  // Helper to convert data URL to File object
+  const dataURLtoFile = (dataurl: string, filename: string): File => {
+    const arr = dataurl.split(',');
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
+
+  // Handle Supabase Sign Up (Step 10 - Final Step before Publish)
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError(null);
@@ -215,7 +287,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       if (signUpErr) throw signUpErr;
 
       if (data?.user) {
-        // Create profile record if missing
         const { data: existingProfile } = await supabase
           .from('profiles')
           .select('id')
@@ -246,7 +317,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       localStorage.setItem('threadzw_signup_password', passVal);
 
       toast.success('Account created successfully!');
-      setStep(7); // Move to Trial Offer
+      // Move to Step 11 (Publish shop) and trigger store creation
+      setStep(11);
+      triggerStoreCreation();
     } catch (err: any) {
       console.error('Sign up error:', err);
       const friendly = getFriendlyErrorMessage(err);
@@ -257,21 +330,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   };
 
-  // Step 12 Store Creation & Deployment
+  // Step 11 Store Creation & Deployment
   const triggerStoreCreation = async () => {
-    setStep(12);
     setIsBuilding(true);
     setBuildPercent(0);
     setBuildStepIndex(0);
-
-    // Progress simulation & DB creation in parallel
-    const stepsList = [
-      'Syncing Workspace',
-      'Generating Storefront',
-      'Preparing Dashboard',
-      'Creating Inventory',
-      'Finalizing'
-    ];
 
     let currentProgress = 0;
     const interval = setInterval(() => {
@@ -288,7 +351,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       if (!user) {
         clearInterval(interval);
         toast.error('Session expired. Please log in or recreate account.');
-        setStep(6);
+        setStep(10);
         setIsBuilding(false);
         return;
       }
@@ -307,6 +370,19 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         } catch (err) {
           console.warn('Logo upload skipped/failed:', err);
         }
+      } else if (logoPreview && logoPreview.startsWith('data:')) {
+        try {
+          const fileFromData = dataURLtoFile(logoPreview, 'logo.png');
+          logoUrl = await uploadImage({
+            supabase,
+            file: fileFromData,
+            bucket: 'product-images',
+            folder: 'shop_logo',
+            userId: user.id
+          });
+        } catch (err) {
+          console.warn('Logo preview upload failed:', err);
+        }
       }
 
       // 2. Upload Banner if selected
@@ -322,6 +398,19 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           });
         } catch (err) {
           console.warn('Banner upload skipped/failed:', err);
+        }
+      } else if (bannerPreview && bannerPreview.startsWith('data:')) {
+        try {
+          const fileFromData = dataURLtoFile(bannerPreview, 'banner.png');
+          bannerUrl = await uploadImage({
+            supabase,
+            file: fileFromData,
+            bucket: 'product-images',
+            folder: 'shop_banner',
+            userId: user.id
+          });
+        } catch (err) {
+          console.warn('Banner preview upload failed:', err);
         }
       }
 
@@ -343,7 +432,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         banner_url: bannerUrl
       };
 
-      // Check if user already owns a shop
       const { data: existingShop } = await supabase
         .from('shops')
         .select('id')
@@ -351,13 +439,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         .maybeSingle();
 
       if (existingShop) {
-        // Update existing
         await supabase
           .from('shops')
           .update(shopPayload)
           .eq('id', existingShop.id);
       } else {
-        // Insert new
         const { error: insertErr } = await supabase
           .from('shops')
           .insert(shopPayload);
@@ -366,11 +452,16 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       await refreshShop();
 
-      // Complete progress animation
       clearInterval(interval);
       setBuildPercent(100);
       setBuildStepIndex(4);
       setBuildComplete(true);
+
+      // Clear temporary onboarding storage only after all database operations succeed
+      localStorage.removeItem('threadzw_onboarding_form');
+      localStorage.removeItem('threadzw_onboarding_step');
+      localStorage.removeItem('threadzw_onboarding_logo');
+      localStorage.removeItem('threadzw_onboarding_banner');
 
       localStorage.setItem('threadzw_needs_walkthrough', 'true');
       localStorage.removeItem('threadzw_walkthrough_completed');
@@ -385,7 +476,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       console.error('Store creation error:', err);
       toast.error(err.message || 'Error creating storefront record');
       setIsBuilding(false);
-      setStep(11);
+      setStep(10);
     }
   };
 
@@ -412,7 +503,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           </span>
         </div>
 
-        {step < 12 && (
+        {step < 11 && (
           <button
             type="button"
             onClick={handleSkip}
@@ -427,7 +518,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       <main className={`flex-1 flex flex-col items-center justify-start px-4 pt-2 max-w-md mx-auto w-full z-10 ${step < 7 ? 'pb-32' : 'pb-16'}`}>
         
         {/* Progress Tracker Bar */}
-        {step < 12 && (
+        {step < 11 && (
           <div className="w-full max-w-[390px] mx-auto mb-4">
             <div className="flex justify-between items-center font-mono text-xs">
               {/* Progress segments */}
@@ -436,12 +527,12 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   <div
                     key={idx}
                     className={`flex-1 h-full rounded-full transition-all duration-300 ${
-                      idx < Math.ceil((step / 12) * 4) ? 'bg-[#C6FF00]' : 'bg-[#222225]'
+                      idx < Math.ceil((step / 11) * 4) ? 'bg-[#C6FF00]' : 'bg-[#222225]'
                     }`}
                   />
                 ))}
               </div>
-              <span className="text-zinc-400 font-bold text-[11px]">{step} / 12</span>
+              <span className="text-zinc-400 font-bold text-[11px]">{step} / 11</span>
             </div>
           </div>
         )}
