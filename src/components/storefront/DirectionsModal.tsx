@@ -23,44 +23,26 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
   const floor = shop?.floor;
   const shopNumber = shop?.shop_number;
   const landmark = shop?.landmark;
-  const rawDirections = shop?.directions;
+  const rawDirections = shop?.directions || shop?.shop_config?.directions;
   const hours = shop?.opening_hours || shop?.hours || 'Mon - Sat: 8:00 AM - 5:30 PM';
 
-  // Build step by step directions
+  // Get exact directions provided by the shop owner
   const getDirectionSteps = () => {
     if (rawDirections && rawDirections.trim().length > 0) {
       const splitSteps = rawDirections
-        .split(/\n|\.|;/)
+        .split(/\r?\n/)
         .map((s: string) => s.trim())
-        .filter((s: string) => s.length > 2);
-      if (splitSteps.length >= 2) {
+        .filter((s: string) => s.length > 0);
+      if (splitSteps.length > 0) {
         return splitSteps;
       }
     }
 
-    const steps: string[] = [];
-    if (landmark) {
-      steps.push(`Head towards ${landmark}.`);
-    } else {
-      steps.push(`Head towards ${address}.`);
+    // Simple fallback if no custom directions entered yet
+    if (address) {
+      return [address, city].filter(Boolean);
     }
-
-    if (building) {
-      steps.push(`Enter ${building} from the main entrance.`);
-    } else {
-      steps.push(`Enter from the main street entrance.`);
-    }
-
-    if (floor || shopNumber) {
-      const floorStr = floor ? `${floor}` : '';
-      const numStr = shopNumber ? `Shop ${shopNumber}` : '';
-      steps.push(`We are located on ${[floorStr, numStr].filter(Boolean).join(', ')}.`);
-    } else {
-      steps.push(`We are located inside the main arcade/complex.`);
-    }
-
-    steps.push(`Look for the ${shopName} sign.`);
-    return steps;
+    return ['Visit our store during operating hours.'];
   };
 
   const directionSteps = getDirectionSteps();

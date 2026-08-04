@@ -341,82 +341,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               className="w-full max-w-[320px] sm:max-w-[360px] bg-zinc-950 rounded-[44px] border-[8px] border-zinc-800 shadow-[0_25px_80px_rgba(0,0,0,0.85)] overflow-hidden relative z-20"
             >
               {/* Phone Screen Inner Content */}
-              <div className="p-4 sm:p-5 bg-black min-h-[560px] flex flex-col justify-between text-left relative">
-                
+              <div className="bg-black relative rounded-[36px] overflow-hidden flex flex-col items-center">
                 {/* Dynamic Notch Bar */}
-                <div className="w-28 h-4 bg-zinc-900 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <div className="absolute top-2 z-10 w-28 h-4 bg-zinc-900/90 backdrop-blur-xs rounded-full mx-auto flex items-center justify-center">
                   <div className="w-2.5 h-2.5 rounded-full bg-zinc-950 border border-zinc-800" />
                 </div>
 
-                {/* Shop Header */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-b from-zinc-800 to-zinc-900 p-3 mb-4 border border-zinc-800">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-black border border-[#C6FF00]/50 flex items-center justify-center font-black text-xs text-[#C6FF00] overflow-hidden shrink-0">
-                      <img 
-                        src="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=150&q=80" 
-                        alt="Kicks" 
-                        className="w-full h-full object-cover" 
-                      />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1">
-                        <h3 className="text-sm font-black text-white tracking-tight">Urban Kicks HRE</h3>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#C6FF00] fill-[#C6FF00] text-black" />
-                      </div>
-                      <p className="text-[10px] text-zinc-400 font-medium">Sneakers & Drip • Harare CBD</p>
-                      <p className="text-[9px] text-[#C6FF00] font-mono mt-0.5">threadzw.com/urbankicks</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sneaker Product Grid Mockup */}
-                <div className="space-y-3 flex-1">
-                  <div className="flex items-center justify-between text-[11px] font-bold text-zinc-400 px-1">
-                    <span>In Stock (24)</span>
-                    <span className="text-[#C6FF00]">Sneakers</span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {/* Item 1 */}
-                    <div className="bg-zinc-900/90 rounded-xl p-2 border border-zinc-800/80 space-y-1.5">
-                      <div className="h-24 rounded-lg bg-zinc-950 overflow-hidden relative">
-                        <img 
-                          src="https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&w=300&q=80" 
-                          alt="Sneaker 1" 
-                          className="w-full h-full object-cover" 
-                        />
-                        <span className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[#C6FF00] font-mono font-black text-[9px] px-1.5 py-0.5 rounded">
-                          $120
-                        </span>
-                      </div>
-                      <p className="text-[10px] font-bold text-white truncate">Nike Dunk Low Retro</p>
-                      <p className="text-[9px] text-zinc-400">UK 7, 8, 9, 10</p>
-                    </div>
-
-                    {/* Item 2 */}
-                    <div className="bg-zinc-900/90 rounded-xl p-2 border border-zinc-800/80 space-y-1.5">
-                      <div className="h-24 rounded-lg bg-zinc-950 overflow-hidden relative">
-                        <img 
-                          src="https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?auto=format&fit=crop&w=300&q=80" 
-                          alt="Sneaker 2" 
-                          className="w-full h-full object-cover" 
-                        />
-                        <span className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[#C6FF00] font-mono font-black text-[9px] px-1.5 py-0.5 rounded">
-                          $145
-                        </span>
-                      </div>
-                      <p className="text-[10px] font-bold text-white truncate">Air Jordan 1 High</p>
-                      <p className="text-[9px] text-zinc-400">UK 8, 9, 11</p>
-                    </div>
-                  </div>
-
-                  {/* Bottom Order CTA button inside phone */}
-                  <div className="w-full py-2.5 bg-[#25D366] text-black font-extrabold text-xs rounded-xl flex items-center justify-center gap-1.5 mt-2 shadow-md">
-                    <MessageCircle className="w-4 h-4 fill-black" />
-                    <span>Order Directly on WhatsApp</span>
-                  </div>
-                </div>
-
+                <img 
+                  src="https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Screenshot_2026-07-31-11-08-03-715_com.android.chrome.jpg" 
+                  alt="Shop Preview on Phone" 
+                  className="w-full h-auto object-cover rounded-[32px] block" 
+                />
               </div>
             </motion.div>
 

@@ -802,8 +802,8 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
 
       {/* Field Input Dialog Modal */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-zinc-100 animate-in fade-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-zinc-100 animate-in fade-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-extrabold text-black">
                 {activeModal === 'shopName' && 'Edit Shop Name'}
@@ -838,14 +838,25 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
                   </button>
                 ))}
               </div>
-            ) : activeModal === 'bio' ? (
-              <textarea
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                rows={3}
-                placeholder="Enter bio..."
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-3 text-xs text-black font-medium focus:outline-none focus:border-black transition-colors"
-              />
+            ) : activeModal === 'bio' || activeModal === 'directions' ? (
+              <div className="space-y-1.5">
+                <textarea
+                  value={tempValue}
+                  onChange={(e) => setTempValue(e.target.value)}
+                  rows={activeModal === 'directions' ? 5 : 3}
+                  placeholder={
+                    activeModal === 'directions'
+                      ? "Enter shop directions step-by-step..."
+                      : "Enter bio..."
+                  }
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-3 text-xs text-black font-medium focus:outline-none focus:border-black transition-colors resize-y min-h-[110px] max-h-[240px] overflow-y-auto leading-relaxed"
+                />
+                {activeModal === 'directions' && (
+                  <p className="text-[10px] text-zinc-500 font-medium pl-1">
+                    Tip: Enter each direction step on a new line.
+                  </p>
+                )}
+              </div>
             ) : (
               <input
                 type="text"
