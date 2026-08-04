@@ -33,6 +33,7 @@ import { NardoPayCheckout } from './screens/NardoPayCheckout';
 import { Subscription } from './screens/Subscription';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 import { Analytics } from './screens/Analytics';
+import { SuccessScreen } from './components/onboarding/SuccessScreen';
 
 
 type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription';
@@ -400,7 +401,8 @@ function AppContent() {
       path.startsWith('/auth') ||
       path === '/reset-password' ||
       path === '/subscription' ||
-      path === '/subscription/success'
+      path === '/subscription/success' ||
+      path === '/setup-success'
     ) {
       console.log("[ROUTER] General public route bypassed.");
       return;
@@ -550,8 +552,8 @@ function AppContent() {
   if (appStage === 'pricing') {
     return <SignUp initialStep={3} />;
   }
-  if (appStage === 'setup-success') {
-    return <SignUp initialStep={13} />;
+  if (appStage === 'setup-success' || cleanPath === '/setup-success') {
+    return <SuccessScreen />;
   }
   if (appStage === 'setup') {
     return <SignUp initialStep={5} />;
@@ -578,6 +580,8 @@ function AppContent() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
+        <Route path="/account" element={<ShopEdit />} />
+        <Route path="/edit-profile" element={<ShopEdit initialSubView="edit-profile" />} />
         <Route path="/add-product" element={<AddProduct />} />
         <Route path="/edit-product/:id" element={<EditProduct />} />
         <Route path="/subscription" element={<Subscription />} />

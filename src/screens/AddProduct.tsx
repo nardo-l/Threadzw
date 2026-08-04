@@ -12,6 +12,7 @@ import { getCategoryConfig } from '../utils/categoryConfig';
 import { SizeSelector } from '../components/SizeSelector';
 import { cropToSquare, enhanceLighting, compressAndOptimize } from '../utils/imageEnhancer';
 import { ProductCategoryCard } from '../components/ProductCategoryCard';
+import { setOnboardingStep } from '../hooks/useOnboarding';
 
 interface SizeStock {
   active: boolean;
@@ -598,8 +599,9 @@ export const AddProduct: React.FC = () => {
       }
 
       // Increment shop product count via RPC
-      if (shopId) {
-        await supabase.rpc('increment_shop_product_count', { shop_id: shopId });
+      if (currentShopId) {
+        await supabase.rpc('increment_shop_product_count', { shop_id: currentShopId });
+        await setOnboardingStep(currentShopId, 'completed');
       }
 
       toast.success('Product live! 🚀', { id: apiToast });

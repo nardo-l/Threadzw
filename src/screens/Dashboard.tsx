@@ -27,6 +27,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
 import { SubscriptionCountdownBanner } from '../components/dashboard/SubscriptionCountdownBanner';
+import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 
@@ -536,6 +537,9 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* MANDATORY ONBOARDING OVERLAY */}
+      <OnboardingOverlay shop={shop} productsCount={productsCount} />
 
       <BottomNavBar />
     </div>

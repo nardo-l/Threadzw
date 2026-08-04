@@ -1,1751 +1,882 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase, SUPABASE_URL } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
+import { useShopContext } from '../context/ShopContext';
+import { uploadImage } from '../utils/uploadImage';
+import { getImageUrl as getGlobalImageUrl } from '../utils/imageUrl';
+import { BottomNavBar } from '../components/dashboard/BottomNavBar';
+import { toast } from 'sonner';
+import { setOnboardingStep } from '../hooks/useOnboarding';
 import { 
   ArrowLeft, 
   Camera, 
+  CheckCircle2, 
+  Share2, 
+  Edit3, 
+  ChevronRight, 
+  Bell, 
+  Menu, 
+  Eye, 
+  Package, 
+  MessageCircle, 
   Check, 
   X, 
-  ChevronDown, 
-  ChevronUp, 
-  Instagram, 
-  MessageCircle, 
-  Clock, 
-  MapPin, 
-  Globe, 
-  Trash2, 
-  Pause, 
-  Play,
-  Loader2,
-  AlertTriangle,
-  Info,
+  Loader2, 
+  TrendingUp, 
+  Heart, 
+  ShoppingBag, 
+  Zap,
+  MapPin,
   Sparkles,
-  Layout,
-  Palette,
-  Heart,
-  BookOpen,
-  Facebook,
-  Phone,
-  HelpCircle
+  Phone
 } from 'lucide-react';
-import { useToast } from '../context/ToastContext';
-import { Shimmer } from '../components/ui/Shimmer';
-import { ScreenError } from '../components/ui/ScreenError';
-import { FieldError } from '../components/ui/FieldError';
-import { uploadImage } from '../utils/uploadImage';
-import { useShopContext } from '../context/ShopContext';
-import { parseShopConfig, serializeShopConfig, StorefrontConfig } from '../utils/configHelper';
-import { slugify } from '../utils/slugify';
-import { getImageUrl as getGlobalImageUrl } from '../utils/imageUrl';
-import { ShopLogo, ShopBanner, ProductImage } from '../components/ui/ShopImage';
 
-const AREAS = [
-  'Harare CBD', 'Eastlea', 'Borrowdale', 'Avondale', 'Bulawayo', 
-  'Mutare', 'Chitungwiza', 'Gweru', 'Victoria Falls', 'Other'
-];
-
-const CATEGORY_OPTIONS = [
-  'Sneakers', 'Clothing', 'Thrift', 'Electronics', 'Accessories', 'Jewellery', 'Other'
-];
-
-interface TradingHour {
-  day: string;
-  isOpen: boolean;
-  openTime: string;
-  closeTime: string;
+interface ActivityItem {
+  id: string;
+  icon: any;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  description: string;
+  timestamp: string;
 }
 
-export const ShopEdit = () => {
+const CATEGORY_OPTIONS = [
+  'Streetwear', 'Sneakers', 'Clothing', 'Thrift', 'Electronics', 'Accessories', 'Jewellery', 'Boutique', 'Other'
+];
+
+interface ShopEditProps {
+  initialSubView?: 'account' | 'edit-profile';
+}
+
+export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { showToast } = useToast();
-  const { refreshShop } = useShopContext();
-  
+  const { shop, refreshShop } = useShopContext();
+
+  const [view, setView] = useState<'account' | 'edit-profile'>(initialSubView);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
 
-  // Form state
+  // Shop Fields
   const [shopId, setShopId] = useState<string | null>(null);
   const [shopName, setShopName] = useState('');
   const [handle, setHandle] = useState('');
-  const [originalHandle, setOriginalHandle] = useState('');
-  const [tagline, setTagline] = useState('');
   const [description, setDescription] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
-  const [suburb, setSuburb] = useState('');
-  const [city, setCity] = useState('');
-  const [googleMapsUrl, setGoogleMapsUrl] = useState('');
-  const [shopAddress, setShopAddress] = useState('');
-  const [buildingName, setBuildingName] = useState('');
-  const [floor, setFloor] = useState('');
-  const [shopNumber, setShopNumber] = useState('');
-  const [pickupAvailable, setPickupAvailable] = useState(false);
-  const [pickupLabel, setPickupLabel] = useState('');
-  const [area, setArea] = useState('');
-  const [landmark, setLandmark] = useState('');
   const [directions, setDirections] = useState('');
-  const [onlineOnly, setOnlineOnly] = useState(false);
-  const [deliveryInfo, setDeliveryInfo] = useState('');
+  const [category, setCategory] = useState('Streetwear');
   const [whatsapp, setWhatsapp] = useState('');
-  const [instagram, setInstagram] = useState('');
-  
-  // Extended custom fields
-  const [harareDelivery, setHarareDelivery] = useState('');
-  const [nationwideCourier, setNationwideCourier] = useState('');
-  const [internationalShipping, setInternationalShipping] = useState('');
-  const [businessHighlights, setBusinessHighlights] = useState('');
-  const [responseTime, setResponseTime] = useState('');
-  const [customNotes, setCustomNotes] = useState('');
-  const [generatingBio, setGeneratingBio] = useState(false);
-
-  const handleGenerateShopBio = async () => {
-    setGeneratingBio(true);
-    try {
-      const res = await fetch('/api/ai/generate-shop-profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shopName: shopName || 'ThreadZW Boutique',
-          category: categories.join(', ') || 'Streetwear & Apparel',
-          location: city || suburb || 'Harare, Zimbabwe'
-        })
-      });
-      const data = await res.json();
-      if (data.description) {
-        setDescription(data.description.substring(0, 300));
-        markChanged();
-      }
-      if (data.bio && !tagline) {
-        setTagline(data.bio);
-      }
-      showToast('Generated shop bio with Gemini AI!', 'success');
-    } catch (err) {
-      showToast('Failed to generate shop bio', 'error');
-    } finally {
-      setGeneratingBio(false);
-    }
-  };
-  
-  // Custom Premium Redesigned Storefront States
-  const [storeStory, setStoreStory] = useState('');
-  const [featuredProducts, setFeaturedProducts] = useState<string[]>([]);
-  const [bestSellerProducts, setBestSellerProducts] = useState<string[]>([]);
-  const [tiktok, setTiktok] = useState('');
-  const [facebook, setFacebook] = useState('');
-  const [brandColorPrimary, setBrandColorPrimary] = useState('');
-  const [brandColorSecondary, setBrandColorSecondary] = useState('');
-  const [brandColorAccent, setBrandColorAccent] = useState('');
-  const [layoutStyle, setLayoutStyle] = useState('fashion-editorial');
-  const [themeSelection, setThemeSelection] = useState<'streetwear' | 'luxury' | 'minimalist' | 'vintage' | 'sportswear'>('streetwear');
-  const [shopProducts, setShopProducts] = useState<any[]>([]);
-  const [tradingHours, setTradingHours] = useState<TradingHour[]>([
-    { day: 'Mon', isOpen: true,  openTime: '09:00', closeTime: '18:00' },
-    { day: 'Tue', isOpen: true,  openTime: '09:00', closeTime: '18:00' },
-    { day: 'Wed', isOpen: true,  openTime: '09:00', closeTime: '18:00' },
-    { day: 'Thu', isOpen: true,  openTime: '09:00', closeTime: '18:00' },
-    { day: 'Fri', isOpen: true,  openTime: '09:00', closeTime: '18:00' },
-    { day: 'Sat', isOpen: true,  openTime: '09:00', closeTime: '17:00' },
-    { day: 'Sun', isOpen: false, openTime: '10:00', closeTime: '15:00' },
-  ]);
-
-  // Image state
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [newBannerFile, setNewBannerFile] = useState<File | null>(null);
-  const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  // Image Uploading States
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-
-  // Handle availability
-  const [handleAvailable, setHandleAvailable] = useState(true);
-  const [checkingHandle, setCheckingHandle] = useState(false);
-  const [handleError, setHandleError] = useState<string | null>(null);
-
-  // UI state
-  const [showAreaSheet, setShowAreaSheet] = useState(false);
-  const [dangerZoneExpanded, setDangerZoneExpanded] = useState(false);
-  const [showPauseModal, setShowPauseModal] = useState(false);
-  const [showDeleteStep1, setShowDeleteStep1] = useState(false);
-  const [showDeleteStep2, setShowDeleteStep2] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [isLive, setIsLive] = useState(true);
-  const [productCount, setProductCount] = useState(0);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
-  const [advancedExpanded, setAdvancedExpanded] = useState(false);
-  const [contactExpanded, setContactExpanded] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [showCustomOverlayToast, setShowCustomOverlayToast] = useState(false);
-
-  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  // Active Field Editing Modal
+  const [activeModal, setActiveModal] = useState<null | 'shopName' | 'handle' | 'bio' | 'directions' | 'category' | 'whatsapp'>(null);
+  const [tempValue, setTempValue] = useState('');
+
+  // Stats
+  const [stats, setStats] = useState({
+    products: 0,
+    views: '0',
+    whatsappClicks: 0
+  });
+
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
 
   useEffect(() => {
     fetchShopData();
   }, [user]);
 
-  useEffect(() => {
-    const fromOverlay = localStorage.getItem('threadzw_from_overlay') === 'true' || 
-                        new URLSearchParams(window.location.search).get('from_overlay') === 'true';
-    if (fromOverlay) {
-      setShowCustomOverlayToast(true);
-      localStorage.removeItem('threadzw_from_overlay');
-      const t = setTimeout(() => {
-        setShowCustomOverlayToast(false);
-      }, 4000);
-      return () => clearTimeout(t);
-    }
-  }, []);
-
-  // Handle availability check
-  useEffect(() => {
-    if (!handle || handle === originalHandle) {
-      setHandleAvailable(true);
-      setHandleError(null);
+  const fetchShopData = async () => {
+    if (!user) {
+      setLoading(false);
       return;
     }
-
-    const timer = setTimeout(async () => {
-      if (handle.length < 3) {
-        setHandleError('Handle must be at least 3 characters');
-        setHandleAvailable(false);
-        return;
-      }
-      
-      setCheckingHandle(true);
-      try {
-        const { data, error } = await supabase
-          .from('shops')
-          .select('slug')
-          .eq('slug', handle.toLowerCase())
-          .neq('id', shopId)
-          .maybeSingle();
-
-        if (error) throw error;
-        
-        setHandleAvailable(!data);
-        setHandleError(data ? 'This handle is already taken' : null);
-      } catch (err) {
-        console.error('Handle check error:', err);
-      } finally {
-        setCheckingHandle(false);
-      }
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [handle, originalHandle, shopId]);
-
-  const fetchShopData = async () => {
-    if (!user) return;
     setLoading(true);
-    setError(null);
     try {
       const { data, error } = await supabase
         .from('shops')
         .select('*')
         .eq('owner_id', user.id)
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error) throw error;
-
-      setShopId(data.id);
-      setShopName(data.name || '');
-      setHandle(data.slug || '');
-      setOriginalHandle(data.slug || '');
-      setCategories(data.categories || []);
-      
-      // Parse description config safely to support premium custom properties
-      const { description: plainDesc, config } = parseShopConfig(data.description || '');
-      setDescription(plainDesc);
-      setTagline(config.tagline || data.tagline || '');
-      setStoreStory(config.story || '');
-      setTiktok(config.tiktok || '');
-      setFacebook(config.facebook || '');
-      setThemeSelection(config.theme_selection || 'streetwear');
-      setLayoutStyle(config.layout_style || 'fashion-editorial');
-      setFeaturedProducts(config.featured_products || []);
-      setBestSellerProducts(config.best_seller_products || []);
-      if (config.brand_colors) {
-        setBrandColorPrimary(config.brand_colors.primary || '');
-        setBrandColorSecondary(config.brand_colors.secondary || '');
-        setBrandColorAccent(config.brand_colors.accent || '');
-      }
-
-      // Also let's fetch seller products to display selection checklists
-      try {
-        const { data: pData } = await supabase
-          .from('products')
-          .select('id, name, price, images, category')
-          .eq('shop_id', data.id);
-        if (pData) {
-          setShopProducts(pData);
+      if (data) {
+        setShopId(data.id);
+        setShopName(data.name || 'My Shop');
+        setHandle(data.slug || 'myshop');
+        setDescription(data.description || data.tagline || '');
+        setDirections(data.directions || data.location || data.city || '');
+        setCategory(data.categories?.[0] || data.category || 'Streetwear');
+        
+        // Format WhatsApp
+        let wa = data.whatsapp_number || data.whatsapp || '';
+        if (wa && !wa.startsWith('+') && wa.trim()) {
+          wa = `+263 ${wa.replace(/\D/g, '')}`;
         }
-      } catch (pErr) {
-        console.warn('Failed querying products inside ShopEdit:', pErr);
-      }
-      setSuburb(config.suburb || data.suburb || '');
-      setCity(config.city || data.city || '');
-      setGoogleMapsUrl(config.google_maps_url || data.google_maps_url || '');
-      setShopAddress(config.shop_address || data.location || '');
-      setBuildingName(config.building_name || '');
-      setFloor(config.floor || '');
-      setShopNumber(config.shop_number || '');
-      setPickupAvailable(config.pickup_available !== undefined ? config.pickup_available : (data.pickup_available || false));
-      setPickupLabel(config.pickup_label || data.pickup_label || '');
-      setArea(data.location || '');
-      setLandmark(config.landmark || data.landmark || '');
-      setDirections(config.directions || data.directions || '');
-      setOnlineOnly(config.online_only !== undefined ? config.online_only : (data.online_only || false));
-      setDeliveryInfo(config.delivery_info || data.delivery_info || '');
-      setHarareDelivery(typeof config.harare_delivery === 'string' ? config.harare_delivery : (config.harare_delivery ? 'Available' : ''));
-      setNationwideCourier(typeof config.nationwide_courier === 'string' ? config.nationwide_courier : (config.nationwide_courier ? 'Available' : ''));
-      setInternationalShipping(typeof config.international_shipping === 'string' ? config.international_shipping : (config.international_shipping ? 'Available' : ''));
-      setBusinessHighlights(config.business_highlights || '');
-      setResponseTime(config.response_time || '');
-      setCustomNotes(config.custom_notes || '');
-      
-      // Zimbabwe WhatsApp prefill normalization
-      const rawWa = data.whatsapp_number || data.whatsapp || '';
-      let cleanWa = rawWa.replace(/\D/g, '');
-      if (cleanWa.startsWith('263')) {
-        cleanWa = cleanWa.substring(3);
-      }
-      if (cleanWa.startsWith('0')) {
-        cleanWa = cleanWa.substring(1);
-      }
-      setWhatsapp(cleanWa);
+        setWhatsapp(wa);
 
-      setInstagram(config.instagram || data.instagram || '');
-      if (config.trading_hours) {
-        setTradingHours(config.trading_hours);
-      } else if (data.trading_hours) {
-        setTradingHours(data.trading_hours);
-      }
-      setBannerUrl(data.banner_url || null);
-      setBannerPreview(data.banner_url || null);
-      setAvatarUrl(data.logo_url || data.avatar_url || null);
-      setAvatarPreview(data.logo_url || data.avatar_url || null);
-      setIsLive(data.is_active);
-      setProductCount(data.product_count || 0);
+        setBannerUrl(data.banner_url || null);
+        setAvatarUrl(data.logo_url || data.avatar_url || null);
 
+        // Fetch product count & recent products for real activity log
+        const { count, data: prods } = await supabase
+          .from('products')
+          .select('id, name, created_at', { count: 'exact' })
+          .eq('shop_id', data.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        setStats({
+          products: count || 0,
+          views: data.view_count ? String(data.view_count) : '0',
+          whatsappClicks: data.whatsapp_clicks ? Number(data.whatsapp_clicks) : 0
+        });
+
+        // Build dynamic activity feed from real shop history
+        const actList: ActivityItem[] = [];
+
+        if (data.created_at) {
+          actList.push({
+            id: 'act-shop-created',
+            icon: Sparkles,
+            iconBg: 'bg-[#C6FF00]/20 text-black',
+            iconColor: 'text-black',
+            title: 'Storefront created',
+            description: `${data.name || 'Your shop'} is live on ThreadZW`,
+            timestamp: new Date(data.created_at).toLocaleDateString()
+          });
+        }
+
+        if (prods && prods.length > 0) {
+          prods.forEach((prod) => {
+            actList.push({
+              id: `act-prod-${prod.id}`,
+              icon: Package,
+              iconBg: 'bg-zinc-100 text-black',
+              iconColor: 'text-black',
+              title: `Added product "${prod.name}"`,
+              description: 'Published to storefront catalog',
+              timestamp: prod.created_at ? new Date(prod.created_at).toLocaleDateString() : 'Recently'
+            });
+          });
+        }
+
+        setRecentActivities(actList);
+      } else {
+        setShopName('My Shop');
+        setHandle('myshop');
+        setDescription('');
+        setDirections('');
+        setWhatsapp('');
+        setBannerUrl(null);
+        setAvatarUrl(null);
+        setStats({ products: 0, views: '0', whatsappClicks: 0 });
+        setRecentActivities([]);
+      }
     } catch (err) {
-      console.error('Fetch shop error:', err);
-      setError('Could not load shop details');
+      console.error('Error fetching shop for Account page:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const getImageUrl = (url: string | null) => {
-    return getGlobalImageUrl(url);
+  const handleShareShop = async () => {
+    const shopSlug = handle || shop?.slug || shopId || '';
+    const shareUrl = `${window.location.origin}/shop/${shopSlug}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: shopName,
+          text: `Check out ${shopName} on ThreadZW!`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Shop link copied to clipboard!');
+      }
+    } catch (err) {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Shop link copied to clipboard!');
+    }
   };
 
-  const uploadShopImage = async (file: File, type: 'logo' | 'banner') => {
-    const toast = {
-      error: (msg: string) => showToast(msg, 'error'),
-      success: (msg: string) => showToast(msg, 'success'),
-    };
-
+  const handleUploadImage = async (file: File, type: 'logo' | 'banner') => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+    
     try {
-      if (type === 'logo') {
-        setUploadingAvatar(true);
-      } else {
-        setUploadingBanner(true);
-      }
-
-      // Validate file size
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image too large. Max 5MB.');
-        return;
-      }
-      
-      const allowed = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!allowed.includes(file.type)) {
-        toast.error('Use JPG, PNG or WebP only.');
-        return;
-      }
+      if (type === 'logo') setUploadingAvatar(true);
+      else setUploadingBanner(true);
 
       let activeShopId = shopId;
       if (!activeShopId && user) {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
-          .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-        if (dbShop) {
-          activeShopId = dbShop.id;
-          setShopId(dbShop.id);
-        }
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) activeShopId = dbShop.id;
       }
 
-      const bucket = type === 'logo' ? 'shop-avatars' : 'shop-banners';
-      const folder = type === 'logo' ? 'logo' : 'banner';
-
-      // Call the robust centralized uploadImage utility
       const publicUrl = await uploadImage({
         supabase,
         file,
-        bucket,
-        folder,
+        bucket: type === 'logo' ? 'shop-avatars' : 'shop-banners',
+        folder: type === 'logo' ? 'logo' : 'banner',
         userId: activeShopId || user?.id || ''
       });
 
-      // Bust browser cache
       const bustUrl = `${publicUrl}?t=${Date.now()}`;
 
-      // Save URL to shops table (scope query correctly by activeShopId)
-      const { error: dbError } = await supabase
-        .from('shops')
-        .update(
-          type === 'logo' 
-            ? { logo_url: publicUrl }
-            : { banner_url: publicUrl }
-        )
-        .eq('id', activeShopId || '');
-
-      if (dbError) throw dbError;
-
-      // Update local state immediately
       if (type === 'logo') {
         setAvatarUrl(bustUrl);
-        setAvatarPreview(bustUrl);
       } else {
         setBannerUrl(bustUrl);
-        setBannerPreview(bustUrl);
       }
 
-      // Update localStorage cached shop if key exists
-      try {
-        const cachedKey = `shop_${user?.id}`;
-        const cached = localStorage.getItem(cachedKey);
-        let parsed = cached ? JSON.parse(cached) : {};
-        if (type === 'logo') {
-          parsed.logo_url = publicUrl;
-        } else {
-          parsed.banner_url = publicUrl;
-        }
-        localStorage.setItem(cachedKey, JSON.stringify(parsed));
-      } catch (e) {
-        console.warn('Cache update warning:', e);
-      }
-
-      toast.success(
-        type === 'logo' 
-          ? 'Logo updated!' 
-          : 'Banner updated!'
-      );
-
-      // Trigger active layout rebuild
-      await refreshShop();
-
-    } catch (err: any) {
-      console.error('Upload failed:', err);
-      toast.error(`Upload failed: ${err?.message || err || 'Please try again.'}`);
-    } finally {
-      if (type === 'logo') {
-        setUploadingAvatar(false);
-      } else {
-        setUploadingBanner(false);
-      }
-    }
-  };
-
-  const markChanged = () => setHasChanges(true);
-
-  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    uploadShopImage(file, 'banner');
-  };
-
-  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    uploadShopImage(file, 'logo');
-  };
-
-  const toggleCategory = (cat: string) => {
-    setCategories(prev => 
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-    );
-    markChanged();
-  };
-
-  const updateTradingHour = (index: number, updates: Partial<TradingHour>) => {
-    setTradingHours(prev => {
-      const next = [...prev];
-      next[index] = { ...next[index], ...updates };
-      return next;
-    });
-    markChanged();
-  };
-
-  const applyToAllWeekdays = () => {
-    const mon = tradingHours[0];
-    setTradingHours(prev => prev.map((h, i) => 
-      i > 0 && i < 5 ? { ...h, isOpen: mon.isOpen, openTime: mon.openTime, closeTime: mon.closeTime } : h
-    ));
-    markChanged();
-    showToast('Applied Monday hours to all weekdays', 'info');
-  };
-
-  const handleBack = () => {
-    if (hasChanges) {
-      setShowUnsavedModal(true);
-    } else {
-      navigate('/settings');
-    }
-  };
-
-  const handleSave = async () => {
-    console.log('[EDIT_SHOP_PAGE] Save Changes clicked');
-    console.log('[EDIT_SHOP_PAGE] Current States:', {
-      shopId,
-      user: user?.id,
-      shopName,
-      handle,
-      originalHandle,
-      tagline,
-      categories,
-      city,
-      suburb,
-      onlineOnly,
-      area,
-      whatsapp,
-      instagram
-    });
-
-    const errors: Record<string, string> = {};
-    if (!shopName.trim()) errors.shopName = 'Shop name is required';
-    if (!handle.trim()) errors.handle = 'Shop handle is required';
-    if (categories.length === 0) errors.categories = 'Select at least one category';
-    if (!onlineOnly) {
-      if (!area) errors.area = 'Please select your area';
-      if (!landmark.trim()) errors.landmark = 'Please add your landmark';
-      if (!directions.trim()) errors.directions = 'Please add directions';
-    }
-
-    // Standardize & clean Zimbabwean WhatsApp input format
-    let cleanWhatsapp = whatsapp.replace(/\D/g, '');
-    if (cleanWhatsapp.startsWith('0')) {
-      cleanWhatsapp = cleanWhatsapp.substring(1);
-    }
-    
-    if (!whatsapp.trim() || cleanWhatsapp.length !== 9) {
-      errors.whatsapp = 'Please enter a valid 9-digit WhatsApp number (e.g. 077... or 77...)';
-    }
-    
-    if (!handleAvailable) errors.handle = handleError || 'This handle is already taken';
-
-    if (Object.keys(errors).length > 0) {
-      console.warn('[EDIT_SHOP_PAGE] Validation failed:', errors);
-      setValidationErrors(errors);
-      const firstErrorVal = Object.values(errors)[0];
-      showToast(firstErrorVal, 'error');
-      setSaveError(firstErrorVal);
-      const firstErrorKey = Object.keys(errors)[0];
-      
-      if (firstErrorKey === 'area' || firstErrorKey === 'landmark' || firstErrorKey === 'directions') {
-        setContactExpanded(true);
-      }
-      
-      setTimeout(() => {
-        const element = document.getElementById(`field-${firstErrorKey}`);
-        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-      return;
-    }
-
-    // Try verifying and restoring shopId if undefined
-    let activeShopId = shopId;
-    if (!activeShopId && user?.id) {
-      console.log('[EDIT_SHOP_PAGE] shopId empty, querying by owner_id:', user.id);
-      try {
-        const { data: dbShop } = await supabase
+      if (activeShopId) {
+        await supabase
           .from('shops')
-          .select('id')
-          .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+          .update(type === 'logo' ? { logo_url: publicUrl } : { banner_url: publicUrl })
+          .eq('id', activeShopId);
+      }
+
+      await refreshShop();
+      toast.success(`${type === 'logo' ? 'Profile photo' : 'Banner'} updated successfully!`);
+    } catch (err: any) {
+      console.error('Image upload failed:', err);
+      toast.error('Image upload failed. Please try again.');
+    } finally {
+      if (type === 'logo') setUploadingAvatar(false);
+      else setUploadingBanner(false);
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    setSaving(true);
+    try {
+      let activeShopId = shopId;
+      let activeOwnerId = user?.id;
+
+      if (!activeShopId && activeOwnerId) {
+        const { data: dbShop, error: fetchErr } = await supabase
+          .from('shops')
+          .select('id, owner_id')
+          .eq('owner_id', activeOwnerId)
+          .maybeSingle();
+
+        if (fetchErr) {
+          console.error("Error fetching shop by owner_id:", fetchErr);
+        }
         if (dbShop) {
           activeShopId = dbShop.id;
-          setShopId(dbShop.id);
-          console.log('[EDIT_SHOP_PAGE] Recovered missing shopId:', dbShop.id);
         }
-      } catch (recoveryErr) {
-        console.error('[EDIT_SHOP_PAGE] Error recovering active shopId:', recoveryErr);
       }
-    }
 
-    if (!activeShopId) {
-      setSaveError('Shop identifier not found. Please refresh page and verify shop setup.');
-      showToast('Shop identifier missing', 'error');
-      console.error('[EDIT_SHOP_PAGE] Save aborted: activeShopId is empty');
-      return;
-    }
+      const cleanHandle = (handle || '').toLowerCase().trim().replace(/[^a-z0-9_-]/g, '');
 
-    setSaving(true);
-    setValidationErrors({});
-    setSaveError(null);
-    setSaveSuccess(false);
-
-    try {
-      const cleanBanner = bannerUrl ? bannerUrl.split('?')[0] : null;
-      const cleanAvatar = avatarUrl ? avatarUrl.split('?')[0] : null;
-
-      // Pack custom storefront settings into config block safely
-      const configObj: StorefrontConfig = {
-        tagline: tagline.trim(),
-        story: storeStory.trim(),
-        featured_products: featuredProducts,
-        best_seller_products: bestSellerProducts,
-        instagram: instagram.trim(),
-        tiktok: tiktok.trim(),
-        facebook: facebook.trim(),
-        whatsapp_number: `+263${cleanWhatsapp}`,
-        theme_selection: themeSelection,
-        layout_style: layoutStyle,
-        brand_colors: {
-          primary: brandColorPrimary,
-          secondary: brandColorSecondary,
-          accent: brandColorAccent,
-        },
-        suburb: suburb.trim() || undefined,
-        city: city.trim() || undefined,
-        google_maps_url: googleMapsUrl.trim() || undefined,
-        shop_address: shopAddress.trim() || undefined,
-        building_name: buildingName.trim() || undefined,
-        floor: floor.trim() || undefined,
-        shop_number: shopNumber.trim() || undefined,
-        pickup_available: pickupAvailable,
-        pickup_label: pickupLabel.trim() || undefined,
-        landmark: landmark.trim() || undefined,
-        directions: directions.trim() || undefined,
-        online_only: onlineOnly,
-        delivery_info: deliveryInfo.trim() || undefined,
-        instagram_url: instagram.trim() ? `https://instagram.com/${instagram.trim().replace(/^@/, '')}` : undefined,
-        trading_hours: tradingHours,
-        harare_delivery: harareDelivery.trim() || undefined,
-        nationwide_courier: nationwideCourier.trim() || undefined,
-        international_shipping: internationalShipping.trim() || undefined,
-        business_highlights: businessHighlights.trim() || undefined,
-        response_time: responseTime.trim() || undefined,
-        custom_notes: customNotes.trim() || undefined,
+      // Core standard payload matching Supabase 'shops' table schema
+      const payload: Record<string, any> = {
+        name: shopName.trim() || 'My Shop',
+        slug: cleanHandle || handle || 'myshop',
+        description: description || '',
+        category: category || 'Streetwear',
+        whatsapp_number: whatsapp || '',
+        location: directions || '',
       };
 
-      const serializedDescription = serializeShopConfig(description, configObj);
-
-      // Prepare payload and strip undefined values
-      const updateData: any = {
-        name: shopName.trim(),
-        slug: handle.trim().toLowerCase(),
-        description: serializedDescription,
-        categories,
-        category: categories[0] || 'Other',
-        location: onlineOnly ? null : area,
-        whatsapp_number: `+263${cleanWhatsapp}`,
-        banner_url: cleanBanner,
-        logo_url: cleanAvatar
-      };
-
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key] === undefined) {
-          delete updateData[key];
-        }
-      });
-
-      console.log('[EDIT_SHOP_PAGE] Final database update payload:', updateData);
-
-      // Update shop in database
-      const { data, error: updateError } = await supabase
-        .from('shops')
-        .update(updateData)
-        .eq('id', activeShopId)
-        .eq('owner_id', user.id)
-        .select()
-        .single();
-
-      console.log('[EDIT_SHOP_PAGE] Exact Supabase response:', { data, error: updateError });
-
-      if (updateError) {
-        console.error('[EDIT_SHOP_PAGE] Supabase error response:', updateError);
-        
-        if (updateError.code === '23505') {
-          setHandleError('This handle was just taken by someone else. Try a different one.');
-          setHandleAvailable(false);
-          setSaving(false);
-          return;
-        }
-
-        if (updateError.code === '42501') {
-          setSaveError('Permission denied. Please make sure you are logged in as the owner of this shop.');
-          showToast('Update permission denied', 'error');
-          setSaving(false);
-          return;
-        }
-
-        throw updateError;
+      if (avatarUrl && !avatarUrl.startsWith('data:')) {
+        payload.logo_url = avatarUrl.split('?')[0];
+      }
+      if (bannerUrl && !bannerUrl.startsWith('data:')) {
+        payload.banner_url = bannerUrl.split('?')[0];
       }
 
-      console.log('[EDIT_SHOP_PAGE] Database update successful:', data);
+      console.log("Saving profile - Active Shop ID:", activeShopId, "Owner ID:", activeOwnerId, "Payload:", payload);
 
-      // Save changes locally in localStorage immediately to prevent stale states
-      try {
-        if (user?.id) {
-          const cachedKey = `shop_${user.id}`;
-          const cached = localStorage.getItem(cachedKey);
-          let mergedObj = { id: activeShopId, owner_id: user.id, ...updateData };
-          if (cached) {
-            mergedObj = { ...JSON.parse(cached), ...updateData };
-          }
-          localStorage.setItem(cachedKey, JSON.stringify(mergedObj));
-          if (updateData.name) {
-            localStorage.setItem('threadzw_owner_name', updateData.name);
-          }
-        }
-      } catch (e) {
-        console.warn("[EDIT_SHOP_PAGE] Error caching shop updates locally:", e);
-      }
+      if (!activeShopId && activeOwnerId) {
+        // If shop doesn't exist yet for this user, insert a new shop record
+        const insertPayload = {
+          owner_id: activeOwnerId,
+          ...payload,
+          is_active: true,
+          subscription_status: 'trial',
+        };
+        console.log("No existing shop found. Inserting new shop:", insertPayload);
+        const { data: insertedShop, error: insertErr } = await supabase
+          .from('shops')
+          .insert(insertPayload)
+          .select('id')
+          .single();
 
-      // Sync state and memory to avoid stale data
-      await refreshShop();
-
-      setHasChanges(false);
-      setSaveSuccess(true);
-      showToast('Shop updated successfully', 'success');
-      setTimeout(() => {
-        setSaveSuccess(false);
-        navigate('/settings');
-      }, 1000);
-
-    } catch (err: any) {
-      console.error('[EDIT_SHOP_PAGE] Caught unexpected save error:', err);
-      const msg = err?.message || 'Could not save changes -- please try again';
-      setSaveError(msg);
-      showToast(msg, 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handlePauseToggle = async () => {
-    try {
-      const { error } = await supabase
-        .from('shops')
-        .update({ is_active: !isLive })
-        .eq('id', shopId)
-        .eq('owner_id', user.id);
-
-      if (error) throw error;
-
-      // Update local storage cache
-      try {
-        if (user?.id) {
-          const cachedKey = `shop_${user.id}`;
-          const cached = localStorage.getItem(cachedKey);
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            parsed.is_active = !isLive;
-            localStorage.setItem(cachedKey, JSON.stringify(parsed));
-          }
-        }
-      } catch (cacheErr) {
-        console.warn('Error updating pause status in caching:', cacheErr);
-      }
-
-      setIsLive(!isLive);
-      await refreshShop();
-      showToast(isLive ? 'Shop paused' : 'Shop is live again', 'success');
-      setShowPauseModal(false);
-      navigate('/settings');
-    } catch (err) {
-      showToast('Error updating shop status', 'error');
-    }
-  };
-
-  const handleDeleteShop = async () => {
-    try {
-      setSaving(true);
-      
-      // Cancel subscription securely on the backend
-      try {
-        const { data: { session: activeSession } } = await supabase.auth.getSession();
-        const token = activeSession?.access_token;
-        if (token) {
-          await fetch('/api/billing/cancel-subscription', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ shopId })
+        if (insertErr) {
+          console.error("Supabase shop insert error:", {
+            code: insertErr.code,
+            message: insertErr.message,
+            details: insertErr.details,
+            hint: insertErr.hint
           });
+          throw insertErr;
         }
-      } catch (subCancelErr) {
-        console.error('Failed to cancel subscription during shop deletion:', subCancelErr);
+        if (insertedShop) {
+          activeShopId = insertedShop.id;
+          setShopId(insertedShop.id);
+        }
+      } else if (activeShopId) {
+        // Update existing shop
+        const { error: updateErr } = await supabase
+          .from('shops')
+          .update(payload)
+          .eq('id', activeShopId);
+        
+        if (updateErr) {
+          console.error("Supabase shop update error:", {
+            code: updateErr.code,
+            message: updateErr.message,
+            details: updateErr.details,
+            hint: updateErr.hint
+          });
+
+          // Fallback if extra columns cause issue
+          if (updateErr.code === 'PGRST204' || updateErr.message?.includes('column')) {
+            console.warn("Attempting fallback update with minimal fields...");
+            const fallbackPayload = {
+              name: shopName.trim() || 'My Shop',
+              description: description || '',
+              whatsapp_number: whatsapp || '',
+            };
+            const { error: fallbackErr } = await supabase
+              .from('shops')
+              .update(fallbackPayload)
+              .eq('id', activeShopId);
+
+            if (fallbackErr) {
+              console.error("Fallback update also failed:", fallbackErr);
+              throw updateErr;
+            }
+          } else {
+            throw updateErr;
+          }
+        }
+
+        try {
+          await setOnboardingStep(activeShopId, 'step2');
+        } catch (onbErr) {
+          console.warn('Onboarding step update note:', onbErr);
+        }
+      } else {
+        throw new Error('No authenticated user or shop found to update.');
       }
 
-      // Mark products as deleted
-      await supabase.from('products')
-        .update({ status: 'deleted' })
-        .eq('shop_id', shopId);
-
-      // Delete shop
-      await supabase.from('shops')
-        .delete()
-        .eq('id', shopId)
-        .eq('owner_id', user.id);
-
-      localStorage.removeItem('thread_shop_draft');
-      showToast('Shop deleted permanently', 'info');
+      await refreshShop();
+      toast.success('Profile saved successfully!');
       navigate('/dashboard');
-    } catch (err) {
-      console.error('Delete error:', err);
-      showToast('Could not delete shop -- contact support', 'error');
+    } catch (err: any) {
+      console.error('Error saving profile:', err);
+      console.error('Error code:', err?.code, 'message:', err?.message, 'details:', err?.details, 'hint:', err?.hint);
+      const errMsg = err?.message || err?.details || 'Failed to save profile';
+      toast.error(errMsg);
     } finally {
       setSaving(false);
     }
+  };
+
+  const openFieldModal = (field: 'shopName' | 'handle' | 'bio' | 'directions' | 'category' | 'whatsapp') => {
+    if (field === 'shopName') setTempValue(shopName);
+    if (field === 'handle') setTempValue(handle);
+    if (field === 'bio') setTempValue(description);
+    if (field === 'directions') setTempValue(directions);
+    if (field === 'category') setTempValue(category);
+    if (field === 'whatsapp') setTempValue(whatsapp);
+    setActiveModal(field);
+  };
+
+  const saveFieldModal = () => {
+    if (activeModal === 'shopName') setShopName(tempValue);
+    if (activeModal === 'handle') setHandle(tempValue.replace(/^@/, ''));
+    if (activeModal === 'bio') setDescription(tempValue);
+    if (activeModal === 'directions') setDirections(tempValue);
+    if (activeModal === 'category') setCategory(tempValue);
+    if (activeModal === 'whatsapp') setWhatsapp(tempValue);
+    setActiveModal(null);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md z-50 flex items-center px-4 border-b border-border">
-          <Shimmer className="w-8 h-8 rounded-full" />
-          <Shimmer className="w-32 h-6 mx-auto rounded-md" />
-          <Shimmer className="w-12 h-6 rounded-md" />
-        </div>
-        <div className="pt-20 px-4 space-y-8">
-          <Shimmer className="w-full h-[140px] rounded-16" />
-          <div className="space-y-4">
-            <Shimmer className="w-1/3 h-6 rounded-md" />
-            <Shimmer className="w-full h-14 rounded-12" />
-          </div>
-          <div className="space-y-4">
-            <Shimmer className="w-1/3 h-6 rounded-md" />
-            <Shimmer className="w-full h-14 rounded-12" />
-          </div>
-          <div className="space-y-4">
-            <Shimmer className="w-1/3 h-6 rounded-md" />
-            <div className="grid grid-cols-3 gap-2">
-              <Shimmer className="h-10 rounded-pill" />
-              <Shimmer className="h-10 rounded-pill" />
-              <Shimmer className="h-10 rounded-pill" />
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center p-6 pb-24">
+        <Loader2 className="w-8 h-8 text-[#C6FF00] animate-spin" />
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <ScreenError 
-        icon={<AlertTriangle size={32} />}
-        heading="Could not load your shop"
-        body={error}
-        onRetry={fetchShopData} 
-      />
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-36">
-      {/* Custom Overlay Toast */}
-      {showCustomOverlayToast && (
-        <div id="custom-overlay-toast" className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-bounce cursor-pointer flex items-center justify-center w-[calc(100%-32px)] max-w-[398px]">
-          <div style={{
-            background: 'rgba(190, 247, 21,0.12)',
-            border: '1px solid rgba(190, 247, 21,0.25)',
-            borderRadius: '10px',
-            color: '#bef715',
-            fontSize: '13px',
-            padding: '12px 16px'
-          }} className="font-extrabold shadow-[0_4px_24px_rgba(0,0,0,0.9)] flex items-center gap-2 w-full justify-center">
-            <span>👋 Start by adding your logo and banner</span>
-          </div>
-        </div>
-      )}
-
-      {/* Top Bar */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-background/80 backdrop-blur-md z-50 flex items-center justify-between px-4 border-b border-border max-w-[430px] mx-auto">
-        <button 
-          onClick={handleBack}
-          className="p-2 -ml-2 text-white hover:text-primary transition-colors"
-        >
-          <ArrowLeft size={24} />
-        </button>
-        
-        <h1 className="font-pacifico text-xl text-white">Edit Shop</h1>
-        
-        <div className="w-10 h-10" /> {/* Balance placeholder */}
-      </div>
-
-      <div className="pt-20 px-4 space-y-10">
-        {/* ========================================================
-            PART 1: BASIC SETTINGS
-           ======================================================== */}
-        <section className="space-y-6">
-          <div className="space-y-1 border-b border-border/40 pb-2">
-            <h2 className="font-syne font-bold text-lg text-white">Basic Settings</h2>
-            <p className="font-sans text-xs text-muted">Core information about your brand & store</p>
-          </div>
-
-          {/* Shop Photos */}
-          <div className="space-y-4">
-            <label className="font-mono text-xs text-muted uppercase tracking-wider block">Shop Photos</label>
-            <div className="relative">
-              {/* Banner Upload */}
-              <div 
-                onClick={() => {
-                  if (!uploadingBanner) bannerInputRef.current?.click();
-                }}
-                className="w-full h-[140px] rounded-16 overflow-hidden bg-elevated border-2 border-dashed border-border hover:border-primary/50 transition-all cursor-pointer group relative flex flex-col items-center justify-center"
-              >
-                {(bannerPreview || bannerUrl) ? (
-                  <>
-                    <ShopBanner 
-                      url={bannerPreview || bannerUrl} 
-                      alt="Banner" 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-                      <Camera size={24} className="text-white mb-1" />
-                      <span className="font-mono text-[10px] text-white uppercase tracking-wider">Change Banner</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                      <Camera size={24} className="text-primary" />
-                    </div>
-                    <span className="font-mono text-xs text-muted">Upload Banner</span>
-                    <span className="font-mono text-[8px] text-muted/60 mt-1 uppercase tracking-tighter">Appears at the top of your shop profile</span>
-                  </>
-                )}
-                
-                {uploadingBanner && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                    <Loader2 size={24} className="text-primary animate-spin" />
-                    <span className="ml-2 font-mono text-xs text-white">Uploading...</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end mt-2">
-                <button
-                  type="button"
-                  disabled={uploadingBanner}
-                  onClick={() => bannerInputRef.current?.click()}
-                  className="px-4 py-2 bg-elevated border border-border text-xs rounded-lg font-mono text-white flex items-center gap-2 hover:bg-white/5 disabled:opacity-50 transition-all font-bold"
-                >
-                  {uploadingBanner ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin text-primary" />
-                      <span>Uploading...</span>
-                    </>
-                  ) : (bannerPreview || bannerUrl) ? (
-                    'Change Banner'
-                  ) : (
-                    'Upload Banner'
-                  )}
-                </button>
-              </div>
-
-              {/* Avatar Upload */}
-              <div className="absolute -bottom-16 left-4 flex flex-col items-center">
-                <div 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!uploadingAvatar) avatarInputRef.current?.click();
-                  }}
-                  className="w-20 h-20 rounded-full bg-elevated border-2 border-primary overflow-hidden cursor-pointer group relative flex items-center justify-center shadow-xl mb-1"
-                >
-                  {(avatarPreview || avatarUrl) ? (
-                    <>
-                      <ShopLogo 
-                        url={avatarPreview || avatarUrl} 
-                        name={shopName}
-                        alt="Logo" 
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Camera size={20} className="text-white" />
-                      </div>
-                    </>
-                  ) : (
-                    <Camera size={24} className="text-primary" />
-                  )}
-                  
-                  {uploadingAvatar && (
-                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                      <Loader2 size={20} className="text-primary animate-spin" />
-                    </div>
-                  )}
-                </div>
-                <button 
-                  type="button"
-                  disabled={uploadingAvatar}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    avatarInputRef.current?.click();
-                  }}
-                  className="font-mono text-[10px] text-primary uppercase tracking-wider block w-full text-center hover:underline disabled:opacity-50 font-bold"
-                >
-                  {uploadingAvatar ? 'Uploading...' : (avatarPreview || avatarUrl) ? 'Change Logo' : 'Upload Logo'}
-                </button>
-              </div>
-            </div>
-            
-            <p className="font-mono text-[10px] text-muted pt-14">
-              Changes will be saved when you tap Save Changes
-            </p>
-
-            <input 
-              type="file" 
-              ref={bannerInputRef} 
-              onChange={handleBannerSelect} 
-              className="hidden" 
-              accept="image/jpeg,image/png,image/webp" 
-            />
-            <input 
-              type="file" 
-              ref={avatarInputRef} 
-              onChange={handleAvatarSelect} 
-              className="hidden" 
-              accept="image/jpeg,image/png,image/webp" 
-            />
-          </div>
-
-          {/* Shop Name */}
-          <div id="field-shopName" className="space-y-2">
-            <div className="flex justify-between items-end">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                Shop Name <span className="text-primary">*</span>
-              </label>
-              <span className="font-mono text-[10px] text-muted">{shopName.length}/40</span>
-            </div>
-            <input 
-              value={shopName}
-              onChange={e => {
-                if (e.target.value.length <= 40) {
-                  setShopName(e.target.value);
-                  markChanged();
-                }
-              }}
-              placeholder="Your shop's name"
-              className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none transition-all ${
-                validationErrors.shopName ? 'border-red' : 'border-transparent focus:border-primary'
-              }`}
-            />
-            {validationErrors.shopName && <FieldError message={validationErrors.shopName} />}
-          </div>
-
-          {/* Shop Link */}
-          <div id="field-handle" className="space-y-2">
-            <label className="font-mono text-xs text-muted uppercase tracking-wider">
-              Shop Link <span className="text-primary">*</span>
-            </label>
-            <div className={`flex items-center bg-elevated border-2 rounded-12 overflow-hidden transition-all ${
-              validationErrors.handle ? 'border-red' : 'border-transparent focus-within:border-primary'
-            }`}>
-              <span className="pl-4 font-mono text-primary text-sm">thread.zw/</span>
-              <input 
-                value={handle}
-                onChange={e => {
-                  const val = e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '');
-                  if (val.length <= 30) {
-                    setHandle(val);
-                    markChanged();
-                  }
-                }}
-                placeholder="handle"
-                className="flex-1 bg-transparent p-4 pl-0 text-white font-sans focus:outline-none"
-              />
-            </div>
-            
-            <div className="flex items-center gap-2 min-h-[16px]">
-              {checkingHandle && (
-                <>
-                  <Loader2 size={12} className="text-primary animate-spin" />
-                  <span className="font-mono text-[11px] text-muted">Checking...</span>
-                </>
-              )}
-              {!checkingHandle && handle && handle !== originalHandle && (
-                handleAvailable ? (
-                  <>
-                    <Check size={12} className="text-green" />
-                    <span className="font-mono text-[11px] text-green">Available</span>
-                  </>
-                ) : (
-                  <>
-                    <X size={12} className="text-red" />
-                    <span className="font-mono text-[11px] text-red">{handleError || 'Already taken'}</span>
-                  </>
-                )
-              )}
-            </div>
-
-            <div className="bg-elevated/50 border border-primary/20 rounded-12 p-3 mt-2">
-              <span className="font-mono text-[10px] text-muted uppercase tracking-tighter block mb-1">Your shop link:</span>
-              <span className="font-mono text-sm text-primary font-bold">thread.zw/{handle || 'handle'}</span>
-            </div>
-            {validationErrors.handle && <FieldError message={validationErrors.handle} />}
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <label className="font-mono text-xs text-muted uppercase tracking-wider">Description</label>
-                <button
-                  type="button"
-                  onClick={handleGenerateShopBio}
-                  disabled={generatingBio}
-                  className="px-2.5 py-1 bg-primary/20 hover:bg-primary/30 text-primary font-mono text-[10px] font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 border border-primary/30"
-                >
-                  <Sparkles size={11} className={generatingBio ? 'animate-spin' : ''} />
-                  {generatingBio ? 'Generating...' : 'Auto-Generate Bio'}
-                </button>
-              </div>
-              <span className="font-mono text-[10px] text-muted">{description.length}/300</span>
-            </div>
-            <textarea 
-              value={description}
-              onChange={e => {
-                if (e.target.value.length <= 300) {
-                  setDescription(e.target.value);
-                  markChanged();
-                }
-              }}
-              rows={4}
-              placeholder="Tell buyers what you sell and why they should shop with you"
-              className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
-            />
-          </div>
-
-          {/* WhatsApp */}
-          <div id="field-whatsapp" className="space-y-2">
-            <label className="font-mono text-xs text-muted uppercase tracking-wider">
-              WhatsApp Number <span className="text-primary">*</span>
-            </label>
-            <div className={`flex items-center bg-elevated border-2 rounded-12 overflow-hidden transition-all ${
-              validationErrors.whatsapp ? 'border-red' : 'border-transparent focus-within:border-primary'
-            }`}>
-              <span className="pl-4 font-mono text-muted text-sm">+263</span>
-              <input 
-                type="tel"
-                value={whatsapp}
-                onChange={e => {
-                  const val = e.target.value.replace(/\D/g, '');
-                  if (val.length <= 9) {
-                    setWhatsapp(val);
-                    markChanged();
-                  }
-                }}
-                placeholder="771 234 567"
-                className="flex-1 bg-transparent p-4 pl-2 text-white font-sans focus:outline-none"
-              />
-            </div>
-            
-            {whatsapp.length === 9 && (
-              <div className="bg-green/5 border-l-2 border-green p-3 rounded-r-12 flex items-start gap-3 animate-wipe">
-                <MessageCircle size={16} className="text-green mt-0.5" />
-                <div className="space-y-1">
-                  <p className="font-mono text-[10px] text-green uppercase font-bold">WhatsApp Preview</p>
-                  <p className="font-mono text-[11px] text-muted leading-relaxed">
-                    Buyers will see: "Hi, I'm interested in [product] from Thread ZW..."
-                  </p>
-                </div>
-              </div>
-            )}
-            {validationErrors.whatsapp && <FieldError message={validationErrors.whatsapp} />}
-          </div>
-
-          {/* Categories */}
-          <div id="field-categories" className="space-y-4">
-            <div className="space-y-1">
-              <label className="font-mono text-xs text-muted uppercase tracking-wider">Categories</label>
-              <p className="font-sans text-xs text-muted">Select everything that applies to your shop</p>
-            </div>
-
-            <div className={`flex flex-wrap gap-2 transition-all ${validationErrors.categories ? 'animate-shake' : ''}`}>
-              {CATEGORY_OPTIONS.map((cat, index) => {
-                const isSelected = categories.includes(cat);
-                return (
-                  <button
-                    key={`${cat || 'cat'}-${index}`}
-                    type="button"
-                    onClick={() => toggleCategory(cat)}
-                    className={`px-4 py-2 rounded-pill font-sans text-sm transition-all border ${
-                      isSelected 
-                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20' 
-                        : 'bg-elevated border-border text-muted hover:border-primary/50'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
-            {validationErrors.categories && <FieldError message={validationErrors.categories} />}
-          </div>
-        </section>
-
-        {/* ========================================================
-            PART 2: CONTACT & LOCATION (COLLAPSIBLE ACCORDION)
-           ======================================================== */}
-        <section className="space-y-6 pt-6 border-t border-border">
-          <button 
-            type="button"
-            onClick={() => setContactExpanded(!contactExpanded)}
-            className="w-full flex items-center justify-between py-2 text-left group"
-          >
-            <div className="space-y-1">
-              <h2 className="font-syne font-bold text-lg text-white group-hover:text-primary transition-colors flex items-center gap-2">
-                Customer Information
-                <MapPin size={16} className="text-primary" />
-              </h2>
-              <p className="font-sans text-xs text-muted">Manage location settings, directions, and delivery details</p>
-            </div>
-            <div className="p-2 bg-elevated rounded-full text-muted group-hover:text-white transition-colors">
-              <ChevronDown 
-                size={20} 
-                className={`transform transition-transform duration-300 ${contactExpanded ? 'rotate-180' : ''}`} 
-              />
-            </div>
-          </button>
-
-          {contactExpanded && (
-            <div className="space-y-6 pt-4 animate-wipe">
-              {/* Online Only Toggle */}
-              <div className="flex items-center justify-between bg-elevated p-4 rounded-12">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Globe size={20} className="text-primary" />
-                  </div>
-                  <span className="font-sans text-white">My shop is online only</span>
-                </div>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    setOnlineOnly(!onlineOnly);
-                    markChanged();
-                  }}
-                  className={`w-12 h-6 rounded-pill relative transition-colors ${onlineOnly ? 'bg-primary' : 'bg-muted/30'}`}
-                >
-                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${onlineOnly ? 'left-7' : 'left-1'}`} />
-                </button>
-              </div>
-
-              {!onlineOnly ? (
-                <div className="space-y-6 animate-wipe overflow-hidden">
-                  {/* Area Dropdown */}
-                  <div id="field-area" className="space-y-2">
-                    <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                      Area <span className="text-primary">*</span>
-                    </label>
-                    <button 
-                      type="button"
-                      onClick={() => setShowAreaSheet(true)}
-                      className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans flex items-center justify-between transition-all ${
-                        validationErrors.area ? 'border-red' : 'border-transparent focus:border-primary'
-                      }`}
-                    >
-                      <span className={area ? 'text-white' : 'text-muted'}>
-                        {area || 'Select your area'}
-                      </span>
-                      <ChevronDown size={20} className="text-muted" />
-                    </button>
-                    {validationErrors.area && <FieldError message={validationErrors.area} />}
-                  </div>
-
-                  {/* Shop Address */}
-                  <div className="space-y-2">
-                    <label className="font-mono text-xs text-muted uppercase tracking-wider">Shop Address</label>
-                    <input 
-                      value={shopAddress}
-                      onChange={e => {
-                        setShopAddress(e.target.value);
-                        markChanged();
-                      }}
-                      placeholder="e.g. Bulawayo CBD"
-                      className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                    />
-                  </div>
-
-                  {/* Building Name & Floor */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Building Name</label>
-                      <input 
-                        value={buildingName}
-                        onChange={e => {
-                          setBuildingName(e.target.value);
-                          markChanged();
-                        }}
-                        placeholder="e.g. HnS Building"
-                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Floor</label>
-                      <input 
-                        value={floor}
-                        onChange={e => {
-                          setFloor(e.target.value);
-                          markChanged();
-                        }}
-                        placeholder="e.g. First Floor"
-                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Shop Number & Landmark */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <label className="font-mono text-xs text-muted uppercase tracking-wider">Shop Number</label>
-                      <input 
-                        value={shopNumber}
-                        onChange={e => {
-                          setShopNumber(e.target.value);
-                          markChanged();
-                        }}
-                        placeholder="e.g. 23"
-                        className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                      />
-                    </div>
-                    <div id="field-landmark" className="space-y-2">
-                      <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                        Landmark <span className="text-primary">*</span>
-                      </label>
-                      <input 
-                        value={landmark}
-                        onChange={e => {
-                          setLandmark(e.target.value);
-                          markChanged();
-                        }}
-                        placeholder="e.g. Opposite City Hall"
-                        className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none transition-all ${
-                          validationErrors.landmark ? 'border-red' : 'border-transparent focus:border-primary'
-                        }`}
-                      />
-                      {validationErrors.landmark && <FieldError message={validationErrors.landmark} />}
-                    </div>
-                  </div>
-
-                  {/* Directions */}
-                  <div id="field-directions" className="space-y-2">
-                    <div className="flex justify-between items-end">
-                      <label className="font-mono text-xs text-muted uppercase tracking-wider">
-                        Text Directions <span className="text-primary">*</span>
-                      </label>
-                      <span className="font-mono text-[10px] text-muted">{directions.length}/500</span>
-                    </div>
-                    <textarea 
-                      value={directions}
-                      onChange={e => {
-                        if (e.target.value.length <= 500) {
-                          setDirections(e.target.value);
-                          markChanged();
-                        }
-                      }}
-                      rows={5}
-                      placeholder="e.g. Enter through the main entrance of HnS Building, go to the first floor, Shop 23, directly opposite the Game Arena."
-                      className={`w-full bg-elevated border-2 rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all ${
-                        validationErrors.directions ? 'border-red' : 'border-transparent focus:border-primary'
-                      }`}
-                    />
-                    <p className="font-mono text-[10px] text-muted/60 uppercase tracking-tighter">This is what buyers see instead of Google Maps</p>
-                    {validationErrors.directions && <FieldError message={validationErrors.directions} />}
-                  </div>
-                </div>
-              ) : null}
-
-              {/* Delivery Details is always editable to let physical shops explain delivery methods */}
-              <div className="space-y-2 animate-wipe overflow-hidden">
-                <label className="font-mono text-xs text-muted uppercase tracking-wider">Delivery Details</label>
-                <textarea 
-                  value={deliveryInfo}
-                  onChange={e => {
-                    setDeliveryInfo(e.target.value);
-                    markChanged();
-                  }}
-                  rows={3}
-                  placeholder="e.g. Same-day delivery via courier in your city, or bus pickup nationwide."
-                  className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none resize-none transition-all"
-                />
-              </div>
-
-              {/* Extended Delivery Options */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Same City Delivery</label>
-                  <input 
-                    value={harareDelivery}
-                    onChange={e => {
-                      setHarareDelivery(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="e.g. Same Day $3"
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Nationwide Courier</label>
-                  <input 
-                    value={nationwideCourier}
-                    onChange={e => {
-                      setNationwideCourier(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="e.g. overnight via Swift"
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">International Shipping</label>
-                  <input 
-                    value={internationalShipping}
-                    onChange={e => {
-                      setInternationalShipping(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="e.g. DHL within 5 days"
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Extended Highlights & Notes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Response Time</label>
-                  <input 
-                    value={responseTime}
-                    onChange={e => {
-                      setResponseTime(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="e.g. Replies within minutes"
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="font-mono text-xs text-muted uppercase tracking-wider">Business Highlights</label>
-                  <input 
-                    value={businessHighlights}
-                    onChange={e => {
-                      setBusinessHighlights(e.target.value);
-                      markChanged();
-                    }}
-                    placeholder="e.g. Same Day Dispatch"
-                    className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-muted uppercase tracking-wider">Custom Notes / Alert</label>
-                <input 
-                  value={customNotes}
-                  onChange={e => {
-                    setCustomNotes(e.target.value);
-                    markChanged();
-                  }}
-                  placeholder="e.g. Free delivery on orders over $100 this weekend!"
-                  className="w-full bg-elevated border-2 border-transparent focus:border-primary rounded-12 p-4 text-white font-sans focus:outline-none transition-all"
-                />
-              </div>
-
-              {/* Instagram Handle */}
-              <div className="space-y-2">
-                <label className="font-mono text-xs text-muted uppercase tracking-wider">Instagram Handle</label>
-                <div className="flex items-center bg-elevated border-2 border-transparent focus-within:border-primary rounded-12 overflow-hidden transition-all">
-                  <span className="pl-4 font-mono text-muted text-sm">@</span>
-                  <input 
-                    value={instagram}
-                    onChange={e => {
-                      setInstagram(e.target.value.replace(/[^a-zA-Z0-9._]/g, ''));
-                      markChanged();
-                    }}
-                    placeholder="yourshopname"
-                    className="flex-1 bg-transparent p-4 pl-1 text-white font-sans focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Spacing spacer instead of static save button */}
-        <div className="pt-4" />
-
-        {/* Danger Zone */}
-        <section className="pt-10 border-t border-border">
-          <button 
-            onClick={() => setDangerZoneExpanded(!dangerZoneExpanded)}
-            className="flex items-center gap-2 font-mono text-xs text-red uppercase tracking-widest mb-4"
-          >
-            Danger Zone
-            {dangerZoneExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
-
-          {dangerZoneExpanded && (
-            <div className="space-y-4 animate-wipe overflow-hidden">
-              {/* Delete Shop */}
-              <div className="bg-elevated rounded-16 p-5 border-l-4 border-red">
-                <h3 className="font-syne font-bold text-lg text-red mb-1">Delete Your Shop</h3>
-                <p className="font-sans text-sm text-muted mb-6">
-                  Permanently deletes your shop, all products, and sales history. This cannot be undone.
-                </p>
-                <button 
-                  onClick={() => setShowDeleteStep1(true)}
-                  className="px-6 py-2.5 rounded-pill font-syne font-bold text-sm border border-red text-red hover:bg-red/10 transition-all"
-                >
-                  Delete Shop
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      </div>
-
-      {/* Modals */}
+    <div className="min-h-screen bg-white text-black font-sans pb-28 selection:bg-[#C6FF00]">
       
-      {/* Unsaved Changes Modal */}
-      {showUnsavedModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">Unsaved changes</h3>
-              <p className="font-sans text-muted">You have unsaved changes. Leave without saving?</p>
+      {/* Hidden File Inputs */}
+      <input
+        type="file"
+        ref={avatarInputRef}
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.[0]) {
+            handleUploadImage(e.target.files[0], 'logo');
+          }
+        }}
+      />
+      <input
+        type="file"
+        ref={bannerInputRef}
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          if (e.target.files?.[0]) {
+            handleUploadImage(e.target.files[0], 'banner');
+          }
+        }}
+      />
+
+      {/* ============================================================ */}
+      {/* VIEW 1: ACCOUNT PAGE */}
+      {/* ============================================================ */}
+      {view === 'account' && (
+        <div className="max-w-md mx-auto px-4 pt-4 sm:px-6">
+          
+          {/* Top Brand Header */}
+          <header className="flex items-center justify-between pb-3">
+            <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigate('/dashboard')}>
+              <span className="text-xl font-black tracking-tight">THREAD</span>
+              <span className="text-xl font-black tracking-tight text-[#98E600] drop-shadow-xs">ZW</span>
             </div>
-            <div className="space-y-3">
+            <div className="flex items-center gap-3">
               <button 
-                onClick={handleSave}
-                className="w-full py-4 bg-primary text-white font-syne font-bold rounded-14 shadow-lg shadow-primary/20"
+                onClick={() => toast.info('No new notifications')}
+                aria-label="Notifications"
+                className="p-2 rounded-full hover:bg-zinc-100 transition-colors cursor-pointer"
               >
-                Save Changes
+                <Bell className="w-5 h-5 text-black" />
               </button>
               <button 
                 onClick={() => navigate('/settings')}
-                className="w-full py-4 border border-red text-red font-syne font-bold rounded-14"
+                aria-label="Menu"
+                className="p-2 rounded-full hover:bg-zinc-100 transition-colors cursor-pointer"
               >
-                Discard & Leave
+                <Menu className="w-5 h-5 text-black" />
               </button>
-              <button 
-                onClick={() => setShowUnsavedModal(false)}
-                className="w-full py-2 text-muted font-sans text-sm"
+            </div>
+          </header>
+
+          {/* Shop Banner Container */}
+          <div className="relative w-full rounded-3xl overflow-hidden bg-zinc-900 h-40 sm:h-48 border border-zinc-200/80 shadow-xs">
+            {bannerUrl ? (
+              <img 
+                src={bannerUrl} 
+                alt="Shop Banner" 
+                className="w-full h-full object-cover object-center"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-tr from-zinc-950 via-zinc-900 to-zinc-800 flex items-center justify-center text-zinc-500 text-xs font-semibold p-4 text-center">
+                <span>Tap "Edit Profile" to upload a shop banner</span>
+              </div>
+            )}
+            {/* Share Shop Button on top right of banner */}
+            <div className="absolute top-3 right-3 z-10">
+              <button
+                onClick={handleShareShop}
+                className="bg-white/90 backdrop-blur-md hover:bg-white text-black text-xs font-extrabold py-2 px-3.5 rounded-xl border border-zinc-200/90 shadow-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
               >
-                Keep Editing
+                <Share2 className="w-3.5 h-3.5" />
+                <span>Share Shop</span>
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Pause Confirmation Modal */}
-      {showPauseModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">
-                {isLive ? 'Pause your shop?' : 'Unpause your shop?'}
-              </h3>
-              <p className="font-sans text-muted">
-                {isLive 
-                  ? 'Your listings will be hidden until you unpause.' 
-                  : 'Your shop will be visible to all buyers again.'
-                }
+          {/* Avatar and Action Buttons Row */}
+          <div className="relative px-2 flex items-end justify-between -mt-10 mb-3 z-20">
+            {/* Overlapping Logo */}
+            <div className="relative">
+              <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full border-4 border-white bg-black text-white flex items-center justify-center overflow-hidden shadow-md">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={shopName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-black text-2xl tracking-tighter">
+                    {shopName ? shopName.substring(0, 2).toUpperCase() : 'TZ'}
+                  </span>
+                )}
+              </div>
+              {/* Green active dot */}
+              <span className="w-4 h-4 bg-[#C6FF00] rounded-full border-2 border-white absolute bottom-1 right-1 z-10 shadow-xs" />
+            </div>
+
+            {/* Edit Profile Button */}
+            <div className="pb-1">
+              <button
+                onClick={() => setView('edit-profile')}
+                className="bg-black hover:bg-zinc-800 text-white text-xs font-extrabold py-2.5 px-4 rounded-xl flex items-center gap-2 cursor-pointer transition-all shadow-sm active:scale-95"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Edit Profile</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Shop Meta Info */}
+          <div className="px-2 space-y-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-extrabold tracking-tight text-black">{shopName || 'My Shop'}</h1>
+              {/* Verified Badge */}
+              <CheckCircle2 className="w-5 h-5 text-[#25D366] fill-[#25D366] text-white shrink-0" />
+            </div>
+
+            {handle && (
+              <p className="text-xs font-semibold text-zinc-500">@{handle.replace(/^@/, '')}</p>
+            )}
+
+            <div className="flex items-center gap-2 text-xs font-medium text-zinc-600 pt-1">
+              {directions && (
+                <span className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-zinc-400" />
+                  {directions}
+                </span>
+              )}
+              {directions && category && <span className="text-zinc-300">•</span>}
+              <span className="font-semibold text-zinc-700">{category || 'Clothing'}</span>
+            </div>
+
+            {description ? (
+              <p className="text-xs text-zinc-600 pt-1 leading-relaxed">
+                {description}
               </p>
-            </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setShowPauseModal(false)}
-                className="flex-1 py-4 bg-elevated text-white font-syne font-bold rounded-14"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handlePauseToggle}
-                className={`flex-1 py-4 font-syne font-bold rounded-14 ${isLive ? 'bg-amber text-black' : 'bg-green text-black'}`}
-              >
-                {isLive ? 'Pause' : 'Unpause'}
-              </button>
-            </div>
+            ) : (
+              <p className="text-xs text-zinc-400 italic pt-1">
+                No store description added yet.
+              </p>
+            )}
           </div>
-        </div>
-      )}
 
-      {/* Delete Step 1 Modal */}
-      {showDeleteStep1 && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">Are you sure?</h3>
-              <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle size={18} className="text-red shrink-0 mt-0.5" />
-                  <p className="font-sans text-sm text-muted">All {productCount} products will be deleted permanently</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <AlertTriangle size={18} className="text-red shrink-0 mt-0.5" />
-                  <p className="font-sans text-sm text-muted">All sales history will be lost</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <AlertTriangle size={18} className="text-red shrink-0 mt-0.5" />
-                  <p className="font-sans text-sm text-muted">Your shop link thread.zw/{handle} will be released</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <AlertTriangle size={18} className="text-red shrink-0 mt-0.5" />
-                  <p className="font-sans text-sm text-muted">Your subscription will be cancelled immediately</p>
-                </div>
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-3 gap-3 my-5">
+            <div className="bg-zinc-50/80 rounded-2xl p-3 border border-zinc-100 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-[#C6FF00]/30 flex items-center justify-center shrink-0">
+                <Package className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <div className="text-base font-black tracking-tight text-black">{stats.products}</div>
+                <div className="text-[10px] text-zinc-500 font-medium">Products</div>
               </div>
             </div>
-            <div className="space-y-3">
-              <button 
-                onClick={() => {
-                  setShowDeleteStep1(false);
-                  setShowDeleteStep2(true);
-                }}
-                className="w-full py-4 bg-red text-white font-syne font-bold rounded-14"
-              >
-                Yes, I understand -- delete my shop
-              </button>
-              <button 
-                onClick={() => setShowDeleteStep1(false)}
-                className="w-full py-4 bg-elevated text-white font-syne font-bold rounded-14"
-              >
-                Keep My Shop
-              </button>
+
+            <div className="bg-zinc-50/80 rounded-2xl p-3 border border-zinc-100 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-lime-100 flex items-center justify-center shrink-0">
+                <Eye className="w-4 h-4 text-black" />
+              </div>
+              <div>
+                <div className="text-base font-black tracking-tight text-black">{stats.views}</div>
+                <div className="text-[10px] text-zinc-500 font-medium">Shop Views</div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-50/80 rounded-2xl p-3 border border-zinc-100 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <Phone className="w-4 h-4 text-emerald-700" />
+              </div>
+              <div>
+                <div className="text-base font-black tracking-tight text-black">{stats.whatsappClicks}</div>
+                <div className="text-[10px] text-zinc-500 font-medium">WhatsApp Clicks</div>
+              </div>
             </div>
           </div>
+
+          {/* Recent Activity Feed Header */}
+          <div className="bg-white rounded-3xl border border-zinc-100 p-4 sm:p-5 shadow-xs mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-extrabold text-black tracking-tight">Recent Activity</h2>
+              <button 
+                onClick={() => toast.info('Activity log is up to date!')}
+                className="text-xs font-bold text-[#85B800] hover:underline cursor-pointer"
+              >
+                View All
+              </button>
+            </div>
+
+            {/* Activity List */}
+            {recentActivities.length > 0 ? (
+              <div className="divide-y divide-zinc-100/80">
+                {recentActivities.map((act) => {
+                  const IconComp = act.icon;
+                  return (
+                    <div key={act.id} className="py-3 flex items-start gap-3 first:pt-0 last:pb-0">
+                      <div className={`w-9 h-9 rounded-full ${act.iconBg} flex items-center justify-center shrink-0 mt-0.5`}>
+                        <IconComp className={`w-4 h-4 ${act.iconColor}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-xs font-bold text-black truncate">{act.title}</h3>
+                          <span className="text-[10px] font-medium text-zinc-400 shrink-0">{act.timestamp}</span>
+                        </div>
+                        <p className="text-[11px] text-zinc-500 mt-0.5 leading-snug">{act.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-6 text-center space-y-1">
+                <p className="text-xs font-bold text-zinc-700">No recent activity yet</p>
+                <p className="text-[11px] text-zinc-400 max-w-xs mx-auto">
+                  Activity updates will appear here as your store gets views, WhatsApp inquiries, and sales.
+                </p>
+              </div>
+            )}
+          </div>
+
         </div>
       )}
 
-      {/* Delete Step 2 Modal */}
-      {showDeleteStep2 && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-          <div className="bg-card w-full max-w-[340px] rounded-20 p-6 border border-border space-y-6">
-            <div className="space-y-2">
-              <h3 className="font-syne font-bold text-xl text-white">Type DELETE to confirm</h3>
-              <p className="font-sans text-muted text-sm">This action is permanent and cannot be reversed.</p>
-            </div>
-            
-            <input 
-              value={deleteConfirmText}
-              onChange={e => setDeleteConfirmText(e.target.value)}
-              placeholder="Type DELETE here"
-              className="w-full bg-elevated border-2 border-primary rounded-12 p-4 text-white font-sans focus:outline-none text-center"
-            />
+      {/* ============================================================ */}
+      {/* VIEW 2: EDIT PROFILE PAGE (TikTok Style Rows) */}
+      {/* ============================================================ */}
+      {view === 'edit-profile' && (
+        <div className="max-w-md mx-auto px-4 pt-4 sm:px-6">
+          
+          {/* Header Bar */}
+          <div className="flex items-center gap-3 pb-6 border-b border-zinc-100 mb-4">
+            <button
+              onClick={() => setView('account')}
+              aria-label="Back to account"
+              className="p-2 -ml-2 rounded-full hover:bg-zinc-100 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-5 h-5 text-black" />
+            </button>
+            <h1 className="text-lg font-black tracking-tight text-black">Edit Profile</h1>
+          </div>
 
-            <div className="space-y-3">
+          {/* Editable Rows */}
+          <div className="bg-white rounded-3xl border border-zinc-100/90 shadow-xs divide-y divide-zinc-100 overflow-hidden">
+            
+            {/* 1. Profile Photo (Logo) */}
+            <div 
+              onClick={() => avatarInputRef.current?.click()}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Profile Photo</span>
+              <div className="flex items-center gap-3">
+                <div className="relative w-10 h-10 rounded-full bg-black text-white overflow-hidden border border-zinc-200 flex items-center justify-center shrink-0">
+                  {uploadingAvatar ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-[#C6FF00]" />
+                  ) : avatarUrl ? (
+                    <img src={avatarUrl} alt="Logo" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="font-bold text-xs">{shopName.substring(0, 2)}</span>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors" />
+              </div>
+            </div>
+
+            {/* 2. Banner */}
+            <div 
+              onClick={() => bannerInputRef.current?.click()}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Banner</span>
+              <div className="flex items-center gap-3">
+                <div className="relative w-16 h-8 rounded-lg bg-zinc-200 overflow-hidden border border-zinc-200 flex items-center justify-center shrink-0">
+                  {uploadingBanner ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  ) : bannerUrl ? (
+                    <img src={bannerUrl} alt="Banner" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-[10px] text-zinc-400">None</span>
+                  )}
+                </div>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors" />
+              </div>
+            </div>
+
+            {/* 3. Shop Name */}
+            <div 
+              onClick={() => openFieldModal('shopName')}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Shop Name</span>
+              <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                <span className="text-xs font-medium text-zinc-600 truncate">{shopName}</span>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors shrink-0" />
+              </div>
+            </div>
+
+            {/* 4. Username */}
+            <div 
+              onClick={() => openFieldModal('handle')}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Username</span>
+              <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                <span className="text-xs font-medium text-zinc-600 truncate">@{handle.replace(/^@/, '')}</span>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors shrink-0" />
+              </div>
+            </div>
+
+            {/* 5. Bio */}
+            <div 
+              onClick={() => openFieldModal('bio')}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Bio</span>
+              <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                <span className="text-xs font-medium text-zinc-600 truncate">{description || 'Add bio'}</span>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors shrink-0" />
+              </div>
+            </div>
+
+            {/* 6. Shop Directions */}
+            <div 
+              onClick={() => openFieldModal('directions')}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Shop Directions</span>
+              <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                <span className="text-xs font-medium text-zinc-600 truncate">{directions || 'Add location/directions'}</span>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors shrink-0" />
+              </div>
+            </div>
+
+            {/* 7. Category */}
+            <div 
+              onClick={() => openFieldModal('category')}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Category</span>
+              <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                <span className="text-xs font-medium text-zinc-600 truncate">{category}</span>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors shrink-0" />
+              </div>
+            </div>
+
+            {/* 8. WhatsApp Number */}
+            <div 
+              onClick={() => openFieldModal('whatsapp')}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">WhatsApp Number</span>
+              <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                <span className="text-xs font-medium text-zinc-600 truncate">{whatsapp || 'Add WhatsApp number'}</span>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors shrink-0" />
+              </div>
+            </div>
+
+          </div>
+
+          {/* Prominent Neon Green Save Button */}
+          <div className="mt-8">
+            <button
+              onClick={handleSaveChanges}
+              disabled={saving}
+              className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-sm py-4 px-6 rounded-2xl shadow-md shadow-[#C6FF00]/30 transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin text-black" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <span>Save Changes</span>
+              )}
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* Field Input Dialog Modal */}
+      {activeModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-zinc-100 animate-in fade-in slide-in-from-bottom-4 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-extrabold text-black">
+                {activeModal === 'shopName' && 'Edit Shop Name'}
+                {activeModal === 'handle' && 'Edit Username'}
+                {activeModal === 'bio' && 'Edit Bio'}
+                {activeModal === 'directions' && 'Edit Shop Directions'}
+                {activeModal === 'category' && 'Select Category'}
+                {activeModal === 'whatsapp' && 'Edit WhatsApp Number'}
+              </h3>
               <button 
-                onClick={handleDeleteShop}
-                disabled={deleteConfirmText !== 'DELETE' || saving}
-                className={`w-full py-4 font-syne font-bold rounded-14 transition-all ${
-                  deleteConfirmText === 'DELETE' && !saving
-                    ? 'bg-red text-white shadow-lg shadow-red/20' 
-                    : 'bg-muted/20 text-muted cursor-not-allowed'
-                }`}
+                onClick={() => setActiveModal(null)}
+                className="p-1 rounded-full text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer"
               >
-                {saving ? <Loader2 className="animate-spin mx-auto" /> : 'Delete My Shop Forever'}
+                <X className="w-5 h-5" />
               </button>
-              <button 
-                onClick={() => {
-                  setShowDeleteStep2(false);
-                  setDeleteConfirmText('');
-                }}
-                className="w-full py-2 text-muted font-sans text-sm"
+            </div>
+
+            {activeModal === 'category' ? (
+              <div className="space-y-2 max-h-60 overflow-y-auto my-2 pr-1">
+                {CATEGORY_OPTIONS.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setTempValue(cat);
+                    }}
+                    className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-between ${
+                      tempValue === cat ? 'bg-[#C6FF00] text-black' : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    {tempValue === cat && <Check className="w-4 h-4 text-black" />}
+                  </button>
+                ))}
+              </div>
+            ) : activeModal === 'bio' ? (
+              <textarea
+                value={tempValue}
+                onChange={(e) => setTempValue(e.target.value)}
+                rows={3}
+                placeholder="Enter bio..."
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-3 text-xs text-black font-medium focus:outline-none focus:border-black transition-colors"
+              />
+            ) : (
+              <input
+                type="text"
+                value={tempValue}
+                onChange={(e) => setTempValue(e.target.value)}
+                placeholder="Enter value..."
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-3 text-xs text-black font-medium focus:outline-none focus:border-black transition-colors"
+              />
+            )}
+
+            <div className="flex items-center gap-3 mt-6">
+              <button
+                onClick={() => setActiveModal(null)}
+                className="flex-1 py-3 bg-zinc-100 text-zinc-700 font-bold text-xs rounded-xl hover:bg-zinc-200 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
+              <button
+                onClick={saveFieldModal}
+                className="flex-1 py-3 bg-black text-white font-bold text-xs rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                Done
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Area Bottom Sheet */}
-      {showAreaSheet && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center">
-          <div 
-            className="absolute inset-0 bg-black/60" 
-            onClick={() => setShowAreaSheet(false)}
-          />
-          <div className="relative bg-card w-full max-w-[430px] rounded-t-32 p-6 animate-wipe overflow-hidden">
-            <div className="w-12 h-1.5 bg-border rounded-full mx-auto mb-6" />
-            <h3 className="font-syne font-bold text-xl text-white mb-6">Select Area</h3>
-            <div className="space-y-1 max-h-[400px] overflow-y-auto no-scrollbar">
-              {AREAS.map((a, index) => (
-                <button
-                  key={`${a || 'area'}-${index}`}
-                  onClick={() => {
-                    setArea(a);
-                    setShowAreaSheet(false);
-                    markChanged();
-                  }}
-                  className={`w-full p-4 rounded-16 text-left font-sans transition-all flex items-center justify-between ${
-                    area === a ? 'bg-primary/10 text-primary' : 'text-white hover:bg-elevated'
-                  }`}
-                >
-                  {a}
-                  {area === a && <Check size={18} />}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Persistent Bottom Floating Navigation Bar */}
+      <BottomNavBar />
 
-      {/* Floating always-visible Save Changes Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-40 max-w-[430px] mx-auto flex flex-col gap-1.5 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="w-full py-4 text-xs tracking-widest uppercase transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
-          style={{
-            background: saveSuccess
-              ? '#10b981'
-              : saving
-                ? '#1f2937'
-                : '#bef715',
-            color: saveSuccess || saving
-              ? '#ffffff'
-              : '#000000',
-            border: 'none',
-            borderRadius: '14px',
-            cursor: saving ? 'not-allowed' : 'pointer',
-            fontWeight: 800,
-            fontFamily: 'sans-serif'
-          }}
-        >
-          {saving ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Saving...
-            </>
-          ) : saveSuccess ? (
-            <>
-              <Check size={16} />
-              Saved!
-            </>
-          ) : (
-            'Save Changes'
-          )}
-        </button>
-
-        {saveError && (
-          <p className="text-[10px] text-red text-center font-mono uppercase tracking-tight">
-            {saveError}
-          </p>
-        )}
-      </div>
     </div>
   );
 };

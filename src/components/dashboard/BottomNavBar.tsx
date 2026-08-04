@@ -1,56 +1,86 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, ShoppingBag, Store, Settings } from 'lucide-react';
+import { Home, Package, Plus, User } from 'lucide-react';
 
 export const BottomNavBar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const pathname = location.pathname;
+  const pathname = location.pathname.toLowerCase();
 
   const getActiveTab = () => {
-    if (pathname === '/' || pathname.replace(/\/$/, '') === '/dashboard') return 'dashboard';
-    if (pathname.startsWith('/inventory') || pathname.startsWith('/products') || pathname.startsWith('/add-product') || pathname.startsWith('/edit-product')) return 'products';
-    if (pathname.startsWith('/edit-shop') || pathname.startsWith('/shop')) return 'shop';
-    if (pathname.startsWith('/settings')) return 'settings';
-    return '';
+    if (pathname === '/' || pathname.replace(/\/$/, '') === '/dashboard') return 'home';
+    if (pathname.startsWith('/inventory') || pathname.startsWith('/products')) return 'products';
+    if (pathname.startsWith('/add-product')) return 'add-product';
+    if (pathname.startsWith('/edit-shop') || pathname.startsWith('/account') || pathname.startsWith('/edit-profile')) return 'account';
+    return 'home';
   };
 
   const activeTab = getActiveTab();
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: <Home size={20} /> },
-    { id: 'products', label: 'Products', path: '/inventory', icon: <ShoppingBag size={20} /> },
-    { id: 'shop', label: 'Shop', path: '/edit-shop', icon: <Store size={20} /> },
-    { id: 'settings', label: 'Settings', path: '/settings', icon: <Settings size={20} /> },
-  ];
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-zinc-100 z-40 flex items-center pb-safe shadow-md">
-      <div className="flex items-center justify-around w-full max-w-2xl mx-auto px-4">
-        {navItems.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.path)}
-              className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 transition-all cursor-pointer ${
-                isActive 
-                  ? 'text-[#85B800]' 
-                  : 'text-zinc-400 hover:text-zinc-600 active:scale-95'
-              }`}
-              id={`nav-tab-${item.id}`}
-            >
-              <div className={`transition-transform duration-200 ${isActive ? 'text-[#85B800] scale-105' : 'text-zinc-600'}`}>
-                {item.icon}
-              </div>
-              <span className={`text-[11px] tracking-tight transition-all font-sans ${isActive ? 'text-[#85B800] font-bold' : 'text-zinc-500 font-medium'}`}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[420px] z-50">
+      <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-2 px-3 flex items-center justify-between border border-zinc-200/90 shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
+        
+        {/* 1. Home */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          id="nav-tab-home"
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 cursor-pointer transition-all active:scale-95 group"
+        >
+          <Home className={`w-5 h-5 transition-colors ${activeTab === 'home' ? 'text-black' : 'text-zinc-400 group-hover:text-zinc-600'}`} />
+          <span className={`text-[10px] tracking-tight font-semibold ${activeTab === 'home' ? 'text-black font-bold' : 'text-zinc-400 group-hover:text-zinc-600'}`}>
+            Home
+          </span>
+          {activeTab === 'home' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF00] -mt-0.5" />
+          )}
+        </button>
+
+        {/* 2. Products */}
+        <button
+          onClick={() => navigate('/inventory')}
+          id="nav-tab-products"
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 cursor-pointer transition-all active:scale-95 group"
+        >
+          <Package className={`w-5 h-5 transition-colors ${activeTab === 'products' ? 'text-black' : 'text-zinc-400 group-hover:text-zinc-600'}`} />
+          <span className={`text-[10px] tracking-tight font-semibold ${activeTab === 'products' ? 'text-black font-bold' : 'text-zinc-400 group-hover:text-zinc-600'}`}>
+            Products
+          </span>
+          {activeTab === 'products' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF00] -mt-0.5" />
+          )}
+        </button>
+
+        {/* 3. Center + Button (Add Product) */}
+        <div className="flex-1 flex items-center justify-center">
+          <button
+            onClick={() => navigate('/add-product')}
+            id="nav-tab-add"
+            aria-label="Add Product"
+            className="w-11 h-11 rounded-2xl bg-[#C6FF00] hover:bg-[#b5eb00] text-black flex items-center justify-center shadow-md shadow-[#C6FF00]/40 transition-all active:scale-95 cursor-pointer hover:scale-105"
+          >
+            <Plus className="w-6 h-6 text-black stroke-[3]" />
+          </button>
+        </div>
+
+        {/* 4. Account */}
+        <button
+          onClick={() => navigate('/edit-shop')}
+          id="nav-tab-account"
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 cursor-pointer transition-all active:scale-95 group"
+        >
+          <User className={`w-5 h-5 transition-colors ${activeTab === 'account' ? 'text-black' : 'text-zinc-400 group-hover:text-zinc-600'}`} />
+          <span className={`text-[10px] tracking-tight font-semibold ${activeTab === 'account' ? 'text-black font-bold' : 'text-zinc-400 group-hover:text-zinc-600'}`}>
+            Account
+          </span>
+          {activeTab === 'account' && (
+            <span className="w-1.5 h-1.5 rounded-full bg-[#C6FF00] -mt-0.5" />
+          )}
+        </button>
+
       </div>
     </div>
   );
 };
+
 

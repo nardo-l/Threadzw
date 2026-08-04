@@ -1,9 +1,9 @@
 // src/components/storefront/StorefrontCart.tsx
-import React, { useMemo } from 'react';
-import { motion } from 'motion/react';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, Truck, Store, MapPin, MessageCircle, ExternalLink, Compass } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ShoppingBag, Trash2, Plus, Minus, MapPin, MessageCircle, ArrowRight } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
 import { CartItem } from './types';
+import { DirectionsModal } from './DirectionsModal';
 
 interface StorefrontCartProps {
   shop?: any;
@@ -11,8 +11,8 @@ interface StorefrontCartProps {
   onUpdateQuantity: (itemId: string, delta: number) => void;
   onRemoveItem: (itemId: string) => void;
   onNavigateToPage: (page: any) => void;
-  shippingMethod: 'pickup' | 'harare' | 'nationwide';
-  onChangeShippingMethod: (method: 'pickup' | 'harare' | 'nationwide') => void;
+  shippingMethod?: 'pickup' | 'harare' | 'nationwide';
+  onChangeShippingMethod?: (method: 'pickup' | 'harare' | 'nationwide') => void;
 }
 
 export const StorefrontCart: React.FC<StorefrontCartProps> = ({
@@ -20,63 +20,84 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
   cart,
   onUpdateQuantity,
   onRemoveItem,
-  onNavigateToPage,
-  shippingMethod,
-  onChangeShippingMethod
+  onNavigateToPage
 }) => {
-  // Check if any location data exists
-  const hasLocationData = useMemo(() => {
-    return !!(shop?.location?.trim() || shop?.landmark?.trim() || shop?.directions?.trim() || shop?.town?.trim() || shop?.city?.trim() || shop?.suburb?.trim());
-  }, [shop]);
+  const [showDirections, setShowDirections] = useState(false);
 
-  // Clean WhatsApp number for Enquiry
-  const whatsappLink = useMemo(() => {
-    if (!shop) return '';
-    const rawNum = shop.whatsapp_number || shop.whatsapp || '';
-    let clean = rawNum.replace(/\D/g, '');
-    if (clean.startsWith('263')) {
-      // already formatted
-    } else if (clean.startsWith('0')) {
-      clean = `263${clean.substring(1)}`;
-    } else if (clean.length > 0) {
-      clean = `263${clean}`;
-    } else {
-      clean = '263771234567'; // Fallback
-    }
-    return `https://wa.me/${clean}?text=${encodeURIComponent(`Hi, I'm looking at your store ${shop.name} and would like to visit or enquire about boutique pickup/location details.`)}`;
-  }, [shop]);
-
-  // Subtotal
-  const subtotal = useMemo(() => {
+  // Calculate total price
+  const total = useMemo(() => {
     return cart.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
   }, [cart]);
 
-  // Delivery Cost
-  const deliveryFee = useMemo(() => {
-    if (shippingMethod === 'pickup') return 0;
-    if (shippingMethod === 'harare') return 5;
-    return 7;
-  }, [shippingMethod]);
+  // Clean WhatsApp number
+  const cleanPhone = useMemo(() => {
+    if (!shop) return '';
+    const rawNum = shop.whatsapp_number || shop.whatsapp || shop.phone || '';
+    let clean = rawNum.replace(/\D/g, '');
+    if (clean.startsWith('263')) {
+      return clean;
+    } else if (clean.startsWith('0')) {
+      return `263${clean.substring(1)}`;
+    } else if (clean.length > 0) {
+      return `263${clean}`;
+    }
+    return '263771234567'; // fallback
+  }, [shop]);
 
-  // Total
-  const total = subtotal + deliveryFee;
+  // Order on WhatsApp handler for all cart items
+  const handleOrderCartOnWhatsApp = () => {
+    if (cart.length === 0) return;
+
+    const shopName = shop?.name || 'Store';
+    
+    let msg = `Hello *${shopName}*! 👋\nI'd like to place an order from your shop:\n\n`;
+
+    cart.forEach((item, idx) => {
+      const sizeStr = item.size ? `Size: ${item.size}` : '';
+      const colorStr = item.color ? `Color: ${item.color}` : '';
+      const opts = [sizeStr, colorStr].filter(Boolean).join(' | ');
+
+      msg += `${idx + 1}. *${item.product.name}*\n`;
+      if (opts) msg += `   ${opts}\n`;
+      msg += `   Qty: ${item.quantity} × $${item.product.price} = $${item.product.price * item.quantity} USD\n\n`;
+    });
+
+    msg += `*Total Order Value: $${total} USD*\n\n`;
+    msg += `Please confirm item availability and store collection/delivery details. Thank you!`;
+
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
 
   return (
-    <div className="space-y-6 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
-      <div className="space-y-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Shopping Bag</span>
-        <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Your Cart</h2>
+    <div className="space-y-6 px-5 pb-36 select-none text-left bg-white min-h-screen pt-4 font-sans">
+      {/* Header */}
+      <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans block">Shopping Bag</span>
+          <h2 className="text-xl font-black tracking-tight text-zinc-900 font-sans">Your Cart</h2>
+        </div>
+        {cart.length > 0 && (
+          <span className="text-xs font-bold bg-zinc-100 text-zinc-800 px-3 py-1 rounded-full">
+            {cart.reduce((s, i) => s + i.quantity, 0)} {cart.length === 1 ? 'Item' : 'Items'}
+          </span>
+        )}
       </div>
 
       {cart.length === 0 ? (
         <div className="py-24 text-center text-zinc-400 space-y-4">
-          <ShoppingBag className="w-12 h-12 mx-auto text-zinc-200 animate-bounce" />
-          <p className="text-xs font-semibold text-zinc-500 font-sans">Your shopping bag is empty</p>
+          <div className="w-16 h-16 rounded-full bg-zinc-50 border border-zinc-150 flex items-center justify-center mx-auto text-zinc-300">
+            <ShoppingBag className="w-8 h-8" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-zinc-800 font-sans">Your shopping bag is empty</p>
+            <p className="text-xs text-zinc-400">Discover items from {shop?.name || 'our shop'} to get started.</p>
+          </div>
           <button
             onClick={() => onNavigateToPage('shop')}
-            className="px-6 py-2.5 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 transition-colors cursor-pointer shadow-xs font-sans"
+            className="px-6 py-3 bg-[#bef715] hover:bg-[#aef000] text-black text-xs font-extrabold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-xs font-sans mt-2"
           >
-            Browse Collections
+            Browse Catalog
           </button>
         </div>
       ) : (
@@ -86,24 +107,30 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
             {cart.map((item, idx) => (
               <div
                 key={`cart-row-${item.id || idx}`}
-                className="flex gap-4 bg-white border border-zinc-150 rounded-2xl p-3 items-center hover:border-zinc-200 transition-colors shadow-xs"
+                className="flex gap-3.5 bg-white border border-zinc-200/80 rounded-2xl p-3.5 items-center hover:border-zinc-300 transition-colors shadow-2xs"
               >
                 {/* Image */}
-                <div className="w-16 h-20 bg-zinc-50 rounded-xl overflow-hidden shrink-0">
+                <div className="w-16 h-20 bg-zinc-50 rounded-xl overflow-hidden shrink-0 border border-zinc-100">
                   <ProductImage product={item.product} shop={shop} index={0} className="w-full h-full object-cover" />
                 </div>
 
-                {/* Metadata */}
-                <div className="flex-grow space-y-0.5 min-w-0 text-left">
-                  <h4 className="text-xs font-bold text-zinc-800 truncate font-sans">{item.product.name}</h4>
-                  <p className="text-[10px] text-zinc-400 font-sans">
-                    Size: {item.size} {item.color ? `| Color: ${item.color}` : ''}
-                  </p>
-                  <span className="text-xs font-bold text-zinc-950 block font-sans">${item.product.price}</span>
+                {/* Details */}
+                <div className="flex-grow space-y-1 min-w-0 text-left">
+                  <h4 className="text-xs font-bold text-zinc-900 truncate font-sans">{item.product.name}</h4>
+                  
+                  {(item.size || item.color) && (
+                    <p className="text-[10px] text-zinc-500 font-medium font-sans">
+                      {[item.size ? `Size: ${item.size}` : '', item.color ? `Color: ${item.color}` : ''].filter(Boolean).join(' | ')}
+                    </p>
+                  )}
+
+                  <span className="text-xs font-extrabold text-zinc-950 block font-sans">
+                    ${item.product.price} USD
+                  </span>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col items-end gap-3 shrink-0">
+                {/* Actions & Quantity */}
+                <div className="flex flex-col items-end gap-2.5 shrink-0">
                   <button
                     onClick={() => onRemoveItem(item.id)}
                     className="p-1 text-zinc-400 hover:text-red-500 transition-colors cursor-pointer"
@@ -112,20 +139,19 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
                     <Trash2 className="w-4 h-4" />
                   </button>
 
-                  {/* Quantity control */}
-                  <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-250/60 rounded-lg px-2 py-0.5">
+                  <div className="flex items-center gap-2 bg-zinc-100/80 border border-zinc-200 rounded-lg px-2 py-1">
                     <button
                       onClick={() => onUpdateQuantity(item.id, -1)}
-                      className="text-zinc-500 hover:text-green-600 cursor-pointer p-0.5"
+                      className="text-zinc-600 hover:text-black cursor-pointer p-0.5"
                     >
-                      <Minus className="w-2.5 h-2.5" />
+                      <Minus className="w-3 h-3" />
                     </button>
-                    <span className="text-xs font-bold w-4 text-center text-zinc-800">{item.quantity}</span>
+                    <span className="text-xs font-bold w-4 text-center text-zinc-900">{item.quantity}</span>
                     <button
                       onClick={() => onUpdateQuantity(item.id, 1)}
-                      className="text-zinc-500 hover:text-green-600 cursor-pointer p-0.5"
+                      className="text-zinc-600 hover:text-black cursor-pointer p-0.5"
                     >
-                      <Plus className="w-2.5 h-2.5" />
+                      <Plus className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
@@ -133,191 +159,47 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
             ))}
           </div>
 
-          {/* ----------------- VISIT SHOP EXPERIENCE (PRIORITY 4) ----------------- */}
-          {hasLocationData && (
-            <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-3.5 text-left">
-              <div className="flex items-center gap-2 pb-2 border-b border-zinc-200/60">
-                <MapPin className="w-4 h-4 text-green-600 animate-pulse" />
-                <span className="text-[10px] uppercase tracking-wider text-zinc-900 font-extrabold font-sans">
-                  How to Find Us
-                </span>
-              </div>
-              
-              <div className="space-y-3">
-                {/* 📍 Address */}
-                <div className="flex items-center gap-2.5">
-                  <span className="text-xs shrink-0">📍</span>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Address</span>
-                    <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.shop_address || shop?.location || shop?.town || 'Bulawayo CBD'}</span>
-                  </div>
-                </div>
-
-                {/* 📍 Building */}
-                {(shop?.building_name) && (
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs shrink-0">📍</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Building</span>
-                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.building_name}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 🏢 Floor */}
-                {(shop?.floor) && (
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs shrink-0">🏢</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Floor</span>
-                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.floor}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 🚪 Shop Number */}
-                {(shop?.shop_number) && (
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs shrink-0">🚪</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Shop Number</span>
-                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.shop_number}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 📌 Landmark */}
-                {(shop?.landmark) && (
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xs shrink-0">📌</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Landmark</span>
-                      <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shop?.landmark}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* 🧭 Directions */}
-                {(shop?.directions) && (
-                  <div className="bg-white border border-green-200 rounded-xl p-3 shadow-xs mt-3 flex items-start gap-2.5">
-                    <span className="text-sm shrink-0 mt-0.5">🧭</span>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[8px] font-bold text-green-700 uppercase tracking-wider block font-mono">Directions</span>
-                      <p className="text-xs font-bold text-zinc-950 font-sans mt-0.5 leading-relaxed break-words whitespace-pre-wrap">
-                        {shop?.directions}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-2">
-                <a
-                  href={whatsappLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-center gap-2 py-3 px-4 bg-green-600 hover:bg-green-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer shadow-xs"
-                >
-                  <MessageCircle className="w-4 h-4 fill-white/10" />
-                  <span>Enquire via WhatsApp</span>
-                </a>
-              </div>
+          {/* Simple Total Price Summary Card */}
+          <div className="bg-zinc-50 border border-zinc-200/80 rounded-2xl p-4 space-y-2">
+            <div className="flex justify-between items-center text-xs text-zinc-500 font-semibold font-sans">
+              <span>Subtotal</span>
+              <span className="font-bold text-zinc-900">${total} USD</span>
             </div>
-          )}
-
-          {/* ----------------- DELIVERY METHOD ----------------- */}
-          <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-3">
-            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block">Delivery Option</span>
-            
-            <div className="space-y-2 text-left">
-              {/* Pickup Option */}
-              <div
-                onClick={() => onChangeShippingMethod('pickup')}
-                className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                  shippingMethod === 'pickup'
-                    ? 'bg-green-500/5 border-green-500 text-green-700'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Store className="w-4 h-4 shrink-0" />
-                  <div>
-                    <span className="text-[11px] font-bold block font-sans">Boutique Pickup</span>
-                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Collect in Bulawayo/Harare showroom</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold uppercase font-sans">Free</span>
-              </div>
-
-              {/* Same City Delivery */}
-              <div
-                onClick={() => onChangeShippingMethod('harare')}
-                className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                  shippingMethod === 'harare'
-                    ? 'bg-green-500/5 border-green-500 text-green-700'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Truck className="w-4 h-4 shrink-0" />
-                  <div>
-                    <span className="text-[11px] font-bold block font-sans">Same City Courier Delivery</span>
-                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Delivered to coordinates in your city</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold font-sans">$5.00</span>
-              </div>
-
-              {/* Nationwide Courier */}
-              <div
-                onClick={() => onChangeShippingMethod('nationwide')}
-                className={`p-3 rounded-xl border cursor-pointer flex items-center justify-between transition-all ${
-                  shippingMethod === 'nationwide'
-                    ? 'bg-green-500/5 border-green-500 text-green-700'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 text-zinc-600'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Truck className="w-4 h-4 shrink-0" />
-                  <div>
-                    <span className="text-[11px] font-bold block font-sans">Nationwide Courier</span>
-                    <span className="text-[9px] text-zinc-400 font-sans font-medium">Certified shipping across Zimbabwe</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold font-sans">$7.00</span>
-              </div>
+            <div className="border-t border-zinc-200 pt-2 flex justify-between items-center">
+              <span className="text-zinc-900 font-extrabold text-xs uppercase tracking-wider font-sans">Total Amount</span>
+              <span className="text-lg font-black text-zinc-900 font-sans">${total} USD</span>
             </div>
           </div>
 
-          {/* ----------------- PRICE CALCULATION SUMMARY ----------------- */}
-          <div className="bg-zinc-50 border border-zinc-150 rounded-[20px] p-5 space-y-4">
-            <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block">Summary Breakdown</span>
-            
-            <div className="space-y-2 text-xs font-medium">
-              <div className="flex justify-between text-zinc-500 font-sans">
-                <span>Subtotal</span>
-                <span className="font-bold text-zinc-800">${subtotal} USD</span>
-              </div>
-              <div className="flex justify-between text-zinc-500 font-sans">
-                <span>Delivery</span>
-                <span className="font-bold text-zinc-800">${deliveryFee === 0 ? '0.00' : `${deliveryFee}.00`} USD</span>
-              </div>
-              <div className="border-t border-zinc-200 pt-3 flex justify-between items-end text-sm">
-                <span className="text-zinc-900 font-bold text-xs uppercase tracking-wider font-sans">Total</span>
-                <span className="text-lg font-bold text-zinc-900 font-sans">${total} USD</span>
-              </div>
-            </div>
-
+          {/* Fixed Bottom Action Panel (Visit Shop & Order on WhatsApp) */}
+          <div className="fixed bottom-20 left-4 right-4 p-2.5 bg-white/95 backdrop-blur-md border border-zinc-200/80 shadow-xl rounded-2xl z-45 max-w-[480px] mx-auto flex items-center gap-2">
+            {/* Visit Shop */}
             <button
-              onClick={() => onNavigateToPage('checkout')}
-              className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs font-sans"
+              onClick={() => setShowDirections(true)}
+              className="flex-1 py-3.5 px-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
             >
-              Proceed to checkout <ArrowRight className="w-4 h-4" />
+              <MapPin className="w-4 h-4 text-emerald-400" />
+              <span>Visit Shop</span>
+            </button>
+
+            {/* Order on WhatsApp */}
+            <button
+              onClick={handleOrderCartOnWhatsApp}
+              className="flex-1 py-3.5 px-3 bg-[#bef715] hover:bg-[#aef000] text-black text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm font-sans"
+            >
+              <MessageCircle className="w-4 h-4 fill-black/20" />
+              <span>Order on WhatsApp</span>
             </button>
           </div>
         </div>
       )}
+
+      {/* Directions Modal Overlay */}
+      <DirectionsModal
+        isOpen={showDirections}
+        onClose={() => setShowDirections(false)}
+        shop={shop}
+      />
     </div>
   );
 };

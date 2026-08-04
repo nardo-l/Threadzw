@@ -3,6 +3,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, MessageCircle, ArrowLeft, ZoomIn, ZoomOut, Heart, HelpCircle, X, Compass, Truck, Map, MapPin, Star, Camera, Image, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react';
 import { ProductImage, ShopLogo } from '../ui/ShopImage';
+import { DirectionsModal } from './DirectionsModal';
 import { parseShopConfig } from '../../utils/configHelper';
 import { toast } from 'sonner';
 import { supabase } from '../../lib/supabase';
@@ -65,7 +66,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [zoomMode, setZoomMode] = useState(false);
-  const [showBuySheet, setShowBuySheet] = useState(false);
+  const [showDirections, setShowDirections] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [zoomScale, setZoomScale] = useState(1);
@@ -486,41 +487,48 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
       )}
 
 
-      {/* ----------------- 7. INTERACTIVE ACTION PANEL ----------------- */}
-      {/* Docked beautifully at bottom-20 right above floating bottom navigation */}
-      <div className="fixed bottom-20 left-4 right-4 p-3 bg-white/95 backdrop-blur-md border border-zinc-150 shadow-lg rounded-2xl z-45 max-w-[480px] mx-auto flex gap-2">
-        <button
-          onClick={handleWhatsAppSeller}
-          className="p-3 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 text-zinc-600 rounded-xl flex items-center justify-center shrink-0 cursor-pointer transition-colors"
-          title="WhatsApp Seller"
-        >
-          <MessageCircle className="w-5 h-5 text-green-600 fill-green-100" />
-        </button>
-
+      {/* ----------------- 7. INTERACTIVE ACTION PANEL (VISIT SHOP & ORDER ON WHATSAPP) ----------------- */}
+      <div className="fixed bottom-20 left-4 right-4 p-2.5 bg-white/95 backdrop-blur-md border border-zinc-200/80 shadow-xl rounded-2xl z-45 max-w-[480px] mx-auto flex items-center gap-2">
+        {/* Add to Cart button */}
         <button
           disabled={isSoldOut}
           onClick={handleAddToCart}
-          className={`flex-1 py-3 text-xs font-bold uppercase rounded-xl flex items-center justify-center gap-1.5 border transition-all cursor-pointer ${
-            isSoldOut
-              ? 'bg-zinc-100 border-zinc-100 text-zinc-400 line-through cursor-not-allowed'
-              : 'bg-white border-zinc-200 text-zinc-800 hover:bg-zinc-50'
-          }`}
+          className="p-3.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl flex items-center justify-center shrink-0 cursor-pointer transition-colors disabled:opacity-50"
+          title="Add to Cart"
         >
-          <ShoppingBag className="w-4 h-4" /> Add to Cart
+          <ShoppingBag className="w-5 h-5" />
         </button>
 
+        {/* Visit Shop Button */}
+        <button
+          onClick={() => setShowDirections(true)}
+          className="flex-1 py-3.5 px-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
+        >
+          <MapPin className="w-4 h-4 text-emerald-400" />
+          <span>Visit Shop</span>
+        </button>
+
+        {/* Order on WhatsApp Button */}
         <button
           disabled={isSoldOut}
-          onClick={handleBuyNow}
-          className={`flex-1 py-3 text-xs font-bold uppercase rounded-xl transition-colors cursor-pointer ${
+          onClick={handleWhatsAppSeller}
+          className={`flex-1 py-3.5 px-3 text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             isSoldOut
-              ? 'bg-zinc-100 text-zinc-450 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700 text-white shadow-2xs'
+              ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed line-through'
+              : 'bg-[#bef715] hover:bg-[#aef000] text-black shadow-sm'
           }`}
         >
-          Buy Now
+          <MessageCircle className="w-4 h-4 fill-black/20" />
+          <span>Order on WhatsApp</span>
         </button>
       </div>
+
+      {/* Directions Overlay Modal */}
+      <DirectionsModal
+        isOpen={showDirections}
+        onClose={() => setShowDirections(false)}
+        shop={shop}
+      />
 
       {/* ----------------- ZOOM MODAL OVERLAY ----------------- */}
       <AnimatePresence>
@@ -626,232 +634,6 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Buy Now Premium Bottom Sheet */}
-      <AnimatePresence>
-        {showBuySheet && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowBuySheet(false)}
-              className="fixed inset-0 bg-black/40 z-[90] backdrop-blur-3xs"
-            />
-            {/* Slide-up Container */}
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 250 }}
-              className="fixed bottom-0 left-0 right-0 max-w-[480px] mx-auto bg-white rounded-t-3xl shadow-2xl border-t border-zinc-100 z-[95] overflow-hidden max-h-[85vh] flex flex-col font-sans text-zinc-900"
-            >
-              {/* Header handle bar */}
-              <div className="w-12 h-1.5 bg-zinc-200 rounded-full mx-auto my-3" />
-              
-              <div className="px-6 pb-8 overflow-y-auto space-y-6">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-bold font-sans text-zinc-900">How to Order</h3>
-                    <p className="text-xs text-zinc-500 mt-0.5">Secure your piece directly from {shop?.name}</p>
-                  </div>
-                  <button 
-                    onClick={() => setShowBuySheet(false)}
-                    className="p-1.5 bg-zinc-50 hover:bg-zinc-100 rounded-full border border-zinc-150 text-zinc-500"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Shop Card */}
-                <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-4 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-zinc-200 overflow-hidden border border-zinc-200 shrink-0">
-                      <ShopLogo shop={shop} size="100%" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <h4 className="text-sm font-bold text-zinc-900">{shop?.name}</h4>
-                        <span className="inline-flex items-center justify-center bg-blue-500 text-white rounded-full p-0.5 shrink-0" style={{ width: '14px', height: '14px' }}>
-                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-2.5 h-2.5">
-                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-                          </svg>
-                        </span>
-                      </div>
-                      <p className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">Verified Merchant</p>
-                    </div>
-                  </div>
-
-                  {/* Delivery & Pickup options with dynamic status chips */}
-                  <div className="space-y-3 pt-3 border-t border-zinc-200/60 text-xs">
-                    <h5 className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Delivery & Collection Options</h5>
-                    
-                    <div className="flex flex-wrap gap-2">
-                      {/* Store Pickup */}
-                      <div className={`px-2.5 py-1.5 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all ${
-                        (shopConfig?.pickup_available || shop?.pickup_available)
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                          : 'bg-zinc-50 border-zinc-150 text-zinc-400 line-through opacity-60'
-                      }`}>
-                        <span>🏪</span>
-                        <span className="font-medium">Store Pickup: {(shopConfig?.pickup_available || shop?.pickup_available) ? (shopConfig?.pickup_label || 'Available') : 'Not Available'}</span>
-                      </div>
-
-                      {/* Same City Delivery */}
-                      <div className={`px-2.5 py-1.5 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all ${
-                        shopConfig?.harare_delivery
-                          ? 'bg-indigo-50 border-indigo-200 text-indigo-800'
-                          : 'bg-zinc-50 border-zinc-150 text-zinc-400 line-through opacity-60'
-                      }`}>
-                        <span>📍</span>
-                        <span className="font-medium">Same City: {shopConfig?.harare_delivery || 'Not Configured'}</span>
-                      </div>
-
-                      {/* Nationwide Courier */}
-                      <div className={`px-2.5 py-1.5 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all ${
-                        shopConfig?.nationwide_courier
-                          ? 'bg-violet-50 border-violet-200 text-violet-800'
-                          : 'bg-zinc-50 border-zinc-150 text-zinc-400 line-through opacity-60'
-                      }`}>
-                        <span>🚚</span>
-                        <span className="font-medium">Nationwide: {shopConfig?.nationwide_courier || 'Not Configured'}</span>
-                      </div>
-
-                      {/* International Shipping */}
-                      <div className={`px-2.5 py-1.5 rounded-lg border text-[11px] flex items-center gap-1.5 transition-all ${
-                        shopConfig?.international_shipping
-                          ? 'bg-pink-50 border-pink-200 text-pink-800'
-                          : 'bg-zinc-50 border-zinc-150 text-zinc-400 line-through opacity-60'
-                      }`}>
-                        <span>🌐</span>
-                        <span className="font-medium">International: {shopConfig?.international_shipping || 'Not Available'}</span>
-                      </div>
-                    </div>
-
-                    {/* How to Find Us block */}
-                    {!shop?.online_only && (
-                      <div className="pt-3 border-t border-zinc-200/40 space-y-2">
-                        <div className="flex items-center gap-1.5 text-zinc-800 font-bold uppercase tracking-wider text-[10px] font-mono">
-                          <span>🧭</span>
-                          <span>How to Find Us</span>
-                        </div>
-                        
-                        <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 shadow-sm space-y-3.5 text-left w-full">
-                          {/* 📍 Address */}
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm shrink-0">📍</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Address</span>
-                              <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shopConfig?.shop_address || shop?.shop_address || shop?.location || 'Bulawayo CBD'}</span>
-                            </div>
-                          </div>
-
-                          {/* 📍 Building */}
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm shrink-0">📍</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Building</span>
-                              <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shopConfig?.building_name || shop?.building_name || 'HnS Building'}</span>
-                            </div>
-                          </div>
-
-                          {/* 🏢 Floor */}
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm shrink-0">🏢</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Floor</span>
-                              <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shopConfig?.floor || shop?.floor || 'First Floor'}</span>
-                            </div>
-                          </div>
-
-                          {/* 🚪 Shop Number */}
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm shrink-0">🚪</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Shop Number</span>
-                              <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shopConfig?.shop_number || shop?.shop_number || '23'}</span>
-                            </div>
-                          </div>
-
-                          {/* 📌 Landmark */}
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm shrink-0">📌</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block font-mono">Landmark</span>
-                              <span className="text-xs font-semibold text-zinc-900 font-sans break-words block">{shopConfig?.landmark || shop?.landmark || 'Opposite City Hall'}</span>
-                            </div>
-                          </div>
-
-                          {/* 🧭 Directions (Most prominent) */}
-                          <div className="bg-white border-2 border-green-200/80 rounded-xl p-3 shadow-xs mt-3 flex items-start gap-3">
-                            <span className="text-base shrink-0 mt-0.5">🧭</span>
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[9px] font-extrabold text-green-700 uppercase tracking-wider block font-mono">Directions</span>
-                              <p className="text-xs font-bold text-zinc-950 font-sans mt-0.5 leading-relaxed break-words whitespace-pre-wrap">
-                                {shopConfig?.directions || shop?.directions || 'Enter through the main entrance of HnS Building, go to the first floor, Shop 23, directly opposite the Game Arena.'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Custom Notes / Promo Alert */}
-                    {shopConfig?.custom_notes && (
-                      <div className="pt-2.5 border-t border-zinc-200/40 space-y-1">
-                        <div className="flex items-center gap-1 text-zinc-500 font-bold uppercase tracking-wider text-[10px] font-mono">
-                          <span>🔔</span>
-                          <span>Boutique Announcement</span>
-                        </div>
-                        <p className="text-zinc-700 font-semibold font-sans text-xs bg-amber-50 border border-amber-200/60 p-2.5 rounded-xl">
-                          {shopConfig.custom_notes}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Interactive Options list */}
-                <div className="space-y-3 pt-2">
-                  {/* WhatsApp Shop Option */}
-                  <button
-                    onClick={() => {
-                      handleWhatsAppSeller();
-                      setShowBuySheet(false);
-                    }}
-                    className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition-colors text-sm uppercase tracking-wider cursor-pointer"
-                  >
-                    <MessageCircle className="w-5 h-5 fill-white/15" /> WhatsApp Shop (Order Now)
-                  </button>
-
-
-
-                  {/* Add to Cart Option */}
-                  <button
-                    onClick={() => {
-                      handleAddToCart();
-                      setShowBuySheet(false);
-                    }}
-                    className="w-full py-3.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors text-sm cursor-pointer"
-                  >
-                    <ShoppingBag className="w-4 h-4 text-zinc-600" /> Add to Cart & Checkout Later
-                  </button>
-
-                  {/* Close / Continue Shopping Option */}
-                  <button
-                    onClick={() => setShowBuySheet(false)}
-                    className="w-full py-3.5 text-center text-zinc-500 hover:text-zinc-800 font-medium text-xs tracking-wider uppercase transition-colors cursor-pointer"
-                  >
-                    Continue Shopping
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
     </div>
   );
 };
