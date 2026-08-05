@@ -256,7 +256,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
   // Buy Now handler
   const handleBuyNow = async () => {
     if (isSoldOut) return;
-    setShowBuySheet(true);
+    setShowDirections(true);
 
     if (shop?.id) {
       console.log("TRACK START", { shopId: shop?.id, eventType: 'map_open' });

@@ -290,22 +290,22 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   {/* Collage Graphic / Image representation */}
                   <div className="py-2 flex items-center justify-center relative">
                     <div className="relative w-full max-w-[280px] h-48 bg-zinc-50 rounded-2xl p-2 border border-zinc-100 flex items-center justify-center overflow-hidden">
-                      {/* Black Blond Hoodie */}
+                      {/* Left Flatlay Clothing Card */}
                       <img
-                        src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=300"
-                        alt="Blond Hoodie"
+                        src="https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif"
+                        alt="Clothing Flatlay"
                         className="w-28 h-36 object-cover rounded-xl shadow-lg -rotate-6 absolute left-2 top-4 border-2 border-white z-10"
                       />
-                      {/* Cap */}
+                      {/* Top Right Cap Card */}
                       <img
-                        src="https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=300"
-                        alt="LA Cap"
+                        src="https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/download%20(2).jfif"
+                        alt="Cap"
                         className="w-24 h-24 object-cover rounded-xl shadow-md rotate-12 absolute right-2 top-2 border-2 border-white z-20"
                       />
-                      {/* Champion Olive Hoodie */}
+                      {/* Bottom Right Trainer / Sweater Card */}
                       <img
-                        src="https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&q=80&w=300"
-                        alt="Olive Hoodie"
+                        src="https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"
+                        alt="Trainers & Drip"
                         className="w-28 h-32 object-cover rounded-xl shadow-lg rotate-3 absolute right-6 bottom-2 border-2 border-white z-0"
                       />
                     </div>
@@ -618,18 +618,18 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
                 <div className="relative w-full h-36 bg-zinc-50 rounded-2xl p-2 border border-zinc-100 flex items-center justify-center overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=300"
-                    alt="Blond Hoodie"
+                    src="https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif"
+                    alt="Clothing Flatlay"
                     className="w-20 h-28 object-cover rounded-xl shadow-lg -rotate-6 absolute left-2 top-2 border-2 border-white z-10"
                   />
                   <img
-                    src="https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=300"
-                    alt="LA Cap"
+                    src="https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/download%20(2).jfif"
+                    alt="Cap"
                     className="w-18 h-18 object-cover rounded-xl shadow-md rotate-12 absolute right-2 top-1 border-2 border-white z-20"
                   />
                   <img
-                    src="https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&q=80&w=300"
-                    alt="Olive Hoodie"
+                    src="https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"
+                    alt="Trainers & Drip"
                     className="w-20 h-24 object-cover rounded-xl shadow-lg rotate-3 absolute right-4 bottom-1 border-2 border-white z-0"
                   />
                 </div>

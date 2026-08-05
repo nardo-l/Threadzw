@@ -49,14 +49,16 @@ export function IPhoneMockup({ className = '' }: IPhoneMockupProps) {
         
         // Dynamic fallback URLs if bucket listing returns zero items or errors
         setImages([
-          'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80',
-          'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=400&q=80'
+          'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif',
+          'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men\'s%20Trainers%20(1).jfif',
+          'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/download%20(2).jfif'
         ]);
       } catch (err) {
         console.warn('Error reading from shop-images storage bucket:', err);
         setImages([
-          'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&w=400&q=80',
-          'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=400&q=80'
+          'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif',
+          'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men\'s%20Trainers%20(1).jfif',
+          'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/download%20(2).jfif'
         ]);
       } finally {
         setLoading(false);
