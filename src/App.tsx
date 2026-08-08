@@ -362,29 +362,28 @@ function AppContent() {
       path === '/signup' ||
       path === '/onboarding'
     ) {
+      if (path === '/signup' || path === '/onboarding') {
+        // Allow user to remain on onboarding/signup flow without interruption
+        console.log("[ROUTER] User is on onboarding/signup route. Allowing flow to continue.");
+        return;
+      }
       if (!loggedIn) {
-        // If not logged in, these paths are perfectly fine to view. No redirect needed.
+        // If not logged in on /login, fine to view
         console.log("[ROUTER] Special route while unauthenticated, returning.");
         return;
       } else {
-        // If logged in, check if shop is still loading
+        // If logged in on /login, check if shop is still loading
         if (shopLoading) {
           console.log("[ROUTER] shopLoading is true on special route, delaying decision.");
           return;
         }
 
         if (hasShop) {
-          // If logged in and has shop, redirect to dashboard!
-          console.log("[ROUTER] User has shop on special route. Transitioning to dashboard.");
+          console.log("[ROUTER] User has shop on /login route. Transitioning to dashboard.");
           setAppStage('dashboard');
         } else {
-          // If logged in but does not have a shop
-          if (path === '/login') {
-            console.log("[ROUTER] User has no shop on special route. Transitioning to onboarding.");
-            setAppStage('onboarding');
-          } else {
-            console.log("[ROUTER] User is already on onboarding, returning.");
-          }
+          console.log("[ROUTER] User has no shop on /login route. Transitioning to onboarding.");
+          setAppStage('onboarding');
         }
         return;
       }
