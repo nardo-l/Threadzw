@@ -257,7 +257,7 @@ export const Paywall: React.FC = () => {
   const [currentSubscription, setCurrentSubscription] = useState<any | null>(null);
   const [loadingSub, setLoadingSub] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [nardopayUrl, setNardopayUrl] = useState<string | null>('https://nardopay.com/subscribe/78bef7c150ea9450');
+  const [nardopayUrl, setNardopayUrl] = useState<string | null>('https://nardopay.com/pay/f1996ce49083d076');
 
   useEffect(() => {
     if (user) {
@@ -318,7 +318,7 @@ export const Paywall: React.FC = () => {
   };
 
   const handleStartCheckout = () => {
-    window.open('https://nardopay.com/subscribe/78bef7c150ea9450', '_blank');
+    window.open('https://nardopay.com/pay/f1996ce49083d076', '_blank');
   };
 
   const handleManualCheck = async () => {

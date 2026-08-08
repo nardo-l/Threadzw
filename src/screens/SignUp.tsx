@@ -1,24 +1,49 @@
 // src/screens/SignUp.tsx
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowRight, 
   ArrowLeft, 
-  Mail, 
   User, 
   MoreHorizontal, 
   Check, 
   Eye, 
   EyeOff, 
-  Loader2 
+  Loader2,
+  Upload,
+  Plus,
+  Trash2,
+  MapPin,
+  Pencil,
+  Store,
+  X,
+  Shirt,
+  Sparkles,
+  ShoppingBag,
+  Tag,
+  Layers,
+  ChevronDown,
+  ShieldCheck,
+  Infinity,
+  Zap,
+  Lock,
+  PartyPopper,
+  Globe,
+  Link,
+  Copy,
+  ExternalLink,
+  Share2,
+  Mail,
+  CheckCircle2
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
 import { FREE_TRIAL_DAYS } from '../lib/plans';
+import { uploadImage } from '../utils/uploadImage';
 
 // Brand SVGs
 const GoogleIcon = () => (
@@ -27,12 +52,6 @@ const GoogleIcon = () => (
     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-  </svg>
-);
-
-const AppleIcon = () => (
-  <svg className="w-5 h-5 fill-current text-black" viewBox="0 0 24 24">
-    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.3c.69-.83 1.15-1.99.1-3.04-1.02.04-2.27.68-2.98 1.51-.62.72-1.16 1.89-1.01 3.02 1.14.09 2.31-.56 2.89-1.49z" />
   </svg>
 );
 
@@ -54,11 +73,76 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
+const NardoPayIcon = () => (
+  <div className="flex items-center gap-1 font-black text-sm tracking-tight">
+    <span className="text-[#1877F2]">NARDO</span>
+    <span className="text-[#FF9900]">PAY</span>
+  </div>
+);
+
 const FacebookIcon = () => (
   <svg className="w-5 h-5 text-[#1877F2] fill-current" viewBox="0 0 24 24">
     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
   </svg>
 );
+
+// Zimbabwe Fashion Bio Suggestions
+const BIO_PRESETS = [
+  {
+    id: 'Streetwear brand',
+    title: 'Streetwear brand',
+    icon: Shirt,
+    text: 'Streetwear brand bringing you the freshest fits in Zimbabwe. Quality pieces. Clean designs. Made for the culture.'
+  },
+  {
+    id: 'Sneaker store',
+    title: 'Sneaker store',
+    icon: ShoppingBag,
+    text: 'Sneakers, streetwear & more. 100% authentic kicks delivered across Zimbabwe.'
+  },
+  {
+    id: 'Thrift store',
+    title: 'Thrift store',
+    icon: Tag,
+    text: 'Thrifted. Curated. Delivered. Handpicked vintage & pre-loved fashion.'
+  },
+  {
+    id: 'Premium fashion',
+    title: 'Premium fashion',
+    icon: Sparkles,
+    text: 'Premium pieces. Made for Zimbabwe. High quality fashion for everyday luxury.'
+  },
+  {
+    id: 'Local clothing brand',
+    title: 'Local clothing brand',
+    icon: MapPin,
+    text: 'Independent clothing brand from Zimbabwe 🇿🇼 Designed & crafted locally.'
+  },
+  {
+    id: 'Vintage clothing',
+    title: 'Vintage clothing',
+    icon: Layers,
+    text: 'Classic vintage style & retro fashion curated for the culture.'
+  },
+  {
+    id: 'Custom clothing',
+    title: 'Custom clothing',
+    icon: Pencil,
+    text: 'Custom fashion & exclusive drops. Bespoke pieces made to stand out.'
+  },
+  {
+    id: 'Fashion & accessories',
+    title: 'Fashion & accessories',
+    icon: Store,
+    text: 'Curated fashion & accessories. Your plug for the latest drip.'
+  },
+  {
+    id: 'Other',
+    title: 'Other',
+    icon: MoreHorizontal,
+    text: 'Your plug for the latest drip in Zimbabwe.'
+  }
+];
 
 interface SignUpProps {
   initialStep?: number;
@@ -66,26 +150,81 @@ interface SignUpProps {
 
 export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const stepParam = searchParams.get('step');
+  const modeParam = searchParams.get('mode');
   const { session } = useAuth();
-  const { refreshShop } = useShopContext();
+  const { shop, refreshShop } = useShopContext();
 
-  // Active step (1 to 4)
+  // Active step (1 to 13)
   const [step, setStep] = useState<number>(() => {
-    if (initialStep !== undefined) return Math.min(4, Math.max(1, initialStep));
+    if (stepParam) {
+      const parsed = parseInt(stepParam, 10);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 13) return parsed;
+    }
+    if (initialStep !== undefined) return Math.min(13, Math.max(1, initialStep));
     return 1;
   });
-  const [viewMode, setViewMode] = useState<'flow' | 'overview'>('flow');
+  const [viewMode, setViewMode] = useState<'flow' | 'overview'>(modeParam === 'cards' ? 'overview' : 'flow');
 
-  // Form state
-  const [shopName, setShopName] = useState('Plusher');
+  // Screen 1 - 4 state
+  const [shopName, setShopName] = useState('Nardo Drip');
   const [referrer, setReferrer] = useState('TikTok');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+263');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // Active shop record ID created during signup
+  const [createdShopId, setCreatedShopId] = useState<string | null>(null);
+
+  // Screen 5: Brand identity (Logo & Banner)
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>(
+    'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=300'
+  );
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string>(
+    'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=1200'
+  );
+
+  // Screen 6: Bio
+  const [selectedBioCategory, setSelectedBioCategory] = useState<string>('Streetwear brand');
+  const [bioText, setBioText] = useState<string>(
+    'Streetwear brand bringing you the freshest fits in Zimbabwe. Quality pieces. Clean designs. Made for the culture.'
+  );
+
+  // Screen 7: Shop Directions
+  const [shopAddress, setShopAddress] = useState<string>('125 Fort Street Mall, Bulawayo, Zimbabwe');
+  const [shopDirections, setShopDirections] = useState<string>(
+    'Head towards Fort Street Mall main entrance. We are on the First Floor, Shop F12. Look for the NARDO DRIP sign.'
+  );
+  const [whatsappPhone, setWhatsappPhone] = useState<string>('+263 77 123 4567');
+
+  // Screen 8: First Product
+  const [productImages, setProductImages] = useState<string[]>([
+    'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=500',
+    'https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&q=80&w=500',
+    'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=500'
+  ]);
+  const [productFiles, setProductFiles] = useState<File[]>([]);
+  const [productName, setProductName] = useState<string>('Nardo Drip Hoodie - Black');
+  const [productPrice, setProductPrice] = useState<string>('35.00');
+  const [productStock, setProductStock] = useState<string>('10');
+  const [productCategory, setProductCategory] = useState<string>('Hoodies');
+  const [productSizes, setProductSizes] = useState<string[]>(['M', 'L']);
+  const [productDescription, setProductDescription] = useState<string>('Premium heavyweight hoodie. Limited drop.');
+
+  // Sync phone into whatsappPhone if unset
+  useEffect(() => {
+    if (phone && phone !== '+263' && (!whatsappPhone || whatsappPhone === '+263 77 123 4567')) {
+      setWhatsappPhone(phone);
+    }
+  }, [phone]);
 
   // Hearing options list
   const REFERRAL_OPTIONS = [
@@ -112,6 +251,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setPhone(val);
   };
 
+  // Step 4 Submit: Sign Up
   const handleSignUp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setAuthError(null);
@@ -160,7 +300,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           }
         } else {
           currentUser = signUpData.user;
-          // Ensure active session if auto-confirm is off or session wasn't set immediately
           if (!signUpData.session) {
             const { data: signInData } = await supabase.auth.signInWithPassword({
               email: emailVal,
@@ -201,8 +340,14 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
         if (existingShop) {
           await supabase.from('shops').update(shopPayload).eq('id', existingShop.id);
+          setCreatedShopId(existingShop.id);
         } else {
-          await supabase.from('shops').insert(shopPayload);
+          const { data: insertedShop } = await supabase
+            .from('shops')
+            .insert(shopPayload)
+            .select('id')
+            .single();
+          if (insertedShop) setCreatedShopId(insertedShop.id);
         }
       } catch (dbErr) {
         console.warn('Shop table insert note:', dbErr);
@@ -214,8 +359,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         console.warn('refreshShop error:', e);
       }
 
-      toast.success('🎉 Welcome to ThreadZW!');
-      navigate('/setup-success', { replace: true });
+      toast.success('🎉 Account created! Let’s brand your store.');
+      // Continue onboarding flow to Screen 5
+      setStep(5);
 
     } catch (err: any) {
       console.error(err);
@@ -226,17 +372,477 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   };
 
+  // Step 5 Submit: Upload Brand Identity (Logo & Banner)
+  const handleSaveBrand = async () => {
+    setLoading(true);
+    try {
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      let targetShopId = createdShopId || shop?.id;
+
+      if (!targetShopId && user) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) targetShopId = dbShop.id;
+      }
+
+      let logoUrl = logoPreview;
+      let bannerUrl = bannerPreview;
+
+      // Upload Logo file if selected
+      if (logoFile && user) {
+        try {
+          logoUrl = await uploadImage({
+            supabase,
+            file: logoFile,
+            bucket: 'shop-avatars',
+            folder: 'logo',
+            userId: targetShopId || user.id
+          });
+        } catch (e) {
+          console.warn('Logo upload note:', e);
+        }
+      }
+
+      // Upload Banner file if selected
+      if (bannerFile && user) {
+        try {
+          bannerUrl = await uploadImage({
+            supabase,
+            file: bannerFile,
+            bucket: 'shop-banners',
+            folder: 'banner',
+            userId: targetShopId || user.id
+          });
+        } catch (e) {
+          console.warn('Banner upload note:', e);
+        }
+      }
+
+      // Persist shop name, logo and banner
+      if (targetShopId) {
+        await supabase
+          .from('shops')
+          .update({
+            name: shopName.trim() || 'My Shop',
+            logo_url: logoUrl,
+            banner_url: bannerUrl
+          })
+          .eq('id', targetShopId);
+      }
+
+      try { await refreshShop(); } catch (e) {}
+      setStep(6);
+    } catch (err: any) {
+      console.error('Error saving brand identity:', err);
+      toast.error('Continuing to next step...');
+      setStep(6);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 6 Submit: Save Bio
+  const handleSaveBio = async () => {
+    setLoading(true);
+    try {
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      let targetShopId = createdShopId || shop?.id;
+
+      if (!targetShopId && user) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) targetShopId = dbShop.id;
+      }
+
+      if (targetShopId) {
+        await supabase
+          .from('shops')
+          .update({
+            description: bioText.trim(),
+            category: selectedBioCategory || 'Streetwear & Fashion'
+          })
+          .eq('id', targetShopId);
+      }
+
+      try { await refreshShop(); } catch (e) {}
+      setStep(7);
+    } catch (err: any) {
+      console.error('Error saving bio:', err);
+      setStep(7);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 7 Submit: Save Shop Directions
+  const handleSaveDirections = async () => {
+    setLoading(true);
+    try {
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      let targetShopId = createdShopId || shop?.id;
+
+      if (!targetShopId && user) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) targetShopId = dbShop.id;
+      }
+
+      if (targetShopId) {
+        await supabase
+          .from('shops')
+          .update({
+            location: shopAddress.trim(),
+            directions: shopDirections.trim(),
+            city: shopAddress.trim(),
+            whatsapp_number: whatsappPhone.trim() || phone.trim()
+          })
+          .eq('id', targetShopId);
+      }
+
+      try { await refreshShop(); } catch (e) {}
+      setStep(8);
+    } catch (err: any) {
+      console.error('Error saving directions:', err);
+      setStep(8);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 8 Submit: Save First Product
+  const handleSaveFirstProduct = async (skip = false) => {
+    setLoading(true);
+    try {
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      let targetShopId = createdShopId || shop?.id;
+
+      if (!targetShopId && user) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) targetShopId = dbShop.id;
+      }
+
+      if (!skip && productName.trim() && targetShopId) {
+        let finalImages = [...productImages];
+
+        // Upload new product files if present
+        if (productFiles.length > 0 && user) {
+          for (const file of productFiles) {
+            try {
+              const url = await uploadImage({
+                supabase,
+                file,
+                bucket: 'product-images',
+                folder: 'product',
+                userId: targetShopId
+              });
+              finalImages.push(url);
+            } catch (e) {
+              console.warn('Product file upload note:', e);
+            }
+          }
+        }
+
+        const priceNum = parseFloat(productPrice) || 35.0;
+        const stockNum = parseInt(productStock) || 10;
+
+        const productPayload = {
+          shop_id: targetShopId,
+          name: productName.trim(),
+          price: priceNum,
+          stock: stockNum,
+          total_stock: stockNum,
+          category: productCategory || 'Hoodies',
+          description: productDescription.trim(),
+          images: finalImages,
+          image_url: finalImages[0] || null,
+          sizes: productSizes,
+          is_published: true,
+          status: 'active',
+          created_at: new Date().toISOString()
+        };
+
+        const { error: prodErr } = await supabase
+          .from('products')
+          .insert(productPayload);
+
+        if (prodErr) {
+          console.error('Error inserting product:', prodErr);
+        }
+      }
+
+      try { await refreshShop(); } catch (e) {}
+      toast.success('Product saved!');
+      setStep(9);
+    } catch (err: any) {
+      console.error('Error in first product setup:', err);
+      setStep(9);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 11 Submit: Handle Nardo Pay Payment
+  const handlePayment = async () => {
+    setLoading(true);
+    try {
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      let targetShopId = createdShopId || shop?.id;
+
+      if (!targetShopId && user) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) targetShopId = dbShop.id;
+      }
+
+      if (targetShopId) {
+        await supabase
+          .from('shops')
+          .update({
+            is_active: true,
+            subscription_status: 'active',
+            plan_type: 'lifetime',
+            paid_at: new Date().toISOString()
+          })
+          .eq('id', targetShopId);
+      }
+
+      try { await refreshShop(); } catch (e) {}
+
+      // Open official Nardo Pay link
+      window.open('https://nardopay.com/pay/f1996ce49083d076', '_blank');
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      toast.success('Redirected to Nardo Pay payment.');
+      setStep(12);
+    } catch (err: any) {
+      console.error('Payment error:', err);
+      toast.error('Payment failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 12 Submit: Go to Screen 13 Activation
+  const handleFinishOnboarding = () => {
+    setStep(13);
+  };
+
+  // Step 13 Submit: Final Account Activation & Dashboard Link
+  const handleActivateAccount = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLoading(true);
+    setAuthError(null);
+
+    try {
+      const emailVal = email.trim();
+      const passVal = password.trim();
+      const confirmVal = confirmPassword.trim();
+
+      if (!emailVal) {
+        toast.error('Please enter your email address');
+        setLoading(false);
+        return;
+      }
+
+      if (!passVal) {
+        toast.error('Please enter a password');
+        setLoading(false);
+        return;
+      }
+
+      if (passVal.length < 6) {
+        toast.error('Password must be at least 6 characters');
+        setLoading(false);
+        return;
+      }
+
+      if (confirmVal && passVal !== confirmVal) {
+        toast.error('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+
+      let activeUser = session?.user || null;
+
+      if (!activeUser) {
+        // Create or authenticates user with Supabase
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: emailVal,
+          password: passVal,
+          options: {
+            data: {
+              full_name: shopName || 'Shop Owner',
+              phone_number: phone || '',
+            }
+          }
+        });
+
+        if (signUpErr) {
+          if (signUpErr.message.includes('already registered')) {
+            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+              email: emailVal,
+              password: passVal
+            });
+            if (signInErr) {
+              toast.error('Email registered. Please verify your password.');
+              throw signInErr;
+            }
+            activeUser = signInData.user;
+          } else {
+            throw signUpErr;
+          }
+        } else {
+          activeUser = signUpData.user;
+          if (!signUpData.session) {
+            const { data: signInData } = await supabase.auth.signInWithPassword({
+              email: emailVal,
+              password: passVal
+            });
+            if (signInData?.user) activeUser = signInData.user;
+          }
+        }
+      } else {
+        // Update user password if provided
+        if (passVal) {
+          try {
+            await supabase.auth.updateUser({ password: passVal });
+          } catch (passErr) {
+            console.warn('Password update note:', passErr);
+          }
+        }
+      }
+
+      const targetShopId = createdShopId || shop?.id;
+      if (activeUser?.id) {
+        if (targetShopId) {
+          await supabase
+            .from('shops')
+            .update({
+              owner_id: activeUser.id,
+              is_active: true,
+              subscription_status: 'active',
+              plan_type: 'lifetime',
+              paid_at: new Date().toISOString()
+            })
+            .eq('id', targetShopId);
+        } else {
+          const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+          const { data: dbShop } = await supabase
+            .from('shops')
+            .select('id')
+            .eq('owner_id', activeUser.id)
+            .maybeSingle();
+
+          if (dbShop) {
+            await supabase
+              .from('shops')
+              .update({
+                is_active: true,
+                subscription_status: 'active',
+                plan_type: 'lifetime',
+                paid_at: new Date().toISOString()
+              })
+              .eq('id', dbShop.id);
+          } else {
+            await supabase
+              .from('shops')
+              .insert({
+                owner_id: activeUser.id,
+                name: shopName || 'My Shop',
+                slug: slug || `shop-${Date.now().toString(36)}`,
+                category: 'Streetwear & Fashion',
+                is_active: true,
+                subscription_status: 'active',
+                plan_type: 'lifetime',
+                paid_at: new Date().toISOString()
+              });
+          }
+        }
+
+        localStorage.setItem('threadzw_logged_in', 'true');
+        localStorage.setItem('supabase_logged_in_user_id', activeUser.id);
+      } else {
+        localStorage.setItem('threadzw_logged_in', 'true');
+      }
+
+      try { await refreshShop(); } catch (e) {}
+
+      toast.success('🎉 Account activated! Welcome to your ThreadZW dashboard.');
+      navigate('/dashboard', { replace: true });
+    } catch (err: any) {
+      console.error('Account activation error:', err);
+      setAuthError(err?.message || 'Failed to activate account');
+      toast.error(err?.message || 'Failed to activate account');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Image Upload Local File Handlers
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      setBannerPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleProductImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const fileArr = Array.from(files);
+      setProductFiles(prev => [...prev, ...fileArr]);
+      const newUrls = fileArr.map(f => URL.createObjectURL(f));
+      setProductImages(prev => [...prev, ...newUrls]);
+    }
+  };
+
+  const toggleSize = (size: string) => {
+    if (productSizes.includes(size)) {
+      setProductSizes(productSizes.filter(s => s !== size));
+    } else {
+      setProductSizes([...productSizes, size]);
+    }
+  };
+
   // Helper component for Progress bar
-  const ProgressIndicator = ({ activeStep }: { activeStep: number }) => (
+  const ProgressIndicator = ({ activeStep, totalSteps = 4 }: { activeStep: number; totalSteps?: number }) => (
     <div className="flex items-center gap-1.5 w-32 sm:w-40">
-      {[1, 2, 3, 4].map((s) => (
-        <div
-          key={s}
-          className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${
-            s <= activeStep ? 'bg-[#C6FF00]' : 'bg-zinc-200'
-          }`}
-        />
-      ))}
+      {Array.from({ length: totalSteps }).map((_, idx) => {
+        const s = idx + 1;
+        return (
+          <div
+            key={s}
+            className={`h-1.5 rounded-full flex-1 transition-all duration-300 ${
+              s <= activeStep ? 'bg-[#C6FF00]' : 'bg-zinc-200'
+            }`}
+          />
+        );
+      })}
     </div>
   );
 
@@ -579,19 +1185,1224 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </motion.div>
               )}
 
+              {/* ========================================= */}
+              {/* SCREEN 5: UPLOAD YOUR BRAND (LOGO & BANNER) */}
+              {/* ========================================= */}
+              {step === 5 && (
+                <motion.div
+                  key="screen5"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-3">
+                    <button
+                      onClick={() => setStep(4)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={2} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-4 pt-1">
+                    <div className="space-y-1">
+                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
+                        Make it yours.
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Add your logo and banner so your storefront feels like your brand.
+                      </p>
+                    </div>
+
+                    {/* Editable Shop Name */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Shop name
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={shopName}
+                          onChange={(e) => setShopName(e.target.value)}
+                          className="w-full bg-white border border-zinc-200 rounded-2xl pl-4 pr-10 py-3 text-sm font-semibold text-black focus:outline-none focus:border-black transition-all"
+                        />
+                        <Pencil className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Logo Section */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Shop logo
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <div className="w-24 h-24 rounded-2xl bg-black border border-zinc-200 overflow-hidden relative flex items-center justify-center shadow-xs shrink-0">
+                          {logoPreview ? (
+                            <img src={logoPreview} alt="Shop Logo" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="text-white text-center p-2 font-black text-xs">
+                              {shopName || 'LOGO'}
+                            </div>
+                          )}
+                        </div>
+
+                        <input
+                          type="file"
+                          id="logo-upload"
+                          accept="image/*"
+                          onChange={handleLogoSelect}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="logo-upload"
+                          className="flex-1 h-24 border-2 border-dashed border-zinc-200 hover:border-black rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-zinc-50/50 hover:bg-zinc-50"
+                        >
+                          <Upload className="w-5 h-5 text-zinc-500 mb-1" />
+                          <span className="text-xs font-bold text-black block">Upload logo</span>
+                          <span className="text-[10px] text-zinc-400 font-medium">Recommended 512x512</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Banner Section */}
+                    <div className="space-y-1 pt-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Shop banner
+                      </label>
+                      <input
+                        type="file"
+                        id="banner-upload"
+                        accept="image/*"
+                        onChange={handleBannerSelect}
+                        className="hidden"
+                      />
+                      <div className="relative w-full h-28 rounded-2xl bg-zinc-900 border border-zinc-200 overflow-hidden group">
+                        {bannerPreview ? (
+                          <img src={bannerPreview} alt="Shop Banner" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-bold text-xs">
+                            NARDO DRIP
+                          </div>
+                        )}
+                        <label
+                          htmlFor="banner-upload"
+                          className="absolute inset-0 bg-black/40 hover:bg-black/60 transition-all flex items-center justify-center gap-2 cursor-pointer text-white text-xs font-bold"
+                        >
+                          <Upload className="w-4 h-4" />
+                          <span>{bannerPreview ? 'Replace Banner' : 'Upload Banner'}</span>
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-zinc-400 font-medium pt-0.5">Recommended 1500x500</p>
+                    </div>
+                  </div>
+
+                  {/* Primary Button */}
+                  <div className="pt-4">
+                    <button
+                      onClick={handleSaveBrand}
+                      disabled={loading}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <span className="text-black font-extrabold">Continue</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-black" />
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 6: ADD BIO */}
+              {/* ========================================= */}
+              {step === 6 && (
+                <motion.div
+                  key="screen6"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-3">
+                    <button
+                      onClick={() => setStep(5)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={2} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-4 pt-1">
+                    <div className="space-y-1">
+                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
+                        Tell people about<br />your brand.
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Choose a description or write your own.
+                      </p>
+                    </div>
+
+                    {/* Bio Presets Grid (3x3 matching design mockups) */}
+                    <div className="grid grid-cols-3 gap-2 pt-1">
+                      {BIO_PRESETS.map((preset) => {
+                        const isSelected = selectedBioCategory === preset.id;
+                        const IconComp = preset.icon;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedBioCategory(preset.id);
+                              setBioText(preset.text);
+                            }}
+                            className={`p-2.5 rounded-2xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer h-20 ${
+                              isSelected
+                                ? 'bg-white border-[#C6FF00] shadow-sm ring-2 ring-[#C6FF00]/40'
+                                : 'bg-white border-zinc-200 hover:border-zinc-300'
+                            }`}
+                          >
+                            <IconComp className={`w-5 h-5 mb-1 ${isSelected ? 'text-black' : 'text-zinc-600'}`} />
+                            <span className="text-[11px] font-bold text-black leading-tight line-clamp-2">
+                              {preset.title}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Editable Bio Textarea */}
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Bio
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          rows={3}
+                          value={bioText}
+                          onChange={(e) => setBioText(e.target.value)}
+                          placeholder="Write a custom description for your storefront..."
+                          className="w-full bg-white border border-zinc-200 rounded-2xl p-3.5 text-xs font-medium text-black placeholder:text-zinc-400 focus:outline-none focus:border-black transition-all resize-none"
+                          maxLength={160}
+                        />
+                        <div className="text-[10px] text-zinc-400 font-mono text-right pt-0.5">
+                          {bioText.length}/160
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Button */}
+                  <div className="pt-3">
+                    <button
+                      onClick={handleSaveBio}
+                      disabled={loading}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <span className="text-black font-extrabold">Continue</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-black" />
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 7: ADD SHOP DIRECTIONS */}
+              {/* ========================================= */}
+              {step === 7 && (
+                <motion.div
+                  key="screen7"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-3">
+                    <button
+                      onClick={() => setStep(6)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={3} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-4 pt-1">
+                    <div className="space-y-1">
+                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
+                        Where can customers<br />find you?
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Add simple directions so customers know where to find your shop.
+                      </p>
+                    </div>
+
+                    {/* Shop Address / Area Input */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Shop address
+                      </label>
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          value={shopAddress}
+                          onChange={(e) => setShopAddress(e.target.value)}
+                          placeholder="City, Area or Suburb (e.g. Fort Street Mall, Bulawayo)"
+                          className="w-full bg-white border border-zinc-200 rounded-2xl pl-10 pr-4 py-3 text-xs font-semibold text-black focus:outline-none focus:border-black transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Directions Textarea */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Directions
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          rows={3}
+                          value={shopDirections}
+                          onChange={(e) => setShopDirections(e.target.value)}
+                          placeholder="e.g. We're at the corner of 6th Avenue and Robert Mugabe Way, next to..."
+                          className="w-full bg-white border border-zinc-200 rounded-2xl p-3 text-xs font-medium text-black placeholder:text-zinc-400 focus:outline-none focus:border-black transition-all resize-none"
+                          maxLength={200}
+                        />
+                        <div className="text-[10px] text-zinc-400 font-mono text-right pt-0.5">
+                          {shopDirections.length}/200
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* WhatsApp Phone Input */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        WhatsApp number (for customers)
+                      </label>
+                      <div className="relative">
+                        <WhatsAppIcon />
+                        <input
+                          type="tel"
+                          value={whatsappPhone}
+                          onChange={(e) => setWhatsappPhone(e.target.value)}
+                          placeholder="+263 77 123 4567"
+                          className="w-full bg-white border border-zinc-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs font-semibold text-black focus:outline-none focus:border-black transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Preview box for customers */}
+                    <div className="p-3 bg-zinc-50/80 rounded-2xl border border-zinc-200/80 space-y-1">
+                      <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                        Preview for your customers
+                      </div>
+                      <div className="flex items-start gap-2 pt-0.5">
+                        <Store className="w-4 h-4 text-black shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-xs font-bold text-black">{shopName}</div>
+                          <div className="text-[11px] font-medium text-zinc-600">{shopAddress}</div>
+                          <div className="text-[10px] text-zinc-500 font-normal leading-normal pt-0.5">
+                            {shopDirections}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Button */}
+                  <div className="pt-3">
+                    <button
+                      onClick={handleSaveDirections}
+                      disabled={loading}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <span className="text-black font-extrabold">Continue</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-black" />
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 8: ADD YOUR FIRST PRODUCT */}
+              {/* ========================================= */}
+              {step === 8 && (
+                <motion.div
+                  key="screen8"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-3">
+                    <button
+                      onClick={() => setStep(7)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={4} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-3 pt-1 max-h-[480px] overflow-y-auto pr-1">
+                    <div className="space-y-1">
+                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
+                        Add your first product
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Let's add a product to your shop. You can add more later.
+                      </p>
+                    </div>
+
+                    {/* Product Images Area */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Product images
+                      </label>
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                        {productImages.map((imgUrl, idx) => (
+                          <div
+                            key={idx}
+                            className="relative w-16 h-16 rounded-xl border border-zinc-200 overflow-hidden bg-zinc-100 shrink-0"
+                          >
+                            <img src={imgUrl} alt={`Product ${idx}`} className="w-full h-full object-cover" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProductImages(productImages.filter((_, i) => i !== idx));
+                              }}
+                              className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-0.5 cursor-pointer hover:bg-black"
+                            >
+                              <X size={10} />
+                            </button>
+                          </div>
+                        ))}
+
+                        <input
+                          type="file"
+                          id="product-images-upload"
+                          accept="image/*"
+                          multiple
+                          onChange={handleProductImageSelect}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="product-images-upload"
+                          className="w-16 h-16 rounded-xl border-2 border-dashed border-zinc-200 hover:border-black flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-zinc-50/50 hover:bg-zinc-50 shrink-0"
+                        >
+                          <Plus className="w-4 h-4 text-zinc-400 mb-0.5" />
+                          <span className="text-[9px] font-bold text-zinc-600">Add more</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Product Name */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Product name
+                      </label>
+                      <input
+                        type="text"
+                        value={productName}
+                        onChange={(e) => setProductName(e.target.value)}
+                        placeholder="e.g. Nardo Drip Hoodie - Black"
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-black focus:outline-none focus:border-black transition-all"
+                      />
+                    </div>
+
+                    {/* Price and Stock row */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                          Price (USD)
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-xs">$</span>
+                          <input
+                            type="text"
+                            value={productPrice}
+                            onChange={(e) => setProductPrice(e.target.value)}
+                            placeholder="35.00"
+                            className="w-full bg-white border border-zinc-200 rounded-xl pl-7 pr-3 py-2.5 text-xs font-semibold text-black focus:outline-none focus:border-black transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                          Stock
+                        </label>
+                        <input
+                          type="number"
+                          value={productStock}
+                          onChange={(e) => setProductStock(e.target.value)}
+                          placeholder="10"
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-black focus:outline-none focus:border-black transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Category Dropdown */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Category
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={productCategory}
+                          onChange={(e) => setProductCategory(e.target.value)}
+                          className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-black focus:outline-none focus:border-black appearance-none cursor-pointer"
+                        >
+                          <option value="Hoodies">Hoodies</option>
+                          <option value="T-Shirts">T-Shirts</option>
+                          <option value="Sneakers">Sneakers</option>
+                          <option value="Pants">Pants</option>
+                          <option value="Jackets">Jackets</option>
+                          <option value="Accessories">Accessories</option>
+                          <option value="Other">Other</option>
+                        </select>
+                        <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Sizes Pills */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Sizes
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        {['S', 'M', 'L', 'XL', 'XXL'].map((sz) => {
+                          const isSelected = productSizes.includes(sz);
+                          return (
+                            <button
+                              key={sz}
+                              type="button"
+                              onClick={() => toggleSize(sz)}
+                              className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#C6FF00] border-black text-black shadow-xs'
+                                  : 'bg-white border-zinc-200 text-zinc-600 hover:border-zinc-300'
+                              }`}
+                            >
+                              {sz}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Short Description */}
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
+                        Short description
+                      </label>
+                      <div className="relative">
+                        <textarea
+                          rows={2}
+                          value={productDescription}
+                          onChange={(e) => setProductDescription(e.target.value)}
+                          placeholder="Premium heavyweight hoodie. Limited drop."
+                          className="w-full bg-white border border-zinc-200 rounded-xl p-2.5 text-xs font-medium text-black placeholder:text-zinc-400 focus:outline-none focus:border-black transition-all resize-none"
+                          maxLength={120}
+                        />
+                        <div className="text-[10px] text-zinc-400 font-mono text-right pt-0.5">
+                          {productDescription.length}/120
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Button */}
+                  <div className="pt-3 space-y-2">
+                    <button
+                      onClick={() => handleSaveFirstProduct(false)}
+                      disabled={loading}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <span className="text-black font-extrabold">Add Product</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-black" />
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSaveFirstProduct(true)}
+                      className="w-full text-center text-xs font-bold text-zinc-400 hover:text-black py-1 transition-colors cursor-pointer"
+                    >
+                      Skip for now
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 9: PREVIEW STOREFRONT */}
+              {/* ========================================= */}
+              {step === 9 && (
+                <motion.div
+                  key="screen9"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-3">
+                    <button
+                      onClick={() => setStep(8)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={5} totalSteps={5} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-3 pt-1">
+                    <div className="space-y-1">
+                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
+                        Preview your storefront
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        This is how customers will see your shop.
+                      </p>
+                    </div>
+
+                    {/* Storefront Mockup Frame */}
+                    <div className="bg-white border-2 border-zinc-900 rounded-3xl p-3 shadow-lg space-y-3 relative overflow-hidden">
+                      {/* Banner with Logo & actions */}
+                      <div className="relative h-24 rounded-2xl overflow-hidden bg-zinc-900">
+                        <img
+                          src={bannerPreview || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=600'}
+                          alt="Shop Banner"
+                          className="w-full h-full object-cover opacity-90"
+                        />
+                        <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/40 backdrop-blur-md p-1 rounded-full text-white">
+                          <Share2 size={12} className="p-0.5 cursor-pointer" />
+                          <MoreHorizontal size={12} className="p-0.5 cursor-pointer" />
+                        </div>
+                        {/* Logo overlay */}
+                        <div className="absolute left-3 bottom-2 w-12 h-12 rounded-xl border-2 border-white overflow-hidden bg-black shadow-md">
+                          <img
+                            src={logoPreview || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=200'}
+                            alt="Shop Logo"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Shop Info */}
+                      <div className="space-y-1 pt-1">
+                        <h2 className="text-base font-black text-black">{shopName || 'Nardo Drip'}</h2>
+                        <p className="text-[11px] text-zinc-600 font-medium leading-tight">
+                          {bioText || 'Streetwear brand bringing you the freshest fits in Zimbabwe.'}
+                        </p>
+                        <div className="flex flex-col gap-0.5 pt-1 text-[10px] text-zinc-500 font-semibold">
+                          <div className="flex items-center gap-1">
+                            <MapPin size={11} className="text-zinc-700" />
+                            <span>{shopAddress || 'Bulawayo, Zimbabwe'}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <WhatsAppIcon />
+                            <span>{whatsappPhone || '+263 77 123 4567'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Categories Pills */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+                        <span className="bg-black text-white text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">
+                          All Products
+                        </span>
+                        <span className="bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2.5 py-1 rounded-full shrink-0">
+                          Hoodies
+                        </span>
+                        <span className="bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2.5 py-1 rounded-full shrink-0">
+                          Tees
+                        </span>
+                        <span className="bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2.5 py-1 rounded-full shrink-0">
+                          Accessories
+                        </span>
+                      </div>
+
+                      {/* Product Card Preview */}
+                      <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-2.5 flex gap-3 items-center">
+                        <img
+                          src={productImages[0] || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=300'}
+                          alt="Product"
+                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-zinc-200"
+                        />
+                        <div className="flex-1 space-y-1">
+                          <div className="text-xs font-bold text-black line-clamp-1">
+                            {productName || 'Nardo Drip Hoodie - Black'}
+                          </div>
+                          <div className="text-xs font-black text-black">${productPrice || '35.00'}</div>
+                          <div className="flex items-center gap-1">
+                            {['S', 'M', 'L', 'XL'].map((sz) => (
+                              <span
+                                key={sz}
+                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                  productSizes.includes(sz) || sz === 'M' || sz === 'L'
+                                    ? 'bg-[#C6FF00] text-black border border-black'
+                                    : 'bg-zinc-200 text-zinc-500'
+                                }`}
+                              >
+                                {sz}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="pt-0.5">
+                            <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1 w-max border border-black/10">
+                              <WhatsAppIcon />
+                              <span>Order on WhatsApp</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Editing notice callout */}
+                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex items-center gap-2 text-xs font-medium text-emerald-800">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>You can edit everything anytime before your shop goes live.</span>
+                    </div>
+                  </div>
+
+                  {/* Primary CTA */}
+                  <div className="pt-3">
+                    <button
+                      onClick={() => setStep(10)}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs"
+                    >
+                      <span className="text-black font-extrabold">Continue to Launch</span>
+                      <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 10: LAUNCH PAYWALL */}
+              {/* ========================================= */}
+              {step === 10 && (
+                <motion.div
+                  key="screen10"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-3">
+                    <button
+                      onClick={() => setStep(9)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={5} totalSteps={5} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-4 pt-1">
+                    <div className="space-y-1">
+                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
+                        Your storefront is ready!
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Everything looks good. Launch your shop and start getting customers.
+                      </p>
+                    </div>
+
+                    {/* Pricing Card */}
+                    <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm space-y-4 text-center relative overflow-hidden">
+                      {/* Pill Badge */}
+                      <div className="inline-block bg-lime-100 text-lime-900 border border-lime-200 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
+                        ONE TIME PAYMENT
+                      </div>
+
+                      {/* Price */}
+                      <div className="space-y-0.5">
+                        <div className="text-5xl font-black text-black tracking-tight">$49</div>
+                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Lifetime Access</div>
+                      </div>
+
+                      <div className="border-t border-zinc-100 pt-3 space-y-2.5 text-left">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
+                            <Infinity className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-extrabold text-black">Pay once, own forever</div>
+                            <div className="text-[11px] text-zinc-500">No monthly fees. Ever.</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
+                            <Store className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-extrabold text-black">Your shop, your brand</div>
+                            <div className="text-[11px] text-zinc-500">Keep your link and customers.</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
+                            <Zap className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="text-xs font-extrabold text-black">Built for Zimbabwe</div>
+                            <div className="text-[11px] text-zinc-500">Local support. Local payment.</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Guarantee badge */}
+                    <div className="bg-lime-50/80 border border-lime-200/80 rounded-2xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold text-lime-900 text-center">
+                      <Check className="w-4 h-4 text-lime-700 stroke-[3]" />
+                      <span>30-day money back guarantee.</span>
+                    </div>
+                  </div>
+
+                  {/* Primary CTA */}
+                  <div className="pt-3 space-y-2 text-center">
+                    <button
+                      onClick={() => setStep(11)}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs"
+                    >
+                      <span className="text-black font-extrabold">Launch My Store – $49</span>
+                      <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                    </button>
+                    <p className="text-[11px] text-zinc-400 font-medium">
+                      Secure payment powered by Nardo Pay
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 11: NARDO PAY PAYMENT */}
+              {/* ========================================= */}
+              {step === 11 && (
+                <motion.div
+                  key="screen11"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-3">
+                    <button
+                      onClick={() => setStep(10)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={5} totalSteps={5} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-4 pt-1">
+                    <div className="space-y-1">
+                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
+                        Complete your payment
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        You're moments away from launching {shopName || 'your store'}.
+                      </p>
+                    </div>
+
+                    {/* Order Summary Box */}
+                    <div className="bg-white border border-zinc-200 rounded-3xl p-4 space-y-3 shadow-xs">
+                      <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                        Order summary
+                      </div>
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-xl bg-black text-white flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
+                            {logoPreview ? (
+                              <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                              (shopName || 'SD').substring(0, 2).toUpperCase()
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-black">ThreadZW Lifetime Plan</div>
+                            <div className="text-[10px] text-zinc-500 font-normal">
+                              Lifetime access to your shop, no monthly fees.
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-xs font-extrabold text-black">$49.00</div>
+                      </div>
+
+                      <div className="border-t border-zinc-100 pt-2 flex items-center justify-between text-xs font-black">
+                        <span className="text-zinc-700">Total</span>
+                        <span className="text-black text-sm">$49.00</span>
+                      </div>
+                    </div>
+
+                    {/* Payment Method Box */}
+                    <div className="bg-white border border-zinc-200 rounded-3xl p-4 space-y-3 shadow-xs">
+                      <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+                        Pay with Nardo Pay
+                      </div>
+
+                      <div className="p-3 bg-zinc-50 rounded-2xl border border-zinc-200 flex items-center justify-between">
+                        <NardoPayIcon />
+                        <span className="text-[10px] font-medium text-zinc-500">Pay securely via EcoCash, ZIPIT or Card.</span>
+                      </div>
+
+                      <button
+                        onClick={handlePayment}
+                        disabled={loading}
+                        className="w-full bg-black hover:bg-zinc-800 text-white font-extrabold text-sm py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 shadow-xs"
+                      >
+                        {loading ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        ) : (
+                          <span>Pay $49 with Nardo Pay</span>
+                        )}
+                      </button>
+
+                      <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-medium pt-0.5">
+                        <Lock size={11} className="text-zinc-400" />
+                        <span>Secure. Fast. Trusted.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Subtext */}
+                  <div className="pt-2 text-center">
+                    <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">
+                      You will be redirected to Nardo Pay to complete your payment securely.
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 12: PAYMENT SUCCESS */}
+              {/* ========================================= */}
+              {step === 12 && (
+                <motion.div
+                  key="screen12"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-2">
+                    <div className="w-5" />
+                    <ProgressIndicator activeStep={5} totalSteps={5} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-3 pt-1">
+                    {/* Celebration checkmark */}
+                    <div className="flex flex-col items-center justify-center text-center space-y-1.5 pt-1">
+                      <div className="relative">
+                        <div className="w-16 h-16 rounded-full bg-[#C6FF00] flex items-center justify-center shadow-md">
+                          <Check className="w-8 h-8 text-black stroke-[3]" />
+                        </div>
+                        <Sparkles className="w-5 h-5 text-[#C6FF00] absolute -top-1 -right-1" />
+                      </div>
+                      <h1 className="text-2xl font-extrabold text-black tracking-tight">
+                        Payment Successful!
+                      </h1>
+                      <p className="text-xs font-bold text-zinc-500">
+                        Your storefront is now live.
+                      </p>
+                    </div>
+
+                    {/* Congratulations Card */}
+                    <div className="bg-lime-50 border border-lime-200 rounded-2xl p-3 space-y-0.5">
+                      <div className="flex items-center gap-2 text-xs font-extrabold text-lime-950">
+                        <span className="text-sm">🎉</span>
+                        <span>Congratulations, {shopName || 'Shop Owner'}!</span>
+                      </div>
+                      <p className="text-[11px] text-lime-900 font-medium leading-relaxed">
+                        Your shop "{shopName}" has been successfully launched on ThreadZW.
+                      </p>
+                    </div>
+
+                    {/* Status & Links List */}
+                    <div className="bg-white border border-zinc-200 rounded-3xl p-3.5 space-y-2.5 shadow-xs">
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
+                          <Globe className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-extrabold text-black">Your shop is live</div>
+                          <div className="text-[10px] text-zinc-500">Customers can now visit and shop.</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
+                          <Link className="w-3.5 h-3.5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-extrabold text-black">Your shop link</div>
+                          <div className="flex items-center justify-between bg-zinc-50 p-2 rounded-xl border border-zinc-200 mt-1">
+                            <span className="text-[10px] font-mono text-black font-semibold truncate">
+                              threadzw.co/shop/{(shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-')}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+                                navigator.clipboard.writeText(`https://threadzw.co/shop/${slug}`);
+                                toast.success('Shop link copied to clipboard!');
+                              }}
+                              className="p-1 hover:bg-zinc-200 rounded-lg text-zinc-600 transition-colors cursor-pointer shrink-0 ml-1"
+                            >
+                              <Copy size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
+                          <Store className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-extrabold text-black">Manage your shop</div>
+                          <div className="text-[10px] text-zinc-500">Add more products, update info and grow your brand.</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary CTA */}
+                  <div className="pt-3">
+                    <button
+                      onClick={handleFinishOnboarding}
+                      disabled={loading}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <span className="text-black font-extrabold">Create My Login Details</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-black" />
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 13: FINAL ACCOUNT ACTIVATION */}
+              {/* ========================================= */}
+              {step === 13 && (
+                <motion.div
+                  key="screen13"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex flex-col justify-between"
+                >
+                  {/* Top Header Nav */}
+                  <div className="flex items-center justify-between pt-1 pb-2">
+                    <button
+                      onClick={() => setStep(12)}
+                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
+                    >
+                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
+                    </button>
+                    <ProgressIndicator activeStep={5} totalSteps={5} />
+                  </div>
+
+                  {/* Main Content */}
+                  <div className="flex-1 space-y-3.5 pt-1">
+                    <div className="space-y-1">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-lime-100 text-lime-900 border border-lime-200 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
+                        <CheckCircle2 size={12} className="text-lime-700" />
+                        <span>Payment Confirmed • $49 Lifetime</span>
+                      </div>
+                      <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight pt-1">
+                        Activate Your Account
+                      </h1>
+                      <p className="text-xs text-zinc-500 font-medium">
+                        Set your login credentials to enter your shop dashboard.
+                      </p>
+                    </div>
+
+                    {/* Shop Confirmation Card */}
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
+                          {logoPreview ? (
+                            <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                          ) : (
+                            (shopName || 'SD').substring(0, 2).toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <div className="text-xs font-black text-black">{shopName || 'Nardo Drip'}</div>
+                          <div className="text-[10px] text-zinc-500">Ready for activation</div>
+                        </div>
+                      </div>
+                      <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-black/10">
+                        Live Store
+                      </span>
+                    </div>
+
+                    {/* Login Details Form */}
+                    <form onSubmit={handleActivateAccount} className="space-y-3">
+                      {/* Email Address */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-black flex items-center justify-between">
+                          <span>Email Address</span>
+                          <span className="text-[10px] text-zinc-400 font-normal">Used for store login</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="your.email@gmail.com"
+                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-3 px-3.5 pl-10 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
+                          />
+                          <Mail className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
+                        </div>
+                      </div>
+
+                      {/* Password */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-black flex items-center justify-between">
+                          <span>Password</span>
+                          <span className="text-[10px] text-zinc-400 font-normal">Min. 6 characters</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            required
+                            minLength={6}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-3 px-3.5 pl-10 pr-10 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
+                          />
+                          <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-black transition-colors cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-black">
+                          Confirm Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            required
+                            minLength={6}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="••••••••"
+                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-3 px-3.5 pl-10 pr-10 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
+                          />
+                          <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-black transition-colors cursor-pointer"
+                          >
+                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {authError && (
+                        <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700">
+                          {authError}
+                        </div>
+                      )}
+                    </form>
+                  </div>
+
+                  {/* Primary CTA */}
+                  <div className="pt-3 space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleActivateAccount}
+                      disabled={loading}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                    >
+                      <span className="text-black font-extrabold">Activate & Enter Dashboard</span>
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-black" />
+                      ) : (
+                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
+                      )}
+                    </button>
+                    <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-medium text-center">
+                      <ShieldCheck size={12} className="text-emerald-600" />
+                      <span>Protected by 256-bit SSL encryption • ThreadZW Platform</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
             </AnimatePresence>
 
         </div>
       )}
 
-      {/* MODE 2: OVERVIEW OF ALL 4 MOCKUP SCREENS SIDE BY SIDE */}
+      {/* MODE 2: OVERVIEW OF ALL ONBOARDING SCREENS SIDE BY SIDE */}
       {viewMode === 'overview' && (
         <div className="w-full max-w-7xl px-4 py-8 mx-auto flex-1 flex flex-col justify-center">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-start justify-center">
             
-            {/* =================================================== */}
             {/* CARD 1: WELCOME */}
-            {/* =================================================== */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div>
@@ -652,9 +2463,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             </div>
 
-            {/* =================================================== */}
             {/* CARD 2: ENTER SHOP NAME */}
-            {/* =================================================== */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
@@ -679,8 +2488,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     <input
                       type="text"
                       readOnly
-                      value="e.g. Plusher, Nardo, Drip Cartel"
-                      className="w-full bg-white border border-zinc-200 rounded-2xl px-3.5 py-3 text-xs font-medium text-zinc-400"
+                      value={shopName}
+                      className="w-full bg-white border border-zinc-200 rounded-2xl px-3.5 py-3 text-xs font-semibold text-black"
                     />
                     <p className="text-[11px] text-zinc-400 font-medium">
                       You can change this later.
@@ -703,9 +2512,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             </div>
 
-            {/* =================================================== */}
             {/* CARD 3: WHERE DID YOU HEAR ABOUT US? */}
-            {/* =================================================== */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
@@ -754,9 +2561,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             </div>
 
-            {/* =================================================== */}
             {/* CARD 4: SIGN UP */}
-            {/* =================================================== */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
@@ -822,6 +2627,373 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
                 <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">4 Sign Up</span>
+              </div>
+            </div>
+
+            {/* CARD 5: UPLOAD BRAND */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={2} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Make it yours.
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Add logo and banner so your store feels like your brand.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    <div>
+                      <label className="text-[10px] font-bold text-black uppercase block">Shop name</label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={shopName}
+                        className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-black uppercase block">Shop logo</label>
+                      <div className="w-20 h-20 bg-black rounded-xl border flex items-center justify-center text-white font-bold text-xs">
+                        LOGO
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(5); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">5 Upload Brand</span>
+              </div>
+            </div>
+
+            {/* CARD 6: ADD BIO */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={2} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Tell customers about your shop
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Choose a description or write your own.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    {BIO_PRESETS.slice(0, 6).map((p) => (
+                      <div key={p.id} className="p-1.5 bg-zinc-50 border rounded-xl text-center text-[10px] font-bold">
+                        {p.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(6); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">6 Add Bio</span>
+              </div>
+            </div>
+
+            {/* CARD 7: SHOP DIRECTIONS */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={3} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Shop directions
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Add location and directions so customers can visit.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-zinc-50 border rounded-xl text-xs space-y-1">
+                    <div className="font-bold">{shopAddress}</div>
+                    <div className="text-zinc-500 text-[10px]">{shopDirections}</div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(7); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">7 Shop Directions</span>
+              </div>
+            </div>
+
+            {/* CARD 8: ADD FIRST PRODUCT */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={4} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Add first product
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Your storefront needs something to sell.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5 text-xs">
+                    <div className="font-bold">{productName}</div>
+                    <div className="text-zinc-500">${productPrice} • Stock: {productStock}</div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(8); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Add Product</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">8 Add First Product</span>
+              </div>
+            </div>
+
+            {/* CARD 9: PREVIEW STOREFRONT */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={5} totalSteps={5} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Preview storefront
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      See how your customers will experience your shop.
+                    </p>
+                  </div>
+
+                  <div className="bg-zinc-50 border p-3 rounded-2xl text-xs space-y-1">
+                    <div className="font-bold text-black">{shopName || 'Nardo Drip'}</div>
+                    <div className="text-[11px] text-zinc-500">{bioText || 'Streetwear brand'}</div>
+                    <div className="text-[10px] text-zinc-400 font-mono">${productPrice || '35.00'} • {productName || 'Hoodie'}</div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(9); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Continue to Launch</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">9 Preview Storefront</span>
+              </div>
+            </div>
+
+            {/* CARD 10: LAUNCH PAYWALL */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={5} totalSteps={5} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Launch Paywall
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      $49 Lifetime Access plan for Zimbabwean merchants.
+                    </p>
+                  </div>
+
+                  <div className="bg-lime-50 border border-lime-200 p-4 rounded-2xl text-center space-y-1">
+                    <div className="text-3xl font-black text-black">$49</div>
+                    <div className="text-[10px] font-bold text-lime-800 uppercase">Lifetime Access</div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(10); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Launch My Store – $49</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">10 Launch Paywall</span>
+              </div>
+            </div>
+
+            {/* CARD 11: NARDO PAY */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={5} totalSteps={5} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Nardo Pay
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Complete $49 payment via EcoCash, ZIPIT or Card.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-zinc-50 border rounded-xl space-y-2">
+                    <NardoPayIcon />
+                    <div className="text-[10px] text-zinc-500">Secure payment processor</div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(11); }}
+                    className="w-full bg-black text-white font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Pay $49 with Nardo Pay</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">11 Nardo Pay</span>
+              </div>
+            </div>
+
+            {/* CARD 12: PAYMENT SUCCESS */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <div className="w-4" />
+                  <ProgressIndicator activeStep={5} totalSteps={5} />
+                </div>
+
+                <div className="space-y-3 py-2 text-center">
+                  <div className="w-12 h-12 rounded-full bg-[#C6FF00] flex items-center justify-center mx-auto">
+                    <Check className="w-6 h-6 text-black stroke-[3]" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Payment Successful!
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Your storefront is live and ready for sales.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(12); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Create My Login Details</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">12 Payment Success</span>
+              </div>
+            </div>
+
+            {/* CARD 13: ACCOUNT ACTIVATION */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={5} totalSteps={5} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      Account Activation
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Set your email & password to enter your shop dashboard.
+                    </p>
+                  </div>
+
+                  <div className="p-3 bg-zinc-50 border rounded-xl space-y-2 text-xs">
+                    <div className="font-bold text-black">{shopName || 'Nardo Drip'}</div>
+                    <div className="text-[10px] text-emerald-700 font-semibold">✓ Payment Confirmed ($49)</div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(13); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Activate & Enter Dashboard</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">13 Account Activation</span>
               </div>
             </div>
 

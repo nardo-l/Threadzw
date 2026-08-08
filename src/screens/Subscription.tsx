@@ -49,7 +49,7 @@ export const Subscription: React.FC = () => {
   }, [user]);
 
   const handleUpgrade = () => {
-    window.open('https://nardopay.com/subscribe/78bef7c150ea9450', '_blank');
+    window.open('https://nardopay.com/pay/f1996ce49083d076', '_blank');
   };
 
   // Trial countdown calculation
