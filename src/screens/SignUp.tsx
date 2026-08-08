@@ -173,7 +173,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const [viewMode, setViewMode] = useState<'flow' | 'overview'>(modeParam === 'cards' ? 'overview' : 'flow');
 
   // Screen 1 - 4 state
-  const [shopName, setShopName] = useState('Nardo Drip');
+  const [shopName, setShopName] = useState('');
   const [referrer, setReferrer] = useState('TikTok');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+263');
@@ -189,19 +189,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
   // Screen 5: Brand identity (Logo & Banner)
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string>(
-    "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"
-  );
+  const [logoPreview, setLogoPreview] = useState<string>('');
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string>(
-    "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif"
-  );
+  const [bannerPreview, setBannerPreview] = useState<string>('');
 
   // Screen 6: Bio
-  const [selectedBioCategory, setSelectedBioCategory] = useState<string>('Streetwear brand');
-  const [bioText, setBioText] = useState<string>(
-    'Streetwear brand bringing you the freshest fits in Zimbabwe. Quality pieces. Clean designs. Made for the culture.'
-  );
+  const [selectedBioCategory, setSelectedBioCategory] = useState<string>('');
+  const [bioText, setBioText] = useState<string>('');
 
   // Screen 7: Shop Directions
   const [shopAddress, setShopAddress] = useState<string>('');
@@ -209,18 +203,14 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const [whatsappPhone, setWhatsappPhone] = useState<string>('+263 77 123 4567');
 
   // Screen 8: First Product
-  const [productImages, setProductImages] = useState<string[]>([
-    'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=500',
-    'https://images.unsplash.com/photo-1578587018452-892bacefd3f2?auto=format&fit=crop&q=80&w=500',
-    'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=500'
-  ]);
+  const [productImages, setProductImages] = useState<string[]>([]);
   const [productFiles, setProductFiles] = useState<File[]>([]);
-  const [productName, setProductName] = useState<string>('Nardo Drip Hoodie - Black');
-  const [productPrice, setProductPrice] = useState<string>('35.00');
-  const [productStock, setProductStock] = useState<string>('10');
-  const [productCategory, setProductCategory] = useState<string>('Hoodies');
-  const [productSizes, setProductSizes] = useState<string[]>(['M', 'L']);
-  const [productDescription, setProductDescription] = useState<string>('Premium heavyweight hoodie. Limited drop.');
+  const [productName, setProductName] = useState<string>('');
+  const [productPrice, setProductPrice] = useState<string>('');
+  const [productStock, setProductStock] = useState<string>('');
+  const [productCategory, setProductCategory] = useState<string>('');
+  const [productSizes, setProductSizes] = useState<string[]>([]);
+  const [productDescription, setProductDescription] = useState<string>('');
 
   // Sync phone into whatsappPhone if unset
   useEffect(() => {
@@ -329,8 +319,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         category: 'Streetwear & Fashion',
         description: `${shopName} official storefront on ThreadZW.`,
         whatsapp_number: phoneVal || '+263771234567',
-        logo_url: "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif",
-        banner_url: "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif",
+        logo_url: logoPreview || null,
+        banner_url: bannerPreview || null,
         is_active: true,
         subscription_status: 'trial',
         trial_ends_at: new Date(Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString()
@@ -1307,7 +1297,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                           <img src={bannerPreview} alt="Shop Banner" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-bold text-xs">
-                            NARDO DRIP
+                            {shopName ? shopName.toUpperCase() : 'YOUR STORE BANNER'}
                           </div>
                         )}
                         <label
@@ -1552,9 +1542,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         <Store className="w-4 h-4 text-black shrink-0 mt-0.5" />
                         <div>
                           <div className="text-xs font-bold text-black">{shopName || 'Your Shop'}</div>
-                          <div className="text-[11px] font-medium text-zinc-600">{shopAddress || '125 Fort Street Mall, Bulawayo, Zimbabwe'}</div>
+                          <div className="text-[11px] font-medium text-zinc-600">{shopAddress || 'No address specified'}</div>
                           <div className="text-[10px] text-zinc-500 font-normal leading-normal pt-0.5">
-                            {shopDirections || 'Head towards Fort Street Mall main entrance. We are on the First Floor, Shop F12. Look for the NARDO DRIP sign.'}
+                            {shopDirections || 'Add step-by-step directions so customers can easily find your store or pickup location.'}
                           </div>
                         </div>
                       </div>
@@ -1664,7 +1654,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         type="text"
                         value={productName}
                         onChange={(e) => setProductName(e.target.value)}
-                        placeholder="e.g. Nardo Drip Hoodie - Black"
+                        placeholder="e.g. Heavyweight Hoodie - Black"
                         className="w-full bg-white border border-zinc-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-black focus:outline-none focus:border-black transition-all"
                       />
                     </div>
@@ -1712,6 +1702,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                           onChange={(e) => setProductCategory(e.target.value)}
                           className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-black focus:outline-none focus:border-black appearance-none cursor-pointer"
                         >
+                          <option value="">Select category...</option>
                           <option value="Hoodies">Hoodies</option>
                           <option value="T-Shirts">T-Shirts</option>
                           <option value="Sneakers">Sneakers</option>
@@ -1841,15 +1832,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       {/* Header row */}
                       <div className="bg-white border-b border-zinc-200 px-3.5 py-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full border border-zinc-200 overflow-hidden shrink-0 bg-zinc-100 flex items-center justify-center">
-                            <img
-                              src={logoPreview || "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"}
-                              alt="Logo"
-                              className="w-full h-full object-cover"
-                            />
+                          <div className="w-8 h-8 rounded-full border border-zinc-200 overflow-hidden shrink-0 bg-black text-white flex items-center justify-center font-black text-xs">
+                            {logoPreview ? (
+                              <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                              <span>{shopName ? shopName.slice(0, 2).toUpperCase() : 'TZ'}</span>
+                            )}
                           </div>
                           <span className="text-xs sm:text-sm font-black text-black">
-                            {shopName || 'Prjctnulla'}
+                            {shopName || 'Your Shop'}
                           </span>
                         </div>
                         <div className="flex items-center gap-2.5 text-black">
@@ -1862,25 +1853,35 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       {/* Banner Image + Overlapping Circular Logo */}
                       <div className="relative">
                         <div className="h-32 sm:h-36 w-full overflow-hidden bg-zinc-900">
-                          <img
-                            src={bannerPreview || "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif"}
-                            alt="Shop Banner"
-                            className="w-full h-full object-cover"
-                          />
+                          {bannerPreview ? (
+                            <img
+                              src={bannerPreview}
+                              alt="Shop Banner"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center text-white/50 font-black text-xs uppercase tracking-widest p-4 text-center">
+                              {shopName ? `${shopName.toUpperCase()} STORE BANNER` : 'STORE BANNER'}
+                            </div>
+                          )}
                         </div>
-                        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full border-4 border-white shadow-md bg-white overflow-hidden -mt-10 relative z-10 mx-auto">
-                          <img
-                            src={logoPreview || "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"}
-                            alt="Shop Logo"
-                            className="w-full h-full object-cover rounded-full"
-                          />
+                        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full border-4 border-white shadow-md bg-black text-white font-black text-xl flex items-center justify-center overflow-hidden -mt-10 relative z-10 mx-auto">
+                          {logoPreview ? (
+                            <img
+                              src={logoPreview}
+                              alt="Shop Logo"
+                              className="w-full h-full object-cover rounded-full"
+                            />
+                          ) : (
+                            <span>{shopName ? shopName.slice(0, 2).toUpperCase() : 'TZ'}</span>
+                          )}
                         </div>
                       </div>
 
                       {/* Shop Info Details */}
                       <div className="space-y-1.5 pt-2 px-4 text-center">
                         <h2 className="text-lg font-black text-black">
-                          {shopName || 'Prjctnulla'}
+                          {shopName || 'Your Shop Name'}
                         </h2>
 
                         <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#25D366] uppercase tracking-wide">
@@ -1889,7 +1890,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         </div>
 
                         <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto pt-0.5">
-                          {bioText || 'Minimal clothing brand based in Bulawayo.'}
+                          {bioText || 'Your storefront bio will appear here.'}
                         </p>
                       </div>
 
@@ -2214,7 +2215,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                           )}
                         </div>
                         <div>
-                          <div className="text-xs font-black text-black">{shopName || 'Prjctnulla'}</div>
+                          <div className="text-xs font-black text-black">{shopName || 'Your Shop'}</div>
                           <div className="text-[10px] text-lime-900 font-semibold">✓ Payment Confirmed ($49 Lifetime)</div>
                         </div>
                       </div>
@@ -2336,7 +2337,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         YOUR SHOP HAS BEEN ACTIVATED 🎉
                       </div>
                       <p className="text-xs text-zinc-500 font-medium max-w-xs leading-relaxed pt-1">
-                        Your shop <span className="font-extrabold text-black">"{shopName || 'Prjctnulla'}"</span> is now live on ThreadZW and ready to start taking orders!
+                        Your shop <span className="font-extrabold text-black">"{shopName || 'Your Shop'}"</span> is now live on ThreadZW and ready to start taking orders!
                       </p>
                     </div>
 
@@ -2791,9 +2792,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     </p>
                   </div>
 
-                  <div className="space-y-1.5 text-xs">
-                    <div className="font-bold">{productName}</div>
-                    <div className="text-zinc-500">${productPrice} • Stock: {productStock}</div>
+                  <div className="space-y-1.5 text-xs bg-zinc-50 border p-3 rounded-2xl">
+                    <div className="font-bold text-black">{productName || 'No product added yet'}</div>
+                    <div className="text-zinc-500 font-medium">{productPrice ? `$${productPrice}` : 'Price: $0.00'} {productStock ? `• Stock: ${productStock}` : '• Stock: 0'}</div>
                   </div>
                 </div>
 
@@ -2831,9 +2832,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   </div>
 
                   <div className="bg-zinc-50 border p-3 rounded-2xl text-xs space-y-1">
-                    <div className="font-bold text-black">{shopName || 'Prjctnulla'}</div>
+                    <div className="font-bold text-black">{shopName || 'Your Shop'}</div>
                     <div className="text-[11px] text-[#25D366] font-bold">🇿🇼 ZIMBABWE STORE LINK</div>
-                    <div className="text-[11px] text-zinc-500">{bioText || 'Minimal clothing brand based in Bulawayo.'}</div>
+                    <div className="text-[11px] text-zinc-500">{bioText || 'Storefront description'}</div>
                   </div>
                 </div>
 
@@ -2987,7 +2988,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   </div>
 
                   <div className="p-3 bg-zinc-50 border rounded-xl space-y-2 text-xs text-left">
-                    <div className="font-bold text-black">{shopName || 'Prjctnulla'}</div>
+                    <div className="font-bold text-black">{shopName || 'Your Shop'}</div>
                     <div className="text-[10px] text-emerald-700 font-semibold">✓ Shop Active & Live</div>
                   </div>
                 </div>

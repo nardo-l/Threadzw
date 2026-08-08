@@ -232,7 +232,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               onClick={onStartFree}
               className="bg-[#C6FF00] hover:bg-[#b5eb00] text-black text-xs font-black px-5 py-2.5 rounded-full transition-all duration-200 cursor-pointer shadow-md shadow-[#C6FF00]/20 tracking-wider uppercase active:scale-95 hover:scale-105"
             >
-              START FREE
+              GET STARTED
             </button>
           </div>
         </div>
@@ -302,7 +302,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                 onClick={onStartFree}
                 className="w-full sm:w-auto h-14 px-8 bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base rounded-2xl flex items-center justify-center gap-3 transition-all duration-200 cursor-pointer active:scale-95 shadow-xl shadow-[#C6FF00]/25 hover:scale-105"
               >
-                <span>Create My Shop Free</span>
+                <span>CREATE MY SHOP</span>
                 <ArrowRight className="w-5 h-5 stroke-[2.5]" />
               </button>
             </motion.div>
@@ -1029,7 +1029,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               onClick={onStartFree}
               className="px-10 h-16 bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-black text-base rounded-2xl inline-flex items-center justify-center gap-3 transition-all duration-200 cursor-pointer shadow-2xl shadow-[#C6FF00]/30 hover:scale-105 active:scale-95 uppercase tracking-wider"
             >
-              <span>Create My Shop Free</span>
+              <span>CREATE MY SHOP</span>
               <ArrowRight className="w-5 h-5 stroke-[3]" />
             </button>
           </div>

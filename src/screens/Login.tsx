@@ -187,7 +187,7 @@ export const Login: React.FC = () => {
               to="/signup" 
               className="font-extrabold text-[#bef715] hover:underline"
             >
-              Get Started Free
+              Get Started
             </Link>
           </p>
 

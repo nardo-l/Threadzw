@@ -106,7 +106,7 @@ export const EmptyFeedDiscovery: React.FC = () => {
           onClick={() => navigate('/shop-centre')}
           className="w-full mt-3 bg-[#f72585] text-white font-syne font-bold text-sm py-3 rounded-xl shadow-lg shadow-primary/20"
         >
-          Open Your Shop — Free
+          Open Your Shop
         </button>
       </div>
     </div>
