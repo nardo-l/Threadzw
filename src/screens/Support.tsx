@@ -13,7 +13,7 @@ interface FAQItem {
 }
 
 const FAQS: FAQItem[] = [
-  { q: 'How long does the free trial last?', a: 'All ThreadZW stores receive a 7-day full-access trial period when created. After the trial, you can subscribe to our Pro Merchant Plan for just $2.99/month to continue selling.' },
+  { q: 'How does ThreadZW pricing work?', a: 'ThreadZW requires a single $49 once-off payment for lifetime merchant access. You receive full storefront features, unlimited product listings, and WhatsApp ordering without any recurring monthly subscriptions.' },
   { q: 'How do customers contact me from my storefront?', a: 'When a customer browses and selects products on your storefront, they click "Checkout." ThreadZW automates their cart draft and instantly redirects them to your configured WhatsApp number to complete payment.' },
   { q: 'Can I upload custom banners and logos?', a: 'Yes! Go to Settings -> Shop Settings to upload your custom store brand logo and banner images, or modify them under the Branding section.' },
   { q: 'How is product stock handled?', a: 'Under the Products list, when recording a sale or manual checkout, our inventory system automatically decrements physical stock count sizes. If an item total stock hits zero, it shows as Sold Out.' },

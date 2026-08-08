@@ -485,18 +485,18 @@ export const Paywall: React.FC = () => {
         {/* 2. Plan Price Banner */}
         <div className="bg-zinc-950 border border-zinc-900/60 rounded-2xl p-5 flex items-center justify-between">
           <div className="space-y-0.5">
-            <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block">Merchant Plan</span>
-            <span className="text-xs text-zinc-300 font-bold">Unlimited products, custom link</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block">Lifetime Plan</span>
+            <span className="text-xs text-zinc-300 font-bold">Unlimited products, custom link, zero monthly fees</span>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$2.99</span>
-            <span className="text-[10px] text-zinc-500 font-bold">per month</span>
+            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$49</span>
+            <span className="text-[10px] text-zinc-500 font-bold">once off</span>
           </div>
         </div>
 
         {/* 3. Features checklist */}
         <div className="space-y-3 pt-1">
-          <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Includes Full Platform Access</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Includes Full Lifetime Access</h4>
           <ul className="space-y-2 text-xs font-semibold text-zinc-400">
             <li className="flex items-center gap-2.5">
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
@@ -508,7 +508,7 @@ export const Paywall: React.FC = () => {
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
                 <Check size={10} className="stroke-[3]" />
               </div>
-              <span>Custom Unique Brand Slug (e.g. threadzw.app/brand)</span>
+              <span>Lifetime Store Access — No Recurring Subscriptions</span>
             </li>
             <li className="flex items-center gap-2.5">
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
@@ -520,7 +520,7 @@ export const Paywall: React.FC = () => {
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
                 <Check size={10} className="stroke-[3]" />
               </div>
-              <span>Real-Time Performance Dashboard Analytics</span>
+              <span>Setup in Under 5 Minutes with Nardo Pay</span>
             </li>
           </ul>
         </div>
@@ -540,7 +540,7 @@ export const Paywall: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin text-black" />
             ) : (
               <>
-                <span>Subscribe via NardoPay</span>
+                <span>Pay $49 via NardoPay</span>
                 <ArrowRight size={14} className="stroke-[2.5px]" />
               </>
             )}

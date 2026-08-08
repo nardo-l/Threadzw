@@ -237,17 +237,17 @@ export const Settings: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                   <span className="text-sm font-black text-black uppercase">
-                    Trial Mode ({trialDaysRemaining} days remaining)
+                    Setup / Pending Activation
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  Your shop is currently operating under the 7-day free trial. After trial expiry, product management will be locked. Upgrade to Pro for $2.99/month.
+                  Activate your ThreadZW store for a single once-off payment of $49. Enjoy lifetime merchant access with zero recurring monthly fees.
                 </p>
                 <button
                   onClick={() => navigate('/subscription')}
                   className="w-full mt-4 bg-zinc-900 text-white font-bold py-3 rounded-xl hover:bg-zinc-800 transition-colors"
                 >
-                  Upgrade to Pro ($2.99/month)
+                  Activate Lifetime Access ($49 Once Off)
                 </button>
               </div>
             ) : (
@@ -255,11 +255,11 @@ export const Settings: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#25D366] shrink-0" />
                   <span className="text-sm font-black text-black uppercase">
-                    Premium Account Active
+                    Lifetime Plan Active ($49 Paid)
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  Your Premium Merchant Subscription is active and verified. Under our standard billing tier, you have unlimited storefront access.
+                  Your ThreadZW Lifetime Merchant Plan is active and verified. You have unlimited storefront access with zero recurring subscription fees.
                 </p>
               </div>
             )}

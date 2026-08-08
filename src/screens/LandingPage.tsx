@@ -316,7 +316,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             >
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
-                <span>7-Day Free Trial</span>
+                <span>$49 Once-Off Plan</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
@@ -794,15 +794,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
           <div className="bg-zinc-950 rounded-3xl p-8 sm:p-12 border-2 border-[#C6FF00]/50 shadow-[0_20px_60px_rgba(198,255,0,0.1)] relative overflow-hidden text-center space-y-8">
             
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider">
-              <span>ThreadZW Pro</span>
+              <span>Lifetime Store Access</span>
             </div>
 
             <div>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-6xl font-black text-white tracking-tight">$2.99</span>
-                <span className="text-zinc-400 font-bold text-lg">/month</span>
+                <span className="text-6xl font-black text-white tracking-tight">$49</span>
+                <span className="text-zinc-400 font-bold text-lg">/ once off</span>
               </div>
-              <p className="text-xs font-extrabold text-[#C6FF00] mt-2">7-Day Free Trial Included</p>
+              <p className="text-xs font-extrabold text-[#C6FF00] mt-2">Zero Monthly Subscription Fees</p>
             </div>
 
             <div className="space-y-3.5 text-left border-y border-zinc-800/80 py-6">
@@ -810,7 +810,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                 'Unlimited Products & Categories',
                 'WhatsApp Ordering Integration',
                 'Inventory & Size Variant Tracking',
-                'Custom Shop Link (threadzw.com/yourshop)',
+                'Custom Shop Link (threadzw.app/shop/yourshop)',
                 'Recent Activity & Analytics Dashboard',
                 'Priority Merchant Support'
               ].map((item) => (
@@ -827,7 +827,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               onClick={onStartFree}
               className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-sm rounded-2xl transition-all cursor-pointer shadow-lg shadow-[#C6FF00]/20 active:scale-95 uppercase tracking-wider"
             >
-              Start 7-Day Free Trial
+              Get Started with $49 Plan
             </button>
 
             <p className="text-[11px] text-zinc-500 font-medium">
@@ -973,8 +973,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               a: "Yes! Put your threadzw.com/yourshop link in your bio on Instagram, TikTok, Facebook, and WhatsApp."
             },
             {
-              q: "What happens after my 7-day free trial?",
-              a: "You can subscribe for $2.99/month to keep your storefront active. If you choose not to subscribe, no hard feelings—there are no hidden cancellation fees."
+              q: "How does the pricing for ThreadZW work?",
+              a: "ThreadZW is a flat $49 once-off single payment for lifetime storefront access. There are no monthly subscriptions, hidden fees, or cancellation worries."
             }
           ].map((item, idx) => (
             <div 

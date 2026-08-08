@@ -99,41 +99,32 @@ export const Subscription: React.FC = () => {
         ) : (
           <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
             <div className="text-center space-y-2">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-[#25D366] font-extrabold bg-[#25D366]/10 px-3 py-1 rounded-full">
-                {subscription?.status === 'active' ? 'Active Pro Subscription' : trialEnded ? 'Trial Ended' : 'Free Trial Active'}
+              <span className="text-[10px] font-mono uppercase tracking-widest text-black font-extrabold bg-[#C6FF00] px-3 py-1 rounded-full border border-black/10">
+                {subscription?.status === 'active' || shop?.plan_type === 'lifetime' ? 'Active Lifetime Plan' : '$49 / Once Off'}
               </span>
-              <h2 className="text-3xl font-black uppercase tracking-tight text-zinc-900">ThreadZW Pro</h2>
+              <h2 className="text-3xl font-black uppercase tracking-tight text-zinc-900">ThreadZW Lifetime Store</h2>
               <div className="flex items-baseline justify-center gap-1 mt-2">
-                <span className="text-4xl font-black text-black">$2.99</span>
-                <span className="text-zinc-500 font-bold text-sm">/month</span>
+                <span className="text-4xl font-black text-black">$49</span>
+                <span className="text-zinc-500 font-bold text-sm">/ once off</span>
               </div>
             </div>
 
-            {trialDaysRemaining !== null && !trialEnded && subscription?.status !== 'active' && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-center space-y-1">
-                <p className="text-xs font-bold text-amber-900">
-                  {trialDaysRemaining} {trialDaysRemaining === 1 ? 'day' : 'days'} remaining on your free trial.
-                </p>
-                <p className="text-[11px] text-amber-700 font-medium">Upgrade now to ensure uninterrupted service.</p>
-              </div>
-            )}
-
-            {trialEnded && subscription?.status !== 'active' && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center space-y-1">
-                <p className="text-xs font-bold text-red-900">Your free trial has ended.</p>
-                <p className="text-[11px] text-red-700 font-medium">Upgrade to continue using ThreadZW.</p>
-              </div>
-            )}
+            <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center space-y-1">
+              <p className="text-xs font-bold text-black">
+                One-time payment for lifetime merchant access.
+              </p>
+              <p className="text-[11px] text-zinc-600 font-medium">No recurring monthly fees. Instant activation.</p>
+            </div>
 
             <div className="space-y-3 pt-2">
               {[
-                'Unlimited products',
-                'Online storefront',
-                'WhatsApp ordering',
-                'Continue receiving orders after your trial'
+                'Unlimited product listings',
+                'Custom WhatsApp ordering storefront',
+                'Lifetime access — zero monthly fees',
+                'Setup in under 5 minutes'
               ].map(benefit => (
                 <div key={benefit} className="flex items-center gap-3 text-xs font-bold text-zinc-700">
-                  <div className="w-5 h-5 rounded-full bg-emerald-50 text-[#25D366] flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-lime-100 text-lime-800 flex items-center justify-center shrink-0">
                     <Check size={12} className="stroke-[3]" />
                   </div>
                   <span>{benefit}</span>
@@ -143,15 +134,15 @@ export const Subscription: React.FC = () => {
 
             <button
               onClick={handleUpgrade}
-              disabled={upgrading || subscription?.status === 'active'}
-              className="w-full h-14 bg-black hover:bg-zinc-800 disabled:opacity-60 text-white font-extrabold text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-md"
+              disabled={upgrading || subscription?.status === 'active' || shop?.plan_type === 'lifetime'}
+              className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5eb00] disabled:opacity-60 text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-sm border border-black/10"
             >
               {upgrading ? (
-                <Loader2 className="animate-spin w-5 h-5" />
-              ) : subscription?.status === 'active' ? (
-                'Pro Plan Active'
+                <Loader2 className="animate-spin w-5 h-5 text-black" />
+              ) : subscription?.status === 'active' || shop?.plan_type === 'lifetime' ? (
+                'Lifetime Plan Active'
               ) : (
-                'Upgrade for $2.99/month'
+                'Pay $49 Once Off'
               )}
             </button>
           </div>

@@ -34,6 +34,10 @@ import {
   Link,
   Copy,
   ExternalLink,
+  Search,
+  Home,
+  Grid,
+  Heart,
   Share2,
   Mail,
   CheckCircle2
@@ -44,6 +48,7 @@ import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
 import { FREE_TRIAL_DAYS } from '../lib/plans';
 import { uploadImage } from '../utils/uploadImage';
+import { SuccessScreen } from '../components/onboarding/SuccessScreen';
 
 // Brand SVGs
 const GoogleIcon = () => (
@@ -185,11 +190,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   // Screen 5: Brand identity (Logo & Banner)
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>(
-    'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=300'
+    "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"
   );
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string>(
-    'https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&q=80&w=1200'
+    "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif"
   );
 
   // Screen 6: Bio
@@ -199,10 +204,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   );
 
   // Screen 7: Shop Directions
-  const [shopAddress, setShopAddress] = useState<string>('125 Fort Street Mall, Bulawayo, Zimbabwe');
-  const [shopDirections, setShopDirections] = useState<string>(
-    'Head towards Fort Street Mall main entrance. We are on the First Floor, Shop F12. Look for the NARDO DRIP sign.'
-  );
+  const [shopAddress, setShopAddress] = useState<string>('');
+  const [shopDirections, setShopDirections] = useState<string>('');
   const [whatsappPhone, setWhatsappPhone] = useState<string>('+263 77 123 4567');
 
   // Screen 8: First Product
@@ -326,6 +329,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         category: 'Streetwear & Fashion',
         description: `${shopName} official storefront on ThreadZW.`,
         whatsapp_number: phoneVal || '+263771234567',
+        logo_url: "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif",
+        banner_url: "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif",
         is_active: true,
         subscription_status: 'trial',
         trial_ends_at: new Date(Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString()
@@ -359,9 +364,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         console.warn('refreshShop error:', e);
       }
 
-      toast.success('🎉 Account created! Let’s brand your store.');
-      // Continue onboarding flow to Screen 5
-      setStep(5);
+      toast.success('🎉 Account created successfully!');
+      // Continue onboarding flow to Signup Success screen (Step 14)
+      setStep(14);
 
     } catch (err: any) {
       console.error(err);
@@ -783,8 +788,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       try { await refreshShop(); } catch (e) {}
 
-      toast.success('🎉 Account activated! Welcome to your ThreadZW dashboard.');
-      navigate('/dashboard', { replace: true });
+      toast.success('🎉 Login successful! Your shop has been activated.');
+      setStep(13);
     } catch (err: any) {
       console.error('Account activation error:', err);
       setAuthError(err?.message || 'Failed to activate account');
@@ -1186,6 +1191,22 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               )}
 
               {/* ========================================= */}
+              {/* SCREEN 14: SIGNUP SUCCESS */}
+              {/* ========================================= */}
+              {step === 14 && (
+                <motion.div
+                  key="screenSignupSuccess"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex-1 flex flex-col justify-between -mx-6 sm:-mx-8 -my-6 sm:-my-8"
+                >
+                  <SuccessScreen onContinue={() => setStep(5)} />
+                </motion.div>
+              )}
+
+              {/* ========================================= */}
               {/* SCREEN 5: UPLOAD YOUR BRAND (LOGO & BANNER) */}
               {/* ========================================= */}
               {step === 5 && (
@@ -1481,13 +1502,27 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                           rows={3}
                           value={shopDirections}
                           onChange={(e) => setShopDirections(e.target.value)}
-                          placeholder="e.g. We're at the corner of 6th Avenue and Robert Mugabe Way, next to..."
+                          placeholder="e.g. Head towards Fort Street Mall main entrance. We are on the First Floor, Shop F12. Look for the NARDO DRIP sign."
                           className="w-full bg-white border border-zinc-200 rounded-2xl p-3 text-xs font-medium text-black placeholder:text-zinc-400 focus:outline-none focus:border-black transition-all resize-none"
                           maxLength={200}
                         />
                         <div className="text-[10px] text-zinc-400 font-mono text-right pt-0.5">
                           {shopDirections.length}/200
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Green Highlighter Notice Box */}
+                    <div className="bg-[#C6FF00] border-2 border-black/20 p-3.5 rounded-2xl space-y-1.5 shadow-xs text-black">
+                      <div className="flex items-center gap-1.5 font-black text-xs uppercase tracking-wider">
+                        <Sparkles className="w-4 h-4 text-black shrink-0" />
+                        <span>Directions Guidance</span>
+                      </div>
+                      <p className="text-xs font-bold leading-snug">
+                        Note that these are the directions on how customers exactly reach your shop.
+                      </p>
+                      <div className="bg-black/10 border border-black/10 p-2.5 rounded-xl text-[11px] font-medium leading-normal text-black">
+                        <span className="font-extrabold">Example:</span> Head towards Fort Street Mall main entrance. We are on the First Floor, Shop F12. Look for the NARDO DRIP sign.
                       </div>
                     </div>
 
@@ -1516,10 +1551,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       <div className="flex items-start gap-2 pt-0.5">
                         <Store className="w-4 h-4 text-black shrink-0 mt-0.5" />
                         <div>
-                          <div className="text-xs font-bold text-black">{shopName}</div>
-                          <div className="text-[11px] font-medium text-zinc-600">{shopAddress}</div>
+                          <div className="text-xs font-bold text-black">{shopName || 'Your Shop'}</div>
+                          <div className="text-[11px] font-medium text-zinc-600">{shopAddress || '125 Fort Street Mall, Bulawayo, Zimbabwe'}</div>
                           <div className="text-[10px] text-zinc-500 font-normal leading-normal pt-0.5">
-                            {shopDirections}
+                            {shopDirections || 'Head towards Fort Street Mall main entrance. We are on the First Floor, Shop F12. Look for the NARDO DRIP sign.'}
                           </div>
                         </div>
                       </div>
@@ -1797,94 +1832,111 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     </div>
 
                     {/* Storefront Mockup Frame */}
-                    <div className="bg-white border-2 border-zinc-900 rounded-3xl p-3 shadow-lg space-y-3 relative overflow-hidden">
-                      {/* Banner with Logo & actions */}
-                      <div className="relative h-24 rounded-2xl overflow-hidden bg-zinc-900">
-                        <img
-                          src={bannerPreview || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=600'}
-                          alt="Shop Banner"
-                          className="w-full h-full object-cover opacity-90"
-                        />
-                        <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/40 backdrop-blur-md p-1 rounded-full text-white">
-                          <Share2 size={12} className="p-0.5 cursor-pointer" />
-                          <MoreHorizontal size={12} className="p-0.5 cursor-pointer" />
+                    <div className="bg-white border-2 border-zinc-900 rounded-3xl shadow-lg relative overflow-hidden flex flex-col">
+                      {/* Top Bar: POWERED BY THREADZW 💚 */}
+                      <div className="bg-[#C6FF00] text-black text-[10px] font-black uppercase tracking-wider py-1.5 px-3 text-center flex items-center justify-center gap-1">
+                        <span>POWERED BY THREADZW 💚</span>
+                      </div>
+
+                      {/* Header row */}
+                      <div className="bg-white border-b border-zinc-200 px-3.5 py-2.5 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full border border-zinc-200 overflow-hidden shrink-0 bg-zinc-100 flex items-center justify-center">
+                            <img
+                              src={logoPreview || "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"}
+                              alt="Logo"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-xs sm:text-sm font-black text-black">
+                            {shopName || 'Prjctnulla'}
+                          </span>
                         </div>
-                        {/* Logo overlay */}
-                        <div className="absolute left-3 bottom-2 w-12 h-12 rounded-xl border-2 border-white overflow-hidden bg-black shadow-md">
+                        <div className="flex items-center gap-2.5 text-black">
+                          <Share2 size={15} className="cursor-pointer" />
+                          <Search size={15} className="cursor-pointer" />
+                          <ShoppingBag size={15} className="cursor-pointer" />
+                        </div>
+                      </div>
+
+                      {/* Banner Image + Overlapping Circular Logo */}
+                      <div className="relative">
+                        <div className="h-32 sm:h-36 w-full overflow-hidden bg-zinc-900">
                           <img
-                            src={logoPreview || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?auto=format&fit=crop&q=80&w=200'}
-                            alt="Shop Logo"
+                            src={bannerPreview || "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/save%20it%20for%20later.jfif"}
+                            alt="Shop Banner"
                             className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full border-4 border-white shadow-md bg-white overflow-hidden -mt-10 relative z-10 mx-auto">
+                          <img
+                            src={logoPreview || "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/Puma%20Men's%20Trainers%20(1).jfif"}
+                            alt="Shop Logo"
+                            className="w-full h-full object-cover rounded-full"
                           />
                         </div>
                       </div>
 
-                      {/* Shop Info */}
-                      <div className="space-y-1 pt-1">
-                        <h2 className="text-base font-black text-black">{shopName || 'Nardo Drip'}</h2>
-                        <p className="text-[11px] text-zinc-600 font-medium leading-tight">
-                          {bioText || 'Streetwear brand bringing you the freshest fits in Zimbabwe.'}
-                        </p>
-                        <div className="flex flex-col gap-0.5 pt-1 text-[10px] text-zinc-500 font-semibold">
-                          <div className="flex items-center gap-1">
-                            <MapPin size={11} className="text-zinc-700" />
-                            <span>{shopAddress || 'Bulawayo, Zimbabwe'}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <WhatsAppIcon />
-                            <span>{whatsappPhone || '+263 77 123 4567'}</span>
-                          </div>
+                      {/* Shop Info Details */}
+                      <div className="space-y-1.5 pt-2 px-4 text-center">
+                        <h2 className="text-lg font-black text-black">
+                          {shopName || 'Prjctnulla'}
+                        </h2>
+
+                        <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#25D366] uppercase tracking-wide">
+                          <Sparkles size={12} className="text-[#25D366]" />
+                          <span>ZIMBABWE STORE LINK</span>
                         </div>
+
+                        <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto pt-0.5">
+                          {bioText || 'Minimal clothing brand based in Bulawayo.'}
+                        </p>
                       </div>
 
-                      {/* Categories Pills */}
-                      <div className="flex items-center gap-1.5 overflow-x-auto py-1">
-                        <span className="bg-black text-white text-[10px] font-bold px-2.5 py-1 rounded-full shrink-0">
-                          All Products
-                        </span>
-                        <span className="bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2.5 py-1 rounded-full shrink-0">
-                          Hoodies
-                        </span>
-                        <span className="bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2.5 py-1 rounded-full shrink-0">
-                          Tees
-                        </span>
-                        <span className="bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2.5 py-1 rounded-full shrink-0">
-                          Accessories
-                        </span>
+                      {/* Action Buttons */}
+                      <div className="space-y-2 pt-3 px-4 pb-2">
+                        <button
+                          type="button"
+                          className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-black text-xs uppercase py-3 px-4 rounded-full flex items-center justify-center gap-2 shadow-xs cursor-pointer tracking-wider border border-black/10"
+                        >
+                          <span>BROWSE CATALOG</span>
+                          <ArrowRight size={14} className="stroke-[2.5]" />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="w-full bg-white hover:bg-zinc-50 border border-zinc-200 text-black font-extrabold text-xs uppercase py-3 px-4 rounded-full flex items-center justify-center gap-2 cursor-pointer shadow-xs tracking-wider"
+                        >
+                          <span>MESSAGE US</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          className="w-full bg-white hover:bg-zinc-50 border border-zinc-200 text-black font-extrabold text-xs uppercase py-3 px-4 rounded-full flex items-center justify-center gap-2 cursor-pointer shadow-xs tracking-wider"
+                        >
+                          <Share2 size={13} />
+                          <span>SHARE SHOP LINK</span>
+                        </button>
                       </div>
 
-                      {/* Product Card Preview */}
-                      <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-2.5 flex gap-3 items-center">
-                        <img
-                          src={productImages[0] || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?auto=format&fit=crop&q=80&w=300'}
-                          alt="Product"
-                          className="w-16 h-16 rounded-xl object-cover shrink-0 border border-zinc-200"
-                        />
-                        <div className="flex-1 space-y-1">
-                          <div className="text-xs font-bold text-black line-clamp-1">
-                            {productName || 'Nardo Drip Hoodie - Black'}
-                          </div>
-                          <div className="text-xs font-black text-black">${productPrice || '35.00'}</div>
-                          <div className="flex items-center gap-1">
-                            {['S', 'M', 'L', 'XL'].map((sz) => (
-                              <span
-                                key={sz}
-                                className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                                  productSizes.includes(sz) || sz === 'M' || sz === 'L'
-                                    ? 'bg-[#C6FF00] text-black border border-black'
-                                    : 'bg-zinc-200 text-zinc-500'
-                                }`}
-                              >
-                                {sz}
-                              </span>
-                            ))}
-                          </div>
-                          <div className="pt-0.5">
-                            <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1 w-max border border-black/10">
-                              <WhatsAppIcon />
-                              <span>Order on WhatsApp</span>
-                            </span>
-                          </div>
+                      {/* Bottom Floating Nav Bar */}
+                      <div className="bg-white border border-zinc-900 rounded-2xl p-2 shadow-md flex justify-around items-center text-[10px] font-bold text-zinc-600 mt-2 mx-3 mb-3">
+                        <div className="flex flex-col items-center gap-0.5 text-black">
+                          <Home size={16} />
+                          <span>Home</span>
+                          <span className="w-1 h-1 bg-[#25D366] rounded-full mt-0.5" />
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5 text-zinc-500">
+                          <Grid size={16} />
+                          <span>Shop</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5 text-zinc-500">
+                          <ShoppingBag size={16} />
+                          <span>Cart</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5 text-zinc-500">
+                          <Heart size={16} />
+                          <span>Wishlist</span>
                         </div>
                       </div>
                     </div>
@@ -2116,7 +2168,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               )}
 
               {/* ========================================= */}
-              {/* SCREEN 12: PAYMENT SUCCESS */}
+              {/* SCREEN 12: PAYMENT SUCCESS & LOGIN SLOT */}
               {/* ========================================= */}
               {step === 12 && (
                 <motion.div
@@ -2134,7 +2186,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   </div>
 
                   {/* Main Content */}
-                  <div className="flex-1 space-y-3 pt-1">
+                  <div className="flex-1 space-y-3.5 pt-1">
                     {/* Celebration checkmark */}
                     <div className="flex flex-col items-center justify-center text-center space-y-1.5 pt-1">
                       <div className="relative">
@@ -2147,78 +2199,98 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         Payment Successful!
                       </h1>
                       <p className="text-xs font-bold text-zinc-500">
-                        Your storefront is now live.
+                        Your storefront is ready. Set your login credentials to activate your shop.
                       </p>
                     </div>
 
-                    {/* Congratulations Card */}
-                    <div className="bg-lime-50 border border-lime-200 rounded-2xl p-3 space-y-0.5">
-                      <div className="flex items-center gap-2 text-xs font-extrabold text-lime-950">
-                        <span className="text-sm">🎉</span>
-                        <span>Congratulations, {shopName || 'Shop Owner'}!</span>
-                      </div>
-                      <p className="text-[11px] text-lime-900 font-medium leading-relaxed">
-                        Your shop "{shopName}" has been successfully launched on ThreadZW.
-                      </p>
-                    </div>
-
-                    {/* Status & Links List */}
-                    <div className="bg-white border border-zinc-200 rounded-3xl p-3.5 space-y-2.5 shadow-xs">
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
-                          <Globe className="w-3.5 h-3.5" />
+                    {/* Shop Confirmation Card */}
+                    <div className="bg-lime-50 border border-lime-200 rounded-2xl p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
+                          {logoPreview ? (
+                            <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                          ) : (
+                            (shopName || 'SD').substring(0, 2).toUpperCase()
+                          )}
                         </div>
                         <div>
-                          <div className="text-xs font-extrabold text-black">Your shop is live</div>
-                          <div className="text-[10px] text-zinc-500">Customers can now visit and shop.</div>
+                          <div className="text-xs font-black text-black">{shopName || 'Prjctnulla'}</div>
+                          <div className="text-[10px] text-lime-900 font-semibold">✓ Payment Confirmed ($49 Lifetime)</div>
                         </div>
                       </div>
-
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
-                          <Link className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-extrabold text-black">Your shop link</div>
-                          <div className="flex items-center justify-between bg-zinc-50 p-2 rounded-xl border border-zinc-200 mt-1">
-                            <span className="text-[10px] font-mono text-black font-semibold truncate">
-                              threadzw.co/shop/{(shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-')}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-                                navigator.clipboard.writeText(`https://threadzw.co/shop/${slug}`);
-                                toast.success('Shop link copied to clipboard!');
-                              }}
-                              className="p-1 hover:bg-zinc-200 rounded-lg text-zinc-600 transition-colors cursor-pointer shrink-0 ml-1"
-                            >
-                              <Copy size={12} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
-                          <Store className="w-3.5 h-3.5" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-extrabold text-black">Manage your shop</div>
-                          <div className="text-[10px] text-zinc-500">Add more products, update info and grow your brand.</div>
-                        </div>
-                      </div>
+                      <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-black/10">
+                        Ready
+                      </span>
                     </div>
+
+                    {/* Login Details Slot Form */}
+                    <form onSubmit={handleActivateAccount} className="space-y-3 bg-zinc-50 p-3.5 rounded-2xl border border-zinc-200">
+                      <div className="text-xs font-extrabold text-black uppercase tracking-wider flex items-center gap-1.5">
+                        <Lock size={13} className="text-black" />
+                        <span>Create Login Credentials</span>
+                      </div>
+
+                      {/* Email Address */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-zinc-700 block">
+                          Email Address
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="email"
+                            required
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="your.email@gmail.com"
+                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-2.5 px-3 pl-9 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
+                          />
+                          <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+                        </div>
+                      </div>
+
+                      {/* Password */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-zinc-700 block">
+                          Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            required
+                            minLength={6}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Min. 6 characters"
+                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-2.5 px-3 pl-9 pr-9 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
+                          />
+                          <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-3 top-3 text-zinc-400 hover:text-black transition-colors cursor-pointer"
+                          >
+                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {authError && (
+                        <div className="p-2 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700">
+                          {authError}
+                        </div>
+                      )}
+                    </form>
                   </div>
 
                   {/* Primary CTA */}
                   <div className="pt-3">
                     <button
-                      onClick={handleFinishOnboarding}
+                      type="button"
+                      onClick={handleActivateAccount}
                       disabled={loading}
-                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50 border border-black/10"
                     >
-                      <span className="text-black font-extrabold">Create My Login Details</span>
+                      <span className="text-black font-extrabold">LOG IN & ACTIVATE SHOP</span>
                       {loading ? (
                         <Loader2 className="w-5 h-5 animate-spin text-black" />
                       ) : (
@@ -2230,7 +2302,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               )}
 
               {/* ========================================= */}
-              {/* SCREEN 13: FINAL ACCOUNT ACTIVATION */}
+              {/* SCREEN 13: SHOP ACTIVATED SUCCESS PAGE */}
               {/* ========================================= */}
               {step === 13 && (
                 <motion.div
@@ -2243,151 +2315,89 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 >
                   {/* Top Header Nav */}
                   <div className="flex items-center justify-between pt-1 pb-2">
-                    <button
-                      onClick={() => setStep(12)}
-                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
-                    >
-                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
-                    </button>
+                    <div className="w-5" />
                     <ProgressIndicator activeStep={5} totalSteps={5} />
                   </div>
 
                   {/* Main Content */}
-                  <div className="flex-1 space-y-3.5 pt-1">
-                    <div className="space-y-1">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-lime-100 text-lime-900 border border-lime-200 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-                        <CheckCircle2 size={12} className="text-lime-700" />
-                        <span>Payment Confirmed • $49 Lifetime</span>
+                  <div className="flex-1 space-y-4 pt-1">
+                    {/* Celebration Header */}
+                    <div className="flex flex-col items-center justify-center text-center space-y-2 pt-2">
+                      <div className="relative">
+                        <div className="w-20 h-20 rounded-full bg-[#C6FF00] flex items-center justify-center shadow-lg border-2 border-black/10">
+                          <Check className="w-10 h-10 text-black stroke-[3]" />
+                        </div>
+                        <Sparkles className="w-6 h-6 text-[#C6FF00] absolute -top-1 -right-1" />
                       </div>
-                      <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight pt-1">
-                        Activate Your Account
+                      <h1 className="text-2xl font-black text-black tracking-tight pt-1">
+                        Congratulations!
                       </h1>
-                      <p className="text-xs text-zinc-500 font-medium">
-                        Set your login credentials to enter your shop dashboard.
+                      <div className="bg-[#C6FF00] text-black text-xs font-black uppercase px-3 py-1 rounded-full tracking-wider border border-black/10 inline-block">
+                        YOUR SHOP HAS BEEN ACTIVATED 🎉
+                      </div>
+                      <p className="text-xs text-zinc-500 font-medium max-w-xs leading-relaxed pt-1">
+                        Your shop <span className="font-extrabold text-black">"{shopName || 'Prjctnulla'}"</span> is now live on ThreadZW and ready to start taking orders!
                       </p>
                     </div>
 
-                    {/* Shop Confirmation Card */}
-                    <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
-                          {logoPreview ? (
-                            <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
-                          ) : (
-                            (shopName || 'SD').substring(0, 2).toUpperCase()
-                          )}
+                    {/* Shop Link Box with Copy Button */}
+                    <div className="bg-white border-2 border-zinc-900 rounded-3xl p-4 space-y-3 shadow-md">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-[#C6FF00] text-black flex items-center justify-center shrink-0">
+                          <Link className="w-4 h-4 stroke-[2.5]" />
                         </div>
                         <div>
-                          <div className="text-xs font-black text-black">{shopName || 'Nardo Drip'}</div>
-                          <div className="text-[10px] text-zinc-500">Ready for activation</div>
+                          <div className="text-xs font-black text-black uppercase tracking-wider">Your Shop Link</div>
+                          <div className="text-[10px] text-zinc-500 font-medium">Share this link with your customers</div>
                         </div>
                       </div>
-                      <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-black/10">
-                        Live Store
-                      </span>
+
+                      <div className="bg-zinc-100 p-2.5 rounded-2xl border border-zinc-200 flex items-center justify-between gap-2">
+                        <span className="text-xs font-mono font-black text-black truncate pl-1">
+                          threadzw.co/shop/{(shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-')}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+                            navigator.clipboard.writeText(`https://threadzw.co/shop/${slug}`);
+                            toast.success('🎉 Shop link copied to clipboard!');
+                          }}
+                          className="bg-black hover:bg-zinc-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
+                        >
+                          <Copy size={13} />
+                          <span>Copy Link</span>
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Login Details Form */}
-                    <form onSubmit={handleActivateAccount} className="space-y-3">
-                      {/* Email Address */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-black flex items-center justify-between">
-                          <span>Email Address</span>
-                          <span className="text-[10px] text-zinc-400 font-normal">Used for store login</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="your.email@gmail.com"
-                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-3 px-3.5 pl-10 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
-                          />
-                          <Mail className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
-                        </div>
+                    {/* Quick Features List */}
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 space-y-2 text-xs">
+                      <div className="flex items-center gap-2 font-bold text-black">
+                        <CheckCircle2 size={14} className="text-[#25D366]" />
+                        <span>WhatsApp direct ordering enabled</span>
                       </div>
-
-                      {/* Password */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-black flex items-center justify-between">
-                          <span>Password</span>
-                          <span className="text-[10px] text-zinc-400 font-normal">Min. 6 characters</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            required
-                            minLength={6}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-3 px-3.5 pl-10 pr-10 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
-                          />
-                          <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-black transition-colors cursor-pointer"
-                          >
-                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-2 font-bold text-black">
+                        <CheckCircle2 size={14} className="text-[#25D366]" />
+                        <span>Custom storefront banner & logo online</span>
                       </div>
-
-                      {/* Confirm Password */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-black">
-                          Confirm Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            required
-                            minLength={6}
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-3 px-3.5 pl-10 pr-10 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
-                          />
-                          <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-3.5" />
-                          <button
-                            type="button"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            className="absolute right-3.5 top-3.5 text-zinc-400 hover:text-black transition-colors cursor-pointer"
-                          >
-                            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
-                        </div>
+                      <div className="flex items-center gap-2 font-bold text-black">
+                        <CheckCircle2 size={14} className="text-[#25D366]" />
+                        <span>Lifetime active subscription</span>
                       </div>
-
-                      {authError && (
-                        <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700">
-                          {authError}
-                        </div>
-                      )}
-                    </form>
+                    </div>
                   </div>
 
-                  {/* Primary CTA */}
+                  {/* Primary CTA Buttons */}
                   <div className="pt-3 space-y-2">
                     <button
                       type="button"
-                      onClick={handleActivateAccount}
-                      disabled={loading}
-                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+                      onClick={() => navigate('/dashboard', { replace: true })}
+                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-black text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-md border border-black/10 uppercase tracking-wider"
                     >
-                      <span className="text-black font-extrabold">Activate & Enter Dashboard</span>
-                      {loading ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-black" />
-                      ) : (
-                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
-                      )}
+                      <span>GO TO DASHBOARD</span>
+                      <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
                     </button>
-                    <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-medium text-center">
-                      <ShieldCheck size={12} className="text-emerald-600" />
-                      <span>Protected by 256-bit SSL encryption • ThreadZW Platform</span>
-                    </div>
                   </div>
                 </motion.div>
               )}
@@ -2821,9 +2831,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   </div>
 
                   <div className="bg-zinc-50 border p-3 rounded-2xl text-xs space-y-1">
-                    <div className="font-bold text-black">{shopName || 'Nardo Drip'}</div>
-                    <div className="text-[11px] text-zinc-500">{bioText || 'Streetwear brand'}</div>
-                    <div className="text-[10px] text-zinc-400 font-mono">${productPrice || '35.00'} • {productName || 'Hoodie'}</div>
+                    <div className="font-bold text-black">{shopName || 'Prjctnulla'}</div>
+                    <div className="text-[11px] text-[#25D366] font-bold">🇿🇼 ZIMBABWE STORE LINK</div>
+                    <div className="text-[11px] text-zinc-500">{bioText || 'Minimal clothing brand based in Bulawayo.'}</div>
                   </div>
                 </div>
 
@@ -2920,7 +2930,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             </div>
 
-            {/* CARD 12: PAYMENT SUCCESS */}
+            {/* CARD 12: PAYMENT SUCCESS & LOGIN SLOT */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
@@ -2938,7 +2948,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       Payment Successful!
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      Your storefront is live and ready for sales.
+                      Enter email and password below to log in and activate your shop.
                     </p>
                   </div>
                 </div>
@@ -2948,37 +2958,37 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     onClick={() => { setViewMode('flow'); setStep(12); }}
                     className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
                   >
-                    <span>Create My Login Details</span>
+                    <span>Log In & Activate Shop</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">12 Payment Success</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">12 Payment Success & Login</span>
               </div>
             </div>
 
-            {/* CARD 13: ACCOUNT ACTIVATION */}
+            {/* CARD 13: SHOP ACTIVATED SUCCESS */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
-                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <div className="w-4" />
                   <ProgressIndicator activeStep={5} totalSteps={5} />
                 </div>
 
-                <div className="space-y-3 py-2">
+                <div className="space-y-3 py-2 text-center">
                   <div className="space-y-1">
                     <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Account Activation
+                      Congratulations!
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      Set your email & password to enter your shop dashboard.
+                      Your shop has been activated. Copy link and enter dashboard.
                     </p>
                   </div>
 
-                  <div className="p-3 bg-zinc-50 border rounded-xl space-y-2 text-xs">
-                    <div className="font-bold text-black">{shopName || 'Nardo Drip'}</div>
-                    <div className="text-[10px] text-emerald-700 font-semibold">✓ Payment Confirmed ($49)</div>
+                  <div className="p-3 bg-zinc-50 border rounded-xl space-y-2 text-xs text-left">
+                    <div className="font-bold text-black">{shopName || 'Prjctnulla'}</div>
+                    <div className="text-[10px] text-emerald-700 font-semibold">✓ Shop Active & Live</div>
                   </div>
                 </div>
 
@@ -2987,13 +2997,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     onClick={() => { setViewMode('flow'); setStep(13); }}
                     className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
                   >
-                    <span>Activate & Enter Dashboard</span>
+                    <span>Go to Dashboard</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">13 Account Activation</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">13 Shop Activated</span>
               </div>
             </div>
 
