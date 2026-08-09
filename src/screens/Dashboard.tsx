@@ -67,22 +67,36 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   const isSubscriptionOrTrialActive = useMemo(() => {
-    if (!session || !user || !subscription) return false;
-    const now = new Date();
+    if (!session || !user) return false;
 
-    if (subscription.status === 'trial') {
-      const trialEndsAt = subscription.trial_ends_at;
-      if (trialEndsAt) {
-        const parsedTrialEnd = new Date(trialEndsAt);
-        if (!isNaN(parsedTrialEnd.getTime()) && parsedTrialEnd > now) {
-          return true;
-        }
+    // Check shop payment & lifetime activation status first
+    if (shop) {
+      if (
+        shop.is_active ||
+        shop.subscription_status === 'active' ||
+        shop.plan_type === 'lifetime' ||
+        shop.payment_status === 'paid' ||
+        shop.payment_required === false
+      ) {
+        return true;
       }
     }
 
-    if (subscription.status === 'active') {
-      const subEndsAt = subscription.subscription_ends_at;
-      if (subEndsAt) {
+    if (subscription) {
+      const now = new Date();
+      if (subscription.status === 'trial') {
+        const trialEndsAt = subscription.trial_ends_at;
+        if (trialEndsAt) {
+          const parsedTrialEnd = new Date(trialEndsAt);
+          if (!isNaN(parsedTrialEnd.getTime()) && parsedTrialEnd > now) {
+            return true;
+          }
+        }
+      }
+
+      if (subscription.status === 'active') {
+        const subEndsAt = subscription.subscription_ends_at;
+        if (!subEndsAt) return true;
         const parsedSubEnd = new Date(subEndsAt);
         if (!isNaN(parsedSubEnd.getTime()) && parsedSubEnd > now) {
           return true;
@@ -91,7 +105,7 @@ export const Dashboard: React.FC = () => {
     }
 
     return false;
-  }, [subscription, session, user]);
+  }, [shop, subscription, session, user]);
 
   const handleCopyShopLink = async () => {
     if (!shop) return;

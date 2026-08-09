@@ -220,33 +220,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   }, [phone]);
 
-  // Auto-confirm payment via RPC when returning to Step 12 if user & shop are present
+  // Clear auth error when changing steps
   useEffect(() => {
-    if (step === 12) {
-      const confirmOnReturn = async () => {
-        const u = session?.user || (await supabase.auth.getUser()).data.user;
-        let sId = createdShopId || shop?.id;
-        if (!sId && u) {
-          const { data: dbShop } = await supabase
-            .from('shops')
-            .select('id')
-            .eq('owner_id', u.id)
-            .maybeSingle();
-          if (dbShop) sId = dbShop.id;
-        }
-        if (sId && u?.id) {
-          console.log('[SignUp Step 12] Auto-confirming payment via RPC for shop:', sId);
-          await paymentService.activateShopPayment({
-            shopId: sId,
-            userId: u.id,
-            paymentReference: `NARDOPAY-STEP12-${Date.now()}`
-          });
-          try { await refreshShop(); } catch (e) {}
-        }
-      };
-      confirmOnReturn();
-    }
-  }, [step, session, createdShopId, shop?.id]);
+    setAuthError(null);
+  }, [step]);
 
   // Hearing options list
   const REFERRAL_OPTIONS = [
@@ -761,27 +738,75 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
           if (dbShop) {
             targetShopId = dbShop.id;
-          } else {
-            const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-            const { data: newShop } = await supabase
-              .from('shops')
-              .insert({
-                owner_id: activeUser.id,
-                name: shopName || 'My Shop',
-                slug: slug || `shop-${Date.now().toString(36)}`,
-                category: 'Streetwear & Fashion',
-                is_active: true,
-                subscription_status: 'active',
-                plan_type: 'lifetime',
-                paid_at: new Date().toISOString()
-              })
-              .select('id')
-              .maybeSingle();
-            if (newShop) targetShopId = newShop.id;
           }
         }
 
+        const nowIso = new Date().toISOString();
+        const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+        const shopPayload = {
+          owner_id: activeUser.id,
+          name: shopName.trim() || 'My Shop',
+          slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+          logo_url: logoPreview || null,
+          banner_url: bannerPreview || null,
+          description: bioText.trim() || null,
+          category: selectedBioCategory || 'Streetwear & Fashion',
+          location: shopAddress.trim() || null,
+          directions: shopDirections.trim() || null,
+          city: shopAddress.trim() || null,
+          whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+          is_active: true,
+          subscription_status: 'active',
+          plan_type: 'lifetime',
+          payment_status: 'paid',
+          payment_required: false,
+          paid_at: nowIso,
+          setup_complete: true,
+          setup_completed_at: nowIso
+        };
+
         if (targetShopId) {
+          await supabase
+            .from('shops')
+            .update(shopPayload)
+            .eq('id', targetShopId);
+        } else {
+          const { data: newShop } = await supabase
+            .from('shops')
+            .insert(shopPayload)
+            .select('id')
+            .maybeSingle();
+          if (newShop) targetShopId = newShop.id;
+        }
+
+        if (targetShopId) {
+          setCreatedShopId(targetShopId);
+
+          if (productName.trim()) {
+            try {
+              const priceNum = parseFloat(productPrice) || 35.0;
+              const stockNum = parseInt(productStock) || 10;
+              const productPayload = {
+                shop_id: targetShopId,
+                name: productName.trim(),
+                price: priceNum,
+                stock: stockNum,
+                total_stock: stockNum,
+                category: productCategory || 'Hoodies',
+                description: productDescription.trim(),
+                images: productImages,
+                image_url: productImages[0] || null,
+                sizes: productSizes,
+                is_published: true,
+                status: 'active',
+                created_at: nowIso
+              };
+              await supabase.from('products').insert(productPayload);
+            } catch (prodErr) {
+              console.warn('Product insert note during activation:', prodErr);
+            }
+          }
+
           await paymentService.activateShopPayment({
             shopId: targetShopId,
             userId: activeUser.id,
@@ -797,7 +822,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       try { await refreshShop(); } catch (e) {}
 
-      toast.success('🎉 Login successful! Your shop has been activated.');
+      toast.success('🎉 Account authenticated & shop activated!');
       setStep(13);
     } catch (err: any) {
       console.error('Account activation error:', err);

@@ -295,24 +295,26 @@ export const Paywall: React.FC = () => {
     };
   }, [isVerifying, user, navigate]);
 
+  // Auto-redirect if shop is already paid/active
+  useEffect(() => {
+    if (shop && (shop.is_active || shop.payment_status === 'paid' || shop.plan_type === 'lifetime')) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [shop, navigate]);
+
   const fetchSubscription = async () => {
     try {
       setLoadingSub(true);
-      console.log("[DIAGNOSTIC] Paywall fetching subscription for user ID:", user?.id);
-      const { data, error } = await supabase
+      if (!user?.id) return;
+      const { data } = await supabase
         .from('subscriptions')
         .select('*')
-        .eq('profile_id', user?.id)
+        .eq('profile_id', user.id)
         .maybeSingle();
 
-      console.log("[DIAGNOSTIC] Paywall subscription fetch result:", data, "error:", error);
-      if (error) {
-        throw error;
-      }
       setCurrentSubscription(data);
     } catch (err: any) {
-      console.error('[DIAGNOSTIC] Paywall subscription fetch error:', err);
-      toast.error('Failed to load subscription status: ' + err.message);
+      console.warn('Subscription check note:', err);
     } finally {
       setLoadingSub(false);
     }
@@ -337,7 +339,6 @@ export const Paywall: React.FC = () => {
         }
 
         if (sId) {
-          console.log('[Paywall] Calling confirm_shop_payment via paymentService for shop:', sId);
           await paymentService.activateShopPayment({
             shopId: sId,
             userId: user.id,
@@ -348,8 +349,7 @@ export const Paywall: React.FC = () => {
           return;
         }
       }
-      toast.info('Payment status updated.');
-      navigate('/dashboard?payment=success');
+      navigate('/signup?step=12');
     } catch (err: any) {
       console.error('[Paywall] Manual status check error:', err);
       toast.error('Unable to verify payment status: ' + err.message);
@@ -368,22 +368,10 @@ export const Paywall: React.FC = () => {
 
   // Calculate status description
   const getSubStatusDesc = () => {
-    if (!currentSubscription) {
-      return 'No active subscription or trial found.';
+    if (shop?.payment_status === 'paid' || shop?.is_active) {
+      return 'Storefront is active and published.';
     }
-    if (currentSubscription.status === 'trial') {
-      const ends = currentSubscription.trial_ends_at ? new Date(currentSubscription.trial_ends_at) : null;
-      return ends && ends < new Date() 
-        ? `Your 7-day trial expired on ${ends.toLocaleDateString()}.`
-        : `Your trial is active but restricted.`;
-    }
-    if (currentSubscription.status === 'active') {
-      const ends = currentSubscription.subscription_ends_at ? new Date(currentSubscription.subscription_ends_at) : null;
-      return ends && ends < new Date()
-        ? `Your subscription expired on ${ends.toLocaleDateString()}.`
-        : `Your subscription status is inactive.`;
-    }
-    return `Subscription status: ${currentSubscription.status}`;
+    return 'One-time $20 storefront activation required to publish your store.';
   };
 
   // Show "Payment received. Verifying your subscription..." screen

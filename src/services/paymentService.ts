@@ -210,6 +210,19 @@ export const paymentService = {
         console.error('[PaymentService] Failed to update shop record:', shopErr);
       }
 
+      // 5. Update shop_onboarding record
+      try {
+        await supabase.from('shop_onboarding').upsert({
+          shop_id: shopId,
+          payment_completed: true,
+          onboarding_completed: true,
+          storefront_published: true,
+          updated_at: now
+        }, { onConflict: 'shop_id' });
+      } catch (onboardingErr) {
+        console.warn('[PaymentService] shop_onboarding upsert note:', onboardingErr);
+      }
+
       console.log('[PaymentService] Shop payment successfully activated for shopId:', shopId);
       return { success: true };
     } catch (err: any) {
