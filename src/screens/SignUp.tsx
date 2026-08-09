@@ -185,8 +185,25 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Active shop record ID created during signup
-  const [createdShopId, setCreatedShopId] = useState<string | null>(null);
+  // Active shop record ID created during signup, persisted in localStorage
+  const [createdShopId, setCreatedShopIdState] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('threadzw_created_shop_id');
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const setCreatedShopId = (id: string | null) => {
+    setCreatedShopIdState(id);
+    try {
+      if (id) {
+        localStorage.setItem('threadzw_created_shop_id', id);
+      } else {
+        localStorage.removeItem('threadzw_created_shop_id');
+      }
+    } catch (e) {}
+  };
 
   // Screen 5: Brand identity (Logo & Banner)
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -751,8 +768,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         throw new Error('Authentication failed. Account does not exist in Supabase.');
       }
 
-      let targetShopId = createdShopId || shop?.id;
-      if (!targetShopId) {
+      let targetShopId = createdShopId || localStorage.getItem('threadzw_created_shop_id') || shop?.id;
+      if (!targetShopId && activeUser?.id) {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
@@ -761,6 +778,16 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
         if (dbShop) {
           targetShopId = dbShop.id;
+        } else {
+          // If still no shop found, fetch the most recent shop created without owner_id or for this session
+          const { data: recentShops } = await supabase
+            .from('shops')
+            .select('id')
+            .order('created_at', { ascending: false })
+            .limit(1);
+          if (recentShops && recentShops.length > 0) {
+            targetShopId = recentShops[0].id;
+          }
         }
       }
 
@@ -836,6 +863,17 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         userId: activeUser.id,
         paymentReference: `NARDOPAY-${Date.now()}`
       });
+
+      // Fetch fresh shop record to ensure localStorage cache & state are fully updated
+      const { data: freshShop } = await supabase
+        .from('shops')
+        .select('*')
+        .eq('id', targetShopId)
+        .maybeSingle();
+
+      if (freshShop) {
+        localStorage.setItem(`shop_${activeUser.id}`, JSON.stringify(freshShop));
+      }
 
       localStorage.setItem('threadzw_logged_in', 'true');
       localStorage.setItem('supabase_logged_in_user_id', activeUser.id);
