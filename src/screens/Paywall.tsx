@@ -257,7 +257,7 @@ export const Paywall: React.FC = () => {
   const [currentSubscription, setCurrentSubscription] = useState<any | null>(null);
   const [loadingSub, setLoadingSub] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [nardopayUrl, setNardopayUrl] = useState<string | null>('https://nardopay.com/pay/f1996ce49083d076');
+  const [nardopayUrl, setNardopayUrl] = useState<string | null>('https://nardopay.com/pay/efb2bff4ee35cc08');
 
   useEffect(() => {
     if (user) {
@@ -318,7 +318,7 @@ export const Paywall: React.FC = () => {
   };
 
   const handleStartCheckout = () => {
-    window.open('https://nardopay.com/pay/f1996ce49083d076', '_blank');
+    window.open('https://nardopay.com/pay/efb2bff4ee35cc08', '_blank');
   };
 
   const handleManualCheck = async () => {
@@ -489,7 +489,7 @@ export const Paywall: React.FC = () => {
             <span className="text-xs text-zinc-300 font-bold">Unlimited products, custom link, zero monthly fees</span>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$49</span>
+            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$20</span>
             <span className="text-[10px] text-zinc-500 font-bold">once off</span>
           </div>
         </div>
@@ -540,7 +540,7 @@ export const Paywall: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin text-black" />
             ) : (
               <>
-                <span>Pay $49 via NardoPay</span>
+                <span>Pay $20 via NardoPay</span>
                 <ArrowRight size={14} className="stroke-[2.5px]" />
               </>
             )}

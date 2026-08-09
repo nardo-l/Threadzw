@@ -49,7 +49,7 @@ export const Subscription: React.FC = () => {
   }, [user]);
 
   const handleUpgrade = () => {
-    window.open('https://nardopay.com/pay/f1996ce49083d076', '_blank');
+    window.open('https://nardopay.com/pay/efb2bff4ee35cc08', '_blank');
   };
 
   // Trial countdown calculation
@@ -100,11 +100,11 @@ export const Subscription: React.FC = () => {
           <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
             <div className="text-center space-y-2">
               <span className="text-[10px] font-mono uppercase tracking-widest text-black font-extrabold bg-[#C6FF00] px-3 py-1 rounded-full border border-black/10">
-                {subscription?.status === 'active' || shop?.plan_type === 'lifetime' ? 'Active Lifetime Plan' : '$49 / Once Off'}
+                {subscription?.status === 'active' || shop?.plan_type === 'lifetime' ? 'Active Lifetime Plan' : '$20 / Once Off'}
               </span>
               <h2 className="text-3xl font-black uppercase tracking-tight text-zinc-900">ThreadZW Lifetime Store</h2>
               <div className="flex items-baseline justify-center gap-1 mt-2">
-                <span className="text-4xl font-black text-black">$49</span>
+                <span className="text-4xl font-black text-black">$20</span>
                 <span className="text-zinc-500 font-bold text-sm">/ once off</span>
               </div>
             </div>
@@ -142,7 +142,7 @@ export const Subscription: React.FC = () => {
               ) : subscription?.status === 'active' || shop?.plan_type === 'lifetime' ? (
                 'Lifetime Plan Active'
               ) : (
-                'Pay $49 Once Off'
+                'Pay $20 Once Off'
               )}
             </button>
           </div>

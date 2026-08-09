@@ -26,7 +26,7 @@ export const SubscriptionCountdownBanner: React.FC = () => {
           <span className="w-2 h-2 rounded-full bg-[#C6FF00] animate-pulse" />
           <h3 className="text-xs sm:text-sm font-extrabold text-white tracking-tight flex items-center gap-1.5 uppercase font-mono">
             <Sparkles size={14} className="text-[#C6FF00]" />
-            {isPaidLifetime ? 'Lifetime Store Access Active' : 'ThreadZW $49 / Once Off Lifetime Plan'}
+            {isPaidLifetime ? 'Lifetime Store Access Active' : 'ThreadZW $20 / Once Off Lifetime Plan'}
           </h3>
         </div>
 
@@ -43,7 +43,7 @@ export const SubscriptionCountdownBanner: React.FC = () => {
       <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 my-3 py-2.5 px-3 bg-zinc-900/90 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-200">
         <div className="flex items-center gap-1.5">
           <Check size={14} className="text-[#C6FF00] stroke-[3]" />
-          <span>$49 Once-Off Plan</span>
+          <span>$20 Once-Off Plan</span>
         </div>
         <div className="flex items-center gap-1.5">
           <Check size={14} className="text-[#C6FF00] stroke-[3]" />
@@ -61,16 +61,16 @@ export const SubscriptionCountdownBanner: React.FC = () => {
           <p className="text-xs font-medium text-zinc-400">
             {isPaidLifetime 
               ? 'Your store is fully activated with lifetime merchant access. No recurring subscription fees.' 
-              : 'One payment of $49 grants unlimited access to your custom WhatsApp storefront forever.'}
+              : 'One payment of $20 grants unlimited access to your custom WhatsApp storefront forever.'}
           </p>
         </div>
 
         {!isPaidLifetime && (
           <button
-            onClick={() => window.open('https://nardopay.com/pay/f1996ce49083d076', '_blank')}
+            onClick={() => window.open('https://nardopay.com/pay/efb2bff4ee35cc08', '_blank')}
             className="w-full sm:w-auto py-2.5 px-5 bg-[#C6FF00] hover:bg-[#b2e600] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
           >
-            <span>Pay $49 Once Off</span>
+            <span>Pay $20 Once Off</span>
             <ArrowRight size={14} className="stroke-[2.5]" />
           </button>
         )}

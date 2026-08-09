@@ -48,6 +48,7 @@ import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
 import { FREE_TRIAL_DAYS } from '../lib/plans';
 import { uploadImage } from '../utils/uploadImage';
+import { paymentService } from '../services/paymentService';
 import { SuccessScreen } from '../components/onboarding/SuccessScreen';
 
 // Brand SVGs
@@ -605,22 +606,20 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         if (dbShop) targetShopId = dbShop.id;
       }
 
-      if (targetShopId) {
-        await supabase
-          .from('shops')
-          .update({
-            is_active: true,
-            subscription_status: 'active',
-            plan_type: 'lifetime',
-            paid_at: new Date().toISOString()
-          })
-          .eq('id', targetShopId);
+      if (targetShopId && user?.id) {
+        await paymentService.createPaymentSession({
+          shopId: targetShopId,
+          userId: user.id,
+          amount: 20.0,
+          currency: 'USD',
+          provider: 'nardopay'
+        });
       }
 
       try { await refreshShop(); } catch (e) {}
 
       // Open official Nardo Pay link
-      window.open('https://nardopay.com/pay/f1996ce49083d076', '_blank');
+      window.open('https://nardopay.com/pay/efb2bff4ee35cc08', '_blank');
 
       await new Promise((resolve) => setTimeout(resolve, 800));
       toast.success('Redirected to Nardo Pay payment.');
@@ -676,7 +675,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       let activeUser = session?.user || null;
 
       if (!activeUser) {
-        // Create or authenticates user with Supabase
+        // Create or authenticate user with Supabase
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
           email: emailVal,
           password: passVal,
@@ -723,21 +722,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         }
       }
 
-      const targetShopId = createdShopId || shop?.id;
+      let targetShopId = createdShopId || shop?.id;
       if (activeUser?.id) {
-        if (targetShopId) {
-          await supabase
-            .from('shops')
-            .update({
-              owner_id: activeUser.id,
-              is_active: true,
-              subscription_status: 'active',
-              plan_type: 'lifetime',
-              paid_at: new Date().toISOString()
-            })
-            .eq('id', targetShopId);
-        } else {
-          const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+        if (!targetShopId) {
           const { data: dbShop } = await supabase
             .from('shops')
             .select('id')
@@ -745,17 +732,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             .maybeSingle();
 
           if (dbShop) {
-            await supabase
-              .from('shops')
-              .update({
-                is_active: true,
-                subscription_status: 'active',
-                plan_type: 'lifetime',
-                paid_at: new Date().toISOString()
-              })
-              .eq('id', dbShop.id);
+            targetShopId = dbShop.id;
           } else {
-            await supabase
+            const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+            const { data: newShop } = await supabase
               .from('shops')
               .insert({
                 owner_id: activeUser.id,
@@ -766,8 +746,19 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 subscription_status: 'active',
                 plan_type: 'lifetime',
                 paid_at: new Date().toISOString()
-              });
+              })
+              .select('id')
+              .maybeSingle();
+            if (newShop) targetShopId = newShop.id;
           }
+        }
+
+        if (targetShopId) {
+          await paymentService.activateShopPayment({
+            shopId: targetShopId,
+            userId: activeUser.id,
+            paymentReference: `NARDOPAY-${Date.now()}`
+          });
         }
 
         localStorage.setItem('threadzw_logged_in', 'true');
@@ -2005,8 +1996,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
                       {/* Price */}
                       <div className="space-y-0.5">
-                        <div className="text-5xl font-black text-black tracking-tight">$49</div>
-                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Lifetime Access</div>
+                        <div className="text-5xl font-black text-black tracking-tight">$20</div>
+                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Lifetime Storefront Activation</div>
                       </div>
 
                       <div className="border-t border-zinc-100 pt-3 space-y-2.5 text-left">
@@ -2055,7 +2046,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       onClick={() => setStep(11)}
                       className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs"
                     >
-                      <span className="text-black font-extrabold">Launch My Store – $49</span>
+                      <span className="text-black font-extrabold">Launch My Store – $20</span>
                       <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
                     </button>
                     <p className="text-[11px] text-zinc-400 font-medium">
@@ -2120,12 +2111,12 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                             </div>
                           </div>
                         </div>
-                        <div className="text-xs font-extrabold text-black">$49.00</div>
+                        <div className="text-xs font-extrabold text-black">$20.00</div>
                       </div>
 
                       <div className="border-t border-zinc-100 pt-2 flex items-center justify-between text-xs font-black">
                         <span className="text-zinc-700">Total</span>
-                        <span className="text-black text-sm">$49.00</span>
+                        <span className="text-black text-sm">$20.00</span>
                       </div>
                     </div>
 
@@ -2148,7 +2139,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         {loading ? (
                           <Loader2 className="w-4 h-4 animate-spin text-white" />
                         ) : (
-                          <span>Pay $49 with Nardo Pay</span>
+                          <span>Pay $20 with Nardo Pay</span>
                         )}
                       </button>
 
@@ -2216,7 +2207,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         </div>
                         <div>
                           <div className="text-xs font-black text-black">{shopName || 'Your Shop'}</div>
-                          <div className="text-[10px] text-lime-900 font-semibold">✓ Payment Confirmed ($49 Lifetime)</div>
+                          <div className="text-[10px] text-lime-900 font-semibold">✓ Payment Confirmed ($20 Lifetime)</div>
                         </div>
                       </div>
                       <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-black/10">
@@ -2393,7 +2384,12 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   <div className="pt-3 space-y-2">
                     <button
                       type="button"
-                      onClick={() => navigate('/dashboard', { replace: true })}
+                      onClick={async () => {
+                        try { await refreshShop(); } catch (e) {}
+                        localStorage.setItem('threadzw_logged_in', 'true');
+                        navigate('/dashboard', { replace: true });
+                        window.location.href = '/dashboard';
+                      }}
                       className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-black text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-md border border-black/10 uppercase tracking-wider"
                     >
                       <span>GO TO DASHBOARD</span>
@@ -2867,13 +2863,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       Launch Paywall
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      $49 Lifetime Access plan for Zimbabwean merchants.
+                      $20 Lifetime Access plan for Zimbabwean merchants.
                     </p>
                   </div>
 
                   <div className="bg-lime-50 border border-lime-200 p-4 rounded-2xl text-center space-y-1">
-                    <div className="text-3xl font-black text-black">$49</div>
-                    <div className="text-[10px] font-bold text-lime-800 uppercase">Lifetime Access</div>
+                    <div className="text-3xl font-black text-black">$20</div>
+                    <div className="text-[10px] font-bold text-lime-800 uppercase">Lifetime Storefront Activation</div>
                   </div>
                 </div>
 
@@ -2882,7 +2878,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     onClick={() => { setViewMode('flow'); setStep(10); }}
                     className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
                   >
-                    <span>Launch My Store – $49</span>
+                    <span>Launch My Store – $20</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
@@ -2906,7 +2902,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       Nardo Pay
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      Complete $49 payment via EcoCash, ZIPIT or Card.
+                      Complete $20 payment via EcoCash, ZIPIT or Card.
                     </p>
                   </div>
 
@@ -2921,7 +2917,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     onClick={() => { setViewMode('flow'); setStep(11); }}
                     className="w-full bg-black text-white font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
                   >
-                    <span>Pay $49 with Nardo Pay</span>
+                    <span>Pay $20 with Nardo Pay</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>

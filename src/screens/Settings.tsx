@@ -241,13 +241,13 @@ export const Settings: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                  Activate your ThreadZW store for a single once-off payment of $49. Enjoy lifetime merchant access with zero recurring monthly fees.
+                  Activate your ThreadZW store for a single once-off payment of $20. Enjoy lifetime merchant access with zero recurring monthly fees.
                 </p>
                 <button
                   onClick={() => navigate('/subscription')}
                   className="w-full mt-4 bg-zinc-900 text-white font-bold py-3 rounded-xl hover:bg-zinc-800 transition-colors"
                 >
-                  Activate Lifetime Access ($49 Once Off)
+                  Activate Lifetime Access ($20 Once Off)
                 </button>
               </div>
             ) : (
@@ -255,7 +255,7 @@ export const Settings: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#25D366] shrink-0" />
                   <span className="text-sm font-black text-black uppercase">
-                    Lifetime Plan Active ($49 Paid)
+                    Lifetime Plan Active ($20 Paid)
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium leading-relaxed">

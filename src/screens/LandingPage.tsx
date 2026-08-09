@@ -316,7 +316,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             >
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
-                <span>$49 Once-Off Plan</span>
+                <span>$20 Once-Off Plan</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
@@ -799,7 +799,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
 
             <div>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-6xl font-black text-white tracking-tight">$49</span>
+                <span className="text-6xl font-black text-white tracking-tight">$20</span>
                 <span className="text-zinc-400 font-bold text-lg">/ once off</span>
               </div>
               <p className="text-xs font-extrabold text-[#C6FF00] mt-2">Zero Monthly Subscription Fees</p>
@@ -827,7 +827,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               onClick={onStartFree}
               className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-sm rounded-2xl transition-all cursor-pointer shadow-lg shadow-[#C6FF00]/20 active:scale-95 uppercase tracking-wider"
             >
-              Get Started with $49 Plan
+              Get Started with $20 Plan
             </button>
 
             <p className="text-[11px] text-zinc-500 font-medium">
@@ -974,7 +974,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             },
             {
               q: "How does the pricing for ThreadZW work?",
-              a: "ThreadZW is a flat $49 once-off single payment for lifetime storefront access. There are no monthly subscriptions, hidden fees, or cancellation worries."
+              a: "ThreadZW is a flat $20 once-off single payment for lifetime storefront access. There are no monthly subscriptions, hidden fees, or cancellation worries."
             }
           ].map((item, idx) => (
             <div 
