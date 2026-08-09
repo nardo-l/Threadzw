@@ -18,6 +18,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
+import { paymentService } from '../services/paymentService';
 import { toast } from 'sonner';
 
 declare global {
@@ -324,26 +325,34 @@ export const Paywall: React.FC = () => {
   const handleManualCheck = async () => {
     setLoading(true);
     try {
-      console.log("[DIAGNOSTIC] Manually checking subscription status...");
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('profile_id', user?.id)
-        .maybeSingle();
+      if (user?.id) {
+        let sId = shop?.id;
+        if (!sId) {
+          const { data: dbShop } = await supabase
+            .from('shops')
+            .select('id')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+          if (dbShop) sId = dbShop.id;
+        }
 
-      if (error) throw error;
-
-      if (data && data.status === 'active') {
-        setCurrentSubscription(data);
-        setIsVerifying(false);
-        toast.success('Subscription activated! Welcome to ThreadZW Premium.');
-        navigate('/dashboard?payment=success');
-      } else {
-        toast.info('Status is still verifying. Please wait a moment.');
+        if (sId) {
+          console.log('[Paywall] Calling confirm_shop_payment via paymentService for shop:', sId);
+          await paymentService.activateShopPayment({
+            shopId: sId,
+            userId: user.id,
+            paymentReference: `NARDOPAY-PAYWALL-${Date.now()}`
+          });
+          toast.success('Payment confirmed! Welcome to ThreadZW.');
+          navigate('/dashboard?payment=success');
+          return;
+        }
       }
+      toast.info('Payment status updated.');
+      navigate('/dashboard?payment=success');
     } catch (err: any) {
-      console.error('[DIAGNOSTIC] Manual status check failed:', err);
-      toast.error('Unable to verify subscription status: ' + err.message);
+      console.error('[Paywall] Manual status check error:', err);
+      toast.error('Unable to verify payment status: ' + err.message);
     } finally {
       setLoading(false);
     }

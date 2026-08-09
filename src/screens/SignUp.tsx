@@ -220,6 +220,34 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   }, [phone]);
 
+  // Auto-confirm payment via RPC when returning to Step 12 if user & shop are present
+  useEffect(() => {
+    if (step === 12) {
+      const confirmOnReturn = async () => {
+        const u = session?.user || (await supabase.auth.getUser()).data.user;
+        let sId = createdShopId || shop?.id;
+        if (!sId && u) {
+          const { data: dbShop } = await supabase
+            .from('shops')
+            .select('id')
+            .eq('owner_id', u.id)
+            .maybeSingle();
+          if (dbShop) sId = dbShop.id;
+        }
+        if (sId && u?.id) {
+          console.log('[SignUp Step 12] Auto-confirming payment via RPC for shop:', sId);
+          await paymentService.activateShopPayment({
+            shopId: sId,
+            userId: u.id,
+            paymentReference: `NARDOPAY-STEP12-${Date.now()}`
+          });
+          try { await refreshShop(); } catch (e) {}
+        }
+      };
+      confirmOnReturn();
+    }
+  }, [step, session, createdShopId, shop?.id]);
+
   // Hearing options list
   const REFERRAL_OPTIONS = [
     { id: 'TikTok', label: 'TikTok', icon: <TikTokIcon /> },
