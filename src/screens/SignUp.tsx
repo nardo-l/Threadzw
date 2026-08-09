@@ -781,9 +781,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         is_active: true,
         payment_status: 'paid',
         payment_required: false,
-        paid_at: nowIso,
-        setup_complete: true,
-        setup_completed_at: nowIso
+        paid_at: nowIso
       };
 
       if (targetShopId) {

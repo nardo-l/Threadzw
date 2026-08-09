@@ -17,7 +17,7 @@ export const getOnboardingStep = (shopId: string | null | undefined, productsCou
   }
 
   // Check shop object flags
-  if (shopData?.is_setup_completed || shopData?.setup_completed) {
+  if (shopData?.setup_complete) {
     return 'completed';
   }
 
@@ -43,17 +43,6 @@ export const setOnboardingStep = async (shopId: string | null | undefined, step:
   try {
     localStorage.setItem(getOnboardingKey(shopId), step);
   } catch (e) {}
-
-  if (step === 'completed') {
-    try {
-      await supabase
-        .from('shops')
-        .update({ is_setup_completed: true, setup_completed: true })
-        .eq('id', shopId);
-    } catch (e) {
-      // Ignore schema column warnings if column doesn't exist
-    }
-  }
 };
 
 export const useOnboarding = (shopId: string | null | undefined, productsCount?: number, shopData?: any) => {

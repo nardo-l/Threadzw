@@ -194,9 +194,7 @@ export const paymentService = {
         is_active: true,
         payment_status: 'paid',
         payment_required: false,
-        paid_at: now,
-        setup_complete: true,
-        setup_completed_at: now
+        paid_at: now
       };
 
       const { error: shopErr } = await supabase

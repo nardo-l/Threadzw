@@ -17,8 +17,6 @@ export interface Shop {
   total_sales: number;
   view_count: number;
   created_at: string;
-  setup_complete?: boolean | null;
-  setup_completed_at?: string | null;
   payment_status?: string;
   payment_required?: boolean;
   paid_at?: string | null;

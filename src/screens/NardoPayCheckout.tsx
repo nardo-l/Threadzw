@@ -127,9 +127,7 @@ export const NardoPayCheckout: React.FC = () => {
         payment_status: 'paid',
         payment_required: false,
         is_active: true,
-        paid_at: nowISO,
-        setup_complete: true,
-        setup_completed_at: nowISO
+        paid_at: nowISO
       }).eq('owner_id', user.id);
 
       setSuccess(true);
