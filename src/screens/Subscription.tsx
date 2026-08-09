@@ -100,7 +100,7 @@ export const Subscription: React.FC = () => {
           <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
             <div className="text-center space-y-2">
               <span className="text-[10px] font-mono uppercase tracking-widest text-black font-extrabold bg-[#C6FF00] px-3 py-1 rounded-full border border-black/10">
-                {subscription?.status === 'active' || shop?.plan_type === 'lifetime' ? 'Active Lifetime Plan' : '$20 / Once Off'}
+                {shop?.payment_status === 'paid' && shop?.payment_required === false ? 'Active Lifetime Plan' : '$20 / Once Off'}
               </span>
               <h2 className="text-3xl font-black uppercase tracking-tight text-zinc-900">ThreadZW Lifetime Store</h2>
               <div className="flex items-baseline justify-center gap-1 mt-2">
@@ -134,12 +134,12 @@ export const Subscription: React.FC = () => {
 
             <button
               onClick={handleUpgrade}
-              disabled={upgrading || subscription?.status === 'active' || shop?.plan_type === 'lifetime'}
+              disabled={upgrading || (shop?.payment_status === 'paid' && shop?.payment_required === false)}
               className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5eb00] disabled:opacity-60 text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-sm border border-black/10"
             >
               {upgrading ? (
                 <Loader2 className="animate-spin w-5 h-5 text-black" />
-              ) : subscription?.status === 'active' || shop?.plan_type === 'lifetime' ? (
+              ) : (shop?.payment_status === 'paid' && shop?.payment_required === false) ? (
                 'Lifetime Plan Active'
               ) : (
                 'Pay $20 Once Off'

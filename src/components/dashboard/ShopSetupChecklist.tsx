@@ -22,16 +22,16 @@ import { toast } from 'sonner';
 interface ShopSetupChecklistProps {
   shop: Shop | null;
   productsCount: number;
-  isSubscriptionOrTrialActive: boolean;
+  isShopPaidAndActive: boolean;
 }
 
 export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   shop,
   productsCount,
-  isSubscriptionOrTrialActive,
+  isShopPaidAndActive,
 }) => {
   const navigate = useNavigate();
-  const { user, subscription } = useAuth();
+  const { user } = useAuth();
 
   // Track shop shared state
   const [shopShared, setShopShared] = useState<boolean>(() => {
@@ -62,13 +62,12 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   // 2. Product added check
   const isProductAdded = productsCount > 0;
 
-  // 3. Upgrade to Pro check
+  // 3. Paid Shop Activation check
   const isProActive = useMemo(() => {
-    if (isSubscriptionOrTrialActive) return true;
-    if (subscription?.status === 'active' || subscription?.status === 'trial') return true;
-    if (shop?.plan === 'active' || shop?.plan === 'trial') return true;
+    if (isShopPaidAndActive) return true;
+    if (shop?.payment_status === 'paid' && shop?.payment_required === false) return true;
     return false;
-  }, [isSubscriptionOrTrialActive, subscription, shop]);
+  }, [isShopPaidAndActive, shop]);
 
   // 4. Share shop check
   const isShopShared = shopShared;

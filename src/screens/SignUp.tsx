@@ -220,9 +220,12 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   }, [phone]);
 
-  // Clear auth error when changing steps
+  // Clear auth error when changing steps & skip removed steps 7 and 8
   useEffect(() => {
     setAuthError(null);
+    if (step === 7 || step === 8) {
+      setStep(9);
+    }
   }, [step]);
 
   // Hearing options list
@@ -272,51 +275,52 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setLoading(true);
 
     try {
-      let currentUser = session?.user || null;
+      let currentUser = null;
 
-      if (!currentUser) {
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-          email: emailVal,
-          password: passVal,
-          options: {
-            data: {
-              full_name: shopName || 'Shop Owner',
-              phone_number: phoneVal,
-            }
+      // Always authenticate with the provided email and password to ensure auth.users record exists
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: emailVal,
+        password: passVal,
+        options: {
+          data: {
+            full_name: shopName || 'Shop Owner',
+            phone_number: phoneVal,
           }
-        });
+        }
+      });
 
-        if (signUpErr) {
-          if (signUpErr.message.includes('already registered')) {
-            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-              email: emailVal,
-              password: passVal
-            });
-            if (signInErr) throw signInErr;
-            currentUser = signInData.user;
-          } else {
-            throw signUpErr;
-          }
+      if (signUpErr) {
+        if (signUpErr.message.toLowerCase().includes('already registered')) {
+          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+            email: emailVal,
+            password: passVal
+          });
+          if (signInErr) throw signInErr;
+          currentUser = signInData.user;
         } else {
-          currentUser = signUpData.user;
-          if (!signUpData.session) {
-            const { data: signInData } = await supabase.auth.signInWithPassword({
-              email: emailVal,
-              password: passVal
-            });
-            if (signInData?.user) {
-              currentUser = signInData.user;
-            }
+          throw signUpErr;
+        }
+      } else {
+        currentUser = signUpData.user;
+        if (!signUpData.session) {
+          const { data: signInData } = await supabase.auth.signInWithPassword({
+            email: emailVal,
+            password: passVal
+          });
+          if (signInData?.user) {
+            currentUser = signInData.user;
           }
         }
       }
 
-      if (!currentUser) throw new Error('Authentication failed');
+      if (!currentUser?.id) {
+        throw new Error('Authentication failed. Account was not created in Supabase Auth.');
+      }
 
       localStorage.setItem('threadzw_logged_in', 'true');
       localStorage.setItem('supabase_logged_in_user_id', currentUser.id);
 
-      // Create shop record
+      // Create shop record linked to owner_id = currentUser.id
       const slug = shopName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
       const shopPayload = {
         owner_id: currentUser.id,
@@ -332,27 +336,32 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         trial_ends_at: new Date(Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString()
       };
 
-      try {
-        const { data: existingShop } = await supabase
-          .from('shops')
-          .select('id')
-          .eq('owner_id', currentUser.id)
-          .maybeSingle();
+      const { data: existingShop } = await supabase
+        .from('shops')
+        .select('id')
+        .eq('owner_id', currentUser.id)
+        .maybeSingle();
 
-        if (existingShop) {
-          await supabase.from('shops').update(shopPayload).eq('id', existingShop.id);
-          setCreatedShopId(existingShop.id);
-        } else {
-          const { data: insertedShop } = await supabase
-            .from('shops')
-            .insert(shopPayload)
-            .select('id')
-            .single();
-          if (insertedShop) setCreatedShopId(insertedShop.id);
-        }
-      } catch (dbErr) {
-        console.warn('Shop table insert note:', dbErr);
+      let activeShopId = existingShop?.id;
+
+      if (existingShop) {
+        const { error: updateErr } = await supabase.from('shops').update(shopPayload).eq('id', existingShop.id);
+        if (updateErr) throw updateErr;
+      } else {
+        const { data: insertedShop, error: insertErr } = await supabase
+          .from('shops')
+          .insert(shopPayload)
+          .select('id')
+          .single();
+        if (insertErr) throw insertErr;
+        if (insertedShop) activeShopId = insertedShop.id;
       }
+
+      if (!activeShopId) {
+        throw new Error('Failed to create shop record in Supabase database.');
+      }
+
+      setCreatedShopId(activeShopId);
 
       try {
         await refreshShop();
@@ -360,12 +369,12 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         console.warn('refreshShop error:', e);
       }
 
-      toast.success('🎉 Account created successfully!');
+      toast.success('🎉 Account & shop created successfully!');
       // Continue onboarding flow to Signup Success screen (Step 14)
       setStep(14);
 
     } catch (err: any) {
-      console.error(err);
+      console.error('Sign up error:', err);
       setAuthError(err?.message || 'Failed to sign up');
       toast.error(err?.message || 'Failed to sign up');
     } finally {
@@ -378,9 +387,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setLoading(true);
     try {
       const user = session?.user || (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        toast.error('Please create your account first');
+        setStep(4);
+        return;
+      }
+
       let targetShopId = createdShopId || shop?.id;
 
-      if (!targetShopId && user) {
+      if (!targetShopId) {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
@@ -424,7 +439,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       // Persist shop name, logo and banner
       if (targetShopId) {
-        await supabase
+        const { error: shopErr } = await supabase
           .from('shops')
           .update({
             name: shopName.trim() || 'My Shop',
@@ -432,14 +447,14 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             banner_url: bannerUrl
           })
           .eq('id', targetShopId);
+        if (shopErr) throw shopErr;
       }
 
       try { await refreshShop(); } catch (e) {}
       setStep(6);
     } catch (err: any) {
       console.error('Error saving brand identity:', err);
-      toast.error('Continuing to next step...');
-      setStep(6);
+      toast.error(err?.message || 'Error saving brand identity');
     } finally {
       setLoading(false);
     }
@@ -450,9 +465,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setLoading(true);
     try {
       const user = session?.user || (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        toast.error('Please create your account first');
+        setStep(4);
+        return;
+      }
+
       let targetShopId = createdShopId || shop?.id;
 
-      if (!targetShopId && user) {
+      if (!targetShopId) {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
@@ -462,20 +483,21 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       }
 
       if (targetShopId) {
-        await supabase
+        const { error: shopErr } = await supabase
           .from('shops')
           .update({
             description: bioText.trim(),
             category: selectedBioCategory || 'Streetwear & Fashion'
           })
           .eq('id', targetShopId);
+        if (shopErr) throw shopErr;
       }
 
       try { await refreshShop(); } catch (e) {}
-      setStep(7);
+      setStep(9);
     } catch (err: any) {
       console.error('Error saving bio:', err);
-      setStep(7);
+      toast.error(err?.message || 'Error saving bio');
     } finally {
       setLoading(false);
     }
@@ -486,9 +508,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setLoading(true);
     try {
       const user = session?.user || (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        toast.error('Please create your account first');
+        setStep(4);
+        return;
+      }
+
       let targetShopId = createdShopId || shop?.id;
 
-      if (!targetShopId && user) {
+      if (!targetShopId) {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
@@ -498,7 +526,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       }
 
       if (targetShopId) {
-        await supabase
+        const { error: shopErr } = await supabase
           .from('shops')
           .update({
             location: shopAddress.trim(),
@@ -507,13 +535,14 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             whatsapp_number: whatsappPhone.trim() || phone.trim()
           })
           .eq('id', targetShopId);
+        if (shopErr) throw shopErr;
       }
 
       try { await refreshShop(); } catch (e) {}
       setStep(8);
     } catch (err: any) {
       console.error('Error saving directions:', err);
-      setStep(8);
+      toast.error(err?.message || 'Error saving directions');
     } finally {
       setLoading(false);
     }
@@ -524,9 +553,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setLoading(true);
     try {
       const user = session?.user || (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        toast.error('Please create your account first');
+        setStep(4);
+        return;
+      }
+
       let targetShopId = createdShopId || shop?.id;
 
-      if (!targetShopId && user) {
+      if (!targetShopId) {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
@@ -581,6 +616,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
         if (prodErr) {
           console.error('Error inserting product:', prodErr);
+          throw prodErr;
         }
       }
 
@@ -589,7 +625,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       setStep(9);
     } catch (err: any) {
       console.error('Error in first product setup:', err);
-      setStep(9);
+      toast.error(err?.message || 'Error saving product');
     } finally {
       setLoading(false);
     }
@@ -600,9 +636,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setLoading(true);
     try {
       const user = session?.user || (await supabase.auth.getUser()).data.user;
+      if (!user) {
+        toast.error('Please create your account first before paying');
+        setStep(4);
+        return;
+      }
+
       let targetShopId = createdShopId || shop?.id;
 
-      if (!targetShopId && user) {
+      if (!targetShopId) {
         const { data: dbShop } = await supabase
           .from('shops')
           .select('id')
@@ -651,7 +693,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     try {
       const emailVal = email.trim();
       const passVal = password.trim();
-      const confirmVal = confirmPassword.trim();
 
       if (!emailVal) {
         toast.error('Please enter your email address');
@@ -671,16 +712,16 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         return;
       }
 
-      if (confirmVal && passVal !== confirmVal) {
-        toast.error('Passwords do not match');
-        setLoading(false);
-        return;
-      }
+      let activeUser = null;
 
-      let activeUser = session?.user || null;
+      // First attempt to sign in with password
+      const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: emailVal,
+        password: passVal
+      });
 
-      if (!activeUser) {
-        // Create or authenticate user with Supabase
+      if (signInErr) {
+        // If sign in fails, attempt sign up in case account was not created
         const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
           email: emailVal,
           password: passVal,
@@ -693,132 +734,117 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         });
 
         if (signUpErr) {
-          if (signUpErr.message.includes('already registered')) {
-            const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-              email: emailVal,
-              password: passVal
-            });
-            if (signInErr) {
-              toast.error('Email registered. Please verify your password.');
-              throw signInErr;
-            }
-            activeUser = signInData.user;
-          } else {
-            throw signUpErr;
-          }
-        } else {
-          activeUser = signUpData.user;
-          if (!signUpData.session) {
-            const { data: signInData } = await supabase.auth.signInWithPassword({
-              email: emailVal,
-              password: passVal
-            });
-            if (signInData?.user) activeUser = signInData.user;
-          }
+          throw new Error(signInErr.message || signUpErr.message || 'Authentication failed');
+        }
+
+        activeUser = signUpData.user;
+        if (!signUpData.session) {
+          const { data: sData } = await supabase.auth.signInWithPassword({
+            email: emailVal,
+            password: passVal
+          });
+          if (sData?.user) activeUser = sData.user;
         }
       } else {
-        // Update user password if provided
-        if (passVal) {
-          try {
-            await supabase.auth.updateUser({ password: passVal });
-          } catch (passErr) {
-            console.warn('Password update note:', passErr);
-          }
-        }
+        activeUser = signInData.user;
+      }
+
+      if (!activeUser?.id) {
+        throw new Error('Authentication failed. Account does not exist in Supabase.');
       }
 
       let targetShopId = createdShopId || shop?.id;
-      if (activeUser?.id) {
-        if (!targetShopId) {
-          const { data: dbShop } = await supabase
-            .from('shops')
-            .select('id')
-            .eq('owner_id', activeUser.id)
-            .maybeSingle();
+      if (!targetShopId) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', activeUser.id)
+          .maybeSingle();
 
-          if (dbShop) {
-            targetShopId = dbShop.id;
-          }
+        if (dbShop) {
+          targetShopId = dbShop.id;
         }
-
-        const nowIso = new Date().toISOString();
-        const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-        const shopPayload = {
-          owner_id: activeUser.id,
-          name: shopName.trim() || 'My Shop',
-          slug: cleanSlug || `shop-${Date.now().toString(36)}`,
-          logo_url: logoPreview || null,
-          banner_url: bannerPreview || null,
-          description: bioText.trim() || null,
-          category: selectedBioCategory || 'Streetwear & Fashion',
-          location: shopAddress.trim() || null,
-          directions: shopDirections.trim() || null,
-          city: shopAddress.trim() || null,
-          whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
-          is_active: true,
-          subscription_status: 'active',
-          plan_type: 'lifetime',
-          payment_status: 'paid',
-          payment_required: false,
-          paid_at: nowIso,
-          setup_complete: true,
-          setup_completed_at: nowIso
-        };
-
-        if (targetShopId) {
-          await supabase
-            .from('shops')
-            .update(shopPayload)
-            .eq('id', targetShopId);
-        } else {
-          const { data: newShop } = await supabase
-            .from('shops')
-            .insert(shopPayload)
-            .select('id')
-            .maybeSingle();
-          if (newShop) targetShopId = newShop.id;
-        }
-
-        if (targetShopId) {
-          setCreatedShopId(targetShopId);
-
-          if (productName.trim()) {
-            try {
-              const priceNum = parseFloat(productPrice) || 35.0;
-              const stockNum = parseInt(productStock) || 10;
-              const productPayload = {
-                shop_id: targetShopId,
-                name: productName.trim(),
-                price: priceNum,
-                stock: stockNum,
-                total_stock: stockNum,
-                category: productCategory || 'Hoodies',
-                description: productDescription.trim(),
-                images: productImages,
-                image_url: productImages[0] || null,
-                sizes: productSizes,
-                is_published: true,
-                status: 'active',
-                created_at: nowIso
-              };
-              await supabase.from('products').insert(productPayload);
-            } catch (prodErr) {
-              console.warn('Product insert note during activation:', prodErr);
-            }
-          }
-
-          await paymentService.activateShopPayment({
-            shopId: targetShopId,
-            userId: activeUser.id,
-            paymentReference: `NARDOPAY-${Date.now()}`
-          });
-        }
-
-        localStorage.setItem('threadzw_logged_in', 'true');
-        localStorage.setItem('supabase_logged_in_user_id', activeUser.id);
-      } else {
-        localStorage.setItem('threadzw_logged_in', 'true');
       }
+
+      const nowIso = new Date().toISOString();
+      const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      const shopPayload = {
+        owner_id: activeUser.id,
+        name: shopName.trim() || 'My Shop',
+        slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+        logo_url: logoPreview || null,
+        banner_url: bannerPreview || null,
+        description: bioText.trim() || null,
+        category: selectedBioCategory || 'Streetwear & Fashion',
+        location: shopAddress.trim() || null,
+        directions: shopDirections.trim() || null,
+        city: shopAddress.trim() || null,
+        whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+        is_active: true,
+        subscription_status: 'active',
+        plan_type: 'lifetime',
+        payment_status: 'paid',
+        payment_required: false,
+        paid_at: nowIso,
+        setup_complete: true,
+        setup_completed_at: nowIso
+      };
+
+      if (targetShopId) {
+        const { error: updateErr } = await supabase
+          .from('shops')
+          .update(shopPayload)
+          .eq('id', targetShopId);
+        if (updateErr) throw updateErr;
+      } else {
+        const { data: newShop, error: insertErr } = await supabase
+          .from('shops')
+          .insert(shopPayload)
+          .select('id')
+          .single();
+        if (insertErr) throw insertErr;
+        if (newShop) targetShopId = newShop.id;
+      }
+
+      if (!targetShopId) {
+        throw new Error('Failed to create or activate shop in Supabase database.');
+      }
+
+      setCreatedShopId(targetShopId);
+
+      if (productName.trim()) {
+        try {
+          const priceNum = parseFloat(productPrice) || 35.0;
+          const stockNum = parseInt(productStock) || 10;
+          const productPayload = {
+            shop_id: targetShopId,
+            name: productName.trim(),
+            price: priceNum,
+            stock: stockNum,
+            total_stock: stockNum,
+            category: productCategory || 'Hoodies',
+            description: productDescription.trim(),
+            images: productImages,
+            image_url: productImages[0] || null,
+            sizes: productSizes,
+            is_published: true,
+            status: 'active',
+            created_at: nowIso
+          };
+          await supabase.from('products').insert(productPayload);
+        } catch (prodErr) {
+          console.warn('Product insert note during activation:', prodErr);
+        }
+      }
+
+      await paymentService.activateShopPayment({
+        shopId: targetShopId,
+        userId: activeUser.id,
+        paymentReference: `NARDOPAY-${Date.now()}`
+      });
+
+      localStorage.setItem('threadzw_logged_in', 'true');
+      localStorage.setItem('supabase_logged_in_user_id', activeUser.id);
 
       try { await refreshShop(); } catch (e) {}
 
@@ -1847,7 +1873,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   {/* Top Header Nav */}
                   <div className="flex items-center justify-between pt-1 pb-3">
                     <button
-                      onClick={() => setStep(8)}
+                      onClick={() => setStep(6)}
                       className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
                     >
                       <ArrowLeft className="w-5 h-5 stroke-[2.5]" />

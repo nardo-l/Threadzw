@@ -26,7 +26,6 @@ import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
-import { SubscriptionCountdownBanner } from '../components/dashboard/SubscriptionCountdownBanner';
 import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
@@ -56,8 +55,10 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (!authLoading && !session) {
       navigate('/login');
+    } else if (!authLoading && !shopLoading && session && !shop) {
+      navigate('/signup');
     }
-  }, [session, authLoading, navigate]);
+  }, [session, shop, authLoading, shopLoading, navigate]);
 
   useEffect(() => {
     if (localStorage.getItem('threadzw_just_subscribed') === 'true') {
@@ -66,46 +67,18 @@ export const Dashboard: React.FC = () => {
     }
   }, []);
 
-  const isSubscriptionOrTrialActive = useMemo(() => {
+  const isShopPaidAndActive = useMemo(() => {
     if (!session || !user) return false;
 
-    // Check shop payment & lifetime activation status first
+    // A shop is paid and active if shop exists, payment_status is 'paid', and payment_required is false
     if (shop) {
-      if (
-        shop.is_active ||
-        shop.subscription_status === 'active' ||
-        shop.plan_type === 'lifetime' ||
-        shop.payment_status === 'paid' ||
-        shop.payment_required === false
-      ) {
+      if (shop.payment_status === 'paid' && shop.payment_required === false) {
         return true;
       }
     }
 
-    if (subscription) {
-      const now = new Date();
-      if (subscription.status === 'trial') {
-        const trialEndsAt = subscription.trial_ends_at;
-        if (trialEndsAt) {
-          const parsedTrialEnd = new Date(trialEndsAt);
-          if (!isNaN(parsedTrialEnd.getTime()) && parsedTrialEnd > now) {
-            return true;
-          }
-        }
-      }
-
-      if (subscription.status === 'active') {
-        const subEndsAt = subscription.subscription_ends_at;
-        if (!subEndsAt) return true;
-        const parsedSubEnd = new Date(subEndsAt);
-        if (!isNaN(parsedSubEnd.getTime()) && parsedSubEnd > now) {
-          return true;
-        }
-      }
-    }
-
     return false;
-  }, [shop, subscription, session, user]);
+  }, [shop, session, user]);
 
   const handleCopyShopLink = async () => {
     if (!shop) return;
@@ -167,7 +140,7 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  if (!isSubscriptionOrTrialActive) {
+  if (!isShopPaidAndActive) {
     return <Paywall />;
   }
 
@@ -227,9 +200,6 @@ export const Dashboard: React.FC = () => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-3 space-y-5">
-        {/* Countdown Timer Banner for Free Trial / Subscription Renewal */}
-        <SubscriptionCountdownBanner />
-
         {/* Greeting Section & Date Range Picker */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-1">
           <div>
@@ -255,7 +225,7 @@ export const Dashboard: React.FC = () => {
         <ShopSetupChecklist 
           shop={shop}
           productsCount={productsCount}
-          isSubscriptionOrTrialActive={isSubscriptionOrTrialActive}
+          isShopPaidAndActive={isShopPaidAndActive}
         />
 
         {/* 4 Metric / KPI Cards Grid */}

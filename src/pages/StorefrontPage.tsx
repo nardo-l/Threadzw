@@ -162,20 +162,9 @@ export const StorefrontPage: React.FC = () => {
         return;
       }
 
-      // Check if the shop is active and subscription/trial status
-      const subStatus = shopResult.subscription_status;
-      const isTrialValid = (!subStatus || subStatus === 'trial') && 
-        (!shopResult.trial_ends_at || new Date(shopResult.trial_ends_at) > new Date());
-      const isSubscriptionValid = !subStatus || subStatus === 'active' || subStatus === 'trial' || isTrialValid;
-
-      if (!shopResult.is_active) {
+      // Check if the shop is active
+      if (shopResult.is_active === false) {
         setError('paused');
-        setLoading(false);
-        return;
-      }
-
-      if (!isSubscriptionValid) {
-        setError('subscription_expired');
         setLoading(false);
         return;
       }

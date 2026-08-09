@@ -268,23 +268,22 @@ export const Paywall: React.FC = () => {
     }
   }, [user]);
 
-  // Polling hook to wait for backend webhook subscription activation
+  // Polling hook to wait for shop payment activation
   useEffect(() => {
     let interval: any = null;
     
     if (isVerifying && user?.id) {
       interval = setInterval(async () => {
-        console.log("[Paywall Polling] Fetching latest subscription status...");
+        console.log("[Paywall Polling] Fetching latest payment status...");
         const { data, error } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('profile_id', user.id)
+          .from('shops')
+          .select('id, payment_status, payment_required')
+          .eq('owner_id', user.id)
           .maybeSingle();
 
-        if (!error && data && data.status === 'active') {
-          setCurrentSubscription(data);
+        if (!error && data && data.payment_status === 'paid' && data.payment_required === false) {
           setIsVerifying(false);
-          toast.success('Subscription activated! Welcome to ThreadZW Premium.');
+          toast.success('Shop payment verified! Welcome to ThreadZW.');
           navigate('/dashboard?payment=success');
         }
       }, 4000);
@@ -295,9 +294,9 @@ export const Paywall: React.FC = () => {
     };
   }, [isVerifying, user, navigate]);
 
-  // Auto-redirect if shop is already paid/active
+  // Auto-redirect if shop is already paid and active
   useEffect(() => {
-    if (shop && (shop.is_active || shop.payment_status === 'paid' || shop.plan_type === 'lifetime')) {
+    if (shop && shop.payment_status === 'paid' && shop.payment_required === false) {
       navigate('/dashboard', { replace: true });
     }
   }, [shop, navigate]);

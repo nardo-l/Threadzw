@@ -246,11 +246,11 @@ export const paymentService = {
     try {
       const { data: shop } = await supabase
         .from('shops')
-        .select('is_active, subscription_status, plan_type, paid_at')
+        .select('payment_status, payment_required, paid_at')
         .eq('id', shopId)
         .maybeSingle();
 
-      if (shop && (shop.is_active || shop.subscription_status === 'active' || shop.plan_type === 'lifetime')) {
+      if (shop && shop.payment_status === 'paid' && shop.payment_required === false) {
         return { isPaid: true, status: 'paid' };
       }
 

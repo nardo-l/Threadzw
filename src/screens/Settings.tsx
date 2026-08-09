@@ -43,17 +43,10 @@ export const Settings: React.FC = () => {
     }
   }, [profile, user]);
 
-  // Calculate remaining trial days
-  const trialDaysRemaining = useMemo(() => {
-    if (!subscription) return 0;
-    if (subscription.status === 'active') return null; // Fully subscribed
-    if (!subscription.trial_ends_at) return 0;
-    const ends = new Date(subscription.trial_ends_at);
-    const now = new Date();
-    const diffTime = ends.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  }, [subscription]);
+  // Check if shop payment is complete
+  const isPaidShop = useMemo(() => {
+    return shop?.payment_status === 'paid' && shop?.payment_required === false;
+  }, [shop]);
 
   // Save Profile Changes
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -232,7 +225,7 @@ export const Settings: React.FC = () => {
           </div>
 
           <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-4">
-            {trialDaysRemaining !== null ? (
+            {!isPaidShop ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
