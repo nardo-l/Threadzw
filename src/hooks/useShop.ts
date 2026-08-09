@@ -112,6 +112,7 @@ export const useShop = () => {
 
   const refreshShop = async () => {
     console.log("[SHOP] refreshShop called.");
+    hasFetchedRef.current = false;
     await fetchShop(true);
   };
 

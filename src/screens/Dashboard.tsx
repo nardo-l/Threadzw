@@ -29,13 +29,37 @@ import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
 import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
+import { paymentService } from '../services/paymentService';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, session, loading: authLoading, subscription } = useAuth();
-  const { shop, loading: shopLoading } = useShopContext();
+  const { shop, loading: shopLoading, refreshShop } = useShopContext();
   const [dateFilter, setDateFilter] = useState('May 20 – May 26');
   const [chartFilter, setChartFilter] = useState('Last 7 days');
+  const [dbPaymentVerified, setDbPaymentVerified] = useState<boolean | null>(null);
+
+  // Force refresh shop record on mount to guarantee fresh Supabase state
+  useEffect(() => {
+    if (session && user) {
+      refreshShop().catch(err => console.warn('Dashboard refreshShop note:', err));
+    }
+  }, [session, user]);
+
+  // Check shop_payments table if shop object isn't marked paid yet
+  useEffect(() => {
+    let isMounted = true;
+    if (shop?.id) {
+      paymentService.getShopPaymentStatus(shop.id).then(res => {
+        if (isMounted) {
+          setDbPaymentVerified(res.isPaid);
+        }
+      }).catch(() => {
+        if (isMounted) setDbPaymentVerified(false);
+      });
+    }
+    return () => { isMounted = false; };
+  }, [shop?.id, shop?.payment_status]);
 
   const {
     productsCount,
@@ -70,7 +94,9 @@ export const Dashboard: React.FC = () => {
   const isShopPaidAndActive = useMemo(() => {
     if (!session || !user) return false;
 
-    // A shop is paid and active if shop exists, payment_status is 'paid', and payment_required is false
+    // Check verified database payment or shop object flags
+    if (dbPaymentVerified === true) return true;
+
     if (shop) {
       if (shop.payment_status === 'paid' && shop.payment_required === false) {
         return true;
@@ -78,7 +104,7 @@ export const Dashboard: React.FC = () => {
     }
 
     return false;
-  }, [shop, session, user]);
+  }, [shop, session, user, dbPaymentVerified]);
 
   const handleCopyShopLink = async () => {
     if (!shop) return;
