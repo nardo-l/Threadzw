@@ -14,12 +14,14 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { useShopContext } from '../context/ShopContext';
 import { toast } from 'sonner';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { user, session, profile, subscription, updateProfile, updatePassword, signOut } = useAuth();
+  const { shop } = useShopContext();
 
   const [loading, setLoading] = useState(false);
 

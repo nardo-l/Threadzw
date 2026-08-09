@@ -11,31 +11,17 @@ export interface Shop {
   avatar_url?: string;
   logo_url?: string;
   banner_url: string;
-  plan: 'trial' | 'active' | 'expired';
-  trial_started_at: string;
-  trial_ends_at: string;
-  trial_start?: string | null;
-  trial_end?: string | null;
-  subscription_status: 'trial' | 'active' | 'locked' | 'pending_verification' | 'pending_payment' | 'expired';
-  subscription_start?: string | null;
-  subscription_end?: string | null;
-  access_code: string;
-  code_expires_at: string;
-  monthly_price: number;
   is_active: boolean;
   product_count: number;
   follower_count?: number;
   total_sales: number;
   view_count: number;
   created_at: string;
-  manual_lock?: boolean;
-  manual_lock_reason?: string | null;
-  manual_lock_date?: string | null;
-  manual_lock_by?: string | null;
-  payment_overdue_flagged?: boolean;
-  payment_overdue_since?: string | null;
   setup_complete?: boolean | null;
   setup_completed_at?: string | null;
+  payment_status?: string;
+  payment_required?: boolean;
+  paid_at?: string | null;
 }
 
 export interface Product {

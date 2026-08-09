@@ -124,12 +124,12 @@ export const NardoPayCheckout: React.FC = () => {
       if (updateError) throw updateError;
 
       await supabase.from('shops').update({
-        subscription_status: 'active',
-        subscription_end: endsAt,
-        trial_ends_at: null,
-        manual_lock: false,
-        payment_overdue_flagged: false,
-        is_live: true
+        payment_status: 'paid',
+        payment_required: false,
+        is_active: true,
+        paid_at: nowISO,
+        setup_complete: true,
+        setup_completed_at: nowISO
       }).eq('owner_id', user.id);
 
       setSuccess(true);

@@ -332,8 +332,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         logo_url: logoPreview || null,
         banner_url: bannerPreview || null,
         is_active: true,
-        subscription_status: 'trial',
-        trial_ends_at: new Date(Date.now() + FREE_TRIAL_DAYS * 24 * 60 * 60 * 1000).toISOString()
       };
 
       const { data: existingShop } = await supabase
@@ -781,8 +779,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         city: shopAddress.trim() || null,
         whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
         is_active: true,
-        subscription_status: 'active',
-        plan_type: 'lifetime',
         payment_status: 'paid',
         payment_required: false,
         paid_at: nowIso,

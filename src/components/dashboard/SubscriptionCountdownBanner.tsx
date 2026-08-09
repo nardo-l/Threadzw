@@ -10,7 +10,7 @@ export const SubscriptionCountdownBanner: React.FC = () => {
   const { shop } = useShopContext();
   const [dismissed, setDismissed] = useState(false);
 
-  const isPaidLifetime = shop?.plan_type === 'lifetime' || shop?.subscription_status === 'active' || subscription?.status === 'active';
+  const isPaidLifetime = shop?.payment_status === 'paid' && shop?.payment_required === false;
 
   if (dismissed) {
     return null;

@@ -192,8 +192,6 @@ export const paymentService = {
       const shopUpdatePayload = {
         owner_id: userId,
         is_active: true,
-        subscription_status: 'active',
-        plan_type: 'lifetime',
         payment_status: 'paid',
         payment_required: false,
         paid_at: now,

@@ -310,7 +310,6 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
           owner_id: activeOwnerId,
           ...payload,
           is_active: true,
-          subscription_status: 'trial',
         };
         console.log("No existing shop found. Inserting new shop:", insertPayload);
         const { data: insertedShop, error: insertErr } = await supabase
