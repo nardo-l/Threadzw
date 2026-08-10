@@ -157,11 +157,13 @@ export const Dashboard: React.FC = () => {
     });
   }, [dailyVisitsChart, maxVisitsScale]);
 
-  if (shopLoading || authLoading || dashboardLoading) {
+  const isVerifyingPayment = Boolean(shop?.id && dbPaymentVerified === null);
+
+  if (shopLoading || authLoading || dashboardLoading || isVerifyingPayment) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] text-black flex flex-col items-center justify-center font-sans">
         <Loader2 className="animate-spin text-[#A1DF00] w-8 h-8" />
-        <span className="text-xs text-zinc-400 mt-4 font-medium">Loading store dashboard...</span>
+        <span className="text-xs text-zinc-400 mt-4 font-medium">Verifying store access...</span>
       </div>
     );
   }
