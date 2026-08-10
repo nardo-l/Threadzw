@@ -2914,7 +2914,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             </div>
 
-            {/* CARD 10: LAUNCH PAYWALL */}
+            {/* CARD 10: LAUNCH FREE TIER */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
@@ -2925,16 +2925,16 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 <div className="space-y-3 py-2">
                   <div className="space-y-1">
                     <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Launch Paywall
+                      Free Tier Launch
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      $20 Lifetime Access plan for Zimbabwean merchants.
+                      Limited free tier with up to 3 products for Zimbabwean merchants.
                     </p>
                   </div>
 
                   <div className="bg-lime-50 border border-lime-200 p-4 rounded-2xl text-center space-y-1">
-                    <div className="text-3xl font-black text-black">$20</div>
-                    <div className="text-[10px] font-bold text-lime-800 uppercase">Lifetime Storefront Activation</div>
+                    <div className="text-3xl font-black text-black">$0</div>
+                    <div className="text-[10px] font-bold text-lime-800 uppercase">Instant Storefront Activation</div>
                   </div>
                 </div>
 
@@ -2943,17 +2943,17 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     onClick={() => { setViewMode('flow'); setStep(10); }}
                     className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
                   >
-                    <span>Launch My Store – $20</span>
+                    <span>Launch My Free Store</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">10 Launch Paywall</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">10 Free Tier Launch</span>
               </div>
             </div>
 
-            {/* CARD 11: NARDO PAY */}
+            {/* CARD 11: INSTANT PUBLISH */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
@@ -2964,16 +2964,16 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 <div className="space-y-3 py-2">
                   <div className="space-y-1">
                     <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Nardo Pay
+                      Instant Publish
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      Complete $20 payment via EcoCash, ZIPIT or Card.
+                      Publish your store instantly with zero subscription fees.
                     </p>
                   </div>
 
                   <div className="p-3 bg-zinc-50 border rounded-xl space-y-2">
-                    <NardoPayIcon />
-                    <div className="text-[10px] text-zinc-500">Secure payment processor</div>
+                    <div className="text-xs font-bold text-black">WhatsApp Orders Enabled</div>
+                    <div className="text-[10px] text-zinc-500">Free tier ready for customers</div>
                   </div>
                 </div>
 
@@ -2982,13 +2982,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     onClick={() => { setViewMode('flow'); setStep(11); }}
                     className="w-full bg-black text-white font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
                   >
-                    <span>Pay $20 with Nardo Pay</span>
+                    <span>Activate Free Store</span>
                     <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </button>
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">11 Nardo Pay</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">11 Instant Publish</span>
               </div>
             </div>
 

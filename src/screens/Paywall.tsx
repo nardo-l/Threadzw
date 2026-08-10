@@ -319,8 +319,41 @@ export const Paywall: React.FC = () => {
     }
   };
 
-  const handleStartCheckout = () => {
-    window.open('https://nardopay.com/pay/efb2bff4ee35cc08', '_blank');
+  const handleStartCheckout = async () => {
+    setLoading(true);
+    try {
+      if (user?.id) {
+        let sId = shop?.id;
+        if (!sId) {
+          const { data: dbShop } = await supabase
+            .from('shops')
+            .select('id')
+            .eq('owner_id', user.id)
+            .maybeSingle();
+          if (dbShop) sId = dbShop.id;
+        }
+
+        if (sId) {
+          await supabase
+            .from('shops')
+            .update({
+              is_active: true,
+              payment_status: 'free',
+              payment_required: false,
+              plan: 'free',
+              product_limit: 3
+            })
+            .eq('id', sId);
+        }
+      }
+      toast.success('Storefront activated on limited free tier!');
+      navigate('/dashboard?activated=true');
+    } catch (err: any) {
+      console.error('[Paywall] Activation error:', err);
+      toast.error('Activation error: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleManualCheck = async () => {
@@ -367,10 +400,10 @@ export const Paywall: React.FC = () => {
 
   // Calculate status description
   const getSubStatusDesc = () => {
-    if (shop?.payment_status === 'paid' || shop?.is_active) {
-      return 'Storefront is active and published.';
+    if (shop?.payment_status === 'free' || shop?.is_active) {
+      return 'Storefront is active and published on the limited free tier.';
     }
-    return 'One-time $20 storefront activation required to publish your store.';
+    return 'Activate your storefront on the limited free tier (up to 3 products).';
   };
 
   // Show "Payment received. Verifying your subscription..." screen
@@ -481,18 +514,18 @@ export const Paywall: React.FC = () => {
         {/* 2. Plan Price Banner */}
         <div className="bg-zinc-950 border border-zinc-900/60 rounded-2xl p-5 flex items-center justify-between">
           <div className="space-y-0.5">
-            <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block">Lifetime Plan</span>
-            <span className="text-xs text-zinc-300 font-bold">Unlimited products, custom link, zero monthly fees</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block">Limited Free Tier</span>
+            <span className="text-xs text-zinc-300 font-bold">Up to 3 products, custom link, zero monthly fees</span>
           </div>
           <div className="text-right">
-            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$20</span>
-            <span className="text-[10px] text-zinc-500 font-bold">once off</span>
+            <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$0</span>
+            <span className="text-[10px] text-zinc-500 font-bold">free tier</span>
           </div>
         </div>
 
         {/* 3. Features checklist */}
         <div className="space-y-3 pt-1">
-          <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Includes Full Lifetime Access</h4>
+          <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Includes Free Tier Access</h4>
           <ul className="space-y-2 text-xs font-semibold text-zinc-400">
             <li className="flex items-center gap-2.5">
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
@@ -504,19 +537,19 @@ export const Paywall: React.FC = () => {
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
                 <Check size={10} className="stroke-[3]" />
               </div>
-              <span>Lifetime Store Access — No Recurring Subscriptions</span>
+              <span>Instant Storefront Publishing — Zero Fees</span>
             </li>
             <li className="flex items-center gap-2.5">
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
                 <Check size={10} className="stroke-[3]" />
               </div>
-              <span>Unlimited Clothing Curation Listings</span>
+              <span>Up to 3 Active Clothing Listings</span>
             </li>
             <li className="flex items-center gap-2.5">
               <div className="w-4 h-4 rounded-full bg-zinc-900 flex items-center justify-center border border-zinc-800 text-[#bef715] shrink-0">
                 <Check size={10} className="stroke-[3]" />
               </div>
-              <span>Setup in Under 5 Minutes with Nardo Pay</span>
+              <span>Setup in Under 5 Minutes</span>
             </li>
           </ul>
         </div>
@@ -536,7 +569,7 @@ export const Paywall: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin text-black" />
             ) : (
               <>
-                <span>Pay $20 via NardoPay</span>
+                <span>Activate Free Storefront</span>
                 <ArrowRight size={14} className="stroke-[2.5px]" />
               </>
             )}

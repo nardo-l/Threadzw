@@ -316,7 +316,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             >
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
-                <span>$20 Once-Off Plan</span>
+                <span>Limited Free Tier</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
@@ -794,25 +794,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
           <div className="bg-zinc-950 rounded-3xl p-8 sm:p-12 border-2 border-[#C6FF00]/50 shadow-[0_20px_60px_rgba(198,255,0,0.1)] relative overflow-hidden text-center space-y-8">
             
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider">
-              <span>Lifetime Store Access</span>
+              <span>Limited Free Tier</span>
             </div>
 
             <div>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-6xl font-black text-white tracking-tight">$20</span>
-                <span className="text-zinc-400 font-bold text-lg">/ once off</span>
+                <span className="text-6xl font-black text-white tracking-tight">$0</span>
+                <span className="text-zinc-400 font-bold text-lg">/ free forever</span>
               </div>
               <p className="text-xs font-extrabold text-[#C6FF00] mt-2">Zero Monthly Subscription Fees</p>
             </div>
 
             <div className="space-y-3.5 text-left border-y border-zinc-800/80 py-6">
               {[
-                'Unlimited Products & Categories',
+                'Up to 3 Active Products & Categories',
                 'WhatsApp Ordering Integration',
                 'Inventory & Size Variant Tracking',
                 'Custom Shop Link (threadzw.app/shop/yourshop)',
                 'Recent Activity & Analytics Dashboard',
-                'Priority Merchant Support'
+                'Instant Storefront Publishing'
               ].map((item) => (
                 <div key={item} className="flex items-center gap-3 text-xs font-bold text-zinc-200">
                   <div className="w-5 h-5 rounded-full bg-[#C6FF00] text-black flex items-center justify-center shrink-0">
@@ -827,7 +827,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               onClick={onStartFree}
               className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-sm rounded-2xl transition-all cursor-pointer shadow-lg shadow-[#C6FF00]/20 active:scale-95 uppercase tracking-wider"
             >
-              Get Started with $20 Plan
+              Get Started for Free
             </button>
 
             <p className="text-[11px] text-zinc-500 font-medium">
@@ -974,7 +974,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             },
             {
               q: "How does the pricing for ThreadZW work?",
-              a: "ThreadZW is a flat $20 once-off single payment for lifetime storefront access. There are no monthly subscriptions, hidden fees, or cancellation worries."
+              a: "ThreadZW offers a limited free tier allowing merchants to run their online storefront completely free with up to 3 products, WhatsApp ordering, and zero monthly fees."
             }
           ].map((item, idx) => (
             <div 

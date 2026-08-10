@@ -29,21 +29,20 @@ export interface ActivatePaymentParams {
 }
 
 /**
- * Clean payment-service abstraction for ThreadZW one-time storefront activation ($20 USD).
- * Designed so Nardo Pay API/webhooks can seamlessly replace redirect flows in the future.
+ * Clean payment-service abstraction for ThreadZW limited free tier storefront activation.
  */
 export const paymentService = {
   /**
-   * Creates or updates a pending $20 payment session for a shop.
+   * Creates or updates a pending payment session for a shop.
    */
   async createPaymentSession(params: CreatePaymentParams): Promise<ShopPayment | null> {
     const {
       shopId,
       userId,
-      amount = 20.0,
+      amount = 0.0,
       currency = 'USD',
-      provider = 'nardopay',
-      paymentReference = `NARDOPAY-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`
+      provider = 'free',
+      paymentReference = `FREE-${Date.now()}`
     } = params;
 
     const now = new Date().toISOString();
@@ -235,7 +234,7 @@ export const paymentService = {
   },
 
   /**
-   * Returns whether a shop has completed its $20 activation payment.
+   * Returns whether a shop has completed its storefront activation.
    */
   async getShopPaymentStatus(shopId: string): Promise<{ isPaid: boolean; status: string }> {
     if (!shopId) return { isPaid: false, status: 'unpaid' };

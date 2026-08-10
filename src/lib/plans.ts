@@ -1,4 +1,4 @@
-// THREADZW PRICING: $20 / once off (Lifetime Storefront Activation)
+// THREADZW PRICING: Limited Free Tier
 export const FREE_TRIAL_DAYS = 7;
 
 export interface PlanDetails {
@@ -13,24 +13,18 @@ export interface PlanDetails {
 
 export const PLANS: Record<string, PlanDetails> = {
   shop: {
-    name: 'Thread ZW Lifetime Store',
+    name: 'Limited Free Tier',
     monthly: {
-      firstMonth: 20.00,  // $20 once off
-      recurring: 0.00,   // $0 recurring
+      firstMonth: 0.00,
+      recurring: 0.00,
     },
-    maxProducts: Infinity,
-    featuredDays: 365,
+    maxProducts: 3,
+    featuredDays: 0,
   },
 };
 
 export const getPlanAmount = (plan: string, billingCycle: string, isFirstPeriod: boolean) => {
-  // THREADZW PRICING: $20 once off
-  return 20.00;
+  return 0.00;
 };
 
 export const formatAmount = (amount: number) => `$${amount.toFixed(2)}`;
-
-
-
-
-
