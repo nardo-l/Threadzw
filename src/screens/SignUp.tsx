@@ -302,10 +302,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   // Clear auth error when changing steps & skip removed steps
   useEffect(() => {
     setAuthError(null);
-    if (step === 7 || step === 8) {
-      setStep(9);
+    if (step === 5 || step === 7 || step === 8) {
+      setStep(6);
     }
-    if (step === 11 || step === 12) {
+    if (step === 9 || step === 11 || step === 12) {
       setStep(10);
     }
   }, [step]);
@@ -594,7 +594,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       }
 
       try { await refreshShop(); } catch (e) {}
-      setStep(9);
+      setStep(10);
     } catch (err: any) {
       console.error('Error saving bio:', err);
       toast.error(err?.message || 'Error saving bio');
@@ -1207,7 +1207,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   };
 
   // Helper component for Progress bar
-  const ProgressIndicator = ({ activeStep, totalSteps = 4 }: { activeStep: number; totalSteps?: number }) => (
+  const ProgressIndicator = ({ activeStep, totalSteps = 5 }: { activeStep: number; totalSteps?: number }) => (
     <div className="flex items-center gap-1.5 w-32 sm:w-40">
       {Array.from({ length: totalSteps }).map((_, idx) => {
         const s = idx + 1;
@@ -1574,141 +1574,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   transition={{ duration: 0.25 }}
                   className="flex-1 flex flex-col justify-between -mx-6 sm:-mx-8 -my-6 sm:-my-8"
                 >
-                  <SuccessScreen onContinue={() => setStep(5)} />
-                </motion.div>
-              )}
-
-              {/* ========================================= */}
-              {/* SCREEN 5: UPLOAD YOUR BRAND (LOGO & BANNER) */}
-              {/* ========================================= */}
-              {step === 5 && (
-                <motion.div
-                  key="screen5"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex-1 flex flex-col justify-between"
-                >
-                  {/* Top Header Nav */}
-                  <div className="flex items-center justify-between pt-1 pb-3">
-                    <button
-                      onClick={() => setStep(4)}
-                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
-                    >
-                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
-                    </button>
-                    <ProgressIndicator activeStep={2} />
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex-1 space-y-4 pt-1">
-                    <div className="space-y-1">
-                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
-                        Make it yours.
-                      </h1>
-                      <p className="text-xs text-zinc-500 font-medium">
-                        Add your logo and banner so your storefront feels like your brand.
-                      </p>
-                    </div>
-
-                    {/* Editable Shop Name */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
-                        Shop name
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={shopName}
-                          onChange={(e) => setShopName(e.target.value)}
-                          className="w-full bg-white border border-zinc-200 rounded-2xl pl-4 pr-10 py-3 text-sm font-semibold text-black focus:outline-none focus:border-black transition-all"
-                        />
-                        <Pencil className="w-4 h-4 text-zinc-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
-                    </div>
-
-                    {/* Logo Section */}
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
-                        Shop logo
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <div className="w-24 h-24 rounded-2xl bg-black border border-zinc-200 overflow-hidden relative flex items-center justify-center shadow-xs shrink-0">
-                          {logoPreview ? (
-                            <img src={logoPreview} alt="Shop Logo" className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="text-white text-center p-2 font-black text-xs">
-                              {shopName || 'LOGO'}
-                            </div>
-                          )}
-                        </div>
-
-                        <input
-                          type="file"
-                          id="logo-upload"
-                          accept="image/*"
-                          onChange={handleLogoSelect}
-                          className="hidden"
-                        />
-                        <label
-                          htmlFor="logo-upload"
-                          className="flex-1 h-24 border-2 border-dashed border-zinc-200 hover:border-black rounded-2xl p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-zinc-50/50 hover:bg-zinc-50"
-                        >
-                          <Upload className="w-5 h-5 text-zinc-500 mb-1" />
-                          <span className="text-xs font-bold text-black block">Upload logo</span>
-                          <span className="text-[10px] text-zinc-400 font-medium">Recommended 512x512</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Banner Section */}
-                    <div className="space-y-1 pt-1">
-                      <label className="text-[11px] font-bold text-zinc-700 uppercase tracking-wider block">
-                        Shop banner
-                      </label>
-                      <input
-                        type="file"
-                        id="banner-upload"
-                        accept="image/*"
-                        onChange={handleBannerSelect}
-                        className="hidden"
-                      />
-                      <div className="relative w-full h-28 rounded-2xl bg-zinc-900 border border-zinc-200 overflow-hidden group">
-                        {bannerPreview ? (
-                          <img src={bannerPreview} alt="Shop Banner" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-zinc-900 text-white font-bold text-xs">
-                            {shopName ? shopName.toUpperCase() : 'YOUR STORE BANNER'}
-                          </div>
-                        )}
-                        <label
-                          htmlFor="banner-upload"
-                          className="absolute inset-0 bg-black/40 hover:bg-black/60 transition-all flex items-center justify-center gap-2 cursor-pointer text-white text-xs font-bold"
-                        >
-                          <Upload className="w-4 h-4" />
-                          <span>{bannerPreview ? 'Replace Banner' : 'Upload Banner'}</span>
-                        </label>
-                      </div>
-                      <p className="text-[10px] text-zinc-400 font-medium pt-0.5">Recommended 1500x500</p>
-                    </div>
-                  </div>
-
-                  {/* Primary Button */}
-                  <div className="pt-4">
-                    <button
-                      onClick={handleSaveBrand}
-                      disabled={loading}
-                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
-                    >
-                      <span className="text-black font-extrabold">Continue</span>
-                      {loading ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-black" />
-                      ) : (
-                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
-                      )}
-                    </button>
-                  </div>
+                  <SuccessScreen onContinue={() => setStep(6)} />
                 </motion.div>
               )}
 
@@ -1727,12 +1593,12 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   {/* Top Header Nav */}
                   <div className="flex items-center justify-between pt-1 pb-3">
                     <button
-                      onClick={() => setStep(5)}
+                      onClick={() => setStep(4)}
                       className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
                     >
                       <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
                     </button>
-                    <ProgressIndicator activeStep={2} />
+                    <ProgressIndicator activeStep={4} totalSteps={5} />
                   </div>
 
                   {/* Main Content */}
@@ -2171,180 +2037,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               )}
 
               {/* ========================================= */}
-              {/* SCREEN 9: PREVIEW STOREFRONT */}
-              {/* ========================================= */}
-              {step === 9 && (
-                <motion.div
-                  key="screen9"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex-1 flex flex-col justify-between"
-                >
-                  {/* Top Header Nav */}
-                  <div className="flex items-center justify-between pt-1 pb-3">
-                    <button
-                      onClick={() => setStep(6)}
-                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
-                    >
-                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
-                    </button>
-                    <ProgressIndicator activeStep={5} totalSteps={5} />
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex-1 space-y-3 pt-1">
-                    <div className="space-y-1">
-                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
-                        Preview your storefront
-                      </h1>
-                      <p className="text-xs text-zinc-500 font-medium">
-                        This is how customers will see your shop.
-                      </p>
-                    </div>
-
-                    {/* Storefront Mockup Frame */}
-                    <div className="bg-white border-2 border-zinc-900 rounded-3xl shadow-lg relative overflow-hidden flex flex-col">
-                      {/* Top Bar: POWERED BY THREADZW 💚 */}
-                      <div className="bg-[#C6FF00] text-black text-[10px] font-black uppercase tracking-wider py-1.5 px-3 text-center flex items-center justify-center gap-1">
-                        <span>POWERED BY THREADZW 💚</span>
-                      </div>
-
-                      {/* Header row */}
-                      <div className="bg-white border-b border-zinc-200 px-3.5 py-2.5 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full border border-zinc-200 overflow-hidden shrink-0 bg-black text-white flex items-center justify-center font-black text-xs">
-                            {logoPreview ? (
-                              <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
-                            ) : (
-                              <span>{shopName ? shopName.slice(0, 2).toUpperCase() : 'TZ'}</span>
-                            )}
-                          </div>
-                          <span className="text-xs sm:text-sm font-black text-black">
-                            {shopName || 'Your Shop'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2.5 text-black">
-                          <Share2 size={15} className="cursor-pointer" />
-                          <Search size={15} className="cursor-pointer" />
-                          <ShoppingBag size={15} className="cursor-pointer" />
-                        </div>
-                      </div>
-
-                      {/* Banner Image + Overlapping Circular Logo */}
-                      <div className="relative">
-                        <div className="h-32 sm:h-36 w-full overflow-hidden bg-zinc-900">
-                          {bannerPreview ? (
-                            <img
-                              src={bannerPreview}
-                              alt="Shop Banner"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 flex items-center justify-center text-white/50 font-black text-xs uppercase tracking-widest p-4 text-center">
-                              {shopName ? `${shopName.toUpperCase()} STORE BANNER` : 'STORE BANNER'}
-                            </div>
-                          )}
-                        </div>
-                        <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-full border-4 border-white shadow-md bg-black text-white font-black text-xl flex items-center justify-center overflow-hidden -mt-10 relative z-10 mx-auto">
-                          {logoPreview ? (
-                            <img
-                              src={logoPreview}
-                              alt="Shop Logo"
-                              className="w-full h-full object-cover rounded-full"
-                            />
-                          ) : (
-                            <span>{shopName ? shopName.slice(0, 2).toUpperCase() : 'TZ'}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Shop Info Details */}
-                      <div className="space-y-1.5 pt-2 px-4 text-center">
-                        <h2 className="text-lg font-black text-black">
-                          {shopName || 'Your Shop Name'}
-                        </h2>
-
-                        <div className="inline-flex items-center justify-center gap-1.5 text-[11px] font-extrabold text-[#25D366] uppercase tracking-wide">
-                          <Sparkles size={12} className="text-[#25D366]" />
-                          <span>ZIMBABWE STORE LINK</span>
-                        </div>
-
-                        <p className="text-xs text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto pt-0.5">
-                          {bioText || 'Your storefront bio will appear here.'}
-                        </p>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="space-y-2 pt-3 px-4 pb-2">
-                        <button
-                          type="button"
-                          className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-black text-xs uppercase py-3 px-4 rounded-full flex items-center justify-center gap-2 shadow-xs cursor-pointer tracking-wider border border-black/10"
-                        >
-                          <span>BROWSE CATALOG</span>
-                          <ArrowRight size={14} className="stroke-[2.5]" />
-                        </button>
-
-                        <button
-                          type="button"
-                          className="w-full bg-white hover:bg-zinc-50 border border-zinc-200 text-black font-extrabold text-xs uppercase py-3 px-4 rounded-full flex items-center justify-center gap-2 cursor-pointer shadow-xs tracking-wider"
-                        >
-                          <span>MESSAGE US</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className="w-full bg-white hover:bg-zinc-50 border border-zinc-200 text-black font-extrabold text-xs uppercase py-3 px-4 rounded-full flex items-center justify-center gap-2 cursor-pointer shadow-xs tracking-wider"
-                        >
-                          <Share2 size={13} />
-                          <span>SHARE SHOP LINK</span>
-                        </button>
-                      </div>
-
-                      {/* Bottom Floating Nav Bar */}
-                      <div className="bg-white border border-zinc-900 rounded-2xl p-2 shadow-md flex justify-around items-center text-[10px] font-bold text-zinc-600 mt-2 mx-3 mb-3">
-                        <div className="flex flex-col items-center gap-0.5 text-black">
-                          <Home size={16} />
-                          <span>Home</span>
-                          <span className="w-1 h-1 bg-[#25D366] rounded-full mt-0.5" />
-                        </div>
-                        <div className="flex flex-col items-center gap-0.5 text-zinc-500">
-                          <Grid size={16} />
-                          <span>Shop</span>
-                        </div>
-                        <div className="flex flex-col items-center gap-0.5 text-zinc-500">
-                          <ShoppingBag size={16} />
-                          <span>Cart</span>
-                        </div>
-                        <div className="flex flex-col items-center gap-0.5 text-zinc-500">
-                          <Heart size={16} />
-                          <span>Wishlist</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Editing notice callout */}
-                    <div className="p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl flex items-center gap-2 text-xs font-medium text-emerald-800">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>You can edit everything anytime before your shop goes live.</span>
-                    </div>
-                  </div>
-
-                  {/* Primary CTA */}
-                  <div className="pt-3">
-                    <button
-                      onClick={() => setStep(10)}
-                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs"
-                    >
-                      <span className="text-black font-extrabold">Continue to Launch</span>
-                      <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ========================================= */}
               {/* SCREEN 10: CHOOSE YOUR PLAN */}
               {/* ========================================= */}
               {(step === 10 || step === 11) && (
@@ -2359,7 +2051,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   {/* Top Header Nav */}
                   <div className="flex items-center justify-between pt-1 pb-3">
                     <button
-                      onClick={() => setStep(9)}
+                      onClick={() => setStep(6)}
                       className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
                     >
                       <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
@@ -2672,7 +2364,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
                   <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={1} />
+                  <ProgressIndicator activeStep={1} totalSteps={5} />
                 </div>
 
                 <div className="space-y-4 py-2">
@@ -2712,7 +2404,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">2 Enter Shop Name</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Step 1: Shop Name</span>
               </div>
             </div>
 
@@ -2721,7 +2413,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
                   <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={2} />
+                  <ProgressIndicator activeStep={2} totalSteps={5} />
                 </div>
 
                 <div className="space-y-3 py-1">
@@ -2761,7 +2453,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">3 Where did you hear about us?</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Step 2: Referral</span>
               </div>
             </div>
 
@@ -2770,7 +2462,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
                   <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={3} />
+                  <ProgressIndicator activeStep={3} totalSteps={5} />
                 </div>
 
                 <div className="space-y-4 py-2">
@@ -2830,59 +2522,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">4 Sign Up</span>
-              </div>
-            </div>
-
-            {/* CARD 5: UPLOAD BRAND */}
-            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-2">
-                  <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={2} />
-                </div>
-
-                <div className="space-y-3 py-2">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Make it yours.
-                    </h1>
-                    <p className="text-xs text-zinc-500 font-normal">
-                      Add logo and banner so your store feels like your brand.
-                    </p>
-                  </div>
-
-                  <div className="space-y-2 pt-1">
-                    <div>
-                      <label className="text-[10px] font-bold text-black uppercase block">Shop name</label>
-                      <input
-                        type="text"
-                        readOnly
-                        value={shopName}
-                        className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-xs font-semibold text-black"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-black uppercase block">Shop logo</label>
-                      <div className="w-20 h-20 bg-black rounded-xl border flex items-center justify-center text-white font-bold text-xs">
-                        LOGO
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    onClick={() => { setViewMode('flow'); setStep(5); }}
-                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Continue</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">5 Upload Brand</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Step 3: Account</span>
               </div>
             </div>
 
@@ -2891,7 +2531,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
                   <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={2} />
+                  <ProgressIndicator activeStep={4} totalSteps={5} />
                 </div>
 
                 <div className="space-y-3 py-2">
@@ -2924,125 +2564,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">6 Add Bio</span>
-              </div>
-            </div>
-
-            {/* CARD 7: SHOP DIRECTIONS */}
-            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-2">
-                  <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={3} />
-                </div>
-
-                <div className="space-y-3 py-2">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Shop directions
-                    </h1>
-                    <p className="text-xs text-zinc-500 font-normal">
-                      Add location and directions so customers can visit.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-zinc-50 border rounded-xl text-xs space-y-1">
-                    <div className="font-bold">{shopAddress}</div>
-                    <div className="text-zinc-500 text-[10px]">{shopDirections}</div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    onClick={() => { setViewMode('flow'); setStep(7); }}
-                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Continue</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">7 Shop Directions</span>
-              </div>
-            </div>
-
-            {/* CARD 8: ADD FIRST PRODUCT */}
-            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-2">
-                  <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={4} />
-                </div>
-
-                <div className="space-y-3 py-2">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Add first product
-                    </h1>
-                    <p className="text-xs text-zinc-500 font-normal">
-                      Your storefront needs something to sell.
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5 text-xs bg-zinc-50 border p-3 rounded-2xl">
-                    <div className="font-bold text-black">{productName || 'No product added yet'}</div>
-                    <div className="text-zinc-500 font-medium">{productPrice ? `$${productPrice}` : 'Price: $0.00'} {productStock ? `• Stock: ${productStock}` : '• Stock: 0'}</div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    onClick={() => { setViewMode('flow'); setStep(8); }}
-                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Add Product</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">8 Add First Product</span>
-              </div>
-            </div>
-
-            {/* CARD 9: PREVIEW STOREFRONT */}
-            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-2">
-                  <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={5} totalSteps={5} />
-                </div>
-
-                <div className="space-y-3 py-2">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Preview storefront
-                    </h1>
-                    <p className="text-xs text-zinc-500 font-normal">
-                      See how your customers will experience your shop.
-                    </p>
-                  </div>
-
-                  <div className="bg-zinc-50 border p-3 rounded-2xl text-xs space-y-1">
-                    <div className="font-bold text-black">{shopName || 'Your Shop'}</div>
-                    <div className="text-[11px] text-[#25D366] font-bold">🇿🇼 ZIMBABWE STORE LINK</div>
-                    <div className="text-[11px] text-zinc-500">{bioText || 'Storefront description'}</div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    onClick={() => { setViewMode('flow'); setStep(9); }}
-                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Continue to Launch</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">9 Preview Storefront</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Step 4: Add Bio</span>
               </div>
             </div>
 
@@ -3081,46 +2603,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">10 Free Tier Launch</span>
-              </div>
-            </div>
-
-            {/* CARD 11: INSTANT PUBLISH */}
-            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-2">
-                  <ArrowLeft className="w-4 h-4 text-black" />
-                  <ProgressIndicator activeStep={5} totalSteps={5} />
-                </div>
-
-                <div className="space-y-3 py-2">
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Instant Publish
-                    </h1>
-                    <p className="text-xs text-zinc-500 font-normal">
-                      Publish your store instantly with zero subscription fees.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-zinc-50 border rounded-xl space-y-2">
-                    <div className="text-xs font-bold text-black">WhatsApp Orders Enabled</div>
-                    <div className="text-[10px] text-zinc-500">Free tier ready for customers</div>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    onClick={() => { setViewMode('flow'); setStep(11); }}
-                    className="w-full bg-black text-white font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Activate Free Store</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">11 Instant Publish</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Step 5: Choose Plan</span>
               </div>
             </div>
 
@@ -3159,7 +2642,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 </div>
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">13 Shop Activated</span>
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Activated</span>
               </div>
             </div>
 

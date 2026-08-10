@@ -552,10 +552,10 @@ function AppContent() {
     return <SignUp initialStep={3} />;
   }
   if (appStage === 'setup-success' || cleanPath === '/setup-success') {
-    return <SuccessScreen onContinue={() => { setAppStage('setup'); navigate('/signup?step=5'); }} />;
+    return <SuccessScreen onContinue={() => { setAppStage('setup'); navigate('/signup?step=6'); }} />;
   }
   if (appStage === 'setup') {
-    return <SignUp initialStep={5} />;
+    return <SignUp initialStep={6} />;
   }
 
   if (appStage === 'checkout') {
