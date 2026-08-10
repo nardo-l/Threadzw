@@ -62,12 +62,8 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   // 2. Product added check
   const isProductAdded = productsCount > 0;
 
-  // 3. Paid Shop Activation check
-  const isProActive = useMemo(() => {
-    if (isShopPaidAndActive) return true;
-    if (shop?.payment_status === 'paid' && shop?.payment_required === false) return true;
-    return false;
-  }, [isShopPaidAndActive, shop]);
+  // 3. Plan Activation check (Free Plan Active by default)
+  const isProActive = true;
 
   // 4. Share shop check
   const isShopShared = shopShared;

@@ -157,34 +157,13 @@ export const Dashboard: React.FC = () => {
     });
   }, [dailyVisitsChart, maxVisitsScale]);
 
-  const isVerifyingPayment = Boolean(shop?.id && dbPaymentVerified === null);
-
-  console.log('[DASHBOARD ACCESS DEBUG]', {
-    userId: session?.user?.id,
-    shopId: shop?.id,
-    shopOwnerId: shop?.owner_id,
-    paymentStatus: shop?.payment_status,
-    paymentRequired: shop?.payment_required,
-    isActive: shop?.is_active,
-    dbPaymentVerified,
-    isVerifyingPayment,
-    shopLoading,
-    authLoading,
-    dashboardLoading,
-    isShopPaidAndActive
-  });
-
-  if (shopLoading || authLoading || dashboardLoading || isVerifyingPayment) {
+  if (shopLoading || authLoading || dashboardLoading) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] text-black flex flex-col items-center justify-center font-sans">
         <Loader2 className="animate-spin text-[#A1DF00] w-8 h-8" />
-        <span className="text-xs text-zinc-400 mt-4 font-medium">Verifying store access...</span>
+        <span className="text-xs text-zinc-400 mt-4 font-medium">Loading store dashboard...</span>
       </div>
     );
-  }
-
-  if (!isShopPaidAndActive) {
-    return <Paywall />;
   }
 
   if (!shop) {

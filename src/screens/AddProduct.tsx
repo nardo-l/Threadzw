@@ -108,6 +108,7 @@ export const AddProduct: React.FC = () => {
   const [publishing, setPublishing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
+  const [isAtLimit, setIsAtLimit] = useState(false);
 
   // Fetch Global Categories
   const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
@@ -160,12 +161,23 @@ export const AddProduct: React.FC = () => {
         if (session) {
           const { data: shop } = await supabase
             .from('shops')
-            .select('id, slug')
+            .select('id, slug, plan, plan_type')
             .eq('owner_id', session.user.id).order('created_at', { ascending: false }).limit(1)
             .maybeSingle();
           if (shop) {
             setShopId(shop.id);
             setShopHandle(shop.slug);
+
+            const isPremium = shop.plan === 'premium' || shop.plan_type === 'premium';
+            if (!isPremium) {
+              const { count } = await supabase
+                .from('products')
+                .select('id', { count: 'exact', head: true })
+                .eq('shop_id', shop.id);
+              if (count !== null && count >= 3) {
+                setIsAtLimit(true);
+              }
+            }
           }
         }
       } catch (err) {
@@ -568,6 +580,26 @@ export const AddProduct: React.FC = () => {
 
       if (!currentShopId || String(currentShopId).startsWith('local-shop-') || currentShopId === '55555555-5555-5555-5555-555555555555') {
         throw new Error("Cannot create product: No active, valid shop found for your profile.");
+      }
+
+      // Enforce 3-product limit on Free plan
+      const { count: liveCount } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('shop_id', currentShopId);
+
+      const { data: currentShopData } = await supabase
+        .from('shops')
+        .select('plan, plan_type')
+        .eq('id', currentShopId)
+        .maybeSingle();
+
+      const isPremiumShop = currentShopData?.plan === 'premium' || currentShopData?.plan_type === 'premium';
+
+      if (!isPremiumShop && liveCount !== null && liveCount >= 3) {
+        toast.error('You have reached the 3-product limit on the Free plan. Premium with unlimited products is coming soon.');
+        setPublishing(false);
+        return;
       }
 
       const { data: newProd, error: insertError } = await supabase

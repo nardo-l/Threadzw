@@ -237,11 +237,14 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   }, [phone]);
 
-  // Clear auth error when changing steps & skip removed steps 7 and 8
+  // Clear auth error when changing steps & skip removed steps
   useEffect(() => {
     setAuthError(null);
     if (step === 7 || step === 8) {
       setStep(9);
+    }
+    if (step === 11 || step === 12) {
+      setStep(10);
     }
   }, [step]);
 
@@ -337,19 +340,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       localStorage.setItem('threadzw_logged_in', 'true');
       localStorage.setItem('supabase_logged_in_user_id', currentUser.id);
 
-      // Create shop record linked to owner_id = currentUser.id
+      // Check if existing shop record exists for currentUser.id
       const slug = shopName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
-      const shopPayload = {
-        owner_id: currentUser.id,
-        name: shopName.trim() || 'My Shop',
-        slug: slug || `shop-${Date.now().toString(36)}`,
-        category: 'Streetwear & Fashion',
-        description: `${shopName} official storefront on ThreadZW.`,
-        whatsapp_number: phoneVal || '+263771234567',
-        logo_url: logoPreview || null,
-        banner_url: bannerPreview || null,
-        is_active: true,
-      };
+      const loc = shopAddress.trim() || null;
 
       const { data: existingShop } = await supabase
         .from('shops')
@@ -360,9 +353,32 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       let activeShopId = existingShop?.id;
 
       if (existingShop) {
+        const shopPayload: any = {
+          name: shopName.trim() || 'My Shop',
+          slug: slug || `shop-${Date.now().toString(36)}`,
+          whatsapp_number: phoneVal || '+263771234567',
+          location: loc,
+          city: loc,
+        };
         const { error: updateErr } = await supabase.from('shops').update(shopPayload).eq('id', existingShop.id);
         if (updateErr) throw updateErr;
       } else {
+        const shopPayload = {
+          owner_id: currentUser.id,
+          name: shopName.trim() || 'My Shop',
+          slug: slug || `shop-${Date.now().toString(36)}`,
+          category: selectedBioCategory || 'Streetwear & Fashion',
+          description: bioText.trim() || `${shopName} official storefront on ThreadZW.`,
+          whatsapp_number: phoneVal || '+263771234567',
+          location: loc,
+          city: loc,
+          logo_url: logoPreview || null,
+          banner_url: bannerPreview || null,
+          is_active: true,
+          plan: 'free',
+          product_limit: 3,
+          premium_status: 'coming_soon',
+        };
         const { data: insertedShop, error: insertErr } = await supabase
           .from('shops')
           .insert(shopPayload)
@@ -372,11 +388,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         if (insertedShop) activeShopId = insertedShop.id;
       }
 
-      if (!activeShopId) {
-        throw new Error('Failed to create shop record in Supabase database.');
+      if (activeShopId) {
+        setCreatedShopId(activeShopId);
       }
-
-      setCreatedShopId(activeShopId);
 
       try {
         await refreshShop();
@@ -384,7 +398,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         console.warn('refreshShop error:', e);
       }
 
-      toast.success('🎉 Account & shop created successfully!');
+      toast.success('🎉 Account created successfully!');
       // Continue onboarding flow to Signup Success screen (Step 14)
       setStep(14);
 
@@ -518,7 +532,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   };
 
-  // Step 7 Submit: Save Shop Directions
+  // Step 7 Submit: Save Shop Directions & Location
   const handleSaveDirections = async () => {
     setLoading(true);
     try {
@@ -528,6 +542,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         setStep(4);
         return;
       }
+
+      const loc = shopAddress.trim() || null;
 
       let targetShopId = createdShopId || shop?.id;
 
@@ -540,17 +556,47 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         if (dbShop) targetShopId = dbShop.id;
       }
 
+      const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+
       if (targetShopId) {
         const { error: shopErr } = await supabase
           .from('shops')
           .update({
-            location: shopAddress.trim(),
+            location: loc,
             directions: shopDirections.trim(),
-            city: shopAddress.trim(),
+            city: loc,
             whatsapp_number: whatsappPhone.trim() || phone.trim()
           })
           .eq('id', targetShopId);
         if (shopErr) throw shopErr;
+      } else {
+        const shopPayload = {
+          owner_id: user.id,
+          name: shopName.trim() || 'My Shop',
+          slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+          logo_url: logoPreview || null,
+          banner_url: bannerPreview || null,
+          description: bioText.trim() || null,
+          category: selectedBioCategory || 'Streetwear & Fashion',
+          location: loc,
+          city: loc,
+          directions: shopDirections.trim() || null,
+          whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+          is_active: true,
+          plan: 'free',
+          product_limit: 3,
+          premium_status: 'coming_soon',
+        };
+        const { data: insertedShop, error: insertErr } = await supabase
+          .from('shops')
+          .insert(shopPayload)
+          .select('id')
+          .single();
+        if (insertErr) throw insertErr;
+        if (insertedShop) {
+          targetShopId = insertedShop.id;
+          setCreatedShopId(targetShopId);
+        }
       }
 
       try { await refreshShop(); } catch (e) {}
@@ -694,7 +740,100 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     }
   };
 
-  // Step 12 Submit: Go to Screen 13 Activation
+  // Step 10: Free plan selection and shop launch
+  const handleSelectFreePlan = async () => {
+    setLoading(true);
+    try {
+      const activeUser = session?.user || (await supabase.auth.getUser()).data.user;
+
+      if (!activeUser?.id) {
+        toast.error('Please create your account first');
+        setStep(4);
+        setLoading(false);
+        return;
+      }
+
+      const loc = shopAddress.trim() || shopDirections.trim() || null;
+
+      let targetShopId = createdShopId || localStorage.getItem('threadzw_created_shop_id') || shop?.id;
+
+      if (!targetShopId && activeUser?.id) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', activeUser.id)
+          .maybeSingle();
+        if (dbShop) targetShopId = dbShop.id;
+      }
+
+      const nowIso = new Date().toISOString();
+      const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      const shopPayload = {
+        name: shopName.trim() || 'My Shop',
+        slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+        logo_url: logoPreview || null,
+        banner_url: bannerPreview || null,
+        description: bioText.trim() || null,
+        category: selectedBioCategory || 'Streetwear & Fashion',
+        location: loc,
+        city: loc,
+        directions: shopDirections.trim() || null,
+        whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+        is_active: true,
+        plan: 'free',
+        product_limit: 3,
+        premium_status: 'coming_soon',
+        payment_status: 'free',
+        payment_required: false,
+        paid_at: nowIso
+      };
+
+      if (targetShopId) {
+        const { error: updateErr } = await supabase
+          .from('shops')
+          .update(shopPayload)
+          .eq('id', targetShopId);
+        if (updateErr) throw updateErr;
+      } else if (activeUser?.id) {
+        const { data: newShop, error: insertErr } = await supabase
+          .from('shops')
+          .insert({ ...shopPayload, owner_id: activeUser.id })
+          .select('id')
+          .single();
+        if (insertErr) throw insertErr;
+        if (newShop) targetShopId = newShop.id;
+      }
+
+      if (targetShopId) {
+        setCreatedShopId(targetShopId);
+        try {
+          await paymentService.activateShopPayment({
+            shopId: targetShopId,
+            userId: activeUser?.id || '',
+            paymentReference: `FREE-${Date.now()}`
+          });
+        } catch (payErr) {
+          console.warn('Payment activation note:', payErr);
+        }
+      }
+
+      if (activeUser?.id) {
+        localStorage.setItem('threadzw_logged_in', 'true');
+        localStorage.setItem('supabase_logged_in_user_id', activeUser.id);
+      }
+
+      try { await refreshShop(); } catch (e) {}
+
+      toast.success('🎉 Free plan selected! Storefront is ready.');
+      setStep(13);
+    } catch (err: any) {
+      console.error('Free plan error:', err);
+      toast.error(err?.message || 'Failed to select free plan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFinishOnboarding = () => {
     setStep(13);
   };
@@ -768,6 +907,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         throw new Error('Authentication failed. Account does not exist in Supabase.');
       }
 
+      const loc = shopAddress.trim() || shopDirections.trim() || null;
+
       let targetShopId = createdShopId || localStorage.getItem('threadzw_created_shop_id') || shop?.id;
       if (!targetShopId && activeUser?.id) {
         const { data: dbShop } = await supabase
@@ -801,12 +942,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         banner_url: bannerPreview || null,
         description: bioText.trim() || null,
         category: selectedBioCategory || 'Streetwear & Fashion',
-        location: shopAddress.trim() || null,
+        location: loc,
+        city: loc,
         directions: shopDirections.trim() || null,
-        city: shopAddress.trim() || null,
         whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
         is_active: true,
-        payment_status: 'paid',
+        plan: 'free',
+        product_limit: 3,
+        premium_status: 'coming_soon',
+        payment_status: 'free',
         payment_required: false,
         paid_at: nowIso
       };
@@ -858,11 +1002,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         }
       }
 
-      await paymentService.activateShopPayment({
-        shopId: targetShopId,
-        userId: activeUser.id,
-        paymentReference: `NARDOPAY-${Date.now()}`
-      });
+      try {
+        await paymentService.activateShopPayment({
+          shopId: targetShopId,
+          userId: activeUser.id,
+          paymentReference: `FREE-${Date.now()}`
+        });
+      } catch (payErr) {
+        console.warn('Payment activation note:', payErr);
+      }
 
       // Fetch fresh shop record to ensure localStorage cache & state are fully updated
       const { data: freshShop } = await supabase
@@ -2065,9 +2213,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               )}
 
               {/* ========================================= */}
-              {/* SCREEN 10: LAUNCH PAYWALL */}
+              {/* SCREEN 10: CHOOSE YOUR PLAN */}
               {/* ========================================= */}
-              {step === 10 && (
+              {(step === 10 || step === 11) && (
                 <motion.div
                   key="screen10"
                   initial={{ opacity: 0, x: 20 }}
@@ -2091,315 +2239,121 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   <div className="flex-1 space-y-4 pt-1">
                     <div className="space-y-1">
                       <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
-                        Your storefront is ready!
+                        Choose Your Plan
                       </h1>
                       <p className="text-xs text-zinc-500 font-medium">
-                        Everything looks good. Launch your shop and start getting customers.
+                        Select a plan to get started with your ThreadZW storefront.
                       </p>
                     </div>
 
-                    {/* Pricing Card */}
-                    <div className="bg-white border border-zinc-200 rounded-3xl p-5 shadow-sm space-y-4 text-center relative overflow-hidden">
-                      {/* Pill Badge */}
-                      <div className="inline-block bg-lime-100 text-lime-900 border border-lime-200 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                        ONE TIME PAYMENT
-                      </div>
-
-                      {/* Price */}
-                      <div className="space-y-0.5">
-                        <div className="text-5xl font-black text-black tracking-tight">$20</div>
-                        <div className="text-xs font-bold text-zinc-500 uppercase tracking-wider">Lifetime Storefront Activation</div>
-                      </div>
-
-                      <div className="border-t border-zinc-100 pt-3 space-y-2.5 text-left">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
-                            <Infinity className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-extrabold text-black">Pay once, own forever</div>
-                            <div className="text-[11px] text-zinc-500">No monthly fees. Ever.</div>
-                          </div>
+                    {/* Plan 1: FREE */}
+                    <div className="bg-white border-2 border-black rounded-3xl p-4 shadow-sm space-y-3 relative overflow-hidden">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-xs font-black text-black uppercase tracking-wider">FREE</div>
+                          <div className="text-2xl font-black text-black">$0</div>
                         </div>
+                        <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-black/10">
+                          Free Forever
+                        </span>
+                      </div>
 
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
-                            <Store className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-extrabold text-black">Your shop, your brand</div>
-                            <div className="text-[11px] text-zinc-500">Keep your link and customers.</div>
-                          </div>
+                      <div className="border-t border-zinc-100 pt-3 space-y-1.5 text-xs font-semibold text-zinc-700">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>Storefront</span>
                         </div>
-
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-lime-100 text-lime-900 flex items-center justify-center shrink-0 mt-0.5">
-                            <Zap className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <div className="text-xs font-extrabold text-black">Built for Zimbabwe</div>
-                            <div className="text-[11px] text-zinc-500">Local support. Local payment.</div>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>Up to 3 products</span>
                         </div>
-                      </div>
-                    </div>
-
-                    {/* Guarantee badge */}
-                    <div className="bg-lime-50/80 border border-lime-200/80 rounded-2xl p-2.5 flex items-center justify-center gap-2 text-xs font-bold text-lime-900 text-center">
-                      <Check className="w-4 h-4 text-lime-700 stroke-[3]" />
-                      <span>30-day money back guarantee.</span>
-                    </div>
-                  </div>
-
-                  {/* Primary CTA */}
-                  <div className="pt-3 space-y-2 text-center">
-                    <button
-                      onClick={() => setStep(11)}
-                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs"
-                    >
-                      <span className="text-black font-extrabold">Launch My Store – $20</span>
-                      <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
-                    </button>
-                    <p className="text-[11px] text-zinc-400 font-medium">
-                      Secure payment powered by Nardo Pay
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ========================================= */}
-              {/* SCREEN 11: NARDO PAY PAYMENT */}
-              {/* ========================================= */}
-              {step === 11 && (
-                <motion.div
-                  key="screen11"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex-1 flex flex-col justify-between"
-                >
-                  {/* Top Header Nav */}
-                  <div className="flex items-center justify-between pt-1 pb-3">
-                    <button
-                      onClick={() => setStep(10)}
-                      className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
-                    >
-                      <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
-                    </button>
-                    <ProgressIndicator activeStep={5} totalSteps={5} />
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex-1 space-y-4 pt-1">
-                    <div className="space-y-1">
-                      <h1 className="text-3xl font-extrabold text-black tracking-tight leading-tight">
-                        Complete your payment
-                      </h1>
-                      <p className="text-xs text-zinc-500 font-medium">
-                        You're moments away from launching {shopName || 'your store'}.
-                      </p>
-                    </div>
-
-                    {/* Order Summary Box */}
-                    <div className="bg-white border border-zinc-200 rounded-3xl p-4 space-y-3 shadow-xs">
-                      <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                        Order summary
-                      </div>
-                      <div className="flex items-center justify-between gap-3 pt-1">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-xl bg-black text-white flex items-center justify-center font-black text-xs shrink-0 overflow-hidden">
-                            {logoPreview ? (
-                              <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
-                            ) : (
-                              (shopName || 'SD').substring(0, 2).toUpperCase()
-                            )}
-                          </div>
-                          <div>
-                            <div className="text-xs font-bold text-black">ThreadZW Lifetime Plan</div>
-                            <div className="text-[10px] text-zinc-500 font-normal">
-                              Lifetime access to your shop, no monthly fees.
-                            </div>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>Dynamic themes</span>
                         </div>
-                        <div className="text-xs font-extrabold text-black">$20.00</div>
-                      </div>
-
-                      <div className="border-t border-zinc-100 pt-2 flex items-center justify-between text-xs font-black">
-                        <span className="text-zinc-700">Total</span>
-                        <span className="text-black text-sm">$20.00</span>
-                      </div>
-                    </div>
-
-                    {/* Payment Method Box */}
-                    <div className="bg-white border border-zinc-200 rounded-3xl p-4 space-y-3 shadow-xs">
-                      <div className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
-                        Pay with Nardo Pay
-                      </div>
-
-                      <div className="p-3 bg-zinc-50 rounded-2xl border border-zinc-200 flex items-center justify-between">
-                        <NardoPayIcon />
-                        <span className="text-[10px] font-medium text-zinc-500">Pay securely via EcoCash, ZIPIT or Card.</span>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>Video backgrounds</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>Logo, Banner & Shop bio</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>WhatsApp ordering</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>Shareable ThreadZW shop link</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
+                          <span>Basic shop management</span>
+                        </div>
                       </div>
 
                       <button
-                        onClick={handlePayment}
+                        type="button"
                         disabled={loading}
-                        className="w-full bg-black hover:bg-zinc-800 text-white font-extrabold text-sm py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 shadow-xs"
+                        onClick={handleSelectFreePlan}
+                        className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-sm py-3 px-4 rounded-xl flex items-center justify-between transition-all cursor-pointer shadow-xs border border-black/10 mt-2 disabled:opacity-50"
                       >
                         {loading ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-white" />
+                          <Loader2 className="w-4 h-4 animate-spin text-black mx-auto" />
                         ) : (
-                          <span>Pay $20 with Nardo Pay</span>
+                          <>
+                            <span>Continue with Free</span>
+                            <ArrowRight className="w-4 h-4 text-black stroke-[2.5]" />
+                          </>
                         )}
                       </button>
-
-                      <div className="flex items-center justify-center gap-1.5 text-[10px] text-zinc-400 font-medium pt-0.5">
-                        <Lock size={11} className="text-zinc-400" />
-                        <span>Secure. Fast. Trusted.</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Subtext */}
-                  <div className="pt-2 text-center">
-                    <p className="text-[11px] text-zinc-400 font-medium leading-relaxed">
-                      You will be redirected to Nardo Pay to complete your payment securely.
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ========================================= */}
-              {/* SCREEN 12: PAYMENT SUCCESS & LOGIN SLOT */}
-              {/* ========================================= */}
-              {step === 12 && (
-                <motion.div
-                  key="screen12"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex-1 flex flex-col justify-between"
-                >
-                  {/* Top Header Nav */}
-                  <div className="flex items-center justify-between pt-1 pb-2">
-                    <div className="w-5" />
-                    <ProgressIndicator activeStep={5} totalSteps={5} />
-                  </div>
-
-                  {/* Main Content */}
-                  <div className="flex-1 space-y-3.5 pt-1">
-                    {/* Celebration checkmark */}
-                    <div className="flex flex-col items-center justify-center text-center space-y-1.5 pt-1">
-                      <div className="relative">
-                        <div className="w-16 h-16 rounded-full bg-[#C6FF00] flex items-center justify-center shadow-md">
-                          <Check className="w-8 h-8 text-black stroke-[3]" />
-                        </div>
-                        <Sparkles className="w-5 h-5 text-[#C6FF00] absolute -top-1 -right-1" />
-                      </div>
-                      <h1 className="text-2xl font-extrabold text-black tracking-tight">
-                        Payment Successful!
-                      </h1>
-                      <p className="text-xs font-bold text-zinc-500">
-                        Your storefront is ready. Set your login credentials to activate your shop.
-                      </p>
                     </div>
 
-                    {/* Shop Confirmation Card */}
-                    <div className="bg-lime-50 border border-lime-200 rounded-2xl p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
-                          {logoPreview ? (
-                            <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
-                          ) : (
-                            (shopName || 'SD').substring(0, 2).toUpperCase()
-                          )}
-                        </div>
+                    {/* Plan 2: THREADZW PREMIUM */}
+                    <div className="bg-zinc-50 border border-zinc-200 rounded-3xl p-4 space-y-3 relative overflow-hidden opacity-90">
+                      <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-xs font-black text-black">{shopName || 'Your Shop'}</div>
-                          <div className="text-[10px] text-lime-900 font-semibold">✓ Payment Confirmed ($20 Lifetime)</div>
+                          <div className="text-xs font-black text-black uppercase tracking-wider">THREADZW PREMIUM</div>
+                          <div className="text-lg font-black text-zinc-500">Coming Soon</div>
+                        </div>
+                        <span className="bg-zinc-200 text-zinc-700 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                          Coming Soon
+                        </span>
+                      </div>
+
+                      <div className="border-t border-zinc-200 pt-3 space-y-1.5 text-xs font-semibold text-zinc-600">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
+                          <span>Unlimited products</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
+                          <span>Advanced storefront customization</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
+                          <span>More customization options</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
+                          <span>Premium features</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
+                          <span>Future advanced shop tools</span>
                         </div>
                       </div>
-                      <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-black/10">
-                        Ready
-                      </span>
+
+                      <button
+                        type="button"
+                        disabled
+                        onClick={() => toast.info('Premium is coming soon.')}
+                        className="w-full bg-zinc-200 text-zinc-500 font-extrabold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed mt-2"
+                      >
+                        <span>Coming Soon</span>
+                      </button>
                     </div>
-
-                    {/* Login Details Slot Form */}
-                    <form onSubmit={handleActivateAccount} className="space-y-3 bg-zinc-50 p-3.5 rounded-2xl border border-zinc-200">
-                      <div className="text-xs font-extrabold text-black uppercase tracking-wider flex items-center gap-1.5">
-                        <Lock size={13} className="text-black" />
-                        <span>Create Login Credentials</span>
-                      </div>
-
-                      {/* Email Address */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-zinc-700 block">
-                          Email Address
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="your.email@gmail.com"
-                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-2.5 px-3 pl-9 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
-                          />
-                          <Mail className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
-                        </div>
-                      </div>
-
-                      {/* Password */}
-                      <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-zinc-700 block">
-                          Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showPassword ? 'text' : 'password'}
-                            required
-                            minLength={6}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Min. 6 characters"
-                            className="w-full bg-white border border-zinc-200 focus:border-black rounded-xl py-2.5 px-3 pl-9 pr-9 text-xs font-semibold text-black placeholder:text-zinc-400 outline-none transition-all"
-                          />
-                          <Lock className="w-4 h-4 text-zinc-400 absolute left-3 top-3" />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-3 text-zinc-400 hover:text-black transition-colors cursor-pointer"
-                          >
-                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {authError && (
-                        <div className="p-2 bg-red-50 border border-red-200 rounded-xl text-xs font-medium text-red-700">
-                          {authError}
-                        </div>
-                      )}
-                    </form>
-                  </div>
-
-                  {/* Primary CTA */}
-                  <div className="pt-3">
-                    <button
-                      type="button"
-                      onClick={handleActivateAccount}
-                      disabled={loading}
-                      className="w-full bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50 border border-black/10"
-                    >
-                      <span className="text-black font-extrabold">LOG IN & ACTIVATE SHOP</span>
-                      {loading ? (
-                        <Loader2 className="w-5 h-5 animate-spin text-black" />
-                      ) : (
-                        <ArrowRight className="w-5 h-5 text-black stroke-[2.5]" />
-                      )}
-                    </button>
                   </div>
                 </motion.div>
               )}
@@ -3035,44 +2989,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
                 <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">11 Nardo Pay</span>
-              </div>
-            </div>
-
-            {/* CARD 12: PAYMENT SUCCESS & LOGIN SLOT */}
-            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
-              <div className="flex-1 flex flex-col justify-between">
-                <div className="flex items-center justify-between pb-2">
-                  <div className="w-4" />
-                  <ProgressIndicator activeStep={5} totalSteps={5} />
-                </div>
-
-                <div className="space-y-3 py-2 text-center">
-                  <div className="w-12 h-12 rounded-full bg-[#C6FF00] flex items-center justify-center mx-auto">
-                    <Check className="w-6 h-6 text-black stroke-[3]" />
-                  </div>
-
-                  <div className="space-y-1">
-                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Payment Successful!
-                    </h1>
-                    <p className="text-xs text-zinc-500 font-normal">
-                      Enter email and password below to log in and activate your shop.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <button
-                    onClick={() => { setViewMode('flow'); setStep(12); }}
-                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
-                  >
-                    <span>Log In & Activate Shop</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                </div>
-              </div>
-              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
-                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">12 Payment Success & Login</span>
               </div>
             </div>
 

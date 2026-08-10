@@ -106,6 +106,21 @@ export const Inventory: React.FC = () => {
       if (!shop || product.shop_id !== shop.id) {
         throw new Error('You do not own this product.');
       }
+
+      // Check 3-product limit on Free plan
+      const isPremium = shop.plan === 'premium' || shop.plan_type === 'premium';
+      if (!isPremium) {
+        const { count } = await supabase
+          .from('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('shop_id', shop.id);
+
+        if (count !== null && count >= 3) {
+          toast.error('You have reached the 3-product limit on the Free plan. Premium with unlimited products is coming soon.');
+          return;
+        }
+      }
+
       const ownerId = session.user.id;
       
       const { data, error } = await supabase

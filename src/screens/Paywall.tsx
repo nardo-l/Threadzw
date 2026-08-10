@@ -294,9 +294,9 @@ export const Paywall: React.FC = () => {
     };
   }, [isVerifying, user, navigate]);
 
-  // Auto-redirect if shop is already paid and active
+  // Auto-redirect to dashboard if shop exists
   useEffect(() => {
-    if (shop && shop.payment_status === 'paid' && shop.payment_required === false) {
+    if (shop) {
       navigate('/dashboard', { replace: true });
     }
   }, [shop, navigate]);

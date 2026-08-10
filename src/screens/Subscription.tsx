@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Check, Loader2, ArrowLeft, RefreshCw, AlertCircle } from 'lucide-react';
+import { Check, Loader2, ArrowLeft, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useShop } from '../hooks/useShop';
@@ -97,54 +97,82 @@ export const Subscription: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="bg-white p-8 rounded-3xl border border-zinc-200 shadow-sm space-y-6">
-            <div className="text-center space-y-2">
-              <span className="text-[10px] font-mono uppercase tracking-widest text-black font-extrabold bg-[#C6FF00] px-3 py-1 rounded-full border border-black/10">
-                {shop?.payment_status === 'paid' && shop?.payment_required === false ? 'Active Lifetime Plan' : '$20 / Once Off'}
-              </span>
-              <h2 className="text-3xl font-black uppercase tracking-tight text-zinc-900">ThreadZW Lifetime Store</h2>
-              <div className="flex items-baseline justify-center gap-1 mt-2">
-                <span className="text-4xl font-black text-black">$20</span>
-                <span className="text-zinc-500 font-bold text-sm">/ once off</span>
+          <div className="space-y-6">
+            {/* FREE PLAN CARD */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border-2 border-black shadow-sm space-y-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-black font-extrabold bg-[#C6FF00] px-3 py-1 rounded-full border border-black/10">
+                    Active Plan
+                  </span>
+                  <h2 className="text-2xl font-black uppercase tracking-tight text-zinc-900 mt-2">Free Plan</h2>
+                </div>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-black">$0</span>
+                </div>
+              </div>
+
+              <div className="space-y-2.5 border-t border-zinc-100 pt-3">
+                {[
+                  'Storefront with logo, banner & bio',
+                  'Up to 3 products',
+                  'Dynamic themes & Video backgrounds',
+                  'WhatsApp ordering system',
+                  'Shareable ThreadZW store link',
+                  'Basic store management'
+                ].map(benefit => (
+                  <div key={benefit} className="flex items-center gap-3 text-xs font-bold text-zinc-700">
+                    <div className="w-5 h-5 rounded-full bg-lime-100 text-lime-800 flex items-center justify-center shrink-0">
+                      <Check size={12} className="stroke-[3]" />
+                    </div>
+                    <span>{benefit}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="p-3 bg-zinc-50 border border-zinc-200 rounded-xl text-center text-xs font-bold text-zinc-700">
+                Current Plan — Active Forever
               </div>
             </div>
 
-            <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-center space-y-1">
-              <p className="text-xs font-bold text-black">
-                One-time payment for lifetime merchant access.
-              </p>
-              <p className="text-[11px] text-zinc-600 font-medium">No recurring monthly fees. Instant activation.</p>
-            </div>
-
-            <div className="space-y-3 pt-2">
-              {[
-                'Unlimited product listings',
-                'Custom WhatsApp ordering storefront',
-                'Lifetime access — zero monthly fees',
-                'Setup in under 5 minutes'
-              ].map(benefit => (
-                <div key={benefit} className="flex items-center gap-3 text-xs font-bold text-zinc-700">
-                  <div className="w-5 h-5 rounded-full bg-lime-100 text-lime-800 flex items-center justify-center shrink-0">
-                    <Check size={12} className="stroke-[3]" />
-                  </div>
-                  <span>{benefit}</span>
+            {/* PREMIUM PLAN CARD (COMING SOON) */}
+            <div className="bg-zinc-900 text-white p-6 sm:p-8 rounded-3xl border border-zinc-800 shadow-sm space-y-5 relative overflow-hidden">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-extrabold bg-zinc-800 px-3 py-1 rounded-full border border-zinc-700">
+                    Coming Soon
+                  </span>
+                  <h2 className="text-2xl font-black uppercase tracking-tight text-white mt-2">ThreadZW Premium</h2>
                 </div>
-              ))}
-            </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold text-[#C6FF00]">Coming Soon</span>
+                </div>
+              </div>
 
-            <button
-              onClick={handleUpgrade}
-              disabled={upgrading || (shop?.payment_status === 'paid' && shop?.payment_required === false)}
-              className="w-full h-14 bg-[#C6FF00] hover:bg-[#b5eb00] disabled:opacity-60 text-black font-extrabold text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center transition-all active:scale-95 cursor-pointer shadow-sm border border-black/10"
-            >
-              {upgrading ? (
-                <Loader2 className="animate-spin w-5 h-5 text-black" />
-              ) : (shop?.payment_status === 'paid' && shop?.payment_required === false) ? (
-                'Lifetime Plan Active'
-              ) : (
-                'Pay $20 Once Off'
-              )}
-            </button>
+              <div className="space-y-2.5 border-t border-zinc-800 pt-3">
+                {[
+                  'Unlimited products',
+                  'Advanced storefront customization',
+                  'More customization options',
+                  'Premium features & analytics',
+                  'Future advanced shop tools'
+                ].map(benefit => (
+                  <div key={benefit} className="flex items-center gap-3 text-xs font-bold text-zinc-300">
+                    <div className="w-5 h-5 rounded-full bg-zinc-800 text-[#C6FF00] flex items-center justify-center shrink-0">
+                      <Sparkles size={12} />
+                    </div>
+                    <span>{benefit}</span>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                disabled
+                className="w-full h-12 bg-zinc-800 text-zinc-500 font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center cursor-not-allowed border border-zinc-700"
+              >
+                Premium Coming Soon
+              </button>
+            </div>
           </div>
         )}
       </div>
