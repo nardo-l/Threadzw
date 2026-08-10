@@ -32,7 +32,6 @@ import {
   PartyPopper,
   Globe,
   Link,
-  Copy,
   ExternalLink,
   Search,
   Home,
@@ -2233,22 +2232,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         </div>
                       </div>
 
-                      <div className="bg-zinc-100 p-2.5 rounded-2xl border border-zinc-200 flex items-center justify-between gap-2">
-                        <span className="text-xs font-mono font-black text-black truncate pl-1">
+                      <div className="bg-zinc-100 p-2.5 rounded-2xl border border-zinc-200 flex items-center justify-center">
+                        <span className="text-xs font-mono font-black text-black truncate px-1">
                           threadzw.co/shop/{(shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-')}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const slug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-                            navigator.clipboard.writeText(`https://threadzw.co/shop/${slug}`);
-                            toast.success('🎉 Shop link copied to clipboard!');
-                          }}
-                          className="bg-black hover:bg-zinc-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shrink-0 transition-all cursor-pointer"
-                        >
-                          <Copy size={13} />
-                          <span>Copy Link</span>
-                        </button>
                       </div>
                     </div>
 
@@ -2621,7 +2608,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       Congratulations!
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      Your shop has been activated. Copy link and enter dashboard.
+                      Your shop has been activated. Enter dashboard.
                     </p>
                   </div>
 
