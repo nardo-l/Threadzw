@@ -211,6 +211,68 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string>('');
 
+  const uploadBrandFilesIfNeeded = async (userId: string, targetShopId: string) => {
+    let logoUrl: string | null = null;
+    let bannerUrl: string | null = null;
+
+    let existingLogo: string | null = null;
+    let existingBanner: string | null = null;
+    if (targetShopId) {
+      const { data: dbShop } = await supabase
+        .from('shops')
+        .select('logo_url, banner_url')
+        .eq('id', targetShopId)
+        .maybeSingle();
+      if (dbShop) {
+        existingLogo = dbShop.logo_url || null;
+        existingBanner = dbShop.banner_url || null;
+      }
+    }
+
+    if (logoFile) {
+      try {
+        logoUrl = await uploadImage({
+          supabase,
+          file: logoFile,
+          bucket: 'shop-avatars',
+          folder: 'logo',
+          userId: targetShopId || userId
+        });
+      } catch (e) {
+        console.error('Logo upload error:', e);
+        throw e;
+      }
+    } else if (logoPreview && !logoPreview.startsWith('blob:')) {
+      logoUrl = logoPreview;
+    } else {
+      logoUrl = existingLogo && !existingLogo.startsWith('blob:') ? existingLogo : null;
+    }
+
+    if (bannerFile) {
+      try {
+        bannerUrl = await uploadImage({
+          supabase,
+          file: bannerFile,
+          bucket: 'shop-banners',
+          folder: 'banner',
+          userId: targetShopId || userId
+        });
+      } catch (e) {
+        console.error('Banner upload error:', e);
+        throw e;
+      }
+    } else if (bannerPreview && !bannerPreview.startsWith('blob:')) {
+      bannerUrl = bannerPreview;
+    } else {
+      bannerUrl = existingBanner && !existingBanner.startsWith('blob:') ? existingBanner : null;
+    }
+
+    if (logoUrl && logoUrl.startsWith('blob:')) logoUrl = null;
+    if (bannerUrl && bannerUrl.startsWith('blob:')) bannerUrl = null;
+
+    return { logoUrl, bannerUrl };
+  };
+
   // Screen 6: Bio
   const [selectedBioCategory, setSelectedBioCategory] = useState<string>('');
   const [bioText, setBioText] = useState<string>('');
@@ -353,17 +415,20 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       let activeShopId = existingShop?.id;
 
       if (existingShop) {
+        const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(currentUser.id, existingShop.id);
         const shopPayload: any = {
           name: shopName.trim() || 'My Shop',
           slug: slug || `shop-${Date.now().toString(36)}`,
           whatsapp_number: phoneVal || '+263771234567',
           location: loc,
           city: loc,
+          logo_url: logoUrl,
+          banner_url: bannerUrl,
         };
         const { error: updateErr } = await supabase.from('shops').update(shopPayload).eq('id', existingShop.id);
         if (updateErr) throw updateErr;
       } else {
-        const shopPayload = {
+        const initialShopPayload = {
           owner_id: currentUser.id,
           name: shopName.trim() || 'My Shop',
           slug: slug || `shop-${Date.now().toString(36)}`,
@@ -372,8 +437,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: phoneVal || '+263771234567',
           location: loc,
           city: loc,
-          logo_url: logoPreview || null,
-          banner_url: bannerPreview || null,
+          logo_url: null,
+          banner_url: null,
           is_active: true,
           plan: 'free',
           product_limit: 3,
@@ -381,11 +446,17 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         };
         const { data: insertedShop, error: insertErr } = await supabase
           .from('shops')
-          .insert(shopPayload)
+          .insert(initialShopPayload)
           .select('id')
           .single();
         if (insertErr) throw insertErr;
-        if (insertedShop) activeShopId = insertedShop.id;
+        if (insertedShop) {
+          activeShopId = insertedShop.id;
+          const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(currentUser.id, activeShopId);
+          if (logoUrl || bannerUrl) {
+            await supabase.from('shops').update({ logo_url: logoUrl, banner_url: bannerUrl }).eq('id', activeShopId);
+          }
+        }
       }
 
       if (activeShopId) {
@@ -559,23 +630,26 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
 
       if (targetShopId) {
+        const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(user.id, targetShopId);
         const { error: shopErr } = await supabase
           .from('shops')
           .update({
             location: loc,
             directions: shopDirections.trim(),
             city: loc,
-            whatsapp_number: whatsappPhone.trim() || phone.trim()
+            whatsapp_number: whatsappPhone.trim() || phone.trim(),
+            logo_url: logoUrl,
+            banner_url: bannerUrl
           })
           .eq('id', targetShopId);
         if (shopErr) throw shopErr;
       } else {
-        const shopPayload = {
+        const initialPayload = {
           owner_id: user.id,
           name: shopName.trim() || 'My Shop',
           slug: cleanSlug || `shop-${Date.now().toString(36)}`,
-          logo_url: logoPreview || null,
-          banner_url: bannerPreview || null,
+          logo_url: null,
+          banner_url: null,
           description: bioText.trim() || null,
           category: selectedBioCategory || 'Streetwear & Fashion',
           location: loc,
@@ -589,13 +663,17 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         };
         const { data: insertedShop, error: insertErr } = await supabase
           .from('shops')
-          .insert(shopPayload)
+          .insert(initialPayload)
           .select('id')
           .single();
         if (insertErr) throw insertErr;
         if (insertedShop) {
           targetShopId = insertedShop.id;
           setCreatedShopId(targetShopId);
+          const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(user.id, targetShopId);
+          if (logoUrl || bannerUrl) {
+            await supabase.from('shops').update({ logo_url: logoUrl, banner_url: bannerUrl }).eq('id', targetShopId);
+          }
         }
       }
 
@@ -768,40 +846,67 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       const nowIso = new Date().toISOString();
       const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-      const shopPayload = {
-        name: shopName.trim() || 'My Shop',
-        slug: cleanSlug || `shop-${Date.now().toString(36)}`,
-        logo_url: logoPreview || null,
-        banner_url: bannerPreview || null,
-        description: bioText.trim() || null,
-        category: selectedBioCategory || 'Streetwear & Fashion',
-        location: loc,
-        city: loc,
-        directions: shopDirections.trim() || null,
-        whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
-        is_active: true,
-        plan: 'free',
-        product_limit: 3,
-        premium_status: 'coming_soon',
-        payment_status: 'free',
-        payment_required: false,
-        paid_at: nowIso
-      };
 
       if (targetShopId) {
+        const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(activeUser.id, targetShopId);
+        const shopPayload = {
+          name: shopName.trim() || 'My Shop',
+          slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+          logo_url: logoUrl,
+          banner_url: bannerUrl,
+          description: bioText.trim() || null,
+          category: selectedBioCategory || 'Streetwear & Fashion',
+          location: loc,
+          city: loc,
+          directions: shopDirections.trim() || null,
+          whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+          is_active: true,
+          plan: 'free',
+          product_limit: 3,
+          premium_status: 'coming_soon',
+          payment_status: 'free',
+          payment_required: false,
+          paid_at: nowIso
+        };
         const { error: updateErr } = await supabase
           .from('shops')
           .update(shopPayload)
           .eq('id', targetShopId);
         if (updateErr) throw updateErr;
       } else if (activeUser?.id) {
+        const initialPayload = {
+          owner_id: activeUser.id,
+          name: shopName.trim() || 'My Shop',
+          slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+          logo_url: null,
+          banner_url: null,
+          description: bioText.trim() || null,
+          category: selectedBioCategory || 'Streetwear & Fashion',
+          location: loc,
+          city: loc,
+          directions: shopDirections.trim() || null,
+          whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+          is_active: true,
+          plan: 'free',
+          product_limit: 3,
+          premium_status: 'coming_soon',
+          payment_status: 'free',
+          payment_required: false,
+          paid_at: nowIso
+        };
         const { data: newShop, error: insertErr } = await supabase
           .from('shops')
-          .insert({ ...shopPayload, owner_id: activeUser.id })
+          .insert(initialPayload)
           .select('id')
           .single();
         if (insertErr) throw insertErr;
-        if (newShop) targetShopId = newShop.id;
+        if (newShop) {
+          targetShopId = newShop.id;
+          const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(activeUser.id, targetShopId);
+          if (logoUrl || bannerUrl) {
+            await supabase.from('shops').update({ logo_url: logoUrl, banner_url: bannerUrl }).eq('id', targetShopId);
+          }
+        }
       }
 
       if (targetShopId) {
@@ -934,41 +1039,68 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       const nowIso = new Date().toISOString();
       const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-      const shopPayload = {
-        owner_id: activeUser.id,
-        name: shopName.trim() || 'My Shop',
-        slug: cleanSlug || `shop-${Date.now().toString(36)}`,
-        logo_url: logoPreview || null,
-        banner_url: bannerPreview || null,
-        description: bioText.trim() || null,
-        category: selectedBioCategory || 'Streetwear & Fashion',
-        location: loc,
-        city: loc,
-        directions: shopDirections.trim() || null,
-        whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
-        is_active: true,
-        plan: 'free',
-        product_limit: 3,
-        premium_status: 'coming_soon',
-        payment_status: 'free',
-        payment_required: false,
-        paid_at: nowIso
-      };
 
       if (targetShopId) {
+        const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(activeUser.id, targetShopId);
+        const shopPayload = {
+          owner_id: activeUser.id,
+          name: shopName.trim() || 'My Shop',
+          slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+          logo_url: logoUrl,
+          banner_url: bannerUrl,
+          description: bioText.trim() || null,
+          category: selectedBioCategory || 'Streetwear & Fashion',
+          location: loc,
+          city: loc,
+          directions: shopDirections.trim() || null,
+          whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+          is_active: true,
+          plan: 'free',
+          product_limit: 3,
+          premium_status: 'coming_soon',
+          payment_status: 'free',
+          payment_required: false,
+          paid_at: nowIso
+        };
         const { error: updateErr } = await supabase
           .from('shops')
           .update(shopPayload)
           .eq('id', targetShopId);
         if (updateErr) throw updateErr;
       } else {
+        const initialPayload = {
+          owner_id: activeUser.id,
+          name: shopName.trim() || 'My Shop',
+          slug: cleanSlug || `shop-${Date.now().toString(36)}`,
+          logo_url: null,
+          banner_url: null,
+          description: bioText.trim() || null,
+          category: selectedBioCategory || 'Streetwear & Fashion',
+          location: loc,
+          city: loc,
+          directions: shopDirections.trim() || null,
+          whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
+          is_active: true,
+          plan: 'free',
+          product_limit: 3,
+          premium_status: 'coming_soon',
+          payment_status: 'free',
+          payment_required: false,
+          paid_at: nowIso
+        };
         const { data: newShop, error: insertErr } = await supabase
           .from('shops')
-          .insert(shopPayload)
+          .insert(initialPayload)
           .select('id')
           .single();
         if (insertErr) throw insertErr;
-        if (newShop) targetShopId = newShop.id;
+        if (newShop) {
+          targetShopId = newShop.id;
+          const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(activeUser.id, targetShopId);
+          if (logoUrl || bannerUrl) {
+            await supabase.from('shops').update({ logo_url: logoUrl, banner_url: bannerUrl }).eq('id', targetShopId);
+          }
+        }
       }
 
       if (!targetShopId) {
