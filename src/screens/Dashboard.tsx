@@ -159,6 +159,21 @@ export const Dashboard: React.FC = () => {
 
   const isVerifyingPayment = Boolean(shop?.id && dbPaymentVerified === null);
 
+  console.log('[DASHBOARD ACCESS DEBUG]', {
+    userId: session?.user?.id,
+    shopId: shop?.id,
+    shopOwnerId: shop?.owner_id,
+    paymentStatus: shop?.payment_status,
+    paymentRequired: shop?.payment_required,
+    isActive: shop?.is_active,
+    dbPaymentVerified,
+    isVerifyingPayment,
+    shopLoading,
+    authLoading,
+    dashboardLoading,
+    isShopPaidAndActive
+  });
+
   if (shopLoading || authLoading || dashboardLoading || isVerifyingPayment) {
     return (
       <div className="min-h-screen bg-[#F8F9FA] text-black flex flex-col items-center justify-center font-sans">
