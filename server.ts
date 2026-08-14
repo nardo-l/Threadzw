@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import billingRouter from './server/routes/billing';
 import aiRouter from './server/routes/ai';
+import pushRouter from './server/routes/push';
 
 dotenv.config();
 
@@ -212,6 +213,7 @@ async function startServer() {
 
   // --- AI & MERCHANT PRODUCTIVITY SERVICES ---
   app.use('/api/ai', aiRouter);
+  app.use('/api/push', pushRouter);
 
   // Fallback for unmatched /api routes so they return JSON 404 instead of falling into Vite middleware (which causes 405 Method Not Allowed)
   app.use('/api/*', (req, res) => {
