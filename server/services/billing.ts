@@ -1,6 +1,7 @@
 // server/services/billing.ts
 
 import { serverSupabase, getUserSupabaseClient } from '../middleware/auth';
+import { createNotification } from './notificationService';
 
 export class BillingService {
   /**
@@ -138,6 +139,13 @@ export class BillingService {
     if (shopErr) {
       console.error('[BillingService] Failed to unlock and activate shop for user:', userId, shopErr);
     }
+
+    await createNotification(userId, {
+      type: 'pro_activated',
+      title: 'Pro Plan activated',
+      body: 'Your Pro Plan subscription is now active. Enjoy unlimited products!',
+      target_url: '/dashboard'
+    });
 
     return { success: true };
   }
@@ -284,49 +292,83 @@ export class BillingService {
   }
 
   /**
-   * Generates a new subscription payment link via NardoPay API.
+   * Generates a new payment link via NardoPay API (Reusable for initial purchase & monthly renewals).
    */
   public async createSubscriptionLink(userId: string) {
-    // 1. Check if merchant already has an active subscription
-    const { data: activeSub, error: subError } = await serverSupabase
+    const nardoApiKey = process.env.NARDOPAY_API_KEY;
+    const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'https://ais-dev-zkd4tzvgxm32yzylhaadyh-364066446409.europe-west2.run.app';
+
+    if (!nardoApiKey) {
+      throw new Error('NARDOPAY_API_KEY environment variable is not configured.');
+    }
+
+    const webhookUrl = `${appUrl}/api/nardopay-webhook`;
+    const redirectUrl = `${appUrl}/dashboard?upgraded=true`;
+
+    console.log('[BillingService] Calling NardoPay create-payment-link-api for one-off payment...');
+
+    let response;
+    try {
+      response = await fetch(
+        'https://mczqwqsvumfsneoknlep.supabase.co/functions/v1/create-payment-link-api',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${nardoApiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            link_type: 'payment',
+            product_name: 'Pro Plan — 1 Month',
+            amount: 1.59,
+            currency: 'USD',
+            description: 'Unlimited products for 30 days',
+            webhook_url: webhookUrl,
+            redirect_url: redirectUrl
+          })
+        }
+      );
+    } catch (netErr: any) {
+      throw new Error(`Failed to connect to NardoPay payment gateway: ${netErr.message || 'Network error'}`);
+    }
+
+    const data = await response.json();
+
+    if (!response.ok || data.error) {
+      const errCode = data.code || data.error || 'NARDOPAY_ERROR';
+      const errMsg = data.message || data.error_description || data.error || 'Failed to generate payment link';
+      throw new Error(`NardoPay Error [${errCode}]: ${errMsg}`);
+    }
+
+    const linkCode = data.link_code || data.linkCode;
+    const linkId = data.link_id || data.linkId;
+    const paymentUrl = data.url || data.paymentUrl;
+
+    if (!paymentUrl || !linkCode) {
+      throw new Error('Invalid response from NardoPay payment link generator');
+    }
+
+    // Save/update row in subscriptions table linking profile_id to link_code / link_id
+    const { error: upsertError } = await serverSupabase
       .from('subscriptions')
-      .select('*')
-      .eq('profile_id', userId)
-      .eq('status', 'active')
-      .maybeSingle();
+      .upsert({
+        profile_id: userId,
+        status: 'pending',
+        plan: `pro:${linkCode}`,
+        amount: 1.59,
+        currency: 'USD',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'profile_id' });
 
-    if (subError) {
-      console.error('[BillingService] Error checking active subscription:', subError);
+    if (upsertError) {
+      console.error('[BillingService] Error saving subscription payment link mapping:', upsertError);
     }
 
-    if (activeSub) {
-      const endsAt = activeSub.subscription_ends_at ? new Date(activeSub.subscription_ends_at) : null;
-      if (endsAt && endsAt > new Date()) {
-        throw new Error('Merchant already has an active subscription.');
-      }
-    }
-
-    // 2. Read pricing from app_settings
-    const { data: priceSetting, error: priceError } = await serverSupabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'subscription_price')
-      .maybeSingle();
-
-    const { data: currencySetting, error: currencyError } = await serverSupabase
-      .from('app_settings')
-      .select('value')
-      .eq('key', 'currency')
-      .maybeSingle();
-
-    const amount = priceSetting ? Number(priceSetting.value) : 2.99;
-    const currency = currencySetting ? String(currencySetting.value) : 'USD';
-
-    // 3. Prepare payload for NardoPay API
-    console.log('[BillingService] Using official NardoPay payment link.');
     return {
-      linkCode: '78bef7c150ea9450',
-      url: 'https://nardopay.com/subscribe/78bef7c150ea9450'
+      success: true,
+      url: paymentUrl,
+      linkCode: linkCode,
+      linkId: linkId
     };
   }
 
@@ -536,6 +578,13 @@ export class BillingService {
     }
 
     console.log("FINAL ACTIVATION SUCCESS");
+
+    await createNotification(userId, {
+      type: 'pro_activated',
+      title: 'Pro Plan activated',
+      body: 'Your Pro Plan subscription is now active. Enjoy unlimited products!',
+      target_url: '/dashboard'
+    });
 
     // 11. Only after both verification steps succeed should the API return success: true
     return { success: true, shopName: shop.name, shopId: shop.id, userId };

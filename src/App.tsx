@@ -33,13 +33,19 @@ import { NardoPayCheckout } from './screens/NardoPayCheckout';
 import { Subscription } from './screens/Subscription';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 import { Analytics } from './screens/Analytics';
+import { Notifications } from './screens/Notifications';
 import { SuccessScreen } from './components/onboarding/SuccessScreen';
+import { ProPlanShowcase } from './screens/ProPlanShowcase';
 
 
-type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription';
+type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase';
 
 const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
+
+  if (path === '/pro-showcase') {
+    return { stage: 'pro-showcase' };
+  }
 
   if (path === '/shop' || path === '/store' || path === '/shops') {
     return { stage: 'shop-directory' };
@@ -548,6 +554,10 @@ function AppContent() {
     );
   }
 
+  if (appStage === 'pro-showcase' || cleanPath === '/pro-showcase') {
+    return <ProPlanShowcase />;
+  }
+
   if (appStage === 'pricing') {
     return <SignUp initialStep={3} />;
   }
@@ -577,6 +587,7 @@ function AppContent() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
         <Route path="/account" element={<ShopEdit />} />

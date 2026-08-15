@@ -5,8 +5,12 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import billingRouter from './server/routes/billing';
+import { billingController } from './server/controllers/billing';
 import aiRouter from './server/routes/ai';
 import pushRouter from './server/routes/push';
+import productsRouter from './server/routes/products';
+import cronRouter from './server/routes/cron';
+import notificationsRouter from './server/routes/notifications';
 
 dotenv.config();
 
@@ -209,11 +213,15 @@ async function startServer() {
   });
 
   // --- SECURE SERVER-SIDE BILLING (NARDOPAY INTEGRATION) ---
+  app.post('/api/nardopay-webhook', (req, res) => billingController.webhook(req, res));
   app.use('/api/billing', billingRouter);
 
   // --- AI & MERCHANT PRODUCTIVITY SERVICES ---
   app.use('/api/ai', aiRouter);
   app.use('/api/push', pushRouter);
+  app.use('/api/products', productsRouter);
+  app.use('/api/cron', cronRouter);
+  app.use('/api/notifications', notificationsRouter);
 
   // Fallback for unmatched /api routes so they return JSON 404 instead of falling into Vite middleware (which causes 405 Method Not Allowed)
   app.use('/api/*', (req, res) => {

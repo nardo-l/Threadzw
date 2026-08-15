@@ -109,6 +109,7 @@ export const AddProduct: React.FC = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const [productId, setProductId] = useState<string | null>(null);
   const [isAtLimit, setIsAtLimit] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Fetch Global Categories
   const { categories: globalCategories, loading: globalCategoriesLoading } = useGlobalCategories();
@@ -582,59 +583,34 @@ export const AddProduct: React.FC = () => {
         throw new Error("Cannot create product: No active, valid shop found for your profile.");
       }
 
-      // Enforce 3-product limit on Free plan
-      const { count: liveCount } = await supabase
-        .from('products')
-        .select('id', { count: 'exact', head: true })
-        .eq('shop_id', currentShopId);
+      // Enforce product limit check and create product server-side
+      const res = await fetch('/api/products/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          shopId: currentShopId,
+          productPayload
+        })
+      });
 
-      const { data: currentShopData } = await supabase
-        .from('shops')
-        .select('plan, plan_type')
-        .eq('id', currentShopId)
-        .maybeSingle();
+      const resData = await res.json();
 
-      const isPremiumShop = currentShopData?.plan === 'premium' || currentShopData?.plan_type === 'premium';
-
-      if (!isPremiumShop && liveCount !== null && liveCount >= 3) {
-        toast.error('You have reached the 3-product limit on the Free plan. Premium with unlimited products is coming soon.');
-        setPublishing(false);
-        return;
-      }
-
-      const { data: newProd, error: insertError } = await supabase
-        .from('products')
-        .insert(productPayload)
-        .select('id')
-        .single();
-
-      if (insertError) throw insertError;
-
-      const generatedId = newProd?.id;
-      setProductId(generatedId);
-
-      // Safe inventory table upsert
-      try {
-        if (generatedId) {
-          for (const size of configuredSizes) {
-            await supabase
-              .from('inventory')
-              .upsert({
-                product_id: generatedId,
-                size: size.size,
-                stock_count: size.quantity
-              });
-          }
+      if (!res.ok) {
+        if (resData.upgradeRequired) {
+          toast.dismiss(apiToast);
+          setShowUpgradeModal(true);
+          setPublishing(false);
+          return;
         }
-      } catch (e) {
-        console.log('Using inline products JSON array storage.');
+        throw new Error(resData.error || 'Failed to publish product');
       }
 
-      // Increment shop product count via RPC
-      if (currentShopId) {
-        await supabase.rpc('increment_shop_product_count', { shop_id: currentShopId });
-        await setOnboardingStep(currentShopId, 'completed');
-      }
+      const generatedId = resData.product?.id;
+      setProductId(generatedId);
+      await setOnboardingStep(currentShopId, 'completed');
 
       toast.success('Product live! 🚀', { id: apiToast });
       setIsSuccess(true);
@@ -1539,6 +1515,45 @@ export const AddProduct: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* UPGRADE MODAL WINDOW */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-6">
+          <div className="bg-[#121212] border border-white/[0.08] rounded-3xl w-full max-w-sm p-6 space-y-5 text-center shadow-2xl">
+            <div className="w-14 h-14 rounded-2xl bg-[#C8FF00]/10 border border-[#C8FF00]/20 flex items-center justify-center mx-auto text-[#C8FF00]">
+              <Sparkles size={28} />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-white text-lg font-black tracking-tight font-grotesk">
+                Product Limit Reached (3 / 3)
+              </h3>
+              <p className="text-zinc-400 text-xs leading-relaxed">
+                The Free Plan allows up to 3 products. Upgrade to the Pro Plan ($1.59/month) to unlock unlimited products and grow your store without limits!
+              </p>
+            </div>
+            <div className="space-y-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowUpgradeModal(false);
+                  navigate('/paywall');
+                }}
+                className="w-full h-12 rounded-2xl bg-[#C8FF00] hover:bg-[#b8eb00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg shadow-[#C8FF00]/20"
+              >
+                <span>Upgrade to Pro Plan ($1.59/mo)</span>
+                <ChevronRight size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(false)}
+                className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DISCARD MODAL WINDOW */}
       {showDiscardModal && (

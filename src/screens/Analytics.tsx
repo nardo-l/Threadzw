@@ -21,6 +21,7 @@ import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
 import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
+import { NotificationBell } from '../components/NotificationBell';
 import { toast } from 'sonner';
 
 export const Analytics: React.FC = () => {
@@ -86,6 +87,7 @@ export const Analytics: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <NotificationBell />
           <div className="flex items-center gap-2 bg-white border border-zinc-200 rounded-xl px-4 py-2.5 text-xs font-bold shadow-2xs cursor-pointer hover:bg-zinc-50 transition-colors">
             <Calendar size={14} className="text-zinc-600" />
             <span>{timeFilter}</span>

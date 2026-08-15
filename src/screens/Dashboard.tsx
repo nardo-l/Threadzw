@@ -23,10 +23,14 @@ import {
 } from 'lucide-react';
 import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
+import { NotificationBell } from '../components/NotificationBell';
+import { NotificationPromptBanner } from '../components/NotificationPromptBanner';
 import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
 import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
+import { TutorialModal } from '../components/onboarding/TutorialModal';
+import { useOnboarding } from '../hooks/useOnboarding';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 import { paymentService } from '../services/paymentService';
@@ -75,6 +79,18 @@ export const Dashboard: React.FC = () => {
     dailyVisitsChart,
     loading: dashboardLoading
   } = useDashboard(shop?.id);
+
+  const { step: onboardingStep } = useOnboarding(shop?.id, productsCount, shop);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    if (onboardingStep === 'completed' && shop?.id) {
+      const isCompleted = localStorage.getItem(`threadzw_tutorial_completed_${shop.id}`) === 'true';
+      if (!isCompleted) {
+        setShowTutorial(true);
+      }
+    }
+  }, [onboardingStep, shop?.id]);
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -209,6 +225,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <NotificationBell />
           <div 
             onClick={() => navigate('/settings')}
             className="flex items-center gap-1 cursor-pointer"
@@ -242,6 +259,9 @@ export const Dashboard: React.FC = () => {
             <ChevronDown size={13} className="text-zinc-400 ml-0.5" />
           </button>
         </div>
+
+        {/* Push Notification Permission Banner */}
+        <NotificationPromptBanner userId={user?.id} />
 
         {/* Shop Setup Checklist */}
         <ShopSetupChecklist 
@@ -546,6 +566,11 @@ export const Dashboard: React.FC = () => {
 
       {/* MANDATORY ONBOARDING OVERLAY */}
       <OnboardingOverlay shop={shop} productsCount={productsCount} />
+
+      {/* 5-SCREEN TUTORIAL MODAL */}
+      {showTutorial && shop?.id && (
+        <TutorialModal shopId={shop.id} onComplete={() => setShowTutorial(false)} />
+      )}
 
       <BottomNavBar />
     </div>

@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { seedShopProductsIfEmpty } from '../utils/seedData';
+import { NotificationBell } from '../components/NotificationBell';
 
 interface Product {
   id: string;
@@ -279,12 +280,7 @@ export const Inventory: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <button 
-              onClick={() => toast.info("Your notification hub")}
-              className="relative p-2 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl transition-all cursor-pointer"
-            >
-              <Bell size={21} />
-            </button>
+            <NotificationBell />
             <div className="h-8 w-8 rounded-full border border-zinc-100 bg-zinc-200" />
           </div>
         </div>
