@@ -8,36 +8,49 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 router.post('/create', async (req, res) => {
+  console.log('[PRODUCT_CREATE] request received');
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      return res.status(401).json({ error: 'Missing authorization header' });
+      console.log('[PRODUCT_CREATE ERROR] Missing authorization header');
+      return res.status(401).json({ success: false, error: 'AUTHENTICATION_REQUIRED', message: 'Missing authorization header' });
     }
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
-      return res.status(401).json({ error: 'Invalid or expired session' });
+      console.log('[PRODUCT_CREATE ERROR] Invalid or expired session:', userError?.message);
+      return res.status(401).json({ success: false, error: 'AUTHENTICATION_REQUIRED', message: 'Invalid or expired session' });
     }
 
     const profileId = user.id;
+    console.log('[PRODUCT_CREATE] authenticated user:', profileId);
+
     const { shopId, productPayload } = req.body;
 
     if (!shopId || !productPayload) {
-      return res.status(400).json({ error: 'Missing shopId or productPayload' });
+      console.log('[PRODUCT_CREATE ERROR] Missing shopId or productPayload');
+      return res.status(400).json({ success: false, error: 'MISSING_PARAMETERS', message: 'Missing shopId or productPayload' });
     }
 
     // 1. Verify shop belongs to user (owner_id)
     const { data: shop, error: shopError } = await supabase
       .from('shops')
-      .select('id, plan, plan_type, owner_id')
+      .select('id, plan, owner_id')
       .eq('id', shopId)
       .maybeSingle();
 
-    if (shopError || !shop || shop.owner_id !== profileId) {
-      return res.status(403).json({ error: 'Unauthorized shop access' });
+    if (shopError || !shop) {
+      console.log('[PRODUCT_CREATE ERROR] Shop not found or error:', shopError?.message);
+      return res.status(404).json({ success: false, error: 'SHOP_NOT_FOUND', message: 'Shop not found' });
     }
+
+    if (shop.owner_id !== profileId) {
+      console.log('[PRODUCT_CREATE ERROR] Unauthorized shop access. Shop owner:', shop.owner_id, 'User:', profileId);
+      return res.status(403).json({ success: false, error: 'UNAUTHORIZED_SHOP_ACCESS', message: 'Unauthorized shop access' });
+    }
+    console.log('[PRODUCT_CREATE] shop resolved:', shopId);
 
     // 2. Query profile subscription_status
     const { data: profile } = await supabase
@@ -46,7 +59,7 @@ router.post('/create', async (req, res) => {
       .eq('id', profileId)
       .maybeSingle();
 
-    const isSubscriptionActive = profile?.subscription_status === 'active' || shop.plan === 'premium' || shop.plan_type === 'premium';
+    const isSubscriptionActive = profile?.subscription_status === 'active' || shop.plan === 'premium' || shop.plan === 'pro';
 
     // 3. Query products count for shop_id
     const { count, error: countError } = await supabase
@@ -55,21 +68,33 @@ router.post('/create', async (req, res) => {
       .eq('shop_id', shopId);
 
     if (countError) {
-      console.error('Error counting products:', countError);
+      console.error('[PRODUCT_CREATE ERROR] Error counting products:', countError);
     }
 
     const productCount = count || 0;
+    console.log('[PRODUCT_CREATE] product count resolved:', productCount);
 
     // 4. Enforce product limit check server-side
     if (productCount >= 3 && !isSubscriptionActive) {
+      console.log('[PRODUCT_CREATE] limit check passed (blocked - limit reached):', productCount);
       return res.status(403).json({
+        success: false,
         error: 'PRODUCT_LIMIT_REACHED',
         upgradeRequired: true,
         message: 'Free plan allows up to 3 products. Upgrade to Pro Plan to unlock unlimited products!'
       });
     }
+    console.log('[PRODUCT_CREATE] limit check passed (allowed)');
 
-    // 5. Insert product
+    // 5. Product validation & sanitization
+    if (!productPayload.name || typeof productPayload.price !== 'number') {
+      console.log('[PRODUCT_CREATE ERROR] Invalid product payload:', productPayload);
+      return res.status(400).json({ success: false, error: 'INVALID_PRODUCT_DATA', message: 'Product name and valid price are required' });
+    }
+    console.log('[PRODUCT_CREATE] product validation passed');
+
+    // 6. Database insert started
+    console.log('[PRODUCT_CREATE] database insert started');
     const { data: newProduct, error: insertError } = await supabase
       .from('products')
       .insert({
@@ -81,26 +106,41 @@ router.post('/create', async (req, res) => {
       .single();
 
     if (insertError) {
-      throw insertError;
+      console.error('[PRODUCT_CREATE ERROR] database insert failed:', insertError);
+      return res.status(400).json({
+        success: false,
+        error: 'PRODUCT_INSERT_FAILED',
+        message: insertError.message,
+        details: insertError.details || insertError.hint
+      });
     }
+    console.log('[PRODUCT_CREATE] database insert succeeded:', newProduct?.id);
 
-    // 6. Insert inventory items if provided
+    // 7. Insert inventory items safely
     if (newProduct?.id && productPayload.sizes && Array.isArray(productPayload.sizes)) {
-      for (const size of productPayload.sizes) {
-        await supabase
-          .from('inventory')
-          .upsert({
-            product_id: newProduct.id,
-            size: size.size,
-            stock_count: size.quantity
-          });
+      try {
+        for (const size of productPayload.sizes) {
+          await supabase
+            .from('inventory')
+            .upsert({
+              product_id: newProduct.id,
+              size: size.size,
+              stock_count: size.quantity
+            });
+        }
+      } catch (invErr: any) {
+        console.warn('[PRODUCT_CREATE WARNING] Inventory upsert non-fatal error:', invErr?.message);
       }
     }
 
     return res.json({ success: true, product: newProduct });
   } catch (err: any) {
-    console.error('Error in /api/products/create:', err);
-    return res.status(500).json({ error: err.message || 'Failed to create product' });
+    console.error('[PRODUCT_CREATE ERROR] Unhandled exception:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'PRODUCT_CREATE_FAILED',
+      message: err.message || 'A server error occurred while creating the product.'
+    });
   }
 });
 
