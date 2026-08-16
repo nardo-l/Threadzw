@@ -596,16 +596,23 @@ export const AddProduct: React.FC = () => {
         })
       });
 
-      const resData = await res.json();
+      const responseText = await res.text();
+      let resData: any = {};
+      try {
+        resData = responseText ? JSON.parse(responseText) : {};
+      } catch (parseErr) {
+        console.error('Failed to parse response as JSON:', responseText);
+        throw new Error(`Server error (${res.status}): ${responseText.substring(0, 100)}`);
+      }
 
       if (!res.ok) {
-        if (resData.upgradeRequired) {
+        if (resData.upgradeRequired || resData.error === 'PRODUCT_LIMIT_REACHED' || resData.code === 'PRODUCT_LIMIT_REACHED') {
           toast.dismiss(apiToast);
           setShowUpgradeModal(true);
           setPublishing(false);
           return;
         }
-        throw new Error(resData.error || 'Failed to publish product');
+        throw new Error(resData.error || resData.message || 'Failed to publish product');
       }
 
       const generatedId = resData.product?.id;

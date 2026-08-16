@@ -97,9 +97,6 @@ router.post('/create', async (req, res) => {
       }
     }
 
-    // 7. Increment shop product count via RPC
-    await supabase.rpc('increment_shop_product_count', { shop_id: shopId });
-
     return res.json({ success: true, product: newProduct });
   } catch (err: any) {
     console.error('Error in /api/products/create:', err);
