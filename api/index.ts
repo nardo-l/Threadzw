@@ -2,21 +2,37 @@ import express from 'express';
 import dotenv from 'dotenv';
 import billingRouter from '../server/routes/billing';
 import aiRouter from '../server/routes/ai';
+import productsRouter from '../server/routes/products';
+import subscriptionsRouter from '../server/routes/subscriptions';
+import pushRouter from '../server/routes/push';
+import notificationsRouter from '../server/routes/notifications';
+import cronRouter from '../server/routes/cron';
+import { subscriptionController } from '../server/controllers/subscriptionController';
 
 dotenv.config();
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf.toString('utf-8');
+  }
+}));
 
 // --- HEALTH CHECK ---
 app.get('/api/health', (req, res) => {
   res.setHeader('Content-Type', 'application/json').status(200).json({ status: 'ok' });
 });
 
-// --- ROUTERS ---
+// --- SECURE SERVERLESS API ROUTERS ---
+app.post('/api/nardopay-webhook', (req, res) => subscriptionController.webhook(req, res));
+app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/products', productsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/push', pushRouter);
+app.use('/api/notifications', notificationsRouter);
+app.use('/api/cron', cronRouter);
 
 // Fallback for unmatched /api routes
 app.use('/api/*', (req, res) => {

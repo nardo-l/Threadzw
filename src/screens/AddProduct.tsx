@@ -613,13 +613,20 @@ export const AddProduct: React.FC = () => {
       }
 
       if (!res.ok) {
-        if (resData.upgradeRequired || resData.error === 'PRODUCT_LIMIT_REACHED' || resData.code === 'PRODUCT_LIMIT_REACHED') {
+        if (
+          resData.upgradeRequired || 
+          resData.error === 'PRODUCT_LIMIT_REACHED' || 
+          resData.code === 'PRODUCT_LIMIT_REACHED' || 
+          res.status === 403
+        ) {
           toast.dismiss(apiToast);
+          const limitMessage = resData.message || 'You have reached the maximum number of products allowed on your current plan. Upgrade to Pro to add more products.';
+          toast.error(limitMessage, { duration: 6000 });
           setShowUpgradeModal(true);
           setPublishing(false);
           return;
         }
-        throw new Error(resData.error || resData.message || 'Failed to publish product');
+        throw new Error(resData.message || resData.error || `Server error (${res.status})`);
       }
 
       const generatedId = resData.product?.id;

@@ -505,7 +505,19 @@ export const EditProduct: React.FC = () => {
         .eq('id', productId)
         .eq('shop_id', currentShopId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        const isQuotaViolation = 
+          updateError.code === '23514' || 
+          updateError.message?.toLowerCase().includes('limit reached') ||
+          updateError.message?.toLowerCase().includes('plan limit') ||
+          updateError.message?.toLowerCase().includes('quota');
+
+        if (isQuotaViolation) {
+          toast.error('You have reached the maximum number of active products allowed on your current plan. Upgrade to Pro to activate more products.', { id: saveToastHandle, duration: 6000 });
+          return;
+        }
+        throw updateError;
+      }
 
       // Safe update database inventory tables for resilience
       try {
