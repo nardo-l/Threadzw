@@ -590,8 +590,8 @@ export const AddProduct: React.FC = () => {
         throw new Error("Cannot create product: No active, valid shop found for your profile.");
       }
 
-      // Enforce product limit check and create product server-side
-      const res = await fetch('/api/products/create', {
+      // Enforce product creation via the isolated v2 endpoint
+      const res = await fetch('/api/products/create-v2', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

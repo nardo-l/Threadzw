@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import billingRouter from '../server/routes/billing';
 import aiRouter from '../server/routes/ai';
 import productsRouter from '../server/routes/products';
+import productsV2Router from '../server/routes/productsV2';
 import subscriptionsRouter from '../server/routes/subscriptions';
 import pushRouter from '../server/routes/push';
 import notificationsRouter from '../server/routes/notifications';
@@ -34,6 +35,7 @@ app.get(['/api/health', '/health'], (req, res) => {
 app.post(['/api/nardopay-webhook', '/nardopay-webhook'], (req, res) => subscriptionController.webhook(req, res));
 app.use(['/api/subscriptions', '/subscriptions'], subscriptionsRouter);
 app.use(['/api/billing', '/billing'], billingRouter);
+app.use(['/api/products', '/products'], productsV2Router);
 app.use(['/api/products', '/products'], productsRouter);
 app.use(['/api/ai', '/ai'], aiRouter);
 app.use(['/api/push', '/push'], pushRouter);

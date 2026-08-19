@@ -11,6 +11,7 @@ import { subscriptionController } from './server/controllers/subscriptionControl
 import aiRouter from './server/routes/ai';
 import pushRouter from './server/routes/push';
 import productsRouter from './server/routes/products';
+import productsV2Router from './server/routes/productsV2';
 import cronRouter from './server/routes/cron';
 import notificationsRouter from './server/routes/notifications';
 
@@ -235,6 +236,7 @@ async function startServer() {
   // --- AI & MERCHANT PRODUCTIVITY SERVICES ---
   app.use('/api/ai', aiRouter);
   app.use('/api/push', pushRouter);
+  app.use('/api/products', productsV2Router);
   app.use('/api/products', productsRouter);
   app.use('/api/cron', cronRouter);
   app.use('/api/notifications', notificationsRouter);
