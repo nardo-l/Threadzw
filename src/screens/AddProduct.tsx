@@ -613,20 +613,34 @@ export const AddProduct: React.FC = () => {
       }
 
       if (!res.ok) {
-        if (
+        const errorObj = typeof resData.error === 'object' && resData.error !== null ? resData.error : {};
+        const isLimitReached = 
           resData.upgradeRequired || 
+          errorObj.upgradeRequired ||
           resData.error === 'PRODUCT_LIMIT_REACHED' || 
           resData.code === 'PRODUCT_LIMIT_REACHED' || 
-          res.status === 403
-        ) {
+          errorObj.code === 'PRODUCT_LIMIT_REACHED' ||
+          res.status === 403;
+
+        if (isLimitReached) {
           toast.dismiss(apiToast);
-          const limitMessage = resData.message || 'You have reached the maximum number of products allowed on your current plan. Upgrade to Pro to add more products.';
+          const limitMessage = 
+            resData.message || 
+            errorObj.message || 
+            'You have reached the maximum number of products allowed on your current plan. Upgrade to Pro to add more products.';
           toast.error(limitMessage, { duration: 6000 });
           setShowUpgradeModal(true);
           setPublishing(false);
           return;
         }
-        throw new Error(resData.message || resData.error || `Server error (${res.status})`);
+
+        const fallbackMsg = 
+          resData.message || 
+          errorObj.message || 
+          (typeof resData.error === 'string' ? resData.error : null) || 
+          `Server error (${res.status})`;
+          
+        throw new Error(fallbackMsg);
       }
 
       const generatedId = resData.product?.id;
