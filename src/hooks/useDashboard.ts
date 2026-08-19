@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { AnalyticsService } from '../lib/AnalyticsService';
+import { getShopVehicles } from '../services/vehicleService';
 
 export interface TrafficSourceStat {
   name: string;
@@ -114,7 +115,7 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
     setError(null);
 
     try {
-      const [productsRes, analyticsRes, todayAnalytics] = await Promise.all([
+      const [productsRes, analyticsRes, todayAnalytics, vehiclesList] = await Promise.all([
         supabase
           .from('products')
           .select('*')
@@ -125,14 +126,33 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
           .select('*')
           .eq('shop_id', shopId)
           .order('created_at', { ascending: false }),
-        AnalyticsService.getTodayAnalytics(shopId)
+        AnalyticsService.getTodayAnalytics(shopId),
+        getShopVehicles(shopId).catch(() => [])
       ]);
 
       if (productsRes.error) throw productsRes.error;
       if (analyticsRes.error) throw analyticsRes.error;
 
-      const products = productsRes.data || [];
+      let products = productsRes.data || [];
       const events = analyticsRes.data || [];
+      const vehicles = vehiclesList || [];
+
+      // If shop has vehicles and no standard products, map vehicles into products structure for metrics
+      if (vehicles.length > 0) {
+        const vehicleProducts = vehicles.map(v => ({
+          id: v.id,
+          shop_id: v.shop_id,
+          name: v.title,
+          price: v.price,
+          images: v.images && v.images.length > 0 ? v.images.map(img => typeof img === 'string' ? img : img.image_url) : (v.primary_image ? [v.primary_image] : []),
+          is_published: v.status !== 'sold',
+          status: v.status === 'available' ? 'active' : (v.status === 'sold' ? 'sold_out' : 'paused'),
+          total_stock: v.status === 'available' ? 1 : 0,
+          is_vehicle: true,
+          created_at: v.created_at
+        }));
+        products = [...products, ...vehicleProducts];
+      }
 
       // 1. PRODUCTS & STORE HEALTH
       const productsCount = products.length;

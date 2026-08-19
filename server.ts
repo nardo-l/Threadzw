@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import billingRouter from './server/routes/billing';
 import { billingController } from './server/controllers/billing';
+import subscriptionsRouter from './server/routes/subscriptions';
+import { subscriptionController } from './server/controllers/subscriptionController';
 import aiRouter from './server/routes/ai';
 import pushRouter from './server/routes/push';
 import productsRouter from './server/routes/products';
@@ -29,7 +31,11 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf.toString('utf-8');
+    }
+  }));
 
   // OAuth Configurations
   const SPOTIFY_CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
@@ -221,8 +227,9 @@ async function startServer() {
     } catch (err: any) { res.status(500).json({ error: err.message }); }
   });
 
-  // --- SECURE SERVER-SIDE BILLING (NARDOPAY INTEGRATION) ---
-  app.post('/api/nardopay-webhook', (req, res) => billingController.webhook(req, res));
+  // --- SECURE SERVER-SIDE BILLING & SUBSCRIPTIONS (NARDOPAY INTEGRATION) ---
+  app.post('/api/nardopay-webhook', (req, res) => subscriptionController.webhook(req, res));
+  app.use('/api/subscriptions', subscriptionsRouter);
   app.use('/api/billing', billingRouter);
 
   // --- AI & MERCHANT PRODUCTIVITY SERVICES ---

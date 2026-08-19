@@ -37,7 +37,7 @@ router.post('/create', async (req, res) => {
     // 1. Verify shop belongs to user (owner_id)
     const { data: shop, error: shopError } = await supabase
       .from('shops')
-      .select('id, plan, owner_id')
+      .select('id, plan, plan_type, page_type, owner_id')
       .eq('id', shopId)
       .maybeSingle();
 
@@ -59,30 +59,38 @@ router.post('/create', async (req, res) => {
       .eq('id', profileId)
       .maybeSingle();
 
-    const isSubscriptionActive = profile?.subscription_status === 'active' || shop.plan === 'premium' || shop.plan === 'pro';
+    const isSubscriptionActive = profile?.subscription_status === 'active' || shop.plan === 'premium' || shop.plan === 'pro' || shop.plan_type === 'pro';
 
-    // 3. Query products count for shop_id
-    const { count, error: countError } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true })
-      .eq('shop_id', shopId);
+    // 3. Determine category and active product limits
+    const pageType = (shop.page_type || 'clothing').toLowerCase();
+    const isClothing = pageType === 'clothing' || pageType === 'storefront';
+    
+    // Clothing Free: 2 active products; Clothing Pro: Unlimited; General: Free only
+    if (isClothing && !isSubscriptionActive) {
+      const { count: activeCount, error: countError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('shop_id', shopId)
+        .eq('is_published', true);
 
-    if (countError) {
-      console.error('[PRODUCT_CREATE ERROR] Error counting products:', countError);
-    }
+      if (countError) {
+        console.error('[PRODUCT_CREATE ERROR] Error counting active products:', countError);
+      }
 
-    const productCount = count || 0;
-    console.log('[PRODUCT_CREATE] product count resolved:', productCount);
+      const activeProductCount = activeCount || 0;
+      console.log('[PRODUCT_CREATE] active clothing product count resolved:', activeProductCount);
 
-    // 4. Enforce product limit check server-side
-    if (productCount >= 3 && !isSubscriptionActive) {
-      console.log('[PRODUCT_CREATE] limit check passed (blocked - limit reached):', productCount);
-      return res.status(403).json({
-        success: false,
-        error: 'PRODUCT_LIMIT_REACHED',
-        upgradeRequired: true,
-        message: 'Free plan allows up to 3 products. Upgrade to Pro Plan to unlock unlimited products!'
-      });
+      if (activeProductCount >= 2) {
+        console.log('[PRODUCT_CREATE] limit check blocked (Clothing Free limit 2 reached):', activeProductCount);
+        return res.status(403).json({
+          success: false,
+          error: 'PRODUCT_LIMIT_REACHED',
+          upgradeRequired: true,
+          limit: 2,
+          count: activeProductCount,
+          message: "You've reached the 2-product limit on the Free plan. Upgrade to Clothing Pro to add unlimited products."
+        });
+      }
     }
     console.log('[PRODUCT_CREATE] limit check passed (allowed)');
 

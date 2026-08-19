@@ -13,6 +13,9 @@ import { SizeSelector } from '../components/SizeSelector';
 import { cropToSquare, enhanceLighting, compressAndOptimize } from '../utils/imageEnhancer';
 import { ProductCategoryCard } from '../components/ProductCategoryCard';
 import { setOnboardingStep } from '../hooks/useOnboarding';
+import { canAddProduct, getProductImageLimit } from '../config/plans';
+import { UpgradePromptModal } from '../components/plans/UpgradePromptModal';
+import { Shop } from '../types';
 
 interface SizeStock {
   active: boolean;
@@ -104,6 +107,7 @@ export const AddProduct: React.FC = () => {
   const [productStatus, setProductStatus] = useState<'active' | 'sold_out'>('active');
   const [shopId, setShopId] = useState<string | null>(null);
   const [shopHandle, setShopHandle] = useState<string | null>(null);
+  const [shopData, setShopData] = useState<Shop | null>(null);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -162,22 +166,24 @@ export const AddProduct: React.FC = () => {
         if (session) {
           const { data: shop } = await supabase
             .from('shops')
-            .select('id, slug, plan, plan_type')
+            .select('*')
             .eq('owner_id', session.user.id).order('created_at', { ascending: false }).limit(1)
             .maybeSingle();
           if (shop) {
             setShopId(shop.id);
             setShopHandle(shop.slug);
+            setShopData(shop as unknown as Shop);
 
-            const isPremium = shop.plan === 'premium' || shop.plan_type === 'premium';
-            if (!isPremium) {
-              const { count } = await supabase
-                .from('products')
-                .select('id', { count: 'exact', head: true })
-                .eq('shop_id', shop.id);
-              if (count !== null && count >= 3) {
-                setIsAtLimit(true);
-              }
+            // Check active published products count
+            const { count: activeCount } = await supabase
+              .from('products')
+              .select('id', { count: 'exact', head: true })
+              .eq('shop_id', shop.id)
+              .eq('is_published', true);
+
+            const check = canAddProduct(shop as unknown as Shop, activeCount || 0);
+            if (!check.allowed) {
+              setIsAtLimit(true);
             }
           }
         }
@@ -190,8 +196,9 @@ export const AddProduct: React.FC = () => {
 
   // Shared file upload processor
   const processFiles = async (files: File[]) => {
-    if (images.length + files.length > 6) {
-      toast.error('Maximum of 6 photos allowed.');
+    const maxPhotos = getProductImageLimit(shopData);
+    if (images.length + files.length > maxPhotos) {
+      toast.error(`Maximum of ${maxPhotos} photos allowed on your plan.`);
       return;
     }
 
@@ -1524,43 +1531,12 @@ export const AddProduct: React.FC = () => {
       </div>
 
       {/* UPGRADE MODAL WINDOW */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-[#121212] border border-white/[0.08] rounded-3xl w-full max-w-sm p-6 space-y-5 text-center shadow-2xl">
-            <div className="w-14 h-14 rounded-2xl bg-[#C8FF00]/10 border border-[#C8FF00]/20 flex items-center justify-center mx-auto text-[#C8FF00]">
-              <Sparkles size={28} />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-white text-lg font-black tracking-tight font-grotesk">
-                Product Limit Reached (3 / 3)
-              </h3>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                The Free Plan allows up to 3 products. Upgrade to the Pro Plan ($1.59/month) to unlock unlimited products and grow your store without limits!
-              </p>
-            </div>
-            <div className="space-y-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowUpgradeModal(false);
-                  navigate('/paywall');
-                }}
-                className="w-full h-12 rounded-2xl bg-[#C8FF00] hover:bg-[#b8eb00] text-black font-extrabold text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-all shadow-lg shadow-[#C8FF00]/20"
-              >
-                <span>Upgrade to Pro Plan ($1.59/mo)</span>
-                <ChevronRight size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowUpgradeModal(false)}
-                className="w-full h-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <UpgradePromptModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        shop={shopData}
+        reason="product_limit"
+      />
 
       {/* DISCARD MODAL WINDOW */}
       {showDiscardModal && (

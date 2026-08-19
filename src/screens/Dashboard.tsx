@@ -34,6 +34,7 @@ import { useOnboarding } from '../hooks/useOnboarding';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 import { paymentService } from '../services/paymentService';
+import { DashboardPlanCard } from '../components/plans/DashboardPlanCard';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -270,12 +271,21 @@ export const Dashboard: React.FC = () => {
           isShopPaidAndActive={isShopPaidAndActive}
         />
 
+        {/* Plan Status & Entitlement Usage */}
+        <DashboardPlanCard
+          shop={shop}
+          productsCount={productsCount}
+          liveProductsCount={liveProductsCount}
+        />
+
         {/* 4 Metric / KPI Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* Card 1: Total Products (Replaced Total Revenue) */}
+          {/* Card 1: Total Products / Total Vehicles */}
           <div className="bg-white border border-zinc-200/70 rounded-2xl p-4 shadow-2xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-normal text-zinc-500">Total Products</span>
+              <span className="text-xs font-normal text-zinc-500">
+                {shop?.page_type === 'vehicles' ? 'Total Vehicles' : 'Total Products'}
+              </span>
               <div className="w-7 h-7 rounded-lg bg-[#CCFF00] flex items-center justify-center text-black font-bold">
                 <Package size={15} className="stroke-[2.5]" />
               </div>
@@ -285,7 +295,9 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="flex items-center gap-1 text-[11px] font-medium text-lime-600">
               <span>{liveProductsCount} active</span>
-              <span className="text-zinc-400 font-normal">in store catalog</span>
+              <span className="text-zinc-400 font-normal">
+                {shop?.page_type === 'vehicles' ? 'in showroom' : 'in store catalog'}
+              </span>
             </div>
           </div>
 
@@ -451,12 +463,13 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          {/* Wide Prominent + ADD PRODUCT Green CTA Button */}
+          {/* Wide Prominent + ADD PRODUCT / + ADD VEHICLE Green CTA Button */}
           <button 
-            onClick={() => navigate('/add-product')}
+            onClick={() => navigate(shop?.page_type === 'vehicles' ? '/add-vehicle' : '/add-product')}
             className="w-full h-12 bg-[#CCFF00] hover:bg-[#bbf000] text-black rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-all cursor-pointer shadow-sm active:scale-[0.99]"
           >
-            <Plus size={18} className="stroke-[2.5]" /> ADD PRODUCT
+            <Plus size={18} className="stroke-[2.5]" /> 
+            {shop?.page_type === 'vehicles' ? 'ADD VEHICLE' : 'ADD PRODUCT'}
           </button>
         </div>
 
@@ -465,7 +478,9 @@ export const Dashboard: React.FC = () => {
           {/* Recent WhatsApp Orders & Activity */}
           <div className="bg-white border border-zinc-200/70 rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900">Recent WhatsApp Orders</h3>
+              <h3 className="text-base font-bold text-zinc-900">
+                {shop?.page_type === 'vehicles' ? 'Recent WhatsApp Inquiries' : 'Recent WhatsApp Orders'}
+              </h3>
               <button 
                 onClick={() => navigate('/analytics')}
                 className="text-xs font-medium text-zinc-500 hover:text-black cursor-pointer transition-colors"
@@ -499,17 +514,19 @@ export const Dashboard: React.FC = () => {
                   <div className="w-10 h-10 rounded-full bg-zinc-100 text-zinc-400 mx-auto flex items-center justify-center">
                     <MessageSquare size={20} />
                   </div>
-                  <p className="text-xs text-zinc-500 font-medium">No recent WhatsApp orders yet</p>
-                  <p className="text-[11px] text-zinc-400 max-w-xs mx-auto">Share your storefront link to start receiving customer WhatsApp orders.</p>
+                  <p className="text-xs text-zinc-500 font-medium">No recent WhatsApp inquiries yet</p>
+                  <p className="text-[11px] text-zinc-400 max-w-xs mx-auto">Share your showroom link to start receiving customer WhatsApp inquiries.</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Top Products (Real Store Products) */}
+          {/* Top Products / Top Vehicles */}
           <div className="bg-white border border-zinc-200/70 rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-zinc-900">Top Products</h3>
+              <h3 className="text-base font-bold text-zinc-900">
+                {shop?.page_type === 'vehicles' ? 'Showroom Inventory' : 'Top Products'}
+              </h3>
               <button 
                 onClick={() => navigate('/inventory')}
                 className="text-xs font-medium text-zinc-500 hover:text-black cursor-pointer transition-colors"

@@ -49,6 +49,9 @@ import { FREE_TRIAL_DAYS } from '../lib/plans';
 import { uploadImage } from '../utils/uploadImage';
 import { paymentService } from '../services/paymentService';
 import { SuccessScreen } from '../components/onboarding/SuccessScreen';
+import { CategorySelectionStep } from '../components/onboarding/CategorySelectionStep';
+import { SellerCategory } from '../types';
+import { ONBOARDING_CATEGORY_OPTIONS, getSellerCategoryConfig } from '../config/sellerCategories';
 
 // Brand SVGs
 const GoogleIcon = () => (
@@ -91,8 +94,8 @@ const FacebookIcon = () => (
   </svg>
 );
 
-// Zimbabwe Fashion Bio Suggestions
-const BIO_PRESETS = [
+// Bio Suggestions by Seller Category
+const FASHION_BIO_PRESETS = [
   {
     id: 'Streetwear brand',
     title: 'Streetwear brand',
@@ -149,6 +152,99 @@ const BIO_PRESETS = [
   }
 ];
 
+const VEHICLE_BIO_PRESETS = [
+  {
+    id: 'Car Dealership',
+    title: 'Car Dealership',
+    icon: Store,
+    text: 'Verified car dealership in Zimbabwe. Quality pre-owned & brand new vehicles with clean paperwork.'
+  },
+  {
+    id: 'Private Seller',
+    title: 'Private Seller',
+    icon: Tag,
+    text: 'Direct private vehicle sales in Zimbabwe. Reliable cars, honest pricing, test drives welcome.'
+  },
+  {
+    id: 'Auto Parts & Spares',
+    title: 'Auto Parts & Spares',
+    icon: Layers,
+    text: 'Genuine spare parts, tyres and auto accessories delivered anywhere in Zimbabwe.'
+  },
+  {
+    id: 'Motorbikes & ATVs',
+    title: 'Motorbikes & ATVs',
+    icon: Sparkles,
+    text: 'Motorcycles, delivery bikes and quad bikes for sale in Zimbabwe.'
+  },
+  {
+    id: 'Vehicle Importer',
+    title: 'Vehicle Importer',
+    icon: MapPin,
+    text: 'Direct car imports from Japan, UK and South Africa to Zimbabwe. Duty & clearance handled.'
+  },
+  {
+    id: 'Commercial & Trucks',
+    title: 'Commercial & Trucks',
+    icon: ShoppingBag,
+    text: 'Commercial trucks, pickups, and work vehicles for Zimbabwean businesses and farming.'
+  },
+  {
+    id: 'Other Vehicles',
+    title: 'Other Vehicles',
+    icon: MoreHorizontal,
+    text: 'Your trusted automotive and vehicle plug in Zimbabwe.'
+  }
+];
+
+const GENERAL_BIO_PRESETS = [
+  {
+    id: 'Electronics & Phones',
+    title: 'Electronics & Phones',
+    icon: Store,
+    text: 'Smartphones, laptops, audio gear and accessories with warranty across Zimbabwe.'
+  },
+  {
+    id: 'Home & Furniture',
+    title: 'Home & Furniture',
+    icon: MapPin,
+    text: 'Modern furniture, decor and home appliances delivered to your doorstep.'
+  },
+  {
+    id: 'Beauty & Cosmetics',
+    title: 'Beauty & Cosmetics',
+    icon: Sparkles,
+    text: '100% authentic skincare, makeup, and perfumes delivered anywhere in Zimbabwe.'
+  },
+  {
+    id: 'General Store',
+    title: 'General Store',
+    icon: ShoppingBag,
+    text: 'Your one-stop online shop for everyday products, gadgets, and lifestyle essentials.'
+  },
+  {
+    id: 'Fitness & Health',
+    title: 'Fitness & Health',
+    icon: Tag,
+    text: 'Supplements, gym equipment, and wellness essentials for everyday performance.'
+  },
+  {
+    id: 'Handmade & Crafts',
+    title: 'Handmade & Crafts',
+    icon: Pencil,
+    text: 'Handmade crafts, unique gifts and bespoke artisanal products made with love.'
+  },
+  {
+    id: 'Other Products',
+    title: 'Other Products',
+    icon: MoreHorizontal,
+    text: 'Quality products and reliable delivery across Zimbabwe.'
+  }
+];
+
+// Default BIO_PRESETS alias for backward compatibility
+const BIO_PRESETS = FASHION_BIO_PRESETS;
+
 interface SignUpProps {
   initialStep?: number;
 }
@@ -161,13 +257,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const { session } = useAuth();
   const { shop, refreshShop } = useShopContext();
 
-  // Active step (1 to 13)
+  // Active step (1 to 15)
   const [step, setStep] = useState<number>(() => {
     if (stepParam) {
       const parsed = parseInt(stepParam, 10);
-      if (!isNaN(parsed) && parsed >= 1 && parsed <= 13) return parsed;
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 15) return parsed;
     }
-    if (initialStep !== undefined) return Math.min(13, Math.max(1, initialStep));
+    if (initialStep !== undefined) return Math.min(15, Math.max(1, initialStep));
     return 1;
   });
   const [viewMode, setViewMode] = useState<'flow' | 'overview'>(modeParam === 'cards' ? 'overview' : 'flow');
@@ -183,6 +279,24 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+
+  // Step 15: "What do you sell?" Category Selection State
+  const [selectedSellerCategory, setSelectedSellerCategoryState] = useState<SellerCategory | null>(() => {
+    try {
+      const saved = localStorage.getItem('threadzw_onboarding_category');
+      if (saved && (saved === 'clothing' || saved === 'vehicles' || saved === 'general')) {
+        return saved as SellerCategory;
+      }
+    } catch (e) {}
+    return null;
+  });
+
+  const handleSelectSellerCategory = (cat: SellerCategory) => {
+    setSelectedSellerCategoryState(cat);
+    try {
+      localStorage.setItem('threadzw_onboarding_category', cat);
+    } catch (e) {}
+  };
 
   // Active shop record ID created during signup, persisted in localStorage
   const [createdShopId, setCreatedShopIdState] = useState<string | null>(() => {
@@ -334,6 +448,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
     setPhone(val);
   };
 
+  // Category-specific Bio Presets
+  const currentBioPresets = React.useMemo(() => {
+    if (selectedSellerCategory === 'vehicles') return VEHICLE_BIO_PRESETS;
+    if (selectedSellerCategory === 'general') return GENERAL_BIO_PRESETS;
+    return FASHION_BIO_PRESETS;
+  }, [selectedSellerCategory]);
+
   // Step 4 Submit: Sign Up
   const handleSignUp = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -427,11 +548,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         const { error: updateErr } = await supabase.from('shops').update(shopPayload).eq('id', existingShop.id);
         if (updateErr) throw updateErr;
       } else {
+        const initialCat = selectedSellerCategory
+          ? getSellerCategoryConfig(selectedSellerCategory).defaultCategoryName
+          : 'Streetwear & Fashion';
+
         const initialShopPayload = {
           owner_id: currentUser.id,
           name: shopName.trim() || 'My Shop',
           slug: slug || `shop-${Date.now().toString(36)}`,
-          category: selectedBioCategory || 'Streetwear & Fashion',
+          category: selectedBioCategory || initialCat,
           description: bioText.trim() || `${shopName} official storefront on ThreadZW.`,
           whatsapp_number: phoneVal || '+263771234567',
           location: loc,
@@ -442,6 +567,9 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           plan: 'free',
           product_limit: 3,
           premium_status: 'coming_soon',
+          page_type: selectedSellerCategory || 'clothing',
+          template_id: null,
+          page_config: {},
         };
         const { data: insertedShop, error: insertErr } = await supabase
           .from('shops')
@@ -476,6 +604,57 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       console.error('Sign up error:', err);
       setAuthError(err?.message || 'Failed to sign up');
       toast.error(err?.message || 'Failed to sign up');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Step 15 Submit: Save Category Selection ("What do you sell?")
+  const handleSaveCategory = async () => {
+    if (!selectedSellerCategory) {
+      toast.error('Please select what you sell to continue');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      let targetShopId = createdShopId || shop?.id;
+
+      if (!targetShopId && user?.id) {
+        const { data: dbShop } = await supabase
+          .from('shops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        if (dbShop) {
+          targetShopId = dbShop.id;
+          setCreatedShopId(targetShopId);
+        }
+      }
+
+      if (targetShopId) {
+        const config = getSellerCategoryConfig(selectedSellerCategory);
+        const { error: updateErr } = await supabase
+          .from('shops')
+          .update({
+            page_type: selectedSellerCategory,
+            category: config.defaultCategoryName || 'General Products',
+          })
+          .eq('id', targetShopId);
+        if (updateErr) throw updateErr;
+      }
+
+      try {
+        await refreshShop();
+      } catch (e) {
+        console.warn('refreshShop error:', e);
+      }
+
+      setStep(6);
+    } catch (err: any) {
+      console.error('Save category error:', err);
+      toast.error(err?.message || 'Failed to save category');
     } finally {
       setLoading(false);
     }
@@ -582,11 +761,13 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       }
 
       if (targetShopId) {
+        const defaultCat = selectedSellerCategory ? getSellerCategoryConfig(selectedSellerCategory).defaultCategoryName : 'Streetwear & Fashion';
         const { error: shopErr } = await supabase
           .from('shops')
           .update({
             description: bioText.trim(),
-            category: selectedBioCategory || 'Streetwear & Fashion'
+            category: selectedBioCategory || defaultCat,
+            page_type: selectedSellerCategory || 'clothing',
           })
           .eq('id', targetShopId);
         if (shopErr) throw shopErr;
@@ -845,6 +1026,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       const nowIso = new Date().toISOString();
       const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      const fallbackCat = selectedSellerCategory ? getSellerCategoryConfig(selectedSellerCategory).defaultCategoryName : 'Streetwear & Fashion';
 
       if (targetShopId) {
         const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(activeUser.id, targetShopId);
@@ -854,7 +1036,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           logo_url: logoUrl,
           banner_url: bannerUrl,
           description: bioText.trim() || null,
-          category: selectedBioCategory || 'Streetwear & Fashion',
+          category: selectedBioCategory || fallbackCat,
+          page_type: selectedSellerCategory || 'clothing',
           location: loc,
           city: loc,
           directions: shopDirections.trim() || null,
@@ -880,7 +1063,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           logo_url: null,
           banner_url: null,
           description: bioText.trim() || null,
-          category: selectedBioCategory || 'Streetwear & Fashion',
+          category: selectedBioCategory || fallbackCat,
+          page_type: selectedSellerCategory || 'clothing',
           location: loc,
           city: loc,
           directions: shopDirections.trim() || null,
@@ -1038,6 +1222,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       const nowIso = new Date().toISOString();
       const cleanSlug = (shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+      const fallbackCat = selectedSellerCategory ? getSellerCategoryConfig(selectedSellerCategory).defaultCategoryName : 'Streetwear & Fashion';
 
       if (targetShopId) {
         const { logoUrl, bannerUrl } = await uploadBrandFilesIfNeeded(activeUser.id, targetShopId);
@@ -1048,7 +1233,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           logo_url: logoUrl,
           banner_url: bannerUrl,
           description: bioText.trim() || null,
-          category: selectedBioCategory || 'Streetwear & Fashion',
+          category: selectedBioCategory || fallbackCat,
+          page_type: selectedSellerCategory || 'clothing',
           location: loc,
           city: loc,
           directions: shopDirections.trim() || null,
@@ -1074,7 +1260,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           logo_url: null,
           banner_url: null,
           description: bioText.trim() || null,
-          category: selectedBioCategory || 'Streetwear & Fashion',
+          category: selectedBioCategory || fallbackCat,
+          page_type: selectedSellerCategory || 'clothing',
           location: loc,
           city: loc,
           directions: shopDirections.trim() || null,
@@ -1573,8 +1760,21 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   transition={{ duration: 0.25 }}
                   className="flex-1 flex flex-col justify-between -mx-6 sm:-mx-8 -my-6 sm:-my-8"
                 >
-                  <SuccessScreen onContinue={() => setStep(6)} />
+                  <SuccessScreen onContinue={() => setStep(15)} />
                 </motion.div>
+              )}
+
+              {/* ========================================= */}
+              {/* SCREEN 15: CATEGORY SELECTION ("WHAT DO YOU SELL?") */}
+              {/* ========================================= */}
+              {step === 15 && (
+                <CategorySelectionStep
+                  selectedCategory={selectedSellerCategory}
+                  onSelectCategory={handleSelectSellerCategory}
+                  onContinue={handleSaveCategory}
+                  onBack={() => setStep(4)}
+                  loading={loading}
+                />
               )}
 
               {/* ========================================= */}
@@ -1592,7 +1792,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                   {/* Top Header Nav */}
                   <div className="flex items-center justify-between pt-1 pb-3">
                     <button
-                      onClick={() => setStep(4)}
+                      onClick={() => setStep(15)}
                       className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
                     >
                       <ArrowLeft className="w-5 h-5 stroke-[2.5]" />
@@ -1607,13 +1807,17 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         Tell people about<br />your brand.
                       </h1>
                       <p className="text-xs text-zinc-500 font-medium">
-                        Choose a description or write your own.
+                        {selectedSellerCategory === 'vehicles' 
+                          ? 'Choose an automotive profile or write your own.' 
+                          : selectedSellerCategory === 'general'
+                          ? 'Choose a store profile or write your own.'
+                          : 'Choose a description or write your own.'}
                       </p>
                     </div>
 
                     {/* Bio Presets Grid (3x3 matching design mockups) */}
                     <div className="grid grid-cols-3 gap-2 pt-1">
-                      {BIO_PRESETS.map((preset) => {
+                      {currentBioPresets.map((preset) => {
                         const isSelected = selectedBioCategory === preset.id;
                         const IconComp = preset.icon;
                         return (
@@ -2510,6 +2714,58 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
               <div className="text-center pt-3 border-t border-zinc-100 mt-2">
                 <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Step 3: Account</span>
+              </div>
+            </div>
+
+            {/* CARD 5 (STEP 15): WHAT DO YOU SELL? */}
+            <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex items-center justify-between pb-2">
+                  <ArrowLeft className="w-4 h-4 text-black" />
+                  <ProgressIndicator activeStep={4} totalSteps={5} />
+                </div>
+
+                <div className="space-y-3 py-2">
+                  <div className="space-y-1">
+                    <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
+                      What do you sell?
+                    </h1>
+                    <p className="text-xs text-zinc-500 font-normal">
+                      Select your primary category to customize your storefront.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-1">
+                    {ONBOARDING_CATEGORY_OPTIONS.map((opt) => (
+                      <div
+                        key={opt.id}
+                        className="p-3 rounded-2xl border border-zinc-200 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{opt.icon}</span>
+                          <div>
+                            <div className="text-xs font-extrabold text-black">{opt.label}</div>
+                            <div className="text-[10px] text-zinc-500">{opt.sublabel}</div>
+                          </div>
+                        </div>
+                        <div className="w-4 h-4 rounded-full border border-zinc-300" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <button
+                    onClick={() => { setViewMode('flow'); setStep(15); }}
+                    className="w-full bg-[#C6FF00] text-black font-extrabold text-xs py-3.5 px-4 rounded-xl flex items-center justify-between cursor-pointer"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                </div>
+              </div>
+              <div className="text-center pt-3 border-t border-zinc-100 mt-2">
+                <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Step 4: Category</span>
               </div>
             </div>
 

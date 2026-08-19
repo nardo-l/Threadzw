@@ -83,14 +83,20 @@ export const useShop = () => {
         setShop(null);
       } else {
         console.log("[SHOP] fetch completion: shop data found. Setting states.");
+        const normalizedShop = {
+          ...data,
+          page_type: data.page_type || 'clothing',
+          template_id: data.template_id || null,
+          page_config: data.page_config || {},
+        };
         setHasShop(true);
-        setShop(data);
+        setShop(normalizedShop);
         
         // Sync local storage cache with the real database record to make sure IDs match perfectly
         try {
           if (data.id) {
             console.log("[SHOP] Syncing shop to local storage cache under key:", `shop_${user.id}`);
-            localStorage.setItem(`shop_${user.id}`, JSON.stringify(data));
+            localStorage.setItem(`shop_${user.id}`, JSON.stringify(normalizedShop));
           }
         } catch (cacheErr) {
           console.warn('[SHOP] Error syncing fetched shop to cache:', cacheErr);

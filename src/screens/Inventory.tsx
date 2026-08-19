@@ -15,6 +15,10 @@ import { toast } from 'sonner';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { seedShopProductsIfEmpty } from '../utils/seedData';
 import { NotificationBell } from '../components/NotificationBell';
+import { VehicleInventoryView } from '../components/vehicles/VehicleInventoryView';
+import { canAddProduct, getEntitlements, isPro } from '../config/plans';
+import { UpgradePromptModal } from '../components/plans/UpgradePromptModal';
+import { resolveSellerCategory } from '../config/sellerCategories';
 
 interface Product {
   id: string;
@@ -43,6 +47,7 @@ export const Inventory: React.FC = () => {
   // States for interactive modals
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [shop, setShop] = useState<any>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -56,7 +61,7 @@ export const Inventory: React.FC = () => {
       try {
         const { data } = await supabase
           .from('shops')
-          .select('id, slug, handle, name')
+          .select('*')
           .eq('owner_id', session.user.id).order('created_at', { ascending: false }).limit(1)
           .maybeSingle();
         if (data) shopData = data;
@@ -108,18 +113,13 @@ export const Inventory: React.FC = () => {
         throw new Error('You do not own this product.');
       }
 
-      // Check 3-product limit on Free plan
-      const isPremium = shop.plan === 'premium' || shop.plan_type === 'premium';
-      if (!isPremium) {
-        const { count } = await supabase
-          .from('products')
-          .select('id', { count: 'exact', head: true })
-          .eq('shop_id', shop.id);
-
-        if (count !== null && count >= 3) {
-          toast.error('You have reached the 3-product limit on the Free plan. Premium with unlimited products is coming soon.');
-          return;
-        }
+      // Check product limit on plan
+      const activeCount = products.filter(p => p.is_published !== false).length;
+      const check = canAddProduct(shop, activeCount);
+      if (!check.allowed) {
+        toast.dismiss(toastId);
+        setShowUpgradeModal(true);
+        return;
       }
 
       const ownerId = session.user.id;
@@ -288,22 +288,50 @@ export const Inventory: React.FC = () => {
 
       {/* Main Catalog View Column */}
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 space-y-6 text-left">
-        
-        {/* Title drop banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-black text-zinc-950 tracking-tight leading-none uppercase">Products</h1>
-            <p className="text-xs text-zinc-500 mt-1.5 font-medium">Manage and organize your store products.</p>
-          </div>
-          
-          <button 
-            onClick={() => navigate('/add-product')}
-            className="px-4.5 py-3 rounded-2xl bg-[#C6FF00] hover:bg-opacity-95 text-zinc-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-sm self-start sm:self-center active:scale-[0.98] transition-transform"
-          >
-            <Plus size={15} strokeWidth={2.5} />
-            <span>Add Product</span>
-          </button>
-        </div>
+        {shop?.page_type === 'vehicles' ? (
+          <VehicleInventoryView shop={shop} />
+        ) : (
+          <>
+            {/* Title drop banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-black text-zinc-950 tracking-tight leading-none uppercase">Products</h1>
+                <p className="text-xs text-zinc-500 mt-1.5 font-medium">Manage and organize your store products.</p>
+              </div>
+              
+              <div className="flex items-center gap-2.5 self-start sm:self-center">
+                {(() => {
+                  const isClothing = (shop?.page_type || 'clothing').toLowerCase() === 'clothing' || shop?.page_type === 'storefront';
+                  const activeCount = products.filter(p => p.is_published !== false).length;
+                  const pro = isPro(shop);
+
+                  if (isClothing && !pro) {
+                    return (
+                      <span className="px-3 py-1.5 bg-zinc-100 border border-zinc-200 rounded-xl text-[11px] font-bold text-zinc-700">
+                        {activeCount} / 2 used
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
+
+                <button 
+                  onClick={() => {
+                    const activeCount = products.filter(p => p.is_published !== false).length;
+                    const check = canAddProduct(shop, activeCount);
+                    if (!check.allowed) {
+                      setShowUpgradeModal(true);
+                      return;
+                    }
+                    navigate('/add-product');
+                  }}
+                  className="px-4.5 py-3 rounded-2xl bg-[#C6FF00] hover:bg-opacity-95 text-zinc-950 font-bold text-xs uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-sm active:scale-[0.98] transition-transform"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                  <span>Add Product</span>
+                </button>
+              </div>
+            </div>
 
         {/* Search Assist and Sort Actions */}
         <div className="flex gap-2.5 items-center">
@@ -461,6 +489,8 @@ export const Inventory: React.FC = () => {
             })}
           </div>
         )}
+        </>
+      )}
       </main>
 
       {/* Slide-Up Overlay Action sheet panel */}
@@ -603,6 +633,14 @@ export const Inventory: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Upgrade Prompt Modal */}
+      <UpgradePromptModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        shop={shop}
+        reason="product_limit"
+      />
 
       {/* Global Bottom Navigation bar tab list */}
       <BottomNavBar />

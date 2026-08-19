@@ -27,6 +27,7 @@ import { LandingPage } from './screens/LandingPage';
 import { AdminLeads } from './screens/AdminLeads';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
+import { BioPageView } from './components/public-pages/BioPageView';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
 import { NardoPayCheckout } from './screens/NardoPayCheckout';
@@ -36,12 +37,39 @@ import { Analytics } from './screens/Analytics';
 import { Notifications } from './screens/Notifications';
 import { SuccessScreen } from './components/onboarding/SuccessScreen';
 import { ProPlanShowcase } from './screens/ProPlanShowcase';
+import { AddVehicle } from './screens/AddVehicle';
+import { EditVehicle } from './screens/EditVehicle';
+import { DesignSystemPart1 } from './components/design-system/DesignSystemPart1';
+import { DesignSystemPart2 } from './components/design-system/DesignSystemPart2';
+import { DesignSystemPart3 } from './components/design-system/DesignSystemPart3';
+import { DesignSystemPart4 } from './components/design-system/DesignSystemPart4';
+import { DesignSystemPart5 } from './components/design-system/DesignSystemPart5';
 
 
-type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase';
+type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase' | 'design-system' | 'design-system-2' | 'design-system-3' | 'design-system-4' | 'design-system-5';
 
 const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
+
+  if (path === '/design-system-part-5' || path === '/design-system' || path === '/presentation-5' || path === '/presentation') {
+    return { stage: 'design-system-5' };
+  }
+
+  if (path === '/design-system-part-4' || path === '/presentation-4') {
+    return { stage: 'design-system-4' };
+  }
+
+  if (path === '/design-system-part-3' || path === '/presentation-3') {
+    return { stage: 'design-system-3' };
+  }
+
+  if (path === '/design-system-part-2' || path === '/presentation-2') {
+    return { stage: 'design-system-2' };
+  }
+
+  if (path === '/design-system-part-1' || path === '/presentation-1') {
+    return { stage: 'design-system' };
+  }
 
   if (path === '/pro-showcase') {
     return { stage: 'pro-showcase' };
@@ -59,7 +87,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/add-product' || path.startsWith('/edit-product') || path === '/settings' || path === '/edit-shop') {
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/edit-shop') {
     return { stage: 'dashboard' };
   }
   if (path === '/pricing') {
@@ -94,7 +122,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -171,7 +199,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -328,7 +356,9 @@ function AppContent() {
       cleanPath === '/settings' ||
       cleanPath === '/edit-shop' ||
       cleanPath === '/add-product' ||
-      cleanPath.startsWith('/edit-product/')
+      cleanPath.startsWith('/edit-product/') ||
+      cleanPath === '/add-vehicle' ||
+      cleanPath.startsWith('/edit-vehicle/')
     );
   }, [appStage, cleanPath]);
 
@@ -455,6 +485,26 @@ function AppContent() {
   }
 
   // Standalone Login and Signup Router Blocks
+  if (cleanPath === '/design-system-part-5' || cleanPath === '/design-system' || cleanPath === '/presentation-5' || cleanPath === '/presentation' || appStage === 'design-system-5') {
+    return <DesignSystemPart5 />;
+  }
+
+  if (cleanPath === '/design-system-part-4' || cleanPath === '/presentation-4' || appStage === 'design-system-4') {
+    return <DesignSystemPart4 />;
+  }
+
+  if (cleanPath === '/design-system-part-3' || cleanPath === '/presentation-3' || appStage === 'design-system-3') {
+    return <DesignSystemPart3 />;
+  }
+
+  if (cleanPath === '/design-system-part-2' || cleanPath === '/presentation-2' || appStage === 'design-system-2') {
+    return <DesignSystemPart2 />;
+  }
+
+  if (cleanPath === '/design-system-part-1' || cleanPath === '/presentation-1' || appStage === 'design-system') {
+    return <DesignSystemPart1 />;
+  }
+
   if (cleanPath === '/login') {
     return <Login />;
   }
@@ -482,34 +532,34 @@ function AppContent() {
         <Route path="/store" element={<Navigate to="/shops" replace />} />
         
         {/* Support formatting in /s/:slug */}
-        <Route path="/s/:slug" element={<StorefrontPage />} />
-        <Route path="/s/:slug/products" element={<StorefrontPage />} />
-        <Route path="/s/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/s/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/s/:slug/about" element={<StorefrontPage />} />
+        <Route path="/s/:slug" element={<BioPageView />} />
+        <Route path="/s/:slug/products" element={<BioPageView />} />
+        <Route path="/s/:slug/product/:productId" element={<BioPageView />} />
+        <Route path="/s/:slug/category/:categoryId" element={<BioPageView />} />
+        <Route path="/s/:slug/about" element={<BioPageView />} />
 
         {/* Supports both /shop/:slug--id and /shop/:slug formats */}
-        <Route path="/shop/:slug" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/products" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/shop/:slug/about" element={<StorefrontPage />} />
+        <Route path="/shop/:slug" element={<BioPageView />} />
+        <Route path="/shop/:slug/products" element={<BioPageView />} />
+        <Route path="/shop/:slug/product/:productId" element={<BioPageView />} />
+        <Route path="/shop/:slug/category/:categoryId" element={<BioPageView />} />
+        <Route path="/shop/:slug/about" element={<BioPageView />} />
 
         {/* Supports both /store/:slug--id and /store/:slug formats */}
-        <Route path="/store/:slug" element={<StorefrontPage />} />
-        <Route path="/store/:slug/products" element={<StorefrontPage />} />
-        <Route path="/store/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/store/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/store/:slug/about" element={<StorefrontPage />} />
+        <Route path="/store/:slug" element={<BioPageView />} />
+        <Route path="/store/:slug/products" element={<BioPageView />} />
+        <Route path="/store/:slug/product/:productId" element={<BioPageView />} />
+        <Route path="/store/:slug/category/:categoryId" element={<BioPageView />} />
+        <Route path="/store/:slug/about" element={<BioPageView />} />
 
         {/* Supports direct root path, e.g. /:slug--id */}
-        <Route path="/:slug" element={<StorefrontPage />} />
-        <Route path="/:slug/products" element={<StorefrontPage />} />
-        <Route path="/:slug/product/:productId" element={<StorefrontPage />} />
-        <Route path="/:slug/category/:categoryId" element={<StorefrontPage />} />
-        <Route path="/:slug/about" element={<StorefrontPage />} />
+        <Route path="/:slug" element={<BioPageView />} />
+        <Route path="/:slug/products" element={<BioPageView />} />
+        <Route path="/:slug/product/:productId" element={<BioPageView />} />
+        <Route path="/:slug/category/:categoryId" element={<BioPageView />} />
+        <Route path="/:slug/about" element={<BioPageView />} />
 
-        <Route path="*" element={<StorefrontPage />} />
+        <Route path="*" element={<BioPageView />} />
       </Routes>
     );
   }
@@ -594,6 +644,8 @@ function AppContent() {
         <Route path="/edit-profile" element={<ShopEdit initialSubView="edit-profile" />} />
         <Route path="/add-product" element={<AddProduct />} />
         <Route path="/edit-product/:id" element={<EditProduct />} />
+        <Route path="/add-vehicle" element={<AddVehicle />} />
+        <Route path="/edit-vehicle/:id" element={<EditVehicle />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

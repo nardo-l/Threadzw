@@ -28,10 +28,15 @@ import { StorefrontTrackOrder } from '../components/storefront/StorefrontTrackOr
 import { StorefrontWishlist } from '../components/storefront/StorefrontWishlist';
 import { StorefrontAbout } from '../components/storefront/StorefrontAbout';
 import { StorefrontContact } from '../components/storefront/StorefrontContact';
+import { VehicleStorefrontView } from '../components/vehicles/VehicleStorefrontView';
 import { CartItem, StorefrontPageType } from '../components/storefront/types';
 import { ShopLogo } from '../components/ui/ShopImage';
 
-export const StorefrontPage: React.FC = () => {
+interface StorefrontPageProps {
+  preloadedShop?: any;
+}
+
+export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop }) => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -103,55 +108,74 @@ export const StorefrontPage: React.FC = () => {
 
   // Fetch shop metadata & inventories
   const loadStorefront = useCallback(async () => {
-    if (!slug) {
-      setError('not_found');
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      let cleanSlug = slug.replace(/^@/, '').trim().toLowerCase();
-      cleanSlug = cleanSlug.replace(/\s+/g, '').replace(/[^a-z0-9-]/g, '');
-      if (cleanSlug === 'demo') {
-        cleanSlug = 'him-clothing';
-      }
+      let shopResult = preloadedShop;
 
-      if (!cleanSlug) {
-        setError('not_found');
-        setLoading(false);
-        return;
-      }
-
-      // Query core Supabase database by slug
-      let { data: dbShop, error: shopErr1 } = await supabase
-        .from('shops')
-        .select('*')
-        .eq('slug', cleanSlug)
-        .maybeSingle();
-
-      if (shopErr1) {
-        console.error("Supabase Error querying shops by slug:", shopErr1);
-        throw shopErr1;
-      }
-
-      let shopResult = dbShop;
       if (!shopResult) {
-        // Fallback search by ID (only if slug is a valid UUID)
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (uuidRegex.test(slug)) {
-          const { data: shopById, error: shopErr3 } = await supabase
-            .from('shops')
-            .select('*')
-            .eq('id', slug)
-            .maybeSingle();
+        if (!slug) {
+          setError('not_found');
+          setLoading(false);
+          return;
+        }
 
-          if (shopErr3) {
-            console.error("Supabase Error querying shops by ID:", shopErr3);
-          } else {
-            shopResult = shopById;
+        let cleanSlug = slug.replace(/^@/, '').trim().toLowerCase();
+        cleanSlug = cleanSlug.replace(/\s+/g, '').replace(/[^a-z0-9-]/g, '');
+        if (cleanSlug === 'demo') {
+          cleanSlug = 'him-clothing';
+        }
+
+        if (!cleanSlug) {
+          setError('not_found');
+          setLoading(false);
+          return;
+        }
+
+        // Query core Supabase database by slug
+        let { data: dbShop, error: shopErr1 } = await supabase
+          .from('shops')
+          .select('*')
+          .eq('slug', cleanSlug)
+          .maybeSingle();
+
+        if (shopErr1) {
+          console.error("Supabase Error querying shops by slug:", shopErr1);
+          throw shopErr1;
+        }
+
+        shopResult = dbShop;
+
+        if (!shopResult && cleanSlug.includes('--')) {
+          const parts = cleanSlug.split('--');
+          const possibleId = parts[parts.length - 1];
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(possibleId)) {
+            const { data: shopById } = await supabase
+              .from('shops')
+              .select('*')
+              .eq('id', possibleId)
+              .maybeSingle();
+            if (shopById) shopResult = shopById;
+          }
+        }
+
+        if (!shopResult) {
+          // Fallback search by ID (only if slug is a valid UUID)
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (uuidRegex.test(slug)) {
+            const { data: shopById, error: shopErr3 } = await supabase
+              .from('shops')
+              .select('*')
+              .eq('id', slug)
+              .maybeSingle();
+
+            if (shopErr3) {
+              console.error("Supabase Error querying shops by ID:", shopErr3);
+            } else {
+              shopResult = shopById;
+            }
           }
         }
       }
@@ -173,6 +197,9 @@ export const StorefrontPage: React.FC = () => {
         const { description: plainDesc, config } = parseShopConfig(shopResult.description || '');
         shopResult = {
           ...shopResult,
+          page_type: shopResult.page_type || 'clothing',
+          template_id: shopResult.template_id || null,
+          page_config: shopResult.page_config || {},
           description: plainDesc,
           ...config
         };
@@ -245,12 +272,12 @@ export const StorefrontPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [slug]);
+  }, [slug, preloadedShop]);
 
   // Fetch shop metadata & inventories on mount or slug change
   useEffect(() => {
     loadStorefront();
-  }, [slug, loadStorefront]);
+  }, [slug, preloadedShop, loadStorefront]);
 
   // Dynamic SEO & Social Sharing Meta Tags Update
   useEffect(() => {
@@ -656,6 +683,11 @@ export const StorefrontPage: React.FC = () => {
         </button>
       </div>
     );
+  }
+
+  // Specialized Vehicle Showroom Flow for Cars & Automotive Dealers
+  if (shop?.page_type === 'vehicles') {
+    return <VehicleStorefrontView shop={shop} />;
   }
 
   // RENDER DYNAMIC PAGE
