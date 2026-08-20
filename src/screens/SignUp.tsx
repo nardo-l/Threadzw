@@ -565,7 +565,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           banner_url: null,
           is_active: true,
           plan: 'free',
-          product_limit: 3,
+          product_limit: 9,
           premium_status: 'coming_soon',
           page_type: selectedSellerCategory || 'clothing',
           template_id: null,
@@ -838,7 +838,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 3,
+          product_limit: 9,
           premium_status: 'coming_soon',
         };
         const { data: insertedShop, error: insertErr } = await supabase
@@ -976,7 +976,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         await paymentService.createPaymentSession({
           shopId: targetShopId,
           userId: user.id,
-          amount: 20.0,
+          amount: 9.00,
           currency: 'USD',
           provider: 'nardopay'
         });
@@ -1044,7 +1044,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 3,
+          product_limit: 9,
           premium_status: 'coming_soon',
           payment_status: 'free',
           payment_required: false,
@@ -1071,7 +1071,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 3,
+          product_limit: 9,
           premium_status: 'coming_soon',
           payment_status: 'free',
           payment_required: false,
@@ -1241,7 +1241,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 3,
+          product_limit: 9,
           premium_status: 'coming_soon',
           payment_status: 'free',
           payment_required: false,
@@ -1268,7 +1268,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 3,
+          product_limit: 9,
           premium_status: 'coming_soon',
           payment_status: 'free',
           payment_required: false,
@@ -2292,7 +2292,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
-                          <span>Up to 3 products</span>
+                          <span>Up to 9 products</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
@@ -2825,7 +2825,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       Free Tier Launch
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      Limited free tier with up to 3 products for Zimbabwean merchants.
+                      Limited free tier with up to 9 products for Zimbabwean merchants.
                     </p>
                   </div>
 

@@ -341,7 +341,7 @@ export class SubscriptionService {
           }
 
           // Expected verified price check
-          const expectedAmount = isVehicle ? 30.00 : 1.59;
+          const expectedAmount = isVehicle ? 30.00 : 9.00;
           const verifiedAmount = amount ? Number(amount) : expectedAmount;
 
           // A. Update public.subscriptions
@@ -621,7 +621,7 @@ export class SubscriptionService {
       category: category,
       status: subscription?.status || (shop.plan === 'pro' ? 'active' : 'inactive'),
       billingCycle: subscription?.billing_cycle || (category === 'vehicles' ? 'yearly' : 'monthly'),
-      amount: subscription?.amount || (category === 'vehicles' ? 30.00 : 1.59),
+      amount: subscription?.amount || (category === 'vehicles' ? 30.00 : 9.00),
       currency: subscription?.currency || 'USD',
       currentPeriodStart: subscription?.current_period_start || null,
       currentPeriodEnd: subscription?.current_period_end || null,

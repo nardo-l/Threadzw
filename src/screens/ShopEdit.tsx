@@ -647,7 +647,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
       {/* VIEW 2: EDIT PROFILE PAGE (TikTok Style Rows) */}
       {/* ============================================================ */}
       {view === 'edit-profile' && (
-        <div className="max-w-md mx-auto px-4 pt-4 sm:px-6">
+        <div className="max-w-md mx-auto px-4 pt-4 pb-32 sm:px-6">
           
           {/* Header Bar */}
           <div className="flex items-center gap-3 pb-6 border-b border-zinc-100 mb-4">
@@ -801,20 +801,36 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
 
       {/* Field Input Dialog Modal */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-zinc-100 animate-in fade-in slide-in-from-bottom-4 duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-extrabold text-black">
-                {activeModal === 'shopName' && 'Edit Shop Name'}
-                {activeModal === 'handle' && 'Edit Username'}
-                {activeModal === 'bio' && 'Edit Bio'}
-                {activeModal === 'directions' && 'Edit Shop Directions'}
-                {activeModal === 'category' && 'Select Category'}
-                {activeModal === 'whatsapp' && 'Edit WhatsApp Number'}
-              </h3>
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setActiveModal(null);
+          }}
+        >
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-zinc-100/90 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto my-auto">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-extrabold text-black">
+                  {activeModal === 'shopName' && 'Edit Shop Name'}
+                  {activeModal === 'handle' && 'Edit Username'}
+                  {activeModal === 'bio' && 'Edit Bio'}
+                  {activeModal === 'directions' && 'Edit Shop Directions'}
+                  {activeModal === 'category' && 'Select Category'}
+                  {activeModal === 'whatsapp' && 'Edit WhatsApp Number'}
+                </h3>
+                <p className="text-[10px] text-zinc-500 font-medium mt-0.5">
+                  {activeModal === 'shopName' && 'The public name shown on your storefront'}
+                  {activeModal === 'handle' && 'Your unique storefront handle and link (@handle)'}
+                  {activeModal === 'bio' && 'Short description of what your shop sells'}
+                  {activeModal === 'directions' && 'Clear walking or driving directions to your location'}
+                  {activeModal === 'category' && 'Primary category for your catalog'}
+                  {activeModal === 'whatsapp' && 'Customers will tap this number to place orders'}
+                </p>
+              </div>
               <button 
                 onClick={() => setActiveModal(null)}
-                className="p-1 rounded-full text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer"
+                className="p-1 rounded-full text-zinc-400 hover:text-black hover:bg-zinc-100 transition-colors cursor-pointer shrink-0 ml-2"
+                aria-label="Close dialog"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -828,56 +844,86 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
                     onClick={() => {
                       setTempValue(cat);
                     }}
-                    className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-between ${
-                      tempValue === cat ? 'bg-[#C6FF00] text-black' : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
+                    className={`w-full text-left p-3.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
+                      tempValue === cat ? 'bg-[#C6FF00] text-black shadow-xs' : 'bg-zinc-50 text-zinc-700 hover:bg-zinc-100'
                     }`}
                   >
                     <span>{cat}</span>
-                    {tempValue === cat && <Check className="w-4 h-4 text-black" />}
+                    {tempValue === cat && <Check className="w-4 h-4 text-black stroke-[3]" />}
                   </button>
                 ))}
               </div>
             ) : activeModal === 'bio' || activeModal === 'directions' ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <textarea
                   value={tempValue}
                   onChange={(e) => setTempValue(e.target.value)}
                   rows={activeModal === 'directions' ? 5 : 3}
+                  autoFocus
                   placeholder={
                     activeModal === 'directions'
-                      ? "Enter shop directions step-by-step..."
-                      : "Enter bio..."
+                      ? "e.g. Go to Mbali Mall first floor shop number 23 opposite the game arena..."
+                      : "e.g. Premium streetwear & sneakers in Harare. Nationwide delivery..."
                   }
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-3 text-xs text-black font-medium focus:outline-none focus:border-black transition-colors resize-y min-h-[110px] max-h-[240px] overflow-y-auto leading-relaxed"
+                  className="w-full bg-zinc-50 border-2 border-zinc-200 focus:border-black rounded-2xl p-3.5 text-xs text-black font-medium focus:outline-none transition-colors resize-y min-h-[120px] max-h-[220px] overflow-y-auto leading-relaxed"
                 />
                 {activeModal === 'directions' && (
                   <p className="text-[10px] text-zinc-500 font-medium pl-1">
-                    Tip: Enter each direction step on a new line.
+                    Tip: Enter each direction step on a new line for easy reading.
                   </p>
                 )}
               </div>
+            ) : activeModal === 'whatsapp' ? (
+              <div className="space-y-2">
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-emerald-600">
+                    <MessageCircle className="w-4 h-4 fill-emerald-600" />
+                  </div>
+                  <input
+                    type="tel"
+                    value={tempValue}
+                    onChange={(e) => setTempValue(e.target.value)}
+                    autoFocus
+                    placeholder="e.g. +263 77 123 4567 or 0771234567"
+                    className="w-full bg-zinc-50 border-2 border-zinc-200 focus:border-black rounded-2xl pl-10 pr-4 py-3.5 text-xs text-black font-medium focus:outline-none transition-colors"
+                  />
+                </div>
+                <p className="text-[10px] text-zinc-500 font-medium pl-1">
+                  Enter with country code (e.g. +263 77...) or local format.
+                </p>
+              </div>
             ) : (
-              <input
-                type="text"
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                placeholder="Enter value..."
-                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl p-3 text-xs text-black font-medium focus:outline-none focus:border-black transition-colors"
-              />
+              <div className="space-y-2">
+                <div className="relative">
+                  {activeModal === 'handle' && (
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-xs">@</span>
+                  )}
+                  <input
+                    type="text"
+                    value={tempValue}
+                    onChange={(e) => setTempValue(e.target.value)}
+                    autoFocus
+                    placeholder={activeModal === 'shopName' ? "e.g. Fresh Fits ZW" : "e.g. freshfits"}
+                    className={`w-full bg-zinc-50 border-2 border-zinc-200 focus:border-black rounded-2xl ${activeModal === 'handle' ? 'pl-8' : 'px-3.5'} py-3.5 text-xs text-black font-medium focus:outline-none transition-colors`}
+                  />
+                </div>
+              </div>
             )}
 
             <div className="flex items-center gap-3 mt-6">
               <button
+                type="button"
                 onClick={() => setActiveModal(null)}
-                className="flex-1 py-3 bg-zinc-100 text-zinc-700 font-bold text-xs rounded-xl hover:bg-zinc-200 transition-colors cursor-pointer"
+                className="flex-1 py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={saveFieldModal}
-                className="flex-1 py-3 bg-black text-white font-bold text-xs rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="flex-1 py-3 bg-[#C6FF00] hover:bg-[#b5eb00] text-black font-extrabold text-xs rounded-xl transition-colors cursor-pointer shadow-xs"
               >
-                Done
+                Save
               </button>
             </div>
           </div>

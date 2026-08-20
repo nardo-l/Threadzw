@@ -52,11 +52,11 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
       price: 0,
       currency: 'USD',
       billingCycle: 'none',
-      maxActiveListings: 2,
+      maxActiveListings: 9,
       maxImagesPerListing: 5,
       description: 'Get started with essential online fashion storefront tools',
       features: [
-        'Up to 2 active products',
+        'Up to 9 active products',
         '1 basic storefront template',
         'WhatsApp direct ordering',
         'Basic inventory management',
@@ -68,16 +68,17 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
       id: 'pro',
       name: 'Clothing Pro',
       category: 'clothing',
-      price: 1.59,
+      price: 9,
       currency: 'USD',
-      billingCycle: 'monthly',
+      billingCycle: 'none',
       maxActiveListings: null, // Unlimited
       maxImagesPerListing: 10,
       badge: 'Most Popular',
       popular: true,
-      description: 'Unlimited listings & premium branding for fashion stores',
+      description: 'Unlimited listings & premium branding for fashion stores ($9 one-off)',
       features: [
         'Unlimited active products',
+        '$9 USD one-off lifetime access',
         'All clothing storefront templates',
         'Custom storefront colours & branding',
         'Remove ThreadZW branding',
@@ -141,30 +142,30 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
       price: 0,
       currency: 'USD',
       billingCycle: 'none',
-      maxActiveListings: null, // Free only initially with standard limits
+      maxActiveListings: 9,
       maxImagesPerListing: 8,
       description: 'Essential tools to sell products of any kind',
       features: [
-        'Active product catalog',
+        'Up to 9 active products',
         'Custom storefront link',
         'WhatsApp direct inquiries',
         'Storefront customization',
         'Order logging'
       ]
     },
-    // General Pro placeholder matching free fallback (General paid plan deferred as per requirements)
     pro: {
       id: 'pro',
-      name: 'General Free',
+      name: 'General Pro',
       category: 'general',
-      price: 0,
+      price: 9,
       currency: 'USD',
       billingCycle: 'none',
       maxActiveListings: null,
-      maxImagesPerListing: 8,
-      description: 'Essential tools to sell products of any kind',
+      maxImagesPerListing: 10,
+      description: 'Unlimited catalog and custom seller branding ($9 one-off)',
       features: [
-        'Active product catalog',
+        'Unlimited active products',
+        '$9 USD one-off lifetime access',
         'Custom storefront link',
         'WhatsApp direct inquiries',
         'Storefront customization'
@@ -222,16 +223,14 @@ export function getPlanConfig(shop: Shop | null | undefined): PlanConfig {
 
 /**
  * Active listing limit for clothing products.
- * - Clothing Free: 2 active products
- * - Clothing Pro: null (unlimited)
- * - General Free: null (unlimited)
+ * - Free trial: 9 active products
+ * - Pro plan: null (unlimited)
  */
 export function getProductLimit(shop: Shop | null | undefined): number | null {
-  const category = resolveSellerCategory(shop?.page_type);
-  if (category === 'clothing') {
-    return isPro(shop) ? null : 2;
+  if (isPro(shop)) {
+    return null;
   }
-  return null; // General is unrestricted in this phase
+  return 9; // Free trial allows up to 9 products
 }
 
 /**
@@ -315,7 +314,7 @@ export function canAddProduct(
     count: currentActiveCount,
     reason: allowed
       ? undefined
-      : `You've reached the ${limit}-product limit on the Free plan. Upgrade to Clothing Pro for unlimited products.`
+      : `You've reached the ${limit}-product limit on the Free trial. Upgrade to Pro ($9 one-off) for unlimited products.`
   };
 }
 

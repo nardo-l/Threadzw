@@ -15,6 +15,7 @@ import { ProductCategoryCard } from '../components/ProductCategoryCard';
 import { setOnboardingStep } from '../hooks/useOnboarding';
 import { canAddProduct, getProductImageLimit } from '../config/plans';
 import { UpgradePromptModal } from '../components/plans/UpgradePromptModal';
+import { ProUpgradePaywallCard } from '../components/plans/ProUpgradePaywallCard';
 import { Shop } from '../types';
 
 interface SizeStock {
@@ -150,6 +151,7 @@ export const AddProduct: React.FC = () => {
 
   // Step 6: Review & Publish
   const [isFeatured, setIsFeatured] = useState(false);
+  const [publishedCount, setPublishedCount] = useState<number>(0);
 
   // Default category on globalCategories load
   useEffect(() => {
@@ -181,9 +183,14 @@ export const AddProduct: React.FC = () => {
               .eq('shop_id', shop.id)
               .eq('is_published', true);
 
+            if (typeof activeCount === 'number') {
+              setPublishedCount(activeCount);
+            }
+
             const check = canAddProduct(shop as unknown as Shop, activeCount || 0);
             if (!check.allowed) {
               setIsAtLimit(true);
+              setShowUpgradeModal(true);
             }
           }
         }
@@ -590,67 +597,70 @@ export const AddProduct: React.FC = () => {
         throw new Error("Cannot create product: No active, valid shop found for your profile.");
       }
 
-      // Enforce product creation via the isolated v2 endpoint
-      const res = await fetch('/api/products/create-v2', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          shopId: currentShopId,
-          productPayload
-        })
-      });
+      // Direct product insertion using authenticated Supabase client
+      const { data: newProduct, error: insertError } = await supabase
+        .from('products')
+        .insert(productPayload)
+        .select('*')
+        .single();
 
-      const responseText = await res.text();
-      let resData: any = {};
-      try {
-        resData = responseText ? JSON.parse(responseText) : {};
-      } catch (parseErr) {
-        console.error('Failed to parse response as JSON:', responseText);
-        throw new Error(`Server error (${res.status}): ${responseText.substring(0, 100)}`);
-      }
+      if (insertError) {
+        console.error('[AddProduct] Supabase product insert error:', insertError);
+        const errMsg = insertError.message || '';
+        const errDetails = insertError.details || '';
+        const errCode = insertError.code || '';
 
-      if (!res.ok) {
-        const errorObj = typeof resData.error === 'object' && resData.error !== null ? resData.error : {};
         const isLimitReached = 
-          resData.upgradeRequired || 
-          errorObj.upgradeRequired ||
-          resData.error === 'PRODUCT_LIMIT_REACHED' || 
-          resData.code === 'PRODUCT_LIMIT_REACHED' || 
-          errorObj.code === 'PRODUCT_LIMIT_REACHED' ||
-          res.status === 403;
+          errMsg.includes('PRODUCT_LIMIT_REACHED') ||
+          errMsg.includes('limit reached') ||
+          errMsg.includes('quota') ||
+          errDetails.includes('PRODUCT_LIMIT_REACHED') ||
+          errDetails.includes('quota') ||
+          errCode === '23514';
 
         if (isLimitReached) {
           toast.dismiss(apiToast);
-          const limitMessage = 
-            resData.message || 
-            errorObj.message || 
-            'You have reached the maximum number of products allowed on your current plan. Upgrade to Pro to add more products.';
-          toast.error(limitMessage, { duration: 6000 });
+          toast.error('You have reached the maximum 9 products allowed on the Free trial. Upgrade to Pro ($9 one-off) to add unlimited products.', { duration: 6000 });
+          setIsAtLimit(true);
           setShowUpgradeModal(true);
           setPublishing(false);
           return;
         }
 
-        const fallbackMsg = 
-          resData.message || 
-          errorObj.message || 
-          (typeof resData.error === 'string' ? resData.error : null) || 
-          `Server error (${res.status})`;
-          
-        throw new Error(fallbackMsg);
+        throw new Error(errMsg || 'Failed to publish product. Please try again.');
       }
 
-      const generatedId = resData.product?.id;
+      // Non-blocking inventory variant sync
+      if (newProduct?.id && Array.isArray(configuredSizes) && configuredSizes.length > 0) {
+        try {
+          for (const sizeObj of configuredSizes) {
+            if (sizeObj && sizeObj.size) {
+              const stockQty = typeof sizeObj.quantity === 'number' 
+                ? sizeObj.quantity 
+                : (parseInt(sizeObj.quantity, 10) || 0);
+
+              await supabase
+                .from('inventory')
+                .upsert({
+                  product_id: newProduct.id,
+                  size: String(sizeObj.size),
+                  stock_count: stockQty
+                });
+            }
+          }
+        } catch (invErr) {
+          console.warn('[AddProduct] Inventory variant sync notice:', invErr);
+        }
+      }
+
+      const generatedId = newProduct.id;
       setProductId(generatedId);
       await setOnboardingStep(currentShopId, 'completed');
 
       toast.success('Product live! 🚀', { id: apiToast });
       setIsSuccess(true);
     } catch (err: any) {
-      console.error(err);
+      console.error('[AddProduct] Publish error:', err);
       toast.error('Failed to publish product. ' + (err.message || 'Please try again.'), { id: apiToast });
     } finally {
       setPublishing(false);
@@ -729,6 +739,20 @@ export const AddProduct: React.FC = () => {
     })
   };
 
+  if (isAtLimit && !isSuccess) {
+    return (
+      <ProUpgradePaywallCard
+        shop={shopData}
+        productCount={publishedCount || 9}
+        onBack={() => navigate('/inventory')}
+        onSuccess={() => {
+          setIsAtLimit(false);
+          setStep(1);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white text-zinc-950 font-sans overflow-y-auto select-none relative flex flex-col justify-between">
       
@@ -775,7 +799,97 @@ export const AddProduct: React.FC = () => {
       {/* CORE CONTAINER */}
       <div className="flex-1 w-full max-w-[430px] mx-auto px-5 pt-4 pb-24 flex flex-col justify-start relative">
         <AnimatePresence initial={false} custom={direction} mode="wait">
-          {!isSuccess ? (
+          {isAtLimit && !isSuccess ? (
+            <motion.div
+              key="limit-paywall"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="w-full flex-1 flex flex-col justify-between py-6 space-y-6"
+            >
+              <div className="space-y-6 text-center">
+                <div className="w-16 h-16 rounded-3xl bg-[#C8FF00]/10 border border-[#C8FF00]/30 text-black flex items-center justify-center mx-auto shadow-xs">
+                  <Sparkles size={28} className="text-zinc-950" />
+                </div>
+
+                <div className="space-y-2">
+                  <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-zinc-950 bg-[#C8FF00] px-3 py-1 rounded-full border border-black/10">
+                    Free Trial Limit ({publishedCount || 9} / 9 Products)
+                  </span>
+                  <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950 mt-2">
+                    Product Limit Reached
+                  </h1>
+                  <p className="text-xs text-zinc-600 font-medium leading-relaxed max-w-xs mx-auto">
+                    You have published {publishedCount || 9} products on the Free trial. Upgrade to ThreadZW Pro to unlock unlimited products for your storefront.
+                  </p>
+                </div>
+
+                {/* Pro Tier Summary Card */}
+                <div className="bg-zinc-950 text-white p-6 rounded-3xl border border-zinc-800 space-y-4 text-left shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-900 font-extrabold bg-[#C8FF00] px-2.5 py-0.5 rounded-full">
+                        Growth Tier
+                      </span>
+                      <h3 className="text-lg font-black uppercase tracking-tight text-white mt-1">
+                        ThreadZW Pro
+                      </h3>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-2xl font-black text-[#C8FF00]">$9</span>
+                      <span className="text-[10px] text-zinc-400 font-semibold block uppercase font-mono">One-Off</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 border-t border-zinc-800 pt-3">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+                      <div className="w-4 h-4 rounded-full bg-[#C8FF00]/20 text-[#C8FF00] flex items-center justify-center shrink-0">
+                        <Check size={11} className="stroke-[3]" />
+                      </div>
+                      <span>Unlimited active product listings</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+                      <div className="w-4 h-4 rounded-full bg-[#C8FF00]/20 text-[#C8FF00] flex items-center justify-center shrink-0">
+                        <Check size={11} className="stroke-[3]" />
+                      </div>
+                      <span>Verified storefront badge</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+                      <div className="w-4 h-4 rounded-full bg-[#C8FF00]/20 text-[#C8FF00] flex items-center justify-center shrink-0">
+                        <Check size={11} className="stroke-[3]" />
+                      </div>
+                      <span>Priority marketplace search placement</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-semibold text-zinc-200">
+                      <div className="w-4 h-4 rounded-full bg-[#C8FF00]/20 text-[#C8FF00] flex items-center justify-center shrink-0">
+                        <Check size={11} className="stroke-[3]" />
+                      </div>
+                      <span>Direct WhatsApp customer ordering</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="w-full h-14 rounded-2xl bg-[#C8FF00] hover:bg-[#b2e600] text-zinc-950 font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                >
+                  <Sparkles size={16} />
+                  <span>Upgrade to Pro — $9 USD One-Off</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/inventory')}
+                  className="w-full h-12 rounded-2xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  Manage Existing Products
+                </button>
+              </div>
+            </motion.div>
+          ) : !isSuccess ? (
             <motion.div
               key={`add-step-${step}`}
               custom={direction}

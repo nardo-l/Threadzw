@@ -103,7 +103,7 @@ export const NardoPayCheckout: React.FC = () => {
       const subPayload: any = {
         status: 'active',
         plan: 'pro',
-        amount: 1.00,
+        amount: 9.00,
         currency: 'USD',
         subscription_started_at: nowISO,
         subscription_ends_at: endsAt,
@@ -124,7 +124,11 @@ export const NardoPayCheckout: React.FC = () => {
       if (updateError) throw updateError;
 
       await supabase.from('shops').update({
+        plan: 'pro',
+        product_limit: null,
         payment_status: 'paid',
+        payment_amount: 9.00,
+        payment_currency: 'USD',
         payment_required: false,
         is_active: true,
         paid_at: nowISO
@@ -135,8 +139,8 @@ export const NardoPayCheckout: React.FC = () => {
 
       // Redirect after a success countdown
       setTimeout(() => {
-        navigate('/dashboard?payment=success');
-      }, 2000);
+        navigate('/subscription/success');
+      }, 1500);
 
     } catch (err: any) {
       console.error('NardoPay transaction processing failed:', err);
@@ -159,7 +163,7 @@ export const NardoPayCheckout: React.FC = () => {
               Payment Secured
             </h2>
             <p className="text-zinc-400 text-sm font-medium">
-              Your transaction of $1.00 USD has been completed. Re-entering ThreadZW application workspace...
+              Your transaction of $9.00 USD has been completed. Re-entering ThreadZW application workspace...
             </p>
           </div>
           <div className="flex items-center justify-center gap-2 text-zinc-600 font-mono text-xs">
@@ -200,7 +204,7 @@ export const NardoPayCheckout: React.FC = () => {
             NardoPay Secure Authorization
           </h2>
           <p className="text-zinc-500 text-xs font-semibold leading-relaxed">
-            Please enter your WhatsApp details to authorize subscription fee of <strong className="text-white font-black">$1.00 USD</strong>.
+            Please enter your WhatsApp details to authorize subscription fee of <strong className="text-white font-black">$9.00 USD</strong>.
           </p>
         </div>
 
@@ -218,7 +222,7 @@ export const NardoPayCheckout: React.FC = () => {
           </div>
           <div className="bg-[#25D366]/10 px-3 py-1.5 rounded-lg border border-[#25D366]/20 flex items-center gap-1">
             <DollarSign size={14} className="text-[#25D366]" />
-            <span className="text-sm font-black text-[#25D366] font-mono">1.00</span>
+            <span className="text-sm font-black text-[#25D366] font-mono">9.00</span>
           </div>
         </div>
 
@@ -253,7 +257,7 @@ export const NardoPayCheckout: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin text-black" />
             ) : (
               <>
-                <span>Securely Authorize $1.00 USD</span>
+                <span>Securely Authorize $9.00 USD</span>
                 <ArrowRight size={14} className="stroke-[2.5px]" />
               </>
             )}

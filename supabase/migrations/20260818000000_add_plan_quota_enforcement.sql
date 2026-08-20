@@ -5,7 +5,7 @@
 
 -- 1. Product Quota Enforcement Function (Clothing Sellers)
 -- Rules:
---   - Clothing Free: Max 2 active products
+--   - Clothing Free/Trial: Max 9 active products
 --   - Clothing Pro: Unlimited active products
 --   - General Sellers: Retains existing general functionality (unrestricted)
 --   - Inactive products (is_published = false, draft, paused, archived, deleted) do not count
@@ -59,14 +59,101 @@ BEGIN
           AND is_published IS TRUE
           AND (status IS NULL OR LOWER(status) NOT IN ('draft', 'paused', 'archived', 'deleted'));
 
-        -- Free clothing limit is 2 active products
-        IF v_active_count >= 2 THEN
-            RAISE EXCEPTION 'Clothing Free plan limit reached: maximum 2 active products. Upgrade to Clothing Pro for unlimited active products.'
+        -- Free/trial plan limit is 9 active products
+        IF v_active_count >= 9 THEN
+            RAISE EXCEPTION 'PRODUCT_LIMIT_REACHED: Free trial allows a maximum of 9 products. Upgrade to Pro for unlimited products.'
                 USING ERRCODE = 'check_violation';
         END IF;
     END IF;
 
     RETURN NEW;
+END;
+$$;
+
+-- Helper RPC: confirm_shop_payment
+CREATE OR REPLACE FUNCTION public.confirm_shop_payment(
+    target_shop_id UUID,
+    target_payment_reference TEXT,
+    target_transaction_id TEXT,
+    target_amount NUMERIC
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    UPDATE public.shops
+    SET 
+        plan = 'pro',
+        product_limit = NULL,
+        payment_status = 'paid',
+        payment_amount = target_amount,
+        payment_currency = 'USD',
+        payment_reference = target_payment_reference,
+        payment_required = false,
+        paid_at = NOW(),
+        updated_at = NOW()
+    WHERE id = target_shop_id;
+
+    INSERT INTO public.shop_payments (
+        shop_id,
+        amount,
+        currency,
+        provider,
+        payment_reference,
+        status,
+        created_at,
+        paid_at
+    )
+    VALUES (
+        target_shop_id,
+        target_amount,
+        'USD',
+        'nardopay',
+        target_payment_reference,
+        'paid',
+        NOW(),
+        NOW()
+    )
+    ON CONFLICT (shop_id) DO UPDATE
+    SET 
+        amount = target_amount,
+        status = 'paid',
+        payment_reference = target_payment_reference,
+        paid_at = NOW(),
+        updated_at = NOW();
+
+    RETURN jsonb_build_object('success', true, 'shop_id', target_shop_id, 'plan', 'pro');
+END;
+$$;
+
+-- Helper RPC: shop_has_paid
+CREATE OR REPLACE FUNCTION public.shop_has_paid(target_shop_id UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_has_paid BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 FROM public.shops
+        WHERE id = target_shop_id
+          AND (plan = 'pro' OR (payment_status = 'paid' AND payment_amount >= 9.00))
+    ) INTO v_has_paid;
+
+    IF v_has_paid THEN
+        RETURN TRUE;
+    END IF;
+
+    SELECT EXISTS (
+        SELECT 1 FROM public.shop_payments
+        WHERE shop_id = target_shop_id
+          AND status = 'paid'
+          AND amount >= 9.00
+    ) INTO v_has_paid;
+
+    RETURN v_has_paid;
 END;
 $$;
 

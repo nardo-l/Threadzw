@@ -235,7 +235,7 @@ export const Settings: React.FC = () => {
                 </span>
               </div>
               <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                Your ThreadZW storefront is running on the limited free tier (up to 3 products) with zero monthly fees and WhatsApp ordering enabled.
+                Your ThreadZW storefront is running on the limited free tier (up to 9 products) with zero monthly fees and WhatsApp ordering enabled.
               </p>
             </div>
           </div>

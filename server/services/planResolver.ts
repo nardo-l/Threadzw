@@ -60,7 +60,7 @@ export function resolveProPlanForShop(shop: {
     return {
       category: 'clothing',
       plan: 'pro',
-      amount: 1.59,
+      amount: 9.00,
       currency: 'USD',
       billing_cycle: 'monthly',
       planName: 'ThreadZW Clothing Pro',
@@ -84,7 +84,7 @@ export function resolveProPlanForShop(shop: {
     return {
       category: 'general',
       plan: 'pro',
-      amount: 1.59,
+      amount: 9.00,
       currency: 'USD',
       billing_cycle: 'monthly',
       planName: 'ThreadZW Store Pro',

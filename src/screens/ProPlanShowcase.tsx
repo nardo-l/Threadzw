@@ -97,7 +97,7 @@ export function ProPlanShowcase() {
 
                   <h3 className="text-xl font-bold text-slate-900 tracking-tight">You’ve reached your free limit</h3>
                   <p className="text-xs text-slate-600 mt-1 mb-4 leading-relaxed">
-                    Free shops can have up to 3 products. Upgrade to Pro to add <span className="font-semibold text-slate-900">unlimited products</span> and grow your shop.
+                    Free shops can have up to 9 products. Upgrade to Pro to add <span className="font-semibold text-slate-900">unlimited products</span> and grow your shop.
                   </p>
 
                   {/* Comparison Cards */}
@@ -105,11 +105,11 @@ export function ProPlanShowcase() {
                     <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 flex flex-col justify-between">
                       <div>
                         <span className="text-[10px] font-bold tracking-wider uppercase text-slate-500">Free Plan</span>
-                        <div className="text-2xl font-black text-slate-900 mt-1">3</div>
+                        <div className="text-2xl font-black text-slate-900 mt-1">9</div>
                         <div className="text-[11px] text-slate-600">products</div>
                       </div>
                       <div className="mt-3 space-y-1 pt-2 border-t border-slate-200 text-[11px] text-slate-600">
-                        <div className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> Up to 3 products</div>
+                        <div className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> Up to 9 products</div>
                         <div className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> Basic storefront</div>
                       </div>
                     </div>
@@ -422,11 +422,11 @@ export function ProPlanShowcase() {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-600 font-medium">Product usage</span>
-                      <span className="font-extrabold text-rose-600">3 / 3 products</span>
+                      <span className="font-extrabold text-rose-600">9 / 9 products</span>
                     </div>
                     <div className="bg-rose-50 p-2 rounded-lg text-[10px] text-rose-800 font-medium flex items-center gap-1.5 mt-1">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>You have 8 products, but Free allows only 3. Upgrade to manage all.</span>
+                      <span>Free trial allows up to 9 products. Upgrade to Pro to add unlimited products.</span>
                     </div>
                   </div>
                 </div>

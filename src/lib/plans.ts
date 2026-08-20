@@ -19,14 +19,14 @@ export const PLANS: Record<string, PlanDetails> = {
       firstMonth: 0.00,
       recurring: 0.00,
     },
-    maxProducts: 2,
+    maxProducts: 9,
     featuredDays: 0,
   },
 };
 
 export const getPlanAmount = (plan: string, billingCycle: string, isFirstPeriod: boolean) => {
   if (plan === 'pro' && billingCycle === 'yearly') return 30.00;
-  if (plan === 'pro') return 1.59;
+  if (plan === 'pro') return 9.00;
   return 0.00;
 };
 

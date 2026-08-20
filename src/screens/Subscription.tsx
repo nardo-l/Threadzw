@@ -23,6 +23,7 @@ import { useShop } from '../hooks/useShop';
 import { toast } from 'sonner';
 import { getEntitlements, isPro, resolveSellerCategory, PLANS_CONFIG } from '../config/plans';
 import { subscriptionClient, SubscriptionStatusResponse } from '../services/subscriptionClient';
+import { ProUpgradePaywallCard } from '../components/plans/ProUpgradePaywallCard';
 
 declare global {
   interface Window {
@@ -71,7 +72,7 @@ export const Subscription: React.FC = () => {
         category: category,
         status: isPro(shop) ? 'active' : 'inactive',
         billingCycle: category === 'vehicles' ? 'yearly' : 'monthly',
-        amount: category === 'vehicles' ? 30 : 1.59,
+        amount: category === 'vehicles' ? 30 : 9,
         currency: 'USD'
       });
     } finally {
@@ -187,8 +188,19 @@ export const Subscription: React.FC = () => {
   const generalConfig = PLANS_CONFIG.general;
 
   const currentConfig = category === 'vehicles' ? vehicleConfig : category === 'clothing' ? clothingConfig : generalConfig;
-  const proPrice = category === 'vehicles' ? 30 : 1.59;
-  const proBillingCycle = category === 'vehicles' ? 'yearly' : 'monthly';
+  const proPrice = category === 'vehicles' ? 30 : 9;
+  const proBillingCycle = category === 'vehicles' ? 'year' : 'one-off';
+
+  if (currentPlan === 'free' && category !== 'vehicles') {
+    return (
+      <ProUpgradePaywallCard
+        shop={shop}
+        productCount={entitlements.activeProductsCount || 9}
+        onBack={() => navigate('/dashboard')}
+        onSuccess={() => navigate('/subscription/success')}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] p-4 sm:p-8 flex flex-col items-center justify-center font-sans">
@@ -329,7 +341,7 @@ export const Subscription: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-black text-[#C6FF00]">${proPrice}</span>
-                    <span className="text-xs text-zinc-400 font-semibold block">/{proBillingCycle}</span>
+                    <span className="text-xs text-zinc-400 font-semibold block">{category === 'vehicles' ? '/year' : 'one-off'}</span>
                   </div>
                 </div>
 
@@ -371,7 +383,7 @@ export const Subscription: React.FC = () => {
                       ) : (
                         <>
                           <Zap size={16} className="fill-current" />
-                          <span>Upgrade to Pro — ${proPrice} USD/{proBillingCycle}</span>
+                          <span>Upgrade to Pro — ${proPrice} USD {category === 'vehicles' ? '/ year' : 'One-Off'}</span>
                         </>
                       )}
                     </button>

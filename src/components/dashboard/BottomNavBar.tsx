@@ -18,7 +18,7 @@ export const BottomNavBar: React.FC = () => {
   const activeTab = getActiveTab();
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[420px] z-50">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[420px] z-40">
       <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-2 px-3 flex items-center justify-between border border-zinc-200/90 shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
         
         {/* 1. Home */}

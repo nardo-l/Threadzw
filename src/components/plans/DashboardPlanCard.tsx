@@ -49,7 +49,7 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
       usageText = `${liveProductsCount} active products • Unlimited listings`;
       progressPercentage = 100;
     } else {
-      const limit = entitlements.maxActiveProducts ?? 2;
+      const limit = entitlements.maxActiveProducts ?? 3;
       usageText = `${liveProductsCount} / ${limit} products used`;
       progressPercentage = Math.min(100, (liveProductsCount / limit) * 100);
       isNearOrAtLimit = liveProductsCount >= limit;

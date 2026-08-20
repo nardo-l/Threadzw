@@ -974,7 +974,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             },
             {
               q: "How does the pricing for ThreadZW work?",
-              a: "ThreadZW offers a limited free tier allowing merchants to run their online storefront completely free with up to 3 products, WhatsApp ordering, and zero monthly fees."
+              a: "ThreadZW offers a limited free trial allowing merchants to run their online storefront completely free with up to 9 products, WhatsApp ordering, and zero monthly fees."
             }
           ].map((item, idx) => (
             <div 

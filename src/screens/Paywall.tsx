@@ -341,7 +341,7 @@ export const Paywall: React.FC = () => {
               payment_status: 'free',
               payment_required: false,
               plan: 'free',
-              product_limit: 3
+              product_limit: 9
             })
             .eq('id', sId);
         }
@@ -403,7 +403,7 @@ export const Paywall: React.FC = () => {
     if (shop?.payment_status === 'free' || shop?.is_active) {
       return 'Storefront is active and published on the limited free tier.';
     }
-    return 'Activate your storefront on the limited free tier (up to 3 products).';
+    return 'Activate your storefront on the limited free tier (up to 9 products).';
   };
 
   // Show "Payment received. Verifying your subscription..." screen
@@ -515,7 +515,7 @@ export const Paywall: React.FC = () => {
         <div className="bg-zinc-950 border border-zinc-900/60 rounded-2xl p-5 flex items-center justify-between">
           <div className="space-y-0.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block">Limited Free Tier</span>
-            <span className="text-xs text-zinc-300 font-bold">Up to 3 products, custom link, zero monthly fees</span>
+            <span className="text-xs text-zinc-300 font-bold">Up to 9 products, custom link, zero monthly fees</span>
           </div>
           <div className="text-right">
             <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$0</span>

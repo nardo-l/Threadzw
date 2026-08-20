@@ -126,22 +126,22 @@ export const paymentService = {
     console.log('[PaymentService] Confirming shop payment via RPC for shopId:', shopId, 'userId:', userId);
 
     try {
-      // 1. Invoke confirm_shop_payment RPC function in Supabase
+      // 1. Invoke confirm_shop_payment RPC function in Supabase with authoritative $9.00 amount
       const { data: confirmData, error: confirmErr } = await supabase.rpc('confirm_shop_payment', {
         target_shop_id: shopId,
         target_payment_reference: ref,
         target_transaction_id: txId,
-        target_amount: 20.00
+        target_amount: 9.00
       });
 
       if (confirmErr) {
         console.warn('[PaymentService] confirm_shop_payment RPC notice:', confirmErr.message);
-        // Direct fallback insert into shop_payments if RPC is unavailable or returns an issue
+        // Direct fallback insert into shop_payments if RPC is unavailable
         try {
           await supabase.from('shop_payments').upsert({
             shop_id: shopId,
             user_id: userId,
-            amount: 20.00,
+            amount: 9.00,
             currency: 'USD',
             provider: 'nardopay',
             payment_reference: ref,
@@ -187,11 +187,16 @@ export const paymentService = {
         console.warn('[PaymentService] Shop is not ready for publish (unpaid check failed)');
       }
 
-      // 4. Update shop record for local UI responsiveness
+      // 4. Update shop record for Pro activation and unlimited products
       const shopUpdatePayload = {
         owner_id: userId,
         is_active: true,
+        plan: 'pro',
+        product_limit: null,
         payment_status: 'paid',
+        payment_amount: 9.00,
+        payment_currency: 'USD',
+        payment_reference: ref,
         payment_required: false,
         paid_at: now
       };
@@ -234,11 +239,63 @@ export const paymentService = {
   },
 
   /**
+   * Checks whether a shop has verified paid status directly from Supabase.
+   * Supabase remains the authoritative source of truth.
+   */
+  async shopHasPaid(shopId: string): Promise<boolean> {
+    if (!shopId) return false;
+    try {
+      // 1. Try shop_has_paid RPC
+      const { data: rpcPaid, error: rpcErr } = await supabase.rpc('shop_has_paid', {
+        target_shop_id: shopId
+      });
+      if (!rpcErr && typeof rpcPaid === 'boolean') {
+        return rpcPaid;
+      }
+    } catch (e) {
+      // RPC check fallback
+    }
+
+    // 2. Query Supabase shops and shop_payments
+    try {
+      const { data: shop } = await supabase
+        .from('shops')
+        .select('plan, payment_status, payment_amount')
+        .eq('id', shopId)
+        .maybeSingle();
+
+      if (shop && (shop.plan === 'pro' || (shop.payment_status === 'paid' && Number(shop.payment_amount) === 9.00))) {
+        return true;
+      }
+
+      const { data: payment } = await supabase
+        .from('shop_payments')
+        .select('status, amount')
+        .eq('shop_id', shopId)
+        .eq('status', 'paid')
+        .maybeSingle();
+
+      if (payment && Number(payment.amount) === 9.00) {
+        return true;
+      }
+    } catch (e) {
+      console.warn('[PaymentService] Error verifying shopHasPaid:', e);
+    }
+
+    return false;
+  },
+
+  /**
    * Returns whether a shop has completed its storefront activation.
    */
   async getShopPaymentStatus(shopId: string): Promise<{ isPaid: boolean; status: string }> {
     if (!shopId) return { isPaid: false, status: 'unpaid' };
     try {
+      const isPaid = await this.shopHasPaid(shopId);
+      if (isPaid) {
+        return { isPaid: true, status: 'paid' };
+      }
+
       const { data: shop } = await supabase
         .from('shops')
         .select('payment_status, payment_required, paid_at')
