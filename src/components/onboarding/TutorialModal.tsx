@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowRight, ArrowLeft, X, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 const TUTORIAL_IMAGES = {
   intro: "https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/file_0000000018cc81f484c84af953e86338.png",
@@ -53,81 +53,81 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md select-none">
+      <div 
+        id="tutorial-backdrop" 
+        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-md select-none overflow-y-auto"
+      >
         <motion.div
+          id="tutorial-card-container"
           key={`tutorial-screen-${currentScreen}`}
-          initial={{ opacity: 0, scale: 0.95, y: 15 }}
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: -15 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-[420px] bg-white rounded-[32px] p-6 sm:p-8 flex flex-col justify-between shadow-2xl relative border border-zinc-100 min-h-[520px]"
+          exit={{ opacity: 0, scale: 0.96, y: -12 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-[430px] bg-white rounded-[32px] sm:rounded-[36px] p-5 sm:p-7 flex flex-col justify-between shadow-2xl relative border border-zinc-100 my-auto max-h-[94vh] overflow-y-auto"
         >
           {/* Top Header Bar */}
-          <div className="flex items-center justify-between w-full mb-3">
+          <div className="flex items-center justify-between w-full mb-3 shrink-0">
             <div className="flex items-center gap-2">
               {currentScreen > 1 ? (
                 <button
+                  id="tutorial-back-btn"
                   onClick={handleBack}
-                  className="p-2 -ml-2 rounded-xl text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
+                  className="p-1.5 -ml-1.5 rounded-xl text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
                   title="Previous step"
                 >
-                  <ArrowLeft size={18} />
+                  <ArrowLeft size={20} className="stroke-[2.5]" />
                 </button>
               ) : (
-                <div className="flex items-center text-sm font-black tracking-tight">
-                  <span className="text-black">Thread</span>
+                <div className="flex items-center text-lg font-black tracking-tight select-none">
+                  <span className="text-zinc-950">Thread</span>
                   <span className="text-[#96D100] ml-0.5">ZW</span>
                 </div>
               )}
             </div>
 
             {/* Progress indicator for tutorial steps (Screens 2-5 -> Steps 1-4) */}
-            {currentScreen > 1 ? (
-              <div className="flex items-center gap-2 bg-zinc-100 px-3 py-1 rounded-full">
+            {currentScreen > 1 && (
+              <div className="flex items-center gap-1.5 bg-zinc-100 px-3 py-1 rounded-full">
                 <span className="text-xs font-bold text-zinc-800">
                   {currentScreen - 1} / 4
                 </span>
                 <span className="text-[11px] font-medium text-zinc-500">
-                  {currentScreen === 2 ? '— Edit Shop' : currentScreen === 3 ? '— Products' : currentScreen === 4 ? '— Copy Link' : '— Share Link'}
+                  {currentScreen === 2 ? '• Edit Shop' : currentScreen === 3 ? '• Products' : currentScreen === 4 ? '• Copy Link' : '• Share Link'}
                 </span>
               </div>
-            ) : (
-              <button
-                onClick={handleSkip}
-                className="text-xs font-semibold text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
-              >
-                Skip tutorial
-              </button>
             )}
 
-            {currentScreen > 1 && (
-              <button
-                onClick={handleSkip}
-                className="text-xs font-semibold text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
-              >
-                Skip
-              </button>
-            )}
+            <button
+              id="tutorial-skip-top-btn"
+              onClick={handleSkip}
+              className="text-xs font-bold tracking-wider uppercase text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+            >
+              SKIP TUTORIAL
+            </button>
           </div>
 
-          {/* Center Content based on screen */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center my-2 space-y-4">
+          {/* Main Content Area */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center my-1 space-y-3.5">
             {currentScreen === 1 && (
-              /* SCREEN 1: INTRODUCTION */
-              <div className="space-y-4 w-full">
-                <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-2xl overflow-hidden p-2 flex items-center justify-center">
+              /* SCREEN 1: INTRODUCTION ("Your shop is ready.") */
+              <div className="w-full flex flex-col items-center space-y-3.5">
+                {/* Large Featured Tutorial Screenshot */}
+                <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
                   <img
                     src={TUTORIAL_IMAGES.intro}
-                    alt="Welcome to ThreadZW"
-                    style={{ objectFit: 'contain' }}
-                    className="w-full h-40 sm:h-44 rounded-xl"
+                    alt="ThreadZW Storefront Preview"
+                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
+                    loading="eager"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <div className="inline-flex items-center gap-1.5 text-xs font-black text-lime-700 bg-lime-500/10 px-3.5 py-1 rounded-full">
+
+                {/* Text Content */}
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="inline-flex items-center justify-center text-xs font-semibold text-[#3b6d05] bg-[#edf8d6] px-3.5 py-0.5 rounded-full border border-lime-200/40">
                     <span>Welcome</span>
                   </div>
-                  <h2 className="text-2xl font-black text-zinc-950 tracking-tight">
+                  <h2 className="text-2xl sm:text-3xl font-black text-zinc-950 tracking-tight">
                     Your shop is ready.
                   </h2>
                   <p className="text-zinc-500 text-xs sm:text-sm font-medium leading-relaxed max-w-xs mx-auto">
@@ -139,18 +139,18 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
 
             {currentScreen === 2 && (
               /* SCREEN 2: EDIT YOUR SHOP */
-              <div className="space-y-4 w-full">
-                <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-2xl overflow-hidden p-3 flex items-center justify-center">
+              <div className="w-full flex flex-col items-center space-y-3.5">
+                <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
                   <img
                     src={TUTORIAL_IMAGES.edits}
                     alt="Edit your shop"
-                    style={{ objectFit: 'contain' }}
-                    className="w-full h-44 sm:h-48 rounded-xl"
+                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
+                    loading="eager"
                   />
                 </div>
-                <div className="space-y-1.5 text-left">
-                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Edit Your Shop</h3>
-                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                <div className="space-y-1 text-center w-full px-1">
+                  <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Edit Your Shop</h3>
+                  <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto">
                     Customize your shop name, logo, banner, bio, and directions so customers instantly recognize your brand.
                   </p>
                 </div>
@@ -159,18 +159,18 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
 
             {currentScreen === 3 && (
               /* SCREEN 3: ADD PRODUCTS */
-              <div className="space-y-4 w-full">
-                <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-2xl overflow-hidden p-3 flex items-center justify-center">
+              <div className="w-full flex flex-col items-center space-y-3.5">
+                <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
                   <img
                     src={TUTORIAL_IMAGES.products}
                     alt="Add products"
-                    style={{ objectFit: 'contain' }}
-                    className="w-full h-44 sm:h-48 rounded-xl"
+                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
+                    loading="eager"
                   />
                 </div>
-                <div className="space-y-1.5 text-left">
-                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Add Products</h3>
-                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                <div className="space-y-1 text-center w-full px-1">
+                  <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Add Products</h3>
+                  <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto">
                     Easily add items to your catalog with photos, prices, and stock counts to manage and sell your inventory.
                   </p>
                 </div>
@@ -179,18 +179,18 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
 
             {currentScreen === 4 && (
               /* SCREEN 4: COPY YOUR SHOP LINK */
-              <div className="space-y-4 w-full">
-                <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-2xl overflow-hidden p-3 flex items-center justify-center">
+              <div className="w-full flex flex-col items-center space-y-3.5">
+                <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
                   <img
                     src={TUTORIAL_IMAGES.copyLink}
                     alt="Copy your shop link"
-                    style={{ objectFit: 'contain' }}
-                    className="w-full h-44 sm:h-48 rounded-xl"
+                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
+                    loading="eager"
                   />
                 </div>
-                <div className="space-y-1.5 text-left">
-                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Copy Your Shop Link</h3>
-                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                <div className="space-y-1 text-center w-full px-1">
+                  <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Copy Your Shop Link</h3>
+                  <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto">
                     Quickly copy your unique storefront link from the dashboard to share with buyers anywhere.
                   </p>
                 </div>
@@ -199,18 +199,18 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
 
             {currentScreen === 5 && (
               /* SCREEN 5: SHARE & USE YOUR LINK */
-              <div className="space-y-4 w-full">
-                <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-2xl overflow-hidden p-3 flex items-center justify-center">
+              <div className="w-full flex flex-col items-center space-y-3.5">
+                <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
                   <img
                     src={TUTORIAL_IMAGES.shareLink}
                     alt="Share and use your link"
-                    style={{ objectFit: 'contain' }}
-                    className="w-full h-44 sm:h-48 rounded-xl"
+                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
+                    loading="eager"
                   />
                 </div>
-                <div className="space-y-1.5 text-left">
-                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Share & Use Your Link</h3>
-                  <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
+                <div className="space-y-1 text-center w-full px-1">
+                  <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Share & Use Your Link</h3>
+                  <p className="text-xs sm:text-sm text-zinc-500 font-medium leading-relaxed max-w-xs mx-auto">
                     Share your link on WhatsApp, Instagram, TikTok, Facebook, status updates, flyers, and more to receive instant orders.
                   </p>
                 </div>
@@ -219,39 +219,61 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
           </div>
 
           {/* Bottom Action Footer */}
-          <div className="w-full pt-4 mt-2 border-t border-zinc-100 flex flex-col gap-2.5">
+          <div className="w-full pt-3 mt-1 flex flex-col gap-2 shrink-0">
             {currentScreen === 1 ? (
               <>
                 <button
+                  id="tutorial-show-around-btn"
                   onClick={handleNext}
-                  className="w-full h-14 bg-[#96D100] hover:bg-[#85b800] text-black font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-md shadow-lime-500/20"
+                  className="w-full h-13 sm:h-14 bg-[#bef715] hover:bg-[#b0eb07] active:scale-[0.99] text-black font-black text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-lime-400/20"
                 >
-                  <span>Show me around</span>
-                  <ArrowRight size={18} className="stroke-[2.5]" />
+                  <span>SHOW ME AROUND</span>
+                  <ArrowRight size={18} className="stroke-[3]" />
                 </button>
                 <button
+                  id="tutorial-skip-bottom-btn"
                   onClick={handleSkip}
-                  className="w-full py-2 text-xs font-semibold text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
+                  className="w-full py-1 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
                 >
-                  Skip tutorial
+                  SKIP TUTORIAL
                 </button>
               </>
             ) : currentScreen < 5 ? (
-              <button
-                onClick={handleNext}
-                className="w-full h-14 bg-[#96D100] hover:bg-[#85b800] text-black font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-md shadow-lime-500/20"
-              >
-                <span>Next</span>
-                <ArrowRight size={18} className="stroke-[2.5]" />
-              </button>
+              <>
+                <button
+                  id="tutorial-next-btn"
+                  onClick={handleNext}
+                  className="w-full h-13 sm:h-14 bg-[#bef715] hover:bg-[#b0eb07] active:scale-[0.99] text-black font-black text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-lime-400/20"
+                >
+                  <span>NEXT</span>
+                  <ArrowRight size={18} className="stroke-[3]" />
+                </button>
+                <button
+                  id="tutorial-skip-step-btn"
+                  onClick={handleSkip}
+                  className="w-full py-1 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+                >
+                  SKIP TUTORIAL
+                </button>
+              </>
             ) : (
-              <button
-                onClick={handleNext}
-                className="w-full h-14 bg-[#96D100] hover:bg-[#85b800] text-black font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shadow-md shadow-lime-500/20"
-              >
-                <span>Go to Dashboard</span>
-                <ArrowRight size={18} className="stroke-[2.5]" />
-              </button>
+              <>
+                <button
+                  id="tutorial-finish-btn"
+                  onClick={handleNext}
+                  className="w-full h-13 sm:h-14 bg-[#bef715] hover:bg-[#b0eb07] active:scale-[0.99] text-black font-black text-sm uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-lime-400/20"
+                >
+                  <span>GO TO DASHBOARD</span>
+                  <ArrowRight size={18} className="stroke-[3]" />
+                </button>
+                <button
+                  id="tutorial-finish-skip-btn"
+                  onClick={handleSkip}
+                  className="w-full py-1 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
+                >
+                  SKIP TUTORIAL
+                </button>
+              </>
             )}
           </div>
         </motion.div>

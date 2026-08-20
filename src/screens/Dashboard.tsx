@@ -28,9 +28,7 @@ import { NotificationPromptBanner } from '../components/NotificationPromptBanner
 import { useDashboard } from '../hooks/useDashboard';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
-import { OnboardingOverlay } from '../components/onboarding/OnboardingOverlay';
 import { TutorialModal } from '../components/onboarding/TutorialModal';
-import { useOnboarding } from '../hooks/useOnboarding';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 import { paymentService } from '../services/paymentService';
@@ -81,17 +79,16 @@ export const Dashboard: React.FC = () => {
     loading: dashboardLoading
   } = useDashboard(shop?.id);
 
-  const { step: onboardingStep } = useOnboarding(shop?.id, productsCount, shop);
   const [showTutorial, setShowTutorial] = useState(false);
 
   useEffect(() => {
-    if (onboardingStep === 'completed' && shop?.id) {
+    if (shop?.id) {
       const isCompleted = localStorage.getItem(`threadzw_tutorial_completed_${shop.id}`) === 'true';
       if (!isCompleted) {
         setShowTutorial(true);
       }
     }
-  }, [onboardingStep, shop?.id]);
+  }, [shop?.id]);
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -580,9 +577,6 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </main>
-
-      {/* MANDATORY ONBOARDING OVERLAY */}
-      <OnboardingOverlay shop={shop} productsCount={productsCount} />
 
       {/* 5-SCREEN TUTORIAL MODAL */}
       {showTutorial && shop?.id && (

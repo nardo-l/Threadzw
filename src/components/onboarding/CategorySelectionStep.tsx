@@ -21,18 +21,21 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
 }) => {
   const [validationError, setValidationError] = useState<string | null>(null);
 
+  // Clothing is the only currently active category during onboarding
+  const effectiveCategory: SellerCategory = selectedCategory === 'clothing' ? 'clothing' : 'clothing';
+
   const handleContinue = () => {
-    if (!selectedCategory) {
-      setValidationError('Please select a category to continue.');
-      return;
-    }
     setValidationError(null);
+    onSelectCategory('clothing');
     onContinue();
   };
 
   const handleSelect = (categoryId: SellerCategory) => {
+    if (categoryId !== 'clothing') {
+      return; // Do nothing for disabled categories (Cars & Vehicles, Other Products)
+    }
     setValidationError(null);
-    onSelectCategory(categoryId);
+    onSelectCategory('clothing');
   };
 
   return (
@@ -49,6 +52,7 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
         {onBack ? (
           <button
             type="button"
+            id="onboarding-category-back-btn"
             onClick={onBack}
             className="p-2 -ml-2 rounded-full text-black hover:bg-zinc-100 transition-all cursor-pointer"
             aria-label="Go back"
@@ -78,9 +82,9 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
           </p>
         </div>
 
-        {/* Validation Error Banner */}
+        {/* Validation Error Banner (if any) */}
         {validationError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-2.5 text-red-600 text-xs font-semibold animate-shake">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-2.5 text-red-600 text-xs font-semibold">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{validationError}</span>
           </div>
@@ -89,21 +93,26 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
         {/* Category Cards List */}
         <div className="space-y-3 pt-1">
           {ONBOARDING_CATEGORY_OPTIONS.map((option) => {
-            const isSelected = selectedCategory === option.id;
+            const isClothing = option.id === 'clothing';
+            const isSelected = isClothing && effectiveCategory === 'clothing';
+            const isDisabled = !isClothing;
+
             return (
-              <button
+              <div
                 key={option.id}
-                type="button"
-                onClick={() => handleSelect(option.id)}
-                className={`w-full p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group relative ${
+                id={`category-card-${option.id}`}
+                onClick={isDisabled ? undefined : () => handleSelect(option.id)}
+                className={`w-full p-4 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between gap-3 relative ${
                   isSelected
-                    ? 'bg-zinc-50 border-black ring-2 ring-black/10 shadow-sm'
-                    : 'bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50/50'
+                    ? 'bg-white border-2 border-black shadow-sm ring-1 ring-black/5 cursor-pointer'
+                    : isDisabled
+                    ? 'bg-zinc-50/60 border-zinc-200 opacity-60 cursor-not-allowed select-none'
+                    : 'bg-white border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50/50 cursor-pointer'
                 }`}
               >
-                <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-3.5 min-w-0">
                   <div
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 transition-transform group-hover:scale-105 ${
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0 transition-transform ${
                       isSelected
                         ? 'bg-black text-white shadow-xs'
                         : 'bg-zinc-100 text-zinc-800'
@@ -111,27 +120,34 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
                   >
                     <span>{option.icon}</span>
                   </div>
-                  <div>
-                    <h3 className="text-base font-extrabold text-black tracking-tight">
+                  <div className="min-w-0 pr-1">
+                    <h3 className="text-sm sm:text-base font-extrabold text-black tracking-tight uppercase">
                       {option.label}
                     </h3>
-                    <p className="text-xs text-zinc-500 font-medium leading-snug mt-0.5">
+                    <p className="text-[11px] sm:text-xs text-zinc-500 font-medium leading-snug mt-0.5 uppercase tracking-normal">
                       {option.sublabel}
                     </p>
                   </div>
                 </div>
 
-                {/* Selection Radio / Check indicator */}
-                <div
-                  className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                    isSelected
-                      ? 'border-black bg-black text-white'
-                      : 'border-zinc-300 group-hover:border-zinc-400 bg-white'
-                  }`}
-                >
-                  {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                {/* Right side: Badge if disabled, Checkbox / Radio if enabled */}
+                <div className="flex items-center gap-2.5 shrink-0">
+                  {isDisabled && (
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-200/80 text-zinc-700 border border-zinc-300/60 shadow-2xs">
+                      Coming Soon
+                    </span>
+                  )}
+                  <div
+                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                      isSelected
+                        ? 'border-black bg-black text-white'
+                        : 'border-zinc-300 bg-white'
+                    }`}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -141,11 +157,12 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
       <div className="pt-6">
         <button
           type="button"
+          id="onboarding-category-continue-btn"
           onClick={handleContinue}
           disabled={loading}
-          className="w-full bg-black hover:bg-zinc-800 text-white font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all active:scale-[0.99] cursor-pointer shadow-xs disabled:opacity-50"
+          className="w-full bg-black hover:bg-zinc-800 active:scale-[0.99] text-white font-extrabold text-base py-4 px-6 rounded-2xl flex items-center justify-between transition-all cursor-pointer shadow-xs disabled:opacity-50"
         >
-          <span>Continue</span>
+          <span className="tracking-wider uppercase">Continue</span>
           <ArrowRight className="w-5 h-5 text-white stroke-[2.5]" />
         </button>
       </div>

@@ -280,22 +280,24 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Step 15: "What do you sell?" Category Selection State
-  const [selectedSellerCategory, setSelectedSellerCategoryState] = useState<SellerCategory | null>(() => {
+  // Step 15: "What do you sell?" Category Selection State (Defaults to clothing)
+  const [selectedSellerCategory, setSelectedSellerCategoryState] = useState<SellerCategory>(() => {
     try {
       const saved = localStorage.getItem('threadzw_onboarding_category');
-      if (saved && (saved === 'clothing' || saved === 'vehicles' || saved === 'general')) {
-        return saved as SellerCategory;
+      if (saved === 'clothing') {
+        return 'clothing';
       }
     } catch (e) {}
-    return null;
+    return 'clothing';
   });
 
   const handleSelectSellerCategory = (cat: SellerCategory) => {
-    setSelectedSellerCategoryState(cat);
-    try {
-      localStorage.setItem('threadzw_onboarding_category', cat);
-    } catch (e) {}
+    if (cat === 'clothing') {
+      setSelectedSellerCategoryState('clothing');
+      try {
+        localStorage.setItem('threadzw_onboarding_category', 'clothing');
+      } catch (e) {}
+    }
   };
 
   // Active shop record ID created during signup, persisted in localStorage
