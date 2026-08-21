@@ -17,6 +17,7 @@ interface TutorialModalProps {
 
 export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete }) => {
   const [currentScreen, setCurrentScreen] = useState<number>(1);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
   const handleComplete = () => {
     if (shopId) {
@@ -50,6 +51,35 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
       return null;
     }
   } catch (e) {}
+
+  const renderImageOrFallback = (screenNum: number, src: string, alt: string) => {
+    if (imageErrors[screenNum]) {
+      return (
+        <div className="w-full h-48 sm:h-56 bg-zinc-950 text-white rounded-xl sm:rounded-2xl flex flex-col items-center justify-center p-6 text-center shadow-inner relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 to-black opacity-80" />
+          <div className="relative z-10 flex flex-col items-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-[#bef715] text-black font-black flex items-center justify-center text-lg shadow-md">
+              TW
+            </div>
+            <span className="font-extrabold text-sm tracking-tight text-white">{alt}</span>
+            <span className="text-[11px] text-zinc-400 font-medium">ThreadZW Storefront Preview</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={src}
+        alt={alt}
+        crossOrigin="anonymous"
+        referrerPolicy="no-referrer"
+        onError={() => setImageErrors(prev => ({ ...prev, [screenNum]: true }))}
+        className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
+        loading="eager"
+      />
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -114,12 +144,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
               <div className="w-full flex flex-col items-center space-y-3.5">
                 {/* Large Featured Tutorial Screenshot */}
                 <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
-                  <img
-                    src={TUTORIAL_IMAGES.intro}
-                    alt="ThreadZW Storefront Preview"
-                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
-                    loading="eager"
-                  />
+                  {renderImageOrFallback(1, TUTORIAL_IMAGES.intro, "ThreadZW Storefront Preview")}
                 </div>
 
                 {/* Text Content */}
@@ -141,12 +166,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
               /* SCREEN 2: EDIT YOUR SHOP */
               <div className="w-full flex flex-col items-center space-y-3.5">
                 <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
-                  <img
-                    src={TUTORIAL_IMAGES.edits}
-                    alt="Edit your shop"
-                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
-                    loading="eager"
-                  />
+                  {renderImageOrFallback(2, TUTORIAL_IMAGES.edits, "Edit Your Shop")}
                 </div>
                 <div className="space-y-1 text-center w-full px-1">
                   <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Edit Your Shop</h3>
@@ -161,12 +181,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
               /* SCREEN 3: ADD PRODUCTS */
               <div className="w-full flex flex-col items-center space-y-3.5">
                 <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
-                  <img
-                    src={TUTORIAL_IMAGES.products}
-                    alt="Add products"
-                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
-                    loading="eager"
-                  />
+                  {renderImageOrFallback(3, TUTORIAL_IMAGES.products, "Add Products")}
                 </div>
                 <div className="space-y-1 text-center w-full px-1">
                   <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Add Products</h3>
@@ -181,12 +196,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
               /* SCREEN 4: COPY YOUR SHOP LINK */
               <div className="w-full flex flex-col items-center space-y-3.5">
                 <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
-                  <img
-                    src={TUTORIAL_IMAGES.copyLink}
-                    alt="Copy your shop link"
-                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
-                    loading="eager"
-                  />
+                  {renderImageOrFallback(4, TUTORIAL_IMAGES.copyLink, "Copy Your Shop Link")}
                 </div>
                 <div className="space-y-1 text-center w-full px-1">
                   <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Copy Your Shop Link</h3>
@@ -201,12 +211,7 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ shopId, onComplete
               /* SCREEN 5: SHARE & USE YOUR LINK */
               <div className="w-full flex flex-col items-center space-y-3.5">
                 <div className="w-full bg-[#f8fafc] border border-zinc-100 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex items-center justify-center overflow-hidden shadow-inner">
-                  <img
-                    src={TUTORIAL_IMAGES.shareLink}
-                    alt="Share and use your link"
-                    className="w-full max-h-[310px] sm:max-h-[350px] object-contain rounded-xl sm:rounded-2xl"
-                    loading="eager"
-                  />
+                  {renderImageOrFallback(5, TUTORIAL_IMAGES.shareLink, "Share & Use Your Link")}
                 </div>
                 <div className="space-y-1 text-center w-full px-1">
                   <h3 className="text-xl font-bold text-zinc-950 tracking-tight">Share & Use Your Link</h3>
