@@ -132,7 +132,7 @@ export class SubscriptionService {
       subscriptionId = data.id;
     }
 
-    const appOrigin = (process.env.APP_URL || 'https://threadzw.co.zw').replace(/\/$/, '');
+    const appOrigin = (process.env.APP_URL || 'https://threadzw.vercel.app').replace(/\/$/, '');
     const webhookUrl = `${appOrigin}/api/subscriptions/webhook`;
     const redirectUrl = `${appOrigin}/payment/success`;
 
