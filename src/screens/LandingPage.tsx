@@ -316,7 +316,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             >
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
-                <span>Limited Free Tier</span>
+                <span>Free storefront</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Check className="w-4 h-4 text-[#C6FF00]" />
@@ -355,7 +355,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               </div>
             </motion.div>
 
-            {/* FLOATING CARD 1: Top Left - New WhatsApp Order */}
+            {/* FLOATING CARD 1: Top Left - New customer enquiry */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -366,9 +366,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                 <MessageCircle className="w-4 h-4 text-[#25D366]" />
               </div>
               <div>
-                <div className="text-[9px] font-extrabold text-[#25D366] uppercase tracking-wider">New WhatsApp Order</div>
+                <div className="text-[9px] font-extrabold text-[#25D366] uppercase tracking-wider">New customer enquiry</div>
                 <div className="text-xs font-bold text-white truncate">Nike Dunk Low (Size 9)</div>
-                <div className="text-[10px] text-zinc-400">Tawanda • $120</div>
+                <div className="text-[10px] text-zinc-400">Tawanda • Size 9</div>
               </div>
             </motion.div>
 
@@ -384,7 +384,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               </div>
               <div>
                 <div className="text-[9px] font-extrabold text-[#C6FF00] uppercase tracking-wider">Your Custom Link</div>
-                <div className="text-xs font-mono font-bold text-white">threadzw.com/kicks</div>
+                <div className="text-xs font-mono font-bold text-white">threadzw.vercel.app/shop/kicks</div>
                 <div className="text-[10px] text-zinc-400">Share on IG & Bio</div>
               </div>
             </motion.div>
@@ -406,7 +406,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               </div>
             </motion.div>
 
-            {/* FLOATING CARD 4: Bottom Right - Weekly Orders */}
+            {/* FLOATING CARD 4: Bottom Right - Weekly Enquiries */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -417,8 +417,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                 <TrendingUp className="w-4 h-4 text-[#C6FF00]" />
               </div>
               <div>
-                <div className="text-[9px] font-extrabold text-[#C6FF00] uppercase tracking-wider">Weekly Orders</div>
-                <div className="text-xs font-black text-white">247 Orders Sent</div>
+                <div className="text-[9px] font-extrabold text-[#C6FF00] uppercase tracking-wider">Weekly Enquiries</div>
+                <div className="text-xs font-black text-white">247 Enquiries</div>
                 <div className="text-[10px] text-zinc-400">Direct on WhatsApp</div>
               </div>
             </motion.div>
@@ -517,7 +517,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             <div className="absolute top-0 right-0 w-48 h-48 bg-[#C6FF00]/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#C6FF00]/20 border border-[#C6FF00]/40 text-[#C6FF00] text-xs font-black uppercase tracking-wider">
-              <span>With ThreadZW Pro</span>
+              <span>With ThreadZW Premium</span>
               <span>⚡</span>
             </div>
 
@@ -541,8 +541,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               <li className="flex items-start gap-3">
                 <span className="w-6 h-6 rounded-full bg-[#C6FF00] text-black font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5">✓</span>
                 <div>
-                  <p className="text-sm font-bold text-white">Orders arrive formatted on WhatsApp</p>
-                  <p className="text-xs text-zinc-300 mt-0.5">Receive clear order messages with exact product names, sizes, and totals.</p>
+                  <p className="text-sm font-bold text-white">Customer enquiries arrive formatted on WhatsApp</p>
+                  <p className="text-xs text-zinc-300 mt-0.5">Receive clear enquiry messages with exact product names, sizes, and variants.</p>
                 </div>
               </li>
               <li className="flex items-start gap-3">
@@ -580,7 +580,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             </div>
             <h3 className="text-xl font-extrabold text-white">Create Your Shop</h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Sign up in seconds, pick your custom shop handle (e.g. threadzw.com/yourshop) and add your logo and banner.
+              Sign up in seconds, choose your unique shop handle, and add your logo and banner.
             </p>
           </div>
 
@@ -655,7 +655,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                 <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                   <div>
                     <h3 className="text-base font-extrabold text-white truncate">{shop.name}</h3>
-                    <p className="text-xs font-mono text-zinc-400 truncate">threadzw.com/{shop.slug}</p>
+                    <p className="text-xs font-mono text-zinc-400 truncate">threadzw.vercel.app/shop/{shop.slug}</p>
                     {shop.location && (
                       <p className="text-[11px] text-zinc-500 font-medium mt-1 flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-[#C6FF00]" />
@@ -745,7 +745,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             </div>
             <h3 className="text-xl font-extrabold text-white">Custom Shop Link</h3>
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Get your own clean link (threadzw.com/yourshop) to put in your Instagram, TikTok & WhatsApp bio.
+              Get a clean shop link to place in your Instagram, TikTok and WhatsApp bio.
             </p>
           </div>
 
@@ -783,10 +783,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             AFFORDABLE PRICING
           </span>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            One Simple Plan
+            Start free. Upgrade when you’re growing.
           </h2>
           <p className="text-zinc-400 text-sm">
-            Everything you need to run your online storefront for less than the cost of a coffee.
+            Launch with no setup fee, then unlock continued customer actions with one simple Premium payment when your shop grows.
           </p>
         </div>
 
@@ -794,7 +794,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
           <div className="bg-zinc-950 rounded-3xl p-8 sm:p-12 border-2 border-[#C6FF00]/50 shadow-[0_20px_60px_rgba(198,255,0,0.1)] relative overflow-hidden text-center space-y-8">
             
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#C6FF00] text-black font-extrabold text-xs uppercase tracking-wider">
-              <span>Limited Free Tier</span>
+              <span>Free storefront</span>
             </div>
 
             <div>
@@ -807,10 +807,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
 
             <div className="space-y-3.5 text-left border-y border-zinc-800/80 py-6">
               {[
-                'Up to 3 Active Products & Categories',
-                'WhatsApp Ordering Integration',
+                'Unlimited active products',
+                'WhatsApp and directions customer interests',
                 'Inventory & Size Variant Tracking',
-                'Custom Shop Link (threadzw.app/shop/yourshop)',
+                'A shareable shop link for your social bios',
                 'Recent Activity & Analytics Dashboard',
                 'Instant Storefront Publishing'
               ].map((item) => (
@@ -830,9 +830,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
               Get Started for Free
             </button>
 
-            <p className="text-[11px] text-zinc-500 font-medium">
-              No credit card required. Setup takes less than 5 minutes.
-            </p>
+              <div className="border-t border-zinc-800 pt-5 text-left space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-black text-white">Premium access</span>
+                  <span className="text-sm font-black text-[#C6FF00]">$9 USD one-off</span>
+                </div>
+                <p className="text-xs text-zinc-400 leading-relaxed">Keep WhatsApp and directions enquiries open after the Free lifetime allowance, with custom branding and advanced storefront tools.</p>
+              </div>
+
+              <p className="text-[11px] text-zinc-500 font-medium">
+                No credit card required. Setup takes less than 5 minutes.
+              </p>
 
           </div>
         </div>
@@ -970,11 +978,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
             },
             {
               q: "Can I put my shop link on Instagram and TikTok?",
-              a: "Yes! Put your threadzw.com/yourshop link in your bio on Instagram, TikTok, Facebook, and WhatsApp."
+              a: "Yes! Put your unique ThreadZW shop link in your bio on Instagram, TikTok, Facebook, and WhatsApp."
             },
             {
               q: "How does the pricing for ThreadZW work?",
-              a: "ThreadZW offers a limited free trial allowing merchants to run their online storefront completely free with up to 9 products, WhatsApp ordering, and zero monthly fees."
+              a: "The Free storefront includes unlimited products, 50 unique visits and 10 customer interests for life. Upgrade to Premium for $9 USD one-off access when your shop is ready for more enquiries."
             }
           ].map((item, idx) => (
             <div 

@@ -66,7 +66,7 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
     },
     premium: {
       id: 'premium',
-      name: 'Clothing Pro',
+      name: 'Clothing Premium',
       category: 'clothing',
       price: 9,
       currency: 'USD',
@@ -111,7 +111,7 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
     },
     premium: {
       id: 'premium',
-      name: 'Vehicle Pro',
+      name: 'Vehicle Premium',
       category: 'vehicles',
       price: 30,
       currency: 'USD',
@@ -155,7 +155,7 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
     },
     premium: {
       id: 'premium',
-      name: 'General Pro',
+      name: 'General Premium',
       category: 'general',
       price: 9,
       currency: 'USD',
@@ -175,7 +175,7 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
 };
 
 /**
- * Normalizes raw database plan strings ('free', 'pro', legacy 'premium') into SellerPlan.
+ * Normalizes raw database plan strings ('free', legacy 'pro', and 'premium') into SellerPlan.
  */
 export function normalizePlan(rawPlan: string | null | undefined): SellerPlan {
   if (!rawPlan) return 'free';
@@ -187,7 +187,7 @@ export function normalizePlan(rawPlan: string | null | undefined): SellerPlan {
 }
 
 /**
- * Checks if a shop is on a Pro plan.
+ * Checks if a shop is on the Premium plan.
  */
 export function isPro(shop: Shop | null | undefined): boolean {
   if (!shop) return false;
@@ -203,7 +203,7 @@ export function getPlanForCategory(category: SellerCategory, plan: SellerPlan = 
 }
 
 /**
- * Returns available plans for a category (e.g. [Free, Pro] for clothing/vehicles, [Free] for general).
+ * Returns available plans for a category (e.g. [Free, Premium] for clothing/vehicles, [Free] for general).
  */
 export function getPlansForCategory(category: SellerCategory): PlanConfig[] {
   if (category === 'general') {

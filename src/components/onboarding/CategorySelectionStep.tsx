@@ -22,7 +22,7 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
   const [validationError, setValidationError] = useState<string | null>(null);
 
   // Clothing is the only currently active category during onboarding
-  const effectiveCategory: SellerCategory = selectedCategory === 'clothing' ? 'clothing' : 'clothing';
+  const effectiveCategory: SellerCategory = 'clothing';
 
   const handleContinue = () => {
     setValidationError(null);
@@ -78,7 +78,7 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
             What do you sell?
           </h1>
           <p className="text-xs sm:text-sm text-zinc-500 font-normal">
-            Choose what best describes your store to customize your experience.
+Threadzw is built for Zimbabwean clothing and drip shops first. More seller categories will follow.
           </p>
         </div>
 
@@ -92,10 +92,10 @@ export const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
 
         {/* Category Cards List */}
         <div className="space-y-3 pt-1">
-          {ONBOARDING_CATEGORY_OPTIONS.map((option) => {
+          {ONBOARDING_CATEGORY_OPTIONS.filter((option) => option.id === 'clothing').map((option) => {
             const isClothing = option.id === 'clothing';
             const isSelected = isClothing && effectiveCategory === 'clothing';
-            const isDisabled = !isClothing;
+            const isDisabled = false;
 
             return (
               <div

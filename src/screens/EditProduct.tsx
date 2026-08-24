@@ -513,7 +513,7 @@ export const EditProduct: React.FC = () => {
           updateError.message?.toLowerCase().includes('quota');
 
         if (isQuotaViolation) {
-          toast.error('You have reached the maximum number of active products allowed on your current plan. Upgrade to Pro to activate more products.', { id: saveToastHandle, duration: 6000 });
+          toast.error('Free clothing shops have unlimited products. This listing could not be saved; refresh and try again.', { id: saveToastHandle, duration: 6000 });
           return;
         }
         throw updateError;

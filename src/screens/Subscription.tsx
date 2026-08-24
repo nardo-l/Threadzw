@@ -98,7 +98,7 @@ export const Subscription: React.FC = () => {
             if (pollingRef.current) clearInterval(pollingRef.current);
             await refreshShop();
             setSubStatus(status);
-            toast.success('Pro Subscription Activated! 🎉');
+            toast.success('Premium subscription activated.');
           }
         } catch (e) {
           // Continue polling
@@ -113,7 +113,7 @@ export const Subscription: React.FC = () => {
     };
   }, [isVerifyingPayment, shop?.id]);
 
-  // Handle Upgrade to Pro Trigger
+  // Handle Premium upgrade trigger
   const handleUpgradeToPro = async () => {
     if (!shop?.id) {
       toast.error('Shop details could not be loaded. Please refresh.');
@@ -188,7 +188,7 @@ export const Subscription: React.FC = () => {
   const generalConfig = PLANS_CONFIG.general;
 
   const currentConfig = category === 'vehicles' ? vehicleConfig : category === 'clothing' ? clothingConfig : generalConfig;
-  const proPrice = category === 'vehicles' ? 30 : 9;
+  const proPrice = currentConfig.premium.price;
   const proBillingCycle = category === 'vehicles' ? 'year' : 'one-off';
 
   if (currentPlan === 'free' && category !== 'vehicles') {
@@ -333,10 +333,10 @@ export const Subscription: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-900 font-extrabold bg-[#C6FF00] px-3 py-1 rounded-full">
-                      {category === 'vehicles' ? 'Dealership Pro' : 'Growth Tier'}
+                      {category === 'vehicles' ? 'Dealership Premium' : 'Growth Tier'}
                     </span>
                     <h2 className="text-xl font-black uppercase tracking-tight text-white mt-2">
-                      {category === 'vehicles' ? 'Vehicle Pro Plan' : 'ThreadZW Pro'}
+                      {category === 'vehicles' ? 'Vehicle Premium Plan' : 'ThreadZW Premium'}
                     </h2>
                   </div>
                   <div className="text-right">
@@ -359,7 +359,7 @@ export const Subscription: React.FC = () => {
                 {currentPlan === 'premium' ? (
                   <div className="p-3 bg-[#C6FF00]/10 border border-[#C6FF00]/30 rounded-xl text-center space-y-1">
                     <span className="text-xs font-black uppercase tracking-wider text-[#C6FF00] block">
-                      Active Pro Subscription
+                      Active Premium Subscription
                     </span>
                     {subStatus?.currentPeriodEnd && (
                       <span className="text-[11px] text-zinc-400 block font-mono">
@@ -383,7 +383,7 @@ export const Subscription: React.FC = () => {
                       ) : (
                         <>
                           <Zap size={16} className="fill-current" />
-                          <span>Upgrade to Pro — ${proPrice} USD {category === 'vehicles' ? '/ year' : 'One-Off'}</span>
+                          <span>Upgrade to Premium — ${proPrice} USD {category === 'vehicles' ? '/ year' : 'One-Off'}</span>
                         </>
                       )}
                     </button>

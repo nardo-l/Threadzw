@@ -23,7 +23,7 @@ interface ProUpgradePaywallCardProps {
 
 export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
   shop: propShop,
-  productCount = 9,
+  productCount = 0,
   onBack,
   onSuccess
 }) => {
@@ -31,6 +31,9 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
   const { shop: contextShop, refreshShop } = useShopContext();
   const { refreshSubscription } = useAuth();
   const shop = propShop || contextShop;
+  const visits = Number(shop?.lifetime_unique_visits || 0);
+  const interests = Number(shop?.lifetime_interest_events || 0);
+  const usagePercent = Math.min(100, Math.max(3, Math.max((visits / 50) * 100, (interests / 10) * 100)));
 
   const [loading, setLoading] = useState(false);
 
@@ -103,15 +106,15 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
       <div className="flex-1 px-4 py-4 space-y-4">
         
         {/* 2. Top Purple Alert Card */}
-        <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-2xl p-4 flex items-start gap-3.5 shadow-xs">
-          <div className="w-12 h-12 rounded-2xl bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center shrink-0 mt-0.5">
+        <div className="bg-zinc-950 text-white border border-zinc-900 rounded-2xl p-4 flex items-start gap-3.5 shadow-xs">
+          <div className="w-12 h-12 rounded-2xl bg-[#C6FF00] text-black flex items-center justify-center shrink-0 mt-0.5">
             <Lock size={22} className="stroke-[2.5]" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-sm font-bold text-zinc-950 leading-snug">
+            <h2 className="text-sm font-bold text-white leading-snug">
               Keep receiving customer enquiries
             </h2>
-            <p className="text-xs text-zinc-600 font-medium leading-relaxed">
+            <p className="text-xs text-zinc-300 font-medium leading-relaxed">
               Free clothing shops have unlimited products. The free tier includes 50 unique visits and 10 WhatsApp or directions interests for life; Premium keeps those customer actions open.
             </p>
           </div>
@@ -126,14 +129,14 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm font-bold text-[#7C3AED]">
-                Free Trial
+                Free plan
               </div>
               <div className="text-xs text-zinc-500 font-medium mt-0.5">
-                50 visits / 10 interests for life
+                {visits}/50 visits · {interests}/10 interests used
               </div>
             </div>
 
-            <div className="inline-flex items-center bg-[#FEE2E2] text-[#DC2626] border border-red-200/80 px-2.5 py-1 rounded-full text-xs font-bold font-mono tracking-tight">
+            <div className="inline-flex items-center bg-lime-100 text-lime-900 border border-lime-200 px-2.5 py-1 rounded-full text-xs font-bold font-mono tracking-tight">
               Unlimited products
             </div>
           </div>
@@ -141,16 +144,16 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
           <div className="space-y-2 pt-0.5">
             <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-500">
               <span>Lifetime usage allowance</span>
-              <span>50 visits · 10 interests</span>
+              <span>{visits}/50 · {interests}/10 used</span>
             </div>
-            <div className="w-full h-2 bg-[#EDE9FE] rounded-full overflow-hidden">
-              <div className="h-full w-1/3 bg-[#7C3AED] rounded-full" />
+            <div className="w-full h-2 bg-zinc-200 rounded-full overflow-hidden">
+              <div className="h-full bg-[#C6FF00] rounded-full transition-all duration-500" style={{ width: `${usagePercent}%` }} />
             </div>
-            <p className="text-xs text-zinc-500 font-medium">Browsing remains open; WhatsApp and directions pause after either threshold.</p>
+            <p className="text-xs text-zinc-500 font-medium">Browsing stays open; WhatsApp and directions pause after either lifetime threshold.</p>
           </div>
         </div>
 
-        {/* 4. Upgrade to Pro Card */}
+        {/* 4. Upgrade to Premium Card */}
         <div className="bg-white border border-zinc-200/90 rounded-2xl p-5 space-y-4 shadow-xs">
           <div>
             <h3 className="text-base font-bold text-zinc-950">
@@ -228,8 +231,8 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
           </div>
 
           {/* Mini Purple Benefit Callout */}
-          <div className="bg-[#F5F3FF] border border-[#DDD6FE] rounded-xl p-3.5 flex items-start gap-3">
-            <div className="w-7 h-7 rounded-lg bg-[#EDE9FE] text-[#7C3AED] flex items-center justify-center shrink-0 mt-0.5">
+          <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-3.5 flex items-start gap-3">
+            <div className="w-7 h-7 rounded-lg bg-[#C6FF00]/30 text-black flex items-center justify-center shrink-0 mt-0.5">
               <Sparkles size={15} className="stroke-[2.5]" />
             </div>
             <div>
@@ -248,7 +251,7 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
               type="button"
               disabled={loading}
               onClick={handleUpgrade}
-              className="w-full h-13 bg-[#7C3AED] hover:bg-[#6D28D9] active:scale-[0.99] disabled:opacity-50 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm shadow-[#7C3AED]/20"
+              className="w-full h-13 bg-[#C6FF00] hover:bg-[#b5eb00] active:scale-[0.99] disabled:opacity-50 text-black font-black text-sm rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
             >
               {loading ? (
                 <>
@@ -258,7 +261,7 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
               ) : (
                 <>
                   <Lock size={16} />
-                  <span>Upgrade to Premium — $9</span>
+                  <span>Upgrade to Premium — $9 one-off</span>
                 </>
               )}
             </button>

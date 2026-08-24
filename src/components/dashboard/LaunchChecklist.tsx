@@ -44,7 +44,7 @@ export const LaunchChecklist: React.FC<Props> = ({ shop, productsCount }) => {
     {
       id: 'product',
       label: 'Add first product',
-      desc: 'Upload at least one item to start accepting orders.',
+      desc: 'Upload at least one item so customers can browse your first drop.',
       icon: ShoppingBag,
       completed: hasProduct,
       action: () => navigate('/add-product')
@@ -57,7 +57,7 @@ export const LaunchChecklist: React.FC<Props> = ({ shop, productsCount }) => {
       completed: isShared,
       action: async () => {
         try {
-          const url = `https://threadzw.vercel.app/shop/${shop?.slug || shop?.id}?page=home`;
+          const url = `${window.location.origin}/shop/${shop?.slug || shop?.id}?page=home`;
           await navigator.clipboard.writeText(url);
           localStorage.setItem(`threadzw_shop_shared_${shop?.id}`, 'true');
           setIsShared(true);
@@ -77,7 +77,7 @@ export const LaunchChecklist: React.FC<Props> = ({ shop, productsCount }) => {
         <span className="text-3xl">🎉</span>
         <div>
           <h3 className="text-sm font-black uppercase tracking-tight text-[#C6FF00]">Shop 100% Ready!</h3>
-          <p className="text-xs text-zinc-400 mt-0.5 font-medium">Your storefront is configured and ready to accept WhatsApp orders.</p>
+          <p className="text-xs text-zinc-400 mt-0.5 font-medium">Your storefront is configured and ready for customer enquiries.</p>
         </div>
       </div>
     );
@@ -88,7 +88,7 @@ export const LaunchChecklist: React.FC<Props> = ({ shop, productsCount }) => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-black uppercase tracking-tight">LAUNCH CHECKLIST</h3>
-          <p className="text-[11px] text-zinc-400 font-medium">Complete these steps to activate your store</p>
+          <p className="text-[11px] text-zinc-400 font-medium">Complete these steps to make your store customer-ready</p>
         </div>
         <span className="text-xs font-mono font-extrabold text-[#C6FF00] bg-[#C6FF00]/10 px-2.5 py-1 rounded-full border border-[#C6FF00]/20">
           {completedCount}/4 COMPLETED

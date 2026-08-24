@@ -4,7 +4,7 @@ import { resolveProPlanForShop, resolveServerSellerCategory } from './planResolv
 import { createNotification } from './notificationService';
 
 // NardoPay's settled payment status is exactly `successful`.
-// Generic states such as `paid` or `completed` must not activate entitlements.
+// Generic, missing, or gateway-specific states such as `paid` or `completed` must not activate entitlements.
 const SUCCESS_STATUSES = new Set(['successful']);
 
 function asNumber(value: unknown): number | null {
@@ -60,30 +60,11 @@ export class SubscriptionService {
       throw new Error('ALREADY_SUBSCRIBED: This shop already has an active subscription');
     }
 
-    const appOrigin = (process.env.APP_URL || 'https://threadzw.co.zw').replace(/\/$/, '');
-    const webhookUrl = `${appOrigin}/api/subscriptions/webhook`;
-    const redirectUrl = `${appOrigin}/payment/success`;
-
-    const linkResponse = await nardopayClient.createPaymentLink({
-      link_type: 'payment',
-      product_name: planDetails.planName,
-      amount: planDetails.amount,
-      currency: planDetails.currency,
-      description: planDetails.description,
-      webhook_url: webhookUrl,
-      redirect_url: redirectUrl,
-      metadata: {
-        profile_id: userId,
-        shop_id: shop.id,
-        category: planDetails.category,
-        plan: 'premium'
-      }
-    });
-
-    const linkCode = linkResponse.link_code;
-    const checkoutUrl = linkResponse.url;
     const nowISO = new Date().toISOString();
+    const internalReference = `NP-${shop.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
 
+    // Persist the internal attempt before calling NardoPay. This prevents a fast
+    // provider callback from arriving before Threadzw can resolve the payment.
     const { data: paymentAttempt, error: paymentAttemptError } = await serverSupabase
       .from('shop_payments')
       .insert({
@@ -93,10 +74,9 @@ export class SubscriptionService {
         currency: planDetails.currency,
         plan: 'premium',
         provider: 'nardopay',
-        payment_reference: linkCode,
+        payment_reference: internalReference,
         status: 'pending',
-        checkout_url: checkoutUrl,
-        metadata: { billing_cycle: 'monthly', link_code: linkCode },
+        metadata: { billing_cycle: planDetails.billing_cycle, internal_reference: internalReference },
         created_at: nowISO
       })
       .select('id')
@@ -122,12 +102,12 @@ export class SubscriptionService {
       shop_id: shop.id,
       category: 'clothing',
       plan: 'premium',
-      billing_cycle: 'monthly',
+      billing_cycle: planDetails.billing_cycle,
       amount: planDetails.amount,
       currency: planDetails.currency,
       status: 'trial',
       provider: 'nardopay',
-      nardopay_link_code: linkCode,
+      nardopay_link_code: null,
       created_at: nowISO,
       updated_at: nowISO
     };
@@ -152,6 +132,51 @@ export class SubscriptionService {
       subscriptionId = data.id;
     }
 
+    const appOrigin = (process.env.APP_URL || 'https://threadzw.co.zw').replace(/\/$/, '');
+    const webhookUrl = `${appOrigin}/api/subscriptions/webhook`;
+    const redirectUrl = `${appOrigin}/payment/success`;
+
+    const linkResponse = await nardopayClient.createPaymentLink({
+      link_type: 'payment',
+      product_name: planDetails.planName,
+      amount: planDetails.amount,
+      currency: planDetails.currency,
+      description: planDetails.description,
+      webhook_url: webhookUrl,
+      redirect_url: redirectUrl,
+      metadata: {
+        profile_id: userId,
+        shop_id: shop.id,
+        category: planDetails.category,
+        plan: 'premium',
+        payment_attempt_id: String(paymentAttempt.id),
+        subscription_id: String(subscriptionId),
+        payment_reference: internalReference
+      }
+    });
+
+    const linkCode = linkResponse.link_code;
+    const checkoutUrl = linkResponse.url;
+    const providerMetadata = {
+      billing_cycle: planDetails.billing_cycle,
+      internal_reference: internalReference,
+      payment_attempt_id: String(paymentAttempt.id),
+      subscription_id: String(subscriptionId),
+      link_code: linkCode
+    };
+
+    const { error: paymentLinkUpdateError } = await serverSupabase
+      .from('shop_payments')
+      .update({ payment_reference: linkCode, checkout_url: checkoutUrl, metadata: providerMetadata })
+      .eq('id', paymentAttempt.id);
+    if (paymentLinkUpdateError) throw new Error(`PAYMENT_ATTEMPT_UPDATE_FAILED: ${paymentLinkUpdateError.message}`);
+
+    const { error: subscriptionLinkUpdateError } = await serverSupabase
+      .from('subscriptions')
+      .update({ nardopay_link_code: linkCode, updated_at: new Date().toISOString() })
+      .eq('id', subscriptionId);
+    if (subscriptionLinkUpdateError) throw new Error(`SUBSCRIPTION_ATTEMPT_UPDATE_FAILED: ${subscriptionLinkUpdateError.message}`);
+
     return {
       success: true,
       url: checkoutUrl,
@@ -160,7 +185,7 @@ export class SubscriptionService {
       paymentAttemptId: paymentAttempt.id,
       amount: planDetails.amount,
       currency: planDetails.currency,
-      billingCycle: 'monthly',
+      billingCycle: planDetails.billing_cycle,
       category: 'clothing'
     };
   }
@@ -178,17 +203,38 @@ export class SubscriptionService {
     const transactionId = asString(payload.transaction_id || payload.transactionId || data.transaction_id);
     const providerEventId = asString(payload.event_id || payload.provider_event_id || payload.id || data.event_id);
     const reference = asString(payload.reference || payload.link_code || payload.linkCode || data.reference || data.link_code);
-    const stableId = providerEventId || transactionId || reference;
+    const shopIdFromMetadata = asString(metadata.shop_id || payload.shop_id || data.shop_id);
+    const paymentAttemptId = asString(metadata.payment_attempt_id || payload.payment_attempt_id || data.payment_attempt_id);
+    const subscriptionIdFromMetadata = asString(metadata.subscription_id || payload.subscription_id || data.subscription_id);
+    const linkCode = asString(metadata.link_code || reference);
+    const stableId = providerEventId || transactionId || reference || paymentAttemptId || subscriptionIdFromMetadata;
 
-    if (!stableId) throw new Error('UNPROCESSABLE_WEBHOOK: No stable event, transaction, or payment reference');
+    if (!stableId) throw new Error('UNPROCESSABLE_WEBHOOK: No stable event, transaction, payment reference, or payment attempt');
 
     const idempotencyKey = `${stableId}:${normalizedEvent || 'payment.completed'}`;
-    const shopIdFromMetadata = asString(metadata.shop_id || payload.shop_id || data.shop_id);
-    const linkCode = asString(metadata.link_code || reference);
 
     let targetShop: any = null;
     let targetSubscription: any = null;
     let targetPayment: any = null;
+
+    if (paymentAttemptId) {
+      const { data: payment } = await serverSupabase
+        .from('shop_payments')
+        .select('*')
+        .eq('id', paymentAttemptId)
+        .eq('provider', 'nardopay')
+        .maybeSingle();
+      targetPayment = payment;
+    }
+
+    if (subscriptionIdFromMetadata) {
+      const { data: subscription } = await serverSupabase
+        .from('subscriptions')
+        .select('*')
+        .eq('id', subscriptionIdFromMetadata)
+        .maybeSingle();
+      targetSubscription = subscription;
+    }
 
     if (shopIdFromMetadata) {
       const { data } = await serverSupabase
@@ -199,7 +245,7 @@ export class SubscriptionService {
       targetShop = data;
     }
 
-    if (linkCode) {
+    if (linkCode && !targetPayment) {
       const { data: payment } = await serverSupabase
         .from('shop_payments')
         .select('*')
@@ -209,7 +255,9 @@ export class SubscriptionService {
         .limit(1)
         .maybeSingle();
       targetPayment = payment;
+    }
 
+    if (linkCode && !targetSubscription) {
       const { data: subscription } = await serverSupabase
         .from('subscriptions')
         .select('*')
@@ -236,6 +284,7 @@ export class SubscriptionService {
     const amount = asNumber(payload.amount ?? data.amount);
     const currency = String(payload.currency || data.currency || 'USD').toUpperCase();
     const eventStatus = String(payload.status || data.status || '').toLowerCase();
+    const resolvedLinkCode = linkCode || targetPayment?.payment_reference || targetSubscription?.nardopay_link_code || null;
     const now = new Date();
 
     const { data: insertedEvent, error: eventInsertError } = await serverSupabase
@@ -247,7 +296,7 @@ export class SubscriptionService {
         provider: 'nardopay',
         event_type: normalizedType,
         provider_event_id: idempotencyKey,
-        link_code: linkCode,
+        link_code: resolvedLinkCode,
         amount,
         currency,
         payload,
@@ -269,7 +318,7 @@ export class SubscriptionService {
         return { success: true, ignored: true, event: normalizedType };
       }
 
-      if (eventStatus && !SUCCESS_STATUSES.has(eventStatus)) {
+      if (!SUCCESS_STATUSES.has(eventStatus)) {
         await serverSupabase.from('payment_events').update({ processed: true, processed_at: now.toISOString() }).eq('id', insertedEvent.id);
         return { success: true, paymentRejected: true, event: normalizedType };
       }
@@ -302,7 +351,7 @@ export class SubscriptionService {
           amount: expectedAmount,
           currency: String(targetPayment.currency).toUpperCase(),
           billing_cycle: 'monthly',
-          nardopay_link_code: linkCode,
+          nardopay_link_code: resolvedLinkCode,
           current_period_start: periodStart.toISOString(),
           current_period_end: periodEnd.toISOString(),
           grace_period_end: null,
@@ -333,7 +382,7 @@ export class SubscriptionService {
           plan: 'premium',
           subscription_status: 'active',
           payment_status: 'paid',
-          payment_reference: linkCode || transactionId,
+          payment_reference: resolvedLinkCode || transactionId,
           payment_amount: expectedAmount,
           payment_currency: String(targetPayment.currency).toUpperCase(),
           paid_at: now.toISOString()

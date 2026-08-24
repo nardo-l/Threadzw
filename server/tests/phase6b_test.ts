@@ -4,8 +4,10 @@ import crypto from 'crypto';
 import { resolveProPlanForShop, resolveServerSellerCategory } from '../services/planResolver';
 import { nardopayClient } from '../lib/nardopayClient';
 
-const TEST_API_KEY = 'np_live_4b6a513509513a342cf3cf91d535d054fa2b38385cb9e9c78e4888dcbf1c21a2';
+const TEST_API_KEY = 'test-api-key';
+const TEST_WEBHOOK_SECRET = 'test-webhook-secret';
 process.env.NARDOPAY_API_KEY = TEST_API_KEY;
+process.env.NARDOPAY_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
 
 async function runPhase6BTests() {
   console.log('====================================================');
@@ -33,7 +35,7 @@ async function runPhase6BTests() {
     clothingPlan.billing_cycle === 'monthly' &&
     clothingPlan.currency === 'USD' &&
     clothingPlan.category === 'clothing',
-    'Test 1: Clothing upgrade resolves to $1.59 / monthly'
+    'Test 1: Clothing upgrade resolves to configured fallback $1.59 / monthly'
   );
 
   // 2. Vehicle upgrade request -> $30 / yearly
@@ -64,7 +66,7 @@ async function runPhase6BTests() {
     serverResolvedPricing.currency === 'USD' &&
     serverResolvedPricing.amount !== maliciousClientPayload.amount &&
     serverResolvedPricing.billing_cycle !== maliciousClientPayload.billingCycle,
-    'Test 3: Malicious client payload with amount=0 & billingCycle=yearly cannot override Clothing pricing ($1.59/mo)'
+    'Test 3: Malicious client pricing fields cannot override server-resolved Clothing pricing'
   );
 
   // 4. Normalized categories and alias parsing
@@ -81,12 +83,12 @@ async function runPhase6BTests() {
     metadata: {
       profile_id: 'user-1',
       shop_id: 'shop-101',
-      plan: 'pro'
+        plan: 'premium'
     }
   });
 
   const validSignature = crypto
-    .createHmac('sha256', TEST_API_KEY)
+    .createHmac('sha256', TEST_WEBHOOK_SECRET)
     .update(sampleWebhookBody)
     .digest('hex');
 

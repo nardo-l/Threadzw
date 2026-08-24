@@ -56,21 +56,21 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
       icon = <ShieldAlert className="w-6 h-6 text-black" />;
     } else if (reason === 'vehicle_limit') {
       title = "You've reached the 1-vehicle limit on the Free plan";
-      message = "Upgrade to Vehicle Pro to list up to 20 active vehicles in your digital showroom.";
+      message = "Upgrade to Vehicle Premium to list up to 20 active vehicles in your digital showroom.";
       icon = <Car className="w-6 h-6 text-black" />;
     } else if (reason === 'image_limit') {
       title = "Maximum Photo Limit Reached";
       message = category === 'vehicles'
-        ? "Free vehicle listings support up to 8 photos. Upgrade to Vehicle Pro for up to 20 photos per listing."
-        : "Free product listings support up to 5 photos. Upgrade to Pro for up to 10 photos per listing.";
+        ? "Free vehicle listings support up to 8 photos. Upgrade to Vehicle Premium for up to 20 photos per listing."
+        : "Free product listings support up to 5 photos. Upgrade to Premium for up to 10 photos per listing.";
       icon = <Layers className="w-6 h-6 text-black" />;
     } else if (reason === 'branding_locked') {
-      title = "Custom Branding is a Pro Feature";
-      message = "Upgrade to Pro ($9 one-off) to remove ThreadZW branding and use custom themes, banners, and logos.";
+      title = "Custom Branding is a Premium Feature";
+      message = "Upgrade to Premium ($9 one-off) to remove ThreadZW branding and use custom themes, banners, and logos.";
       icon = <Sparkles className="w-6 h-6 text-black" />;
     } else if (reason === 'template_locked') {
       title = "Premium Theme Locked";
-      message = "Access all premium storefront themes and customization options with a Pro plan ($9 one-off).";
+      message = "Access all premium storefront themes and customization options with Premium ($9 one-off).";
       icon = <Sparkles className="w-6 h-6 text-black" />;
     } else {
       title = "Unlock Premium Features";
@@ -111,7 +111,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-lime-100 text-lime-900 text-[10px] font-extrabold uppercase tracking-wide mb-1.5">
-              {isVehicle ? 'Vehicle Pro' : 'Pro Plan'}
+              {isVehicle ? 'Vehicle Premium' : 'Premium Plan'}
             </div>
             <h3 className="text-lg sm:text-xl font-black text-zinc-950 tracking-tight leading-snug">
               {title}
@@ -128,7 +128,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
         <div className="bg-zinc-50 border border-zinc-200/90 rounded-2xl p-4.5 space-y-3">
           <div className="flex items-baseline justify-between border-b border-zinc-200/70 pb-3">
             <div>
-              <div className="text-xs font-bold text-zinc-900">{isVehicle ? 'Vehicle Pro' : 'ThreadZW Pro'}</div>
+              <div className="text-xs font-bold text-zinc-900">{isVehicle ? 'Vehicle Premium' : 'ThreadZW Premium'}</div>
               <div className="text-[11px] text-zinc-500 font-medium">
                 {isVehicle ? 'Full digital showroom for auto dealerships' : 'Lifetime usage access, unlimited products & premium seller branding'}
               </div>
