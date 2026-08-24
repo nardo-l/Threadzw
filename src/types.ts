@@ -1,5 +1,5 @@
 export type SellerCategory = 'clothing' | 'vehicles' | 'general';
-export type SellerPlan = 'free' | 'pro';
+export type SellerPlan = 'free' | 'premium';
 export type PlanType = SellerPlan;
 
 /**

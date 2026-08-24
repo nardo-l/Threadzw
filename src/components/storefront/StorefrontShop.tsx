@@ -3,7 +3,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
-import { supabase } from '../../lib/supabase';
 import { trackWhatsAppClick } from '../../lib/analytics';
 
 interface StorefrontShopProps {
@@ -40,56 +39,6 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
   useEffect(() => {
     setSortBy(initialSort);
   }, [initialSort]);
-
-  // Dynamic interaction traffic source tracker
-  useEffect(() => {
-    if (!shop || !shop.id) return;
-    const logInteraction = async (source: string) => {
-      try {
-        const key = `zw_source_logged_${shop.id}_${source}`;
-        if (sessionStorage.getItem(key)) return;
-        sessionStorage.setItem(key, 'true');
-
-        const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('boutique_customer_id', customerId);
-
-        const visitPayload = {
-          shop_id: shop.id,
-          owner_id: shop.owner_id,
-          product_name: 'Visit Log',
-          size: 'None',
-          quantity: 0,
-          sale_price: 0,
-          total_price: 0,
-          status: 'visit',
-          source: source,
-          customer_identifier: customerId,
-          created_at: new Date().toISOString()
-        };
-
-        let payload: any = { ...visitPayload };
-        for (let attempt = 0; attempt < 10; attempt++) {
-          const { error } = await supabase.from('orders').insert([payload]);
-          if (!error) break;
-          const errMsg = error.message || '';
-          const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
-                        errMsg.match(/column "([^"]+)" does not exist/);
-          if (match && match[1]) {
-            delete payload[match[1]];
-          } else {
-            break;
-          }
-        }
-      } catch (_) {}
-    };
-
-    if (searchQuery.trim().length > 2) {
-      logInteraction('Search');
-    }
-    if (selectedCategory && selectedCategory !== 'all') {
-      logInteraction('Categories');
-    }
-  }, [searchQuery, selectedCategory, shop]);
 
   // List of Sort Options
   const sortOptions = [

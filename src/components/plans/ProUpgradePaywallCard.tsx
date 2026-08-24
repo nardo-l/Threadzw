@@ -11,7 +11,6 @@ import {
 import { toast } from 'sonner';
 import { Shop } from '../../types';
 import { subscriptionClient } from '../../services/subscriptionClient';
-import { paymentService } from '../../services/paymentService';
 import { useShopContext } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
 
@@ -30,7 +29,7 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
 }) => {
   const navigate = useNavigate();
   const { shop: contextShop, refreshShop } = useShopContext();
-  const { user, refreshSubscription } = useAuth();
+  const { refreshSubscription } = useAuth();
   const shop = propShop || contextShop;
 
   const [loading, setLoading] = useState(false);
@@ -43,87 +42,28 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
 
     setLoading(true);
     try {
-      // 1. Create NardoPay payment link via server
       const linkData = await subscriptionClient.createPaymentLink(shop.id);
+      if (!linkData?.url) throw new Error('NardoPay did not return a checkout URL');
 
-      if (linkData?.url) {
-        // Open NardoPay checkout in a popup or new tab
-        const popup = window.open(linkData.url, '_blank', 'noopener,noreferrer');
-        toast.info("Opening NardoPay checkout. Confirming payment with backend...");
+      window.open(linkData.url, '_blank', 'noopener,noreferrer');
+      toast.info('Checkout opened. Premium activates only after our server verifies NardoPay’s signed webhook.');
 
-        // If popup was blocked or after opening, offer direct activation verification
-        const pollInterval = setInterval(async () => {
-          try {
-            const hasPaid = await paymentService.shopHasPaid(shop.id);
-            if (hasPaid) {
-              clearInterval(pollInterval);
-              await refreshShop();
-              if (refreshSubscription) await refreshSubscription();
-              toast.success('Shop successfully upgraded to Pro!');
-              if (onSuccess) {
-                onSuccess();
-              } else {
-                navigate('/subscription/success');
-              }
-            }
-          } catch (e) {
-            // keep polling
+      const pollInterval = window.setInterval(async () => {
+        try {
+          const status = await subscriptionClient.getStatus(shop.id);
+          if (status.plan === 'premium' && status.status === 'active') {
+            window.clearInterval(pollInterval);
+            await refreshShop();
+            if (refreshSubscription) await refreshSubscription();
+            toast.success('Premium access is active.');
+            onSuccess?.();
           }
-        }, 3000);
-
-        // Fallback timeout to clear interval after 2 minutes
-        setTimeout(() => clearInterval(pollInterval), 120000);
-        return;
-      }
-
-      // Fallback: Direct activation via paymentService if URL is not returned
-      const userId = user?.id || shop.owner_id;
-      if (userId) {
-        const ref = `NRD-${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        const activationRes = await paymentService.activateShopPayment({
-          shopId: shop.id,
-          userId: userId,
-          paymentReference: ref
-        });
-
-        if (activationRes.success) {
-          await refreshShop();
-          if (refreshSubscription) await refreshSubscription();
-          toast.success('Shop activated to Pro! 🎉');
-          if (onSuccess) {
-            onSuccess();
-          } else {
-            navigate('/subscription/success');
-          }
-          return;
+        } catch {
+          // Keep polling; the webhook may still be in flight.
         }
-      }
-
-      navigate('/checkout/nardopay');
+      }, 3500);
+      window.setTimeout(() => window.clearInterval(pollInterval), 120000);
     } catch (err: any) {
-      console.warn('[ProUpgradePaywall] Primary payment link init fallback:', err?.message);
-      // Fallback: proceed to checkout / payment simulation
-      const userId = user?.id || shop.owner_id;
-      if (userId && shop.id) {
-        const ref = `NRD-${new Date().toISOString().slice(0, 10)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        const actRes = await paymentService.activateShopPayment({
-          shopId: shop.id,
-          userId: userId,
-          paymentReference: ref
-        });
-
-        if (actRes.success) {
-          await refreshShop();
-          if (refreshSubscription) await refreshSubscription();
-          toast.success('Shop activated to Pro! 🎉');
-          if (onSuccess) {
-            onSuccess();
-          } else {
-            navigate('/subscription/success');
-          }
-          return;
-        }
-      }
       toast.error(err?.message || 'Failed to initialize NardoPay payment. Please try again.');
     } finally {
       setLoading(false);
@@ -152,7 +92,7 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
         </button>
 
         <h1 className="text-base font-bold text-zinc-950 tracking-tight">
-          Upgrade to Pro
+          Upgrade to Premium
         </h1>
 
         {/* Empty space for visual balance */}
@@ -169,10 +109,10 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
           </div>
           <div className="space-y-1">
             <h2 className="text-sm font-bold text-zinc-950 leading-snug">
-              You've reached your product limit
+              Keep receiving customer enquiries
             </h2>
             <p className="text-xs text-zinc-600 font-medium leading-relaxed">
-              Free trial allows you to add up to 9 products. Upgrade to Pro to add unlimited products and grow your shop.
+              Free clothing shops have unlimited products. The free tier includes 50 unique visits and 10 WhatsApp or directions interests for life; Premium keeps those customer actions open.
             </p>
           </div>
         </div>
@@ -189,26 +129,24 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
                 Free Trial
               </div>
               <div className="text-xs text-zinc-500 font-medium mt-0.5">
-                9 products limit
+                50 visits / 10 interests for life
               </div>
             </div>
 
             <div className="inline-flex items-center bg-[#FEE2E2] text-[#DC2626] border border-red-200/80 px-2.5 py-1 rounded-full text-xs font-bold font-mono tracking-tight">
-              {productCount} / 9 products
+              Unlimited products
             </div>
           </div>
 
-          {/* Limit Progress Bar */}
-          <div className="space-y-1.5 pt-0.5">
-            <div className="w-full h-2 bg-[#EDE9FE] rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-[#7C3AED] rounded-full transition-all duration-300"
-                style={{ width: `${Math.min(100, (productCount / 9) * 100)}%` }}
-              />
+          <div className="space-y-2 pt-0.5">
+            <div className="flex items-center justify-between text-[11px] font-semibold text-zinc-500">
+              <span>Lifetime usage allowance</span>
+              <span>50 visits · 10 interests</span>
             </div>
-            <p className="text-xs text-zinc-500 font-medium">
-              You've used all available slots.
-            </p>
+            <div className="w-full h-2 bg-[#EDE9FE] rounded-full overflow-hidden">
+              <div className="h-full w-1/3 bg-[#7C3AED] rounded-full" />
+            </div>
+            <p className="text-xs text-zinc-500 font-medium">Browsing remains open; WhatsApp and directions pause after either threshold.</p>
           </div>
         </div>
 
@@ -216,7 +154,7 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
         <div className="bg-white border border-zinc-200/90 rounded-2xl p-5 space-y-4 shadow-xs">
           <div>
             <h3 className="text-base font-bold text-zinc-950">
-              Upgrade to Pro
+              Upgrade to Premium
             </h3>
             <p className="text-xs text-zinc-500 font-medium mt-0.5">
               One-time payment. Lifetime access.
@@ -296,10 +234,10 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
             </div>
             <div>
               <div className="text-xs font-bold text-zinc-950">
-                Pro unlocks unlimited products
+                Premium keeps customer actions open
               </div>
               <div className="text-[11px] text-zinc-600 font-medium leading-relaxed mt-0.5">
-                Add as many products as you want and scale your business.
+                Keep receiving WhatsApp enquiries and directions after your lifetime free allowance is used.
               </div>
             </div>
           </div>
@@ -320,14 +258,14 @@ export const ProUpgradePaywallCard: React.FC<ProUpgradePaywallCardProps> = ({
               ) : (
                 <>
                   <Lock size={16} />
-                  <span>Upgrade to Pro — $9</span>
+                  <span>Upgrade to Premium — $9</span>
                 </>
               )}
             </button>
 
             {/* Reassurance text */}
             <p className="text-xs text-zinc-500 text-center font-medium">
-              Secure payment powered by NardoPay
+              Secure payment powered by NardoPay. Activation is webhook-verified.
             </p>
           </div>
         </div>

@@ -2,7 +2,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Search, Loader2, HelpCircle, Package, MapPin, Truck, CheckCircle2 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 
 interface StorefrontTrackOrderProps {
@@ -41,33 +40,12 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
     setOrderResults(null);
 
     try {
-      let query = supabase
-        .from('orders')
-        .select('*')
-        .eq('shop_id', shop.id)
-        .eq('order_reference', orderRef.trim());
-
-      // If phone is provided, let's filter by phone too
+      // Threadzw does not create order records. Shops confirm delivery or collection directly on WhatsApp.
       const cleanPhone = phone.replace(/\D/g, '');
-      if (cleanPhone) {
-        query = query.like('customer_whatsapp', `%${cleanPhone}%`);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      if (!data || data.length === 0) {
-        toast.error('No matching orders found. Check your reference code.');
-        setOrderResults([]);
-      } else {
-        setOrderResults(data);
-        toast.success('Order status updated!');
-      }
-
-    } catch (err) {
-      console.error(err);
-      toast.error('Logistics server synchronization error');
+      if (cleanPhone) localStorage.setItem(`threadzw_customer_phone_${shop.id}`, cleanPhone);
+      setOrderResults([]);
+      toast.info('Opening WhatsApp so the shop can confirm your order directly.');
+      handleContactHelp();
     } finally {
       setLoading(false);
     }
@@ -97,7 +75,7 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
     <div className="space-y-6 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       <div className="space-y-1.5">
         <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Track Shipments</span>
-        <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Track Order</h2>
+        <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Order Support</h2>
       </div>
 
       {/* ----------------- TRACK SEARCH FORM ----------------- */}
@@ -146,7 +124,7 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
       {orderResults && orderResults.length > 0 && (
         <div className="space-y-6 pt-4">
           <div className="border-b border-zinc-100 pb-3">
-            <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold block">Order Reference</span>
+            <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold block">Shop confirmation via WhatsApp</span>
             <div className="flex justify-between items-baseline mt-1">
               <span className="font-mono text-sm font-bold text-zinc-900">{orderResults[0].order_reference}</span>
               <span className="text-[11px] text-zinc-500 font-medium">Total: <strong className="text-zinc-900 font-bold font-mono">${orderResults.reduce((acc, o) => acc + Number(o.total_price || 0), 0)} USD</strong></span>

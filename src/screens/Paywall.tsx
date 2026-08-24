@@ -18,7 +18,7 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
-import { paymentService } from '../services/paymentService';
+import { subscriptionClient } from '../services/subscriptionClient';
 import { toast } from 'sonner';
 
 declare global {
@@ -275,16 +275,18 @@ export const Paywall: React.FC = () => {
     if (isVerifying && user?.id) {
       interval = setInterval(async () => {
         console.log("[Paywall Polling] Fetching latest payment status...");
-        const { data, error } = await supabase
+                const { data: ownedShop } = await supabase
           .from('shops')
-          .select('id, payment_status, payment_required')
+          .select('id')
           .eq('owner_id', user.id)
           .maybeSingle();
-
-        if (!error && data && data.payment_status === 'paid' && data.payment_required === false) {
-          setIsVerifying(false);
-          toast.success('Shop payment verified! Welcome to ThreadZW.');
-          navigate('/dashboard?payment=success');
+        if (ownedShop?.id) {
+          const status = await subscriptionClient.getStatus(ownedShop.id);
+          if (status.plan === 'premium' && status.status === 'active') {
+            setIsVerifying(false);
+            toast.success('Premium payment verified. Welcome to Threadzw.');
+            navigate('/dashboard?payment=success');
+          }
         }
       }, 4000);
     }
@@ -341,12 +343,11 @@ export const Paywall: React.FC = () => {
               payment_status: 'free',
               payment_required: false,
               plan: 'free',
-              product_limit: 9
             })
             .eq('id', sId);
         }
       }
-      toast.success('Storefront activated on limited free tier!');
+      toast.success('Storefront activated on Free: unlimited products, 50 visits and 10 interests for life.');
       navigate('/dashboard?activated=true');
     } catch (err: any) {
       console.error('[Paywall] Activation error:', err);
@@ -371,13 +372,13 @@ export const Paywall: React.FC = () => {
         }
 
         if (sId) {
-          await paymentService.activateShopPayment({
-            shopId: sId,
-            userId: user.id,
-            paymentReference: `NARDOPAY-PAYWALL-${Date.now()}`
-          });
-          toast.success('Payment confirmed! Welcome to ThreadZW.');
-          navigate('/dashboard?payment=success');
+          const status = await subscriptionClient.getStatus(sId);
+          if (status.plan === 'premium' && status.status === 'active') {
+            toast.success('Premium payment verified. Welcome to Threadzw.');
+            navigate('/dashboard?payment=success');
+          } else {
+            toast.info('Payment is still pending. Premium activates after NardoPay sends a verified webhook.');
+          }
           return;
         }
       }
@@ -401,9 +402,9 @@ export const Paywall: React.FC = () => {
   // Calculate status description
   const getSubStatusDesc = () => {
     if (shop?.payment_status === 'free' || shop?.is_active) {
-      return 'Storefront is active and published on the limited free tier.';
+      return 'Storefront is active with unlimited products. Free clothing shops include 50 unique visits and 10 customer interests for life.';
     }
-    return 'Activate your storefront on the limited free tier (up to 9 products).';
+    return 'Activate your free storefront with unlimited products and lifetime usage thresholds.';
   };
 
   // Show "Payment received. Verifying your subscription..." screen
@@ -514,8 +515,8 @@ export const Paywall: React.FC = () => {
         {/* 2. Plan Price Banner */}
         <div className="bg-zinc-950 border border-zinc-900/60 rounded-2xl p-5 flex items-center justify-between">
           <div className="space-y-0.5">
-            <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block">Limited Free Tier</span>
-            <span className="text-xs text-zinc-300 font-bold">Up to 9 products, custom link, zero monthly fees</span>
+            <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500 block">Free Storefront</span>
+            <span className="text-xs text-zinc-300 font-bold">Unlimited products, 50 visits + 10 interests for life</span>
           </div>
           <div className="text-right">
             <span className="text-2xl font-black text-[#bef715] block leading-none font-grotesk">$0</span>

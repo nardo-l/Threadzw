@@ -6,38 +6,9 @@ import { ProductImage, ShopLogo } from '../ui/ShopImage';
 import { DirectionsModal } from './DirectionsModal';
 import { parseShopConfig } from '../../utils/configHelper';
 import { toast } from 'sonner';
-import { supabase } from '../../lib/supabase';
 import { trackPurchaseIntent, createMerchantNotification, trackWhatsAppClick, trackProductView, trackMapOpen } from '../../lib/analytics';
 
-// Helper to safely insert orders even if some columns don't exist on remote table yet
-async function safeInsertOrder(orderPayload: any) {
-  let payload = { ...orderPayload };
-  const maxRetries = 10;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const { data, error } = await supabase.from('orders').insert([payload]).select();
-      if (!error) {
-        return { data, error: null };
-      }
-      
-      const errMsg = error.message || '';
-      const match = errMsg.match(/column "([^"]+)" of relation "orders" does not exist/) || 
-                    errMsg.match(/column "([^"]+)" does not exist/);
-      if (match && match[1]) {
-        const missingCol = match[1];
-        console.warn(`Column '${missingCol}' does not exist on 'orders' table. Stripping and retrying.`);
-        delete payload[missingCol];
-      } else {
-        console.error("Database insert error:", error);
-        return { data: null, error };
-      }
-    } catch (err: any) {
-      console.error("Exception during insert:", err);
-      return { data: null, error: err };
-    }
-  }
-  return { data: null, error: new Error("Too many retries stripping columns") };
-}
+
 
 
 

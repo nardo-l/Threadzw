@@ -1,628 +1,392 @@
-// server/services/subscriptionService.ts
-
 import { serverSupabase } from '../middleware/auth';
 import { nardopayClient } from '../lib/nardopayClient';
 import { resolveProPlanForShop, resolveServerSellerCategory } from './planResolver';
 import { createNotification } from './notificationService';
 
+// NardoPay's settled payment status is exactly `successful`.
+// Generic states such as `paid` or `completed` must not activate entitlements.
+const SUCCESS_STATUSES = new Set(['successful']);
+
+function asNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function asString(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  return String(value);
+}
+
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  result.setMonth(result.getMonth() + months);
+  return result;
+}
+
 export class SubscriptionService {
-  /**
-   * Creates a NardoPay payment link for the authenticated merchant's shop.
-   */
-  public async createPaymentLink(params: {
-    userId: string;
-    shopId: string;
-    origin?: string;
-  }) {
-    const { userId, shopId, origin } = params;
+  public async createPaymentLink(params: { userId: string; shopId: string; origin?: string }) {
+    const { userId, shopId } = params;
+    if (!userId) throw new Error('UNAUTHORIZED: Authentication is required');
+    if (!shopId) throw new Error('INVALID_SHOP: shopId is required');
 
-    if (!userId) {
-      throw new Error('UNAUTHORIZED: Authentication is required');
-    }
-    if (!shopId) {
-      throw new Error('INVALID_SHOP: shopId is required');
-    }
-
-    // 1. Load shop from Supabase & verify ownership
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
       .select('id, owner_id, name, page_type, plan, subscription_status')
       .eq('id', shopId)
       .maybeSingle();
 
-    if (shopError || !shop) {
-      console.error('[SubscriptionService] Shop lookup error:', shopError);
-      throw new Error('INVALID_SHOP: Shop not found');
+    if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
+    if (shop.owner_id !== userId) throw new Error('UNAUTHORIZED: You do not own this shop');
+
+    const category = resolveServerSellerCategory(shop.page_type);
+    if (category !== 'clothing') {
+      throw new Error('UNSUPPORTED_CATEGORY: Clothing subscriptions are the only supported paid flow');
     }
 
-    if (shop.owner_id !== userId) {
-      console.error(`[SubscriptionService] Ownership mismatch. Shop owner: ${shop.owner_id}, requester: ${userId}`);
-      throw new Error('UNAUTHORIZED: You do not own this shop');
-    }
-
-    // 2. Resolve server-side plan details (never trust client amounts)
     const planDetails = resolveProPlanForShop(shop);
 
-    // 3. Check for existing active/past_due/grace_period subscription
-    const { data: existingActiveSub, error: subCheckError } = await serverSupabase
+    const { data: activeSubscription, error: activeSubscriptionError } = await serverSupabase
       .from('subscriptions')
-      .select('id, status, plan, current_period_end, nardopay_link_code')
+      .select('id, status, current_period_end')
       .eq('shop_id', shopId)
-      .in('status', ['active', 'grace_period'])
+      .eq('status', 'active')
       .maybeSingle();
 
-    if (subCheckError) {
-      console.warn('[SubscriptionService] Active subscription check error:', subCheckError.message);
+    if (activeSubscriptionError) {
+      console.warn('[SubscriptionService] Active subscription lookup failed:', activeSubscriptionError.message);
+    }
+    if (activeSubscription) {
+      throw new Error('ALREADY_SUBSCRIBED: This shop already has an active subscription');
     }
 
-    if (existingActiveSub) {
-      console.log(`[SubscriptionService] Shop ${shopId} already has an active subscription (${existingActiveSub.id})`);
-      throw new Error('ALREADY_SUBSCRIBED: This shop already has an active Pro subscription');
-    }
+    const appOrigin = (process.env.APP_URL || 'https://threadzw.co.zw').replace(/\/$/, '');
+    const webhookUrl = `${appOrigin}/api/subscriptions/webhook`;
+    const redirectUrl = `${appOrigin}/payment/success`;
 
-    // 4. Determine webhook endpoint URL
-    const appOrigin = origin || process.env.APP_URL || 'https://threadzw.co.zw';
-    const webhookUrl = `${appOrigin.replace(/\/$/, '')}/api/nardopay-webhook`;
-
-    // 5. Call NardoPay API server-side
     const linkResponse = await nardopayClient.createPaymentLink({
-      link_type: 'subscription',
-      plan_name: planDetails.planName,
+      link_type: 'payment',
+      product_name: planDetails.planName,
       amount: planDetails.amount,
       currency: planDetails.currency,
-      billing_cycle: planDetails.billing_cycle,
       description: planDetails.description,
       webhook_url: webhookUrl,
+      redirect_url: redirectUrl,
       metadata: {
         profile_id: userId,
         shop_id: shop.id,
         category: planDetails.category,
-        plan: planDetails.plan
+        plan: 'premium'
       }
     });
 
     const linkCode = linkResponse.link_code;
-    const linkId = linkResponse.link_id || linkCode;
     const checkoutUrl = linkResponse.url;
+    const nowISO = new Date().toISOString();
 
-    // 6. Record or update pending subscription in public.subscriptions
-    // Check if there is an existing pending/inactive subscription for this shop & category
-    const { data: existingSub } = await serverSupabase
+    const { data: paymentAttempt, error: paymentAttemptError } = await serverSupabase
+      .from('shop_payments')
+      .insert({
+        shop_id: shop.id,
+        user_id: userId,
+        amount: planDetails.amount,
+        currency: planDetails.currency,
+        plan: 'premium',
+        provider: 'nardopay',
+        payment_reference: linkCode,
+        status: 'pending',
+        checkout_url: checkoutUrl,
+        metadata: { billing_cycle: 'monthly', link_code: linkCode },
+        created_at: nowISO
+      })
+      .select('id')
+      .single();
+
+    if (paymentAttemptError || !paymentAttempt) {
+      throw new Error(`PAYMENT_ATTEMPT_FAILED: ${paymentAttemptError?.message || 'Payment attempt was not recorded'}`);
+    }
+
+    const { data: existingSubscription, error: existingSubscriptionError } = await serverSupabase
       .from('subscriptions')
       .select('id')
       .eq('shop_id', shop.id)
-      .eq('category', planDetails.category)
+      .eq('category', 'clothing')
       .maybeSingle();
 
-    let subscriptionId: string;
-
-    if (existingSub) {
-      const { data: updatedSub, error: updateErr } = await serverSupabase
-        .from('subscriptions')
-        .update({
-          owner_id: userId,
-          plan: 'pro',
-          billing_cycle: planDetails.billing_cycle,
-          amount: planDetails.amount,
-          currency: planDetails.currency,
-          status: 'pending',
-          provider: 'nardopay',
-          nardopay_link_id: linkId,
-          nardopay_link_code: linkCode,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingSub.id)
-        .select('id')
-        .single();
-
-      if (updateErr) {
-        console.error('[SubscriptionService] Failed to update pending subscription:', updateErr);
-      }
-      subscriptionId = updatedSub?.id || existingSub.id;
-    } else {
-      const { data: newSub, error: insertErr } = await serverSupabase
-        .from('subscriptions')
-        .insert({
-          shop_id: shop.id,
-          owner_id: userId,
-          category: planDetails.category,
-          plan: 'pro',
-          billing_cycle: planDetails.billing_cycle,
-          amount: planDetails.amount,
-          currency: planDetails.currency,
-          status: 'pending',
-          provider: 'nardopay',
-          nardopay_link_id: linkId,
-          nardopay_link_code: linkCode,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select('id')
-        .single();
-
-      if (insertErr) {
-        console.error('[SubscriptionService] Failed to insert pending subscription:', insertErr);
-      }
-      subscriptionId = newSub?.id || '';
+    if (existingSubscriptionError) {
+      throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${existingSubscriptionError.message}`);
     }
 
-    // Also update legacy subscriptions table if profile_id exists to keep full backward compatibility
-    try {
-      await serverSupabase
-        .from('subscriptions')
-        .update({
-          nardopay_link_code: linkCode,
-          nardopay_link_id: linkId
-        })
-        .eq('profile_id', userId);
-    } catch (e) {
-      // Ignored for legacy field fallback
-    }
-
-    // 7. Return safe client data (NEVER leak API keys or secrets)
-    return {
-      success: true,
-      linkCode,
-      url: checkoutUrl,
-      subscriptionId,
+    const subscriptionData = {
+      owner_id: userId,
+      shop_id: shop.id,
+      category: 'clothing',
+      plan: 'premium',
+      billing_cycle: 'monthly',
       amount: planDetails.amount,
       currency: planDetails.currency,
-      billingCycle: planDetails.billing_cycle,
-      category: planDetails.category
+      status: 'trial',
+      provider: 'nardopay',
+      nardopay_link_code: linkCode,
+      created_at: nowISO,
+      updated_at: nowISO
+    };
+
+    let subscriptionId: string | null = null;
+    if (existingSubscription) {
+      const { data, error } = await serverSupabase
+        .from('subscriptions')
+        .update(subscriptionData)
+        .eq('id', existingSubscription.id)
+        .select('id')
+        .single();
+      if (error || !data) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${error?.message || 'Unable to update subscription reference'}`);
+      subscriptionId = data.id;
+    } else {
+      const { data, error } = await serverSupabase
+        .from('subscriptions')
+        .insert(subscriptionData)
+        .select('id')
+        .single();
+      if (error || !data) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${error?.message || 'Unable to create subscription reference'}`);
+      subscriptionId = data.id;
+    }
+
+    return {
+      success: true,
+      url: checkoutUrl,
+      linkCode,
+      subscriptionId,
+      paymentAttemptId: paymentAttempt.id,
+      amount: planDetails.amount,
+      currency: planDetails.currency,
+      billingCycle: 'monthly',
+      category: 'clothing'
     };
   }
 
-  /**
-   * Processes Authoritative NardoPay Webhooks.
-   */
-  public async handleWebhook(params: {
-    rawBody: string;
-    signatureHeader?: string | string[] | null;
-    payload: any;
-  }) {
+  public async handleWebhook(params: { rawBody: string; signatureHeader?: string | string[] | null; payload: any }) {
     const { rawBody, signatureHeader, payload } = params;
-
-    console.log('[SubscriptionService] Webhook processing triggered');
-
-    // 1. Signature Verification
-    const isSignatureValid = nardopayClient.verifyWebhookSignature(rawBody, signatureHeader);
-
-    if (!isSignatureValid) {
-      console.error('[SubscriptionService] Webhook rejected: Invalid HMAC signature');
+    if (!nardopayClient.verifyWebhookSignature(rawBody, signatureHeader)) {
       throw new Error('INVALID_SIGNATURE');
     }
 
-    // 2. Extract Event Data
-    const eventType = payload.event_type || payload.event || payload.type || payload.status;
-    const providerEventId = payload.provider_event_id || payload.event_id || payload.id || null;
-    const linkCode = payload.link_code || payload.data?.link_code || payload.linkCode || null;
-    const nardopaySubId = payload.nardopay_subscription_id || payload.subscription_id || payload.data?.subscription_id || null;
-    
-    // Metadata pass-through
-    const metadata = payload.metadata || payload.data?.metadata || {};
-    const profileId = metadata.profile_id || payload.profile_id || payload.customer_id || null;
-    const metaShopId = metadata.shop_id || payload.shop_id || null;
-    const metaCategory = metadata.category || null;
+    const eventType = String(payload.event || payload.event_type || payload.type || '').toLowerCase().trim();
+    const normalizedEvent = eventType === 'payment.succeeded' || eventType === 'payment.successful' ? 'payment.completed' : eventType;
+    const data = payload.data || {};
+    const metadata = payload.metadata || data.metadata || {};
+    const transactionId = asString(payload.transaction_id || payload.transactionId || data.transaction_id);
+    const providerEventId = asString(payload.event_id || payload.provider_event_id || payload.id || data.event_id);
+    const reference = asString(payload.reference || payload.link_code || payload.linkCode || data.reference || data.link_code);
+    const stableId = providerEventId || transactionId || reference;
 
-    console.log('[SubscriptionService] Webhook event verified:', {
-      eventType,
-      providerEventId,
-      linkCode,
-      profileId,
-      metaShopId
-    });
+    if (!stableId) throw new Error('UNPROCESSABLE_WEBHOOK: No stable event, transaction, or payment reference');
 
-    // 3. Webhook Idempotency Check (Check public.payment_events)
-    if (providerEventId) {
-      const { data: existingEvent } = await serverSupabase
-        .from('payment_events')
-        .select('id, processed')
-        .eq('provider_event_id', providerEventId)
-        .maybeSingle();
+    const idempotencyKey = `${stableId}:${normalizedEvent || 'payment.completed'}`;
+    const shopIdFromMetadata = asString(metadata.shop_id || payload.shop_id || data.shop_id);
+    const linkCode = asString(metadata.link_code || reference);
 
-      if (existingEvent) {
-        console.log(`[SubscriptionService] Webhook event ${providerEventId} already processed (idempotency).`);
-        return { success: true, duplicate: true, message: 'Event already processed' };
-      }
-    }
-
-    // 4. Resolve Associated Shop and Subscription Records
     let targetShop: any = null;
     let targetSubscription: any = null;
+    let targetPayment: any = null;
 
-    // Search by shop_id from metadata if available
-    if (metaShopId) {
-      const { data: shop } = await serverSupabase
+    if (shopIdFromMetadata) {
+      const { data } = await serverSupabase
         .from('shops')
         .select('*')
-        .eq('id', metaShopId)
+        .eq('id', shopIdFromMetadata)
         .maybeSingle();
-      if (shop) targetShop = shop;
+      targetShop = data;
     }
 
-    // Search by linkCode in public.subscriptions
     if (linkCode) {
-      const { data: sub } = await serverSupabase
-        .from('subscriptions')
+      const { data: payment } = await serverSupabase
+        .from('shop_payments')
         .select('*')
-        .eq('nardopay_link_code', linkCode)
-        .maybeSingle();
-      if (sub) {
-        targetSubscription = sub;
-        if (!targetShop) {
-          const { data: s } = await serverSupabase.from('shops').select('*').eq('id', sub.shop_id).maybeSingle();
-          if (s) targetShop = s;
-        }
-      }
-    }
-
-    // Fallback: search by profile_id / owner_id
-    if (!targetShop && profileId) {
-      const { data: shop } = await serverSupabase
-        .from('shops')
-        .select('*')
-        .eq('owner_id', profileId)
-        .maybeSingle();
-      if (shop) targetShop = shop;
-    }
-
-    if (targetShop && !targetSubscription) {
-      const { data: sub } = await serverSupabase
-        .from('subscriptions')
-        .select('*')
-        .eq('shop_id', targetShop.id)
+        .eq('payment_reference', linkCode)
+        .eq('provider', 'nardopay')
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (sub) targetSubscription = sub;
-    }
+      targetPayment = payment;
 
-    const resolvedShopId = targetShop?.id || metaShopId || null;
-    const resolvedOwnerId = targetShop?.owner_id || profileId || null;
-    const resolvedSubId = targetSubscription?.id || null;
-
-    const amount = payload.amount || payload.data?.amount || targetSubscription?.amount || null;
-    const currency = payload.currency || payload.data?.currency || 'USD';
-
-    // 5. Store Raw Event in public.payment_events (audit log)
-    let paymentEventId: string | null = null;
-    try {
-      const { data: insertedEvent, error: insertEventErr } = await serverSupabase
-        .from('payment_events')
-        .insert({
-          shop_id: resolvedShopId,
-          subscription_id: resolvedSubId,
-          owner_id: resolvedOwnerId,
-          provider: 'nardopay',
-          event_type: this.mapEventType(eventType),
-          provider_event_id: providerEventId,
-          link_code: linkCode,
-          nardopay_subscription_id: nardopaySubId,
-          amount: amount ? Number(amount) : null,
-          currency: currency,
-          payload: payload,
-          signature_verified: true,
-          processed: false,
-          created_at: new Date().toISOString()
-        })
-        .select('id')
+      const { data: subscription } = await serverSupabase
+        .from('subscriptions')
+        .select('*')
+        .eq('nardopay_link_code', linkCode)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
-
-      if (insertEventErr) {
-        console.warn('[SubscriptionService] Payment event logging notice:', insertEventErr.message);
-      } else {
-        paymentEventId = insertedEvent?.id || null;
-      }
-    } catch (e: any) {
-      console.warn('[SubscriptionService] Exception storing payment event:', e.message);
+      targetSubscription = subscription;
     }
 
-    // 6. Handle Specific Event Types Authoritatively
-    const normalizedEvent = this.mapEventType(eventType);
+    if (!targetShop && targetPayment) {
+      const { data } = await serverSupabase.from('shops').select('*').eq('id', targetPayment.shop_id).maybeSingle();
+      targetShop = data;
+    }
+    if (!targetShop && targetSubscription) {
+      const { data } = await serverSupabase.from('shops').select('*').eq('id', targetSubscription.shop_id).maybeSingle();
+      targetShop = data;
+    }
+
+    if (!targetShop) throw new Error('PAYMENT_SHOP_NOT_FOUND');
+    if (resolveServerSellerCategory(targetShop.page_type) !== 'clothing') throw new Error('UNSUPPORTED_CATEGORY');
+
+    const normalizedType = normalizedEvent || 'payment.completed';
+    const amount = asNumber(payload.amount ?? data.amount);
+    const currency = String(payload.currency || data.currency || 'USD').toUpperCase();
+    const eventStatus = String(payload.status || data.status || '').toLowerCase();
     const now = new Date();
 
+    const { data: insertedEvent, error: eventInsertError } = await serverSupabase
+      .from('payment_events')
+      .insert({
+        shop_id: targetShop.id,
+        subscription_id: targetSubscription?.id || null,
+        owner_id: targetShop.owner_id,
+        provider: 'nardopay',
+        event_type: normalizedType,
+        provider_event_id: idempotencyKey,
+        link_code: linkCode,
+        amount,
+        currency,
+        payload,
+        signature_verified: true,
+        processed: false,
+        created_at: now.toISOString()
+      })
+      .select('id')
+      .single();
+
+    if (eventInsertError) {
+      if (eventInsertError.code === '23505') return { success: true, duplicate: true, event: normalizedType };
+      throw new Error(`PAYMENT_EVENT_LOG_FAILED: ${eventInsertError.message}`);
+    }
+
     try {
-      switch (normalizedEvent) {
-        case 'payment.completed': {
-          if (!targetShop) {
-            throw new Error(`Shop could not be resolved for payment.completed (meta: ${JSON.stringify(metadata)})`);
-          }
-
-          const category = resolveServerSellerCategory(targetShop.page_type);
-          const isVehicle = category === 'vehicles';
-
-          // Calculate period end: +1 month for clothing, +1 year for vehicles
-          const periodStart = now;
-          const periodEnd = new Date(periodStart);
-          if (isVehicle) {
-            periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-          } else {
-            periodEnd.setMonth(periodEnd.getMonth() + 1);
-          }
-
-          // Expected verified price check
-          const expectedAmount = isVehicle ? 30.00 : 9.00;
-          const verifiedAmount = amount ? Number(amount) : expectedAmount;
-
-          // A. Update public.subscriptions
-          if (targetSubscription) {
-            await serverSupabase
-              .from('subscriptions')
-              .update({
-                status: 'active',
-                plan: 'pro',
-                amount: verifiedAmount,
-                currency: 'USD',
-                billing_cycle: isVehicle ? 'yearly' : 'monthly',
-                nardopay_subscription_id: nardopaySubId || targetSubscription.nardopay_subscription_id,
-                current_period_start: periodStart.toISOString(),
-                current_period_end: periodEnd.toISOString(),
-                grace_period_end: null,
-                cancelled_at: null,
-                updated_at: now.toISOString()
-              })
-              .eq('id', targetSubscription.id);
-          } else {
-            const { data: newSub } = await serverSupabase
-              .from('subscriptions')
-              .insert({
-                shop_id: targetShop.id,
-                owner_id: targetShop.owner_id,
-                category: category,
-                plan: 'pro',
-                billing_cycle: isVehicle ? 'yearly' : 'monthly',
-                amount: verifiedAmount,
-                currency: 'USD',
-                status: 'active',
-                provider: 'nardopay',
-                nardopay_link_code: linkCode,
-                nardopay_subscription_id: nardopaySubId,
-                current_period_start: periodStart.toISOString(),
-                current_period_end: periodEnd.toISOString(),
-                created_at: now.toISOString(),
-                updated_at: now.toISOString()
-              })
-              .select('id')
-              .maybeSingle();
-
-            if (newSub) {
-              targetSubscription = newSub;
-            }
-          }
-
-          // B. Update public.shops (The application entitlement cache used by Phase 5 logic)
-          await serverSupabase
-            .from('shops')
-            .update({
-              plan: 'pro',
-              subscription_status: 'active',
-              payment_status: 'paid',
-              payment_reference: linkCode || providerEventId || `NP-${Date.now()}`,
-              payment_amount: verifiedAmount,
-              payment_currency: 'USD',
-              paid_at: now.toISOString()
-            })
-            .eq('id', targetShop.id);
-
-          // C. Update legacy profiles/subscriptions if present
-          if (targetShop.owner_id) {
-            try {
-              await serverSupabase
-                .from('profiles')
-                .update({
-                  subscription_status: 'active',
-                  active_until: periodEnd.toISOString()
-                })
-                .eq('id', targetShop.owner_id);
-
-              await serverSupabase
-                .from('subscriptions')
-                .update({
-                  status: 'active',
-                  subscription_started_at: periodStart.toISOString(),
-                  subscription_ends_at: periodEnd.toISOString()
-                })
-                .eq('profile_id', targetShop.owner_id);
-            } catch (e) {}
-          }
-
-          // D. Notify Merchant
-          try {
-            await createNotification(targetShop.owner_id, {
-              title: 'Pro Plan Activated! 🎉',
-              body: `Your ${isVehicle ? 'Vehicle Pro Dealership' : 'Clothing Pro'} subscription is now active. Enjoy unlimited listings!`,
-              type: 'subscription_activated',
-              target_url: '/dashboard'
-            });
-          } catch (e) {}
-
-          console.log(`[SubscriptionService] Pro successfully activated for shop ${targetShop.id}`);
-          break;
-        }
-
-        case 'subscription.renewed': {
-          if (!targetShop) {
-            throw new Error(`Shop not found for renewal event`);
-          }
-
-          const category = resolveServerSellerCategory(targetShop.page_type);
-          const isVehicle = category === 'vehicles';
-
-          let nextPeriodEnd = new Date();
-          if (targetSubscription?.current_period_end) {
-            const currentEnd = new Date(targetSubscription.current_period_end);
-            if (currentEnd > nextPeriodEnd) {
-              nextPeriodEnd = currentEnd;
-            }
-          }
-
-          if (isVehicle) {
-            nextPeriodEnd.setFullYear(nextPeriodEnd.getFullYear() + 1);
-          } else {
-            nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1);
-          }
-
-          if (targetSubscription) {
-            await serverSupabase
-              .from('subscriptions')
-              .update({
-                status: 'active',
-                current_period_end: nextPeriodEnd.toISOString(),
-                grace_period_end: null,
-                updated_at: now.toISOString()
-              })
-              .eq('id', targetSubscription.id);
-          }
-
-          await serverSupabase
-            .from('shops')
-            .update({
-              plan: 'pro',
-              subscription_status: 'active'
-            })
-            .eq('id', targetShop.id);
-
-          console.log(`[SubscriptionService] Subscription renewed for shop ${targetShop.id}`);
-          break;
-        }
-
-        case 'subscription.trial_started': {
-          console.log(`[SubscriptionService] Trial started event received and logged.`);
-          break;
-        }
-
-        case 'subscription.renew_failed': {
-          const graceEnd = new Date(now);
-          graceEnd.setDate(graceEnd.getDate() + 3); // 3-day grace period
-
-          if (targetSubscription) {
-            await serverSupabase
-              .from('subscriptions')
-              .update({
-                status: 'grace_period',
-                grace_period_end: graceEnd.toISOString(),
-                updated_at: now.toISOString()
-              })
-              .eq('id', targetSubscription.id);
-          }
-
-          if (targetShop) {
-            await serverSupabase
-              .from('shops')
-              .update({
-                subscription_status: 'past_due'
-              })
-              .eq('id', targetShop.id);
-          }
-
-          // Do NOT delete any inventory (products or vehicles)
-          console.log(`[SubscriptionService] Subscription renewal failed. Placed in grace period until ${graceEnd.toISOString()}`);
-          break;
-        }
-
-        case 'subscription.cancelled': {
-          if (targetSubscription) {
-            await serverSupabase
-              .from('subscriptions')
-              .update({
-                status: 'cancelled',
-                cancelled_at: now.toISOString(),
-                updated_at: now.toISOString()
-              })
-              .eq('id', targetSubscription.id);
-          }
-
-          if (targetShop) {
-            await serverSupabase
-              .from('shops')
-              .update({
-                subscription_status: 'cancelled'
-              })
-              .eq('id', targetShop.id);
-          }
-
-          // Do NOT delete products or vehicles
-          console.log(`[SubscriptionService] Subscription cancelled. Inventory preserved.`);
-          break;
-        }
-
-        default:
-          console.log(`[SubscriptionService] Unhandled event type: ${eventType}`);
+      if (normalizedType !== 'payment.completed') {
+        await serverSupabase.from('payment_events').update({ processed: true, processed_at: now.toISOString() }).eq('id', insertedEvent.id);
+        return { success: true, ignored: true, event: normalizedType };
       }
 
-      // Mark payment_event as processed
-      if (paymentEventId) {
-        await serverSupabase
-          .from('payment_events')
-          .update({
-            processed: true,
-            processed_at: now.toISOString()
-          })
-          .eq('id', paymentEventId);
+      if (eventStatus && !SUCCESS_STATUSES.has(eventStatus)) {
+        await serverSupabase.from('payment_events').update({ processed: true, processed_at: now.toISOString() }).eq('id', insertedEvent.id);
+        return { success: true, paymentRejected: true, event: normalizedType };
       }
 
-      return { success: true, event: normalizedEvent };
-    } catch (processErr: any) {
-      console.error('[SubscriptionService] Error processing webhook event logic:', processErr);
+      if (!targetPayment) throw new Error('PAYMENT_ATTEMPT_NOT_FOUND');
+      const expectedAmount = Number(targetPayment.amount);
+      if (amount !== null && Math.abs(amount - expectedAmount) > 0.005) throw new Error('PAYMENT_AMOUNT_MISMATCH');
+      if (currency !== String(targetPayment.currency).toUpperCase()) throw new Error('PAYMENT_CURRENCY_MISMATCH');
 
-      if (paymentEventId) {
-        await serverSupabase
-          .from('payment_events')
-          .update({
-            processed: false,
-            processing_error: processErr.message
-          })
-          .eq('id', paymentEventId);
+      const periodStart = now;
+      const currentEnd = targetSubscription?.current_period_end ? new Date(targetSubscription.current_period_end) : null;
+      const baseDate = currentEnd && currentEnd > periodStart ? currentEnd : periodStart;
+      const periodEnd = addMonths(baseDate, 1);
+
+      const { error: paymentUpdateError } = await serverSupabase
+        .from('shop_payments')
+        .update({
+          status: 'paid',
+          provider_transaction_id: transactionId,
+          paid_at: now.toISOString()
+        })
+        .eq('id', targetPayment.id);
+      if (paymentUpdateError) throw new Error(`SHOP_PAYMENT_UPDATE_FAILED: ${paymentUpdateError.message}`);
+
+      const { data: activeSubscription, error: subscriptionError } = await serverSupabase
+        .from('subscriptions')
+        .update({
+          status: 'active',
+          plan: 'premium',
+          amount: expectedAmount,
+          currency: String(targetPayment.currency).toUpperCase(),
+          billing_cycle: 'monthly',
+          nardopay_link_code: linkCode,
+          current_period_start: periodStart.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          grace_period_end: null,
+          cancelled_at: null,
+          updated_at: now.toISOString()
+        })
+        .eq('id', targetSubscription?.id || '')
+        .select('id')
+        .maybeSingle();
+      if (subscriptionError) throw new Error(`SUBSCRIPTION_UPDATE_FAILED: ${subscriptionError.message}`);
+
+      const subscriptionId = activeSubscription?.id || targetSubscription?.id;
+      const { error: paymentRecordError } = await serverSupabase.from('payments').insert({
+        subscription_id: subscriptionId,
+        provider: 'nardopay',
+        provider_transaction_id: transactionId,
+        amount: expectedAmount,
+        currency: String(targetPayment.currency).toUpperCase(),
+        status: 'successful',
+        paid_at: now.toISOString(),
+        updated_at: now.toISOString()
+      });
+      if (paymentRecordError) throw new Error(`PAYMENT_RECORD_FAILED: ${paymentRecordError.message}`);
+
+      const { error: shopUpdateError } = await serverSupabase
+        .from('shops')
+        .update({
+          plan: 'premium',
+          subscription_status: 'active',
+          payment_status: 'paid',
+          payment_reference: linkCode || transactionId,
+          payment_amount: expectedAmount,
+          payment_currency: String(targetPayment.currency).toUpperCase(),
+          paid_at: now.toISOString()
+        })
+        .eq('id', targetShop.id);
+      if (shopUpdateError) throw new Error(`SHOP_ENTITLEMENT_UPDATE_FAILED: ${shopUpdateError.message}`);
+
+      await serverSupabase.from('payment_events').update({ processed: true, processed_at: now.toISOString() }).eq('id', insertedEvent.id);
+
+      try {
+        await createNotification(targetShop.owner_id, {
+          title: 'Premium activated',
+          body: 'Your Threadzw Premium access is active for 30 days.',
+          type: 'subscription_activated',
+          target_url: '/subscription'
+        });
+      } catch (notificationError) {
+        console.warn('[SubscriptionService] Notification failed:', notificationError);
       }
 
-      throw processErr;
+      return { success: true, event: normalizedType, shopId: targetShop.id, subscriptionId };
+    } catch (processingError: any) {
+      await serverSupabase.from('payment_events').update({ processing_error: processingError.message }).eq('id', insertedEvent.id);
+      throw processingError;
     }
   }
 
-  /**
-   * Retrieves Authoritative Subscription Status for a Shop.
-   */
   public async getStatus(params: { userId: string; shopId: string }) {
     const { userId, shopId } = params;
-
-    if (!userId || !shopId) {
-      throw new Error('shopId and authenticated user context are required');
-    }
-
-    // 1. Verify shop ownership
-    const { data: shop, error: shopErr } = await serverSupabase
+    const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
       .select('id, owner_id, plan, subscription_status, page_type, payment_reference, paid_at')
       .eq('id', shopId)
       .maybeSingle();
+    if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
+    if (shop.owner_id !== userId) throw new Error('UNAUTHORIZED: Shop access denied');
 
-    if (shopErr || !shop) {
-      throw new Error('INVALID_SHOP: Shop not found');
-    }
-
-    if (shop.owner_id !== userId) {
-      throw new Error('UNAUTHORIZED: Shop access denied');
-    }
-
-    const category = resolveServerSellerCategory(shop.page_type);
-
-    // 2. Fetch active/most recent subscription from public.subscriptions
     const { data: subscription } = await serverSupabase
       .from('subscriptions')
-      .select('*')
+      .select('id, plan, status, amount, currency, billing_cycle, current_period_start, current_period_end, grace_period_end, cancelled_at, nardopay_link_code')
       .eq('shop_id', shopId)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     return {
-      shopId: shop.id,
+      shopId,
+      category: resolveServerSellerCategory(shop.page_type),
       plan: shop.plan || 'free',
-      category: category,
-      status: subscription?.status || (shop.plan === 'pro' ? 'active' : 'inactive'),
-      billingCycle: subscription?.billing_cycle || (category === 'vehicles' ? 'yearly' : 'monthly'),
-      amount: subscription?.amount || (category === 'vehicles' ? 30.00 : 9.00),
+      status: subscription?.status || (shop.plan === 'premium' ? 'active' : 'trial'),
+      amount: subscription?.amount || Number(process.env.THREADZW_CLOTHING_PRO_PRICE_USD || 1.59),
       currency: subscription?.currency || 'USD',
+      billingCycle: subscription?.billing_cycle || 'monthly',
       currentPeriodStart: subscription?.current_period_start || null,
       currentPeriodEnd: subscription?.current_period_end || null,
       gracePeriodEnd: subscription?.grace_period_end || null,
@@ -631,73 +395,8 @@ export class SubscriptionService {
     };
   }
 
-  /**
-   * Manual Payment Verification Fallback.
-   */
-  public async verifyPaymentFallback(params: {
-    userId: string;
-    shopId: string;
-    linkCode?: string;
-  }) {
-    const { userId, shopId, linkCode } = params;
-
-    const { data: shop } = await serverSupabase
-      .from('shops')
-      .select('*')
-      .eq('id', shopId)
-      .maybeSingle();
-
-    if (!shop || shop.owner_id !== userId) {
-      throw new Error('UNAUTHORIZED');
-    }
-
-    // Call NardoPay verification API
-    const result = await nardopayClient.verifyPaymentStatus({
-      link_code: linkCode,
-      profile_id: userId
-    });
-
-    if (result && (result.status === 'paid' || result.status === 'active' || result.verified === true)) {
-      // Simulate webhook handling for recovery
-      await this.handleWebhook({
-        rawBody: JSON.stringify(result),
-        signatureHeader: 'bypass_fallback',
-        payload: {
-          event_type: 'payment.completed',
-          provider_event_id: `FALLBACK-${Date.now()}`,
-          link_code: linkCode,
-          amount: result.amount,
-          metadata: {
-            profile_id: userId,
-            shop_id: shopId
-          }
-        }
-      });
-      return { verified: true, plan: 'pro' };
-    }
-
-    return { verified: false };
-  }
-
-  private mapEventType(rawType: string): string {
-    if (!rawType) return 'payment.completed';
-    const lower = String(rawType).toLowerCase().trim();
-    if (lower === 'payment.completed' || lower === 'payment.succeeded' || lower === 'paid' || lower === 'success') {
-      return 'payment.completed';
-    }
-    if (lower === 'subscription.renewed' || lower === 'renewed') {
-      return 'subscription.renewed';
-    }
-    if (lower === 'subscription.trial_started' || lower === 'trial_started') {
-      return 'subscription.trial_started';
-    }
-    if (lower === 'subscription.renew_failed' || lower === 'renew_failed' || lower === 'payment.failed') {
-      return 'subscription.renew_failed';
-    }
-    if (lower === 'subscription.cancelled' || lower === 'cancelled') {
-      return 'subscription.cancelled';
-    }
-    return rawType;
+  public async verifyPaymentFallback(_params?: { userId?: string; shopId?: string; linkCode?: string }) {
+    return { verified: false, reason: 'WEBHOOK_REQUIRED' };
   }
 }
 

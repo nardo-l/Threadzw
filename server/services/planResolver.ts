@@ -12,42 +12,46 @@ export interface ResolvedPlanDetails {
   description: string;
 }
 
-/**
- * Normalizes shop page_type to standard SellerCategory
- */
 export function resolveServerSellerCategory(pageType?: string | null): SellerCategory {
   if (!pageType) return 'clothing';
   const normalized = String(pageType).toLowerCase().trim();
 
-  if (
-    normalized === 'vehicle' ||
-    normalized === 'vehicles' ||
-    normalized === 'car' ||
-    normalized === 'dealership' ||
-    normalized === 'auto'
-  ) {
+  if (['vehicle', 'vehicles', 'car', 'dealership', 'auto'].includes(normalized)) {
     return 'vehicles';
   }
 
-  if (
-    normalized === 'clothing' ||
-    normalized === 'fashion' ||
-    normalized === 'apparel' ||
-    normalized === 'boutique'
-  ) {
+  if (['clothing', 'fashion', 'apparel', 'boutique'].includes(normalized)) {
     return 'clothing';
   }
 
-  if (normalized === 'general' || normalized === 'standard' || normalized === 'store') {
+  if (['general', 'standard', 'store'].includes(normalized)) {
     return 'general';
   }
 
   return 'clothing';
 }
 
+function envNumber(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error(`INVALID_CONFIGURATION: ${name} must be a positive number`);
+  }
+  return value;
+}
+
+function envCurrency(): 'USD' {
+  const currency = (process.env.THREADZW_CLOTHING_PRO_CURRENCY || 'USD').toUpperCase();
+  if (currency !== 'USD') {
+    throw new Error('INVALID_CONFIGURATION: THREADZW_CLOTHING_PRO_CURRENCY must be USD');
+  }
+  return 'USD';
+}
+
 /**
- * Authoritative Server-Side Plan Resolution for Upgrades.
- * NEVER trusts client-submitted amount, billing cycle, or prices.
+ * Server-authoritative plan resolution. Client-submitted prices and billing
+ * cycles are never accepted. Paid database entitlements use `premium`.
  */
 export function resolveProPlanForShop(shop: {
   id: string;
@@ -59,36 +63,36 @@ export function resolveProPlanForShop(shop: {
   if (category === 'clothing') {
     return {
       category: 'clothing',
-      plan: 'pro',
-      amount: 9.00,
-      currency: 'USD',
+      plan: 'premium' as SellerPlan,
+      amount: envNumber('THREADZW_CLOTHING_PRO_PRICE_USD', 1.59),
+      currency: envCurrency(),
       billing_cycle: 'monthly',
-      planName: 'ThreadZW Clothing Pro',
-      description: 'Unlimited products, advanced storefront branding, and priority WhatsApp ordering'
+      planName: 'Threadzw Premium',
+      description: 'Unlimited clothing products and advanced storefront tools for 30 days'
     };
   }
 
   if (category === 'vehicles') {
     return {
       category: 'vehicles',
-      plan: 'pro',
-      amount: 30.00,
+      plan: 'premium' as SellerPlan,
+      amount: envNumber('THREADZW_VEHICLES_PRO_PRICE_USD', 30),
       currency: 'USD',
       billing_cycle: 'yearly',
-      planName: 'ThreadZW Vehicle Pro',
-      description: 'Up to 20 active vehicle showroom listings, 20 HD photos per car, and custom dealer branding'
+      planName: 'Threadzw Premium',
+      description: 'Premium seller tools for vehicle showrooms'
     };
   }
 
   if (category === 'general') {
     return {
       category: 'general',
-      plan: 'pro',
-      amount: 9.00,
+      plan: 'premium' as SellerPlan,
+      amount: envNumber('THREADZW_GENERAL_PRO_PRICE_USD', 9),
       currency: 'USD',
       billing_cycle: 'monthly',
-      planName: 'ThreadZW Store Pro',
-      description: 'Unlimited inventory catalog and custom seller branding'
+      planName: 'Threadzw Premium',
+      description: 'Premium seller tools for general stores'
     };
   }
 
