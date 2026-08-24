@@ -49,7 +49,7 @@ export const Subscription: React.FC = () => {
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const category = resolveSellerCategory(shop?.page_type);
-  const currentPlan = isPro(shop) ? 'pro' : 'free';
+  const currentPlan = isPro(shop) ? 'premium' : 'free';
   const entitlements = getEntitlements(shop);
 
   const fetchSubscriptionStatus = async () => {
@@ -68,11 +68,11 @@ export const Subscription: React.FC = () => {
       setSubStatus({
         success: true,
         shopId: shop.id,
-        plan: isPro(shop) ? 'pro' : 'free',
+        plan: isPro(shop) ? 'premium' : 'free',
         category: category,
         status: isPro(shop) ? 'active' : 'inactive',
         billingCycle: category === 'vehicles' ? 'yearly' : 'monthly',
-        amount: category === 'vehicles' ? 30 : 9,
+        amount: category === 'vehicles' ? 30 : Number(import.meta.env.VITE_THREADZW_CLOTHING_PRO_PRICE_USD || 1.59),
         currency: 'USD'
       });
     } finally {
@@ -93,12 +93,12 @@ export const Subscription: React.FC = () => {
         setPollCount(prev => prev + 1);
         try {
           const status = await subscriptionClient.getStatus(shop.id);
-          if (status.plan === 'pro' || status.status === 'active') {
+          if (status.plan === 'premium' || status.status === 'active') {
             setIsVerifyingPayment(false);
             if (pollingRef.current) clearInterval(pollingRef.current);
             await refreshShop();
             setSubStatus(status);
-            toast.success('Pro Subscription Activated! 🎉');
+            toast.success('Premium subscription activated.');
           }
         } catch (e) {
           // Continue polling
@@ -113,7 +113,7 @@ export const Subscription: React.FC = () => {
     };
   }, [isVerifyingPayment, shop?.id]);
 
-  // Handle Upgrade to Pro Trigger
+  // Handle Premium upgrade trigger
   const handleUpgradeToPro = async () => {
     if (!shop?.id) {
       toast.error('Shop details could not be loaded. Please refresh.');
@@ -188,7 +188,7 @@ export const Subscription: React.FC = () => {
   const generalConfig = PLANS_CONFIG.general;
 
   const currentConfig = category === 'vehicles' ? vehicleConfig : category === 'clothing' ? clothingConfig : generalConfig;
-  const proPrice = category === 'vehicles' ? 30 : 9;
+  const proPrice = currentConfig.premium.price;
   const proBillingCycle = category === 'vehicles' ? 'year' : 'one-off';
 
   if (currentPlan === 'free' && category !== 'vehicles') {
@@ -328,15 +328,15 @@ export const Subscription: React.FC = () => {
 
               {/* PRO TIER CARD */}
               <div className={`bg-zinc-950 text-white p-6 sm:p-7 rounded-3xl border transition-all space-y-4 relative overflow-hidden ${
-                currentPlan === 'pro' ? 'border-[#C6FF00] ring-2 ring-[#C6FF00]/20' : 'border-zinc-800'
+                currentPlan === 'premium' ? 'border-[#C6FF00] ring-2 ring-[#C6FF00]/20' : 'border-zinc-800'
               }`}>
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-900 font-extrabold bg-[#C6FF00] px-3 py-1 rounded-full">
-                      {category === 'vehicles' ? 'Dealership Pro' : 'Growth Tier'}
+                      {category === 'vehicles' ? 'Dealership Premium' : 'Growth Tier'}
                     </span>
                     <h2 className="text-xl font-black uppercase tracking-tight text-white mt-2">
-                      {category === 'vehicles' ? 'Vehicle Pro Plan' : 'ThreadZW Pro'}
+                      {category === 'vehicles' ? 'Vehicle Premium Plan' : 'ThreadZW Premium'}
                     </h2>
                   </div>
                   <div className="text-right">
@@ -346,7 +346,7 @@ export const Subscription: React.FC = () => {
                 </div>
 
                 <div className="space-y-2 border-t border-zinc-800 pt-3">
-                  {currentConfig.pro.features.map(f => (
+                  {currentConfig.premium.features.map(f => (
                     <div key={f} className="flex items-center gap-2.5 text-xs font-semibold text-zinc-200">
                       <div className="w-4.5 h-4.5 rounded-full bg-zinc-800 text-[#C6FF00] flex items-center justify-center shrink-0">
                         <Check size={11} className="stroke-[3]" />
@@ -356,10 +356,10 @@ export const Subscription: React.FC = () => {
                   ))}
                 </div>
 
-                {currentPlan === 'pro' ? (
+                {currentPlan === 'premium' ? (
                   <div className="p-3 bg-[#C6FF00]/10 border border-[#C6FF00]/30 rounded-xl text-center space-y-1">
                     <span className="text-xs font-black uppercase tracking-wider text-[#C6FF00] block">
-                      Active Pro Subscription
+                      Active Premium Subscription
                     </span>
                     {subStatus?.currentPeriodEnd && (
                       <span className="text-[11px] text-zinc-400 block font-mono">
@@ -383,7 +383,7 @@ export const Subscription: React.FC = () => {
                       ) : (
                         <>
                           <Zap size={16} className="fill-current" />
-                          <span>Upgrade to Pro — ${proPrice} USD {category === 'vehicles' ? '/ year' : 'One-Off'}</span>
+                          <span>Upgrade to Premium — ${proPrice} USD {category === 'vehicles' ? '/ year' : 'One-Off'}</span>
                         </>
                       )}
                     </button>

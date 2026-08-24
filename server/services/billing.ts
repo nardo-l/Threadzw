@@ -296,14 +296,14 @@ export class BillingService {
    */
   public async createSubscriptionLink(userId: string) {
     const nardoApiKey = process.env.NARDOPAY_API_KEY;
-    const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'https://ais-dev-zkd4tzvgxm32yzylhaadyh-364066446409.europe-west2.run.app';
+    const appUrl = process.env.APP_URL || process.env.VITE_APP_URL || 'https://threadzw.vercel.app';
 
     if (!nardoApiKey) {
       throw new Error('NARDOPAY_API_KEY environment variable is not configured.');
     }
 
-    const webhookUrl = `${appUrl}/api/nardopay-webhook`;
-    const redirectUrl = `${appUrl}/dashboard?upgraded=true`;
+    const webhookUrl = `${appUrl}/api/subscriptions/webhook`;
+    const redirectUrl = `${appUrl}/payment/success`;
 
     console.log('[BillingService] Calling NardoPay create-payment-link-api for one-off payment...');
 

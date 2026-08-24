@@ -32,45 +32,32 @@ export async function sendDailyDigestToAll(supabase: any) {
 
       const shopIds = (shops || []).map((s: any) => s.id);
       
-      let orderCount = 0;
+      let interestCount = 0;
       let visitCount = 0;
 
       if (shopIds.length > 0) {
-        // Count WhatsApp / real orders today
-        const { count: ordCount } = await supabase
-          .from('orders')
-          .select('*', { count: 'exact', head: true })
-          .in('shop_id', shopIds)
-          .neq('status', 'visit')
-          .gte('created_at', startOfDay);
-
-        orderCount = ordCount || 0;
-
-        // Count shop visits today (from shop_analytics or orders status = 'visit')
-        const { count: visCount } = await supabase
+        const { count: interestEvents } = await supabase
           .from('shop_analytics')
           .select('*', { count: 'exact', head: true })
           .in('shop_id', shopIds)
+          .in('event_type', ['whatsapp_click', 'visit_shop_click', 'map_open'])
           .gte('created_at', startOfDay);
+        interestCount = interestEvents || 0;
 
-        visitCount = visCount || 0;
-
-        if (visitCount === 0) {
-          const { count: visOrdersCount } = await supabase
-            .from('orders')
-            .select('*', { count: 'exact', head: true })
-            .in('shop_id', shopIds)
-            .eq('status', 'visit')
-            .gte('created_at', startOfDay);
-          visitCount = visOrdersCount || 0;
-        }
+        const { count: visitEvents } = await supabase
+          .from('shop_analytics')
+          .select('*', { count: 'exact', head: true })
+          .in('shop_id', shopIds)
+          .in('event_type', ['shop_visit', 'shop_view'])
+          .gte('created_at', startOfDay);
+        visitCount = visitEvents || 0;
       }
 
       // Skip sending daily review to profiles with zero activity for the day, but still check expiry reminders below!
-      if (orderCount > 0 || visitCount > 0) {
+      if (interestCount > 0 || visitCount > 0) {
         const payload = {
-          title: "Your daily shop review 📊",
-          body: `You had ${orderCount} WhatsApp orders and ${visitCount} shop visits today`,
+          title: "Your daily shop review",
+          body: `You had ${interestCount} customer interests and ${visitCount} shop visits today`,
           data: { url: "/dashboard" }
         };
 
@@ -78,14 +65,14 @@ export async function sendDailyDigestToAll(supabase: any) {
         await createNotification(profileId, {
           type: 'daily_summary',
           title: 'Daily shop summary',
-          body: `You had ${orderCount} WhatsApp orders and ${visitCount} shop visits today.`,
+          body: `You had ${interestCount} customer interests and ${visitCount} shop visits today.`,
           target_url: '/analytics'
         });
         sentCount++;
       }
     }
 
-    // 2. Check for Pro Plan subscriptions expiring within 3 days and send reminders (once per cycle)
+    // 2. Check for Premium subscriptions expiring within 3 days and send reminders (once per cycle)
     const threeDaysFromNow = new Date();
     threeDaysFromNow.setDate(threeDaysFromNow.getDate() + 3);
 
@@ -129,8 +116,8 @@ export async function sendDailyDigestToAll(supabase: any) {
 
         if (!alreadyReminded) {
           const reminderPayload = {
-            title: "Your Pro Plan expires soon ⏰",
-            body: "Renew for $1.59 to keep unlimited products on your shop",
+            title: "Your Premium access expires soon",
+            body: "Renew to keep Premium storefront access active",
             data: { url: "/dashboard/upgrade" }
           };
 
@@ -138,8 +125,8 @@ export async function sendDailyDigestToAll(supabase: any) {
             await sendPushToProfile(supabase, profileId, reminderPayload);
             await createNotification(profileId, {
               type: 'pro_expiry',
-              title: 'Pro Plan expires in 3 days',
-              body: 'Renew for $1.59 to keep unlimited products on your shop',
+              title: 'Premium access expires in 3 days',
+              body: 'Renew to keep Premium storefront access active',
               target_url: '/subscription'
             });
             reminderCount++;

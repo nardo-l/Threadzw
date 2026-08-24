@@ -31,6 +31,7 @@ import { StorefrontContact } from '../components/storefront/StorefrontContact';
 import { VehicleStorefrontView } from '../components/vehicles/VehicleStorefrontView';
 import { CartItem, StorefrontPageType } from '../components/storefront/types';
 import { ShopLogo } from '../components/ui/ShopImage';
+import { getAbsoluteShopUrl } from '../utils/shopUrl';
 
 interface StorefrontPageProps {
   preloadedShop?: any;
@@ -284,7 +285,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
     if (!shop) return;
     const prodId = searchParams.get('prod_id') || searchParams.get('product_id') || searchParams.get('product');
     let pageTitle = `${shop.name} | Storefront on ThreadZW`;
-    let pageDesc = shop.description || `Browse fashion, sneakers & apparel at ${shop.name} on ThreadZW. Order directly via WhatsApp.`;
+    let pageDesc = shop.description || `Browse the latest clothing drops at ${shop.name} on ThreadZW. Enquire directly on WhatsApp.`;
     let pageImg = shop.banner_url || shop.logo_url || 'https://4htrv9mv32e5k648.public.blob.vercel-storage.com/file_000000009c74724684851106c3e2946c.png';
 
     if (activePage === 'product' && prodId && products.length > 0) {
@@ -399,7 +400,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
   // Share shop utility
   const handleShareShop = async () => {
     if (!shop) return;
-    const url = `https://threadzw.vercel.app/shop/${shop.id.trim()}?page=home`;
+    const url = getAbsoluteShopUrl(shop.slug, shop.id);
     const title = `${shop.name} | ThreadZW Storefront`;
     const text = `Check out the latest clothing collections from ${shop.name} on ThreadZW! 🛍️✨`;
 

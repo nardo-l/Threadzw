@@ -187,8 +187,9 @@ export const AddProduct: React.FC = () => {
               setPublishedCount(activeCount);
             }
 
+            const isClothingShop = (shop.page_type || 'clothing').toLowerCase() === 'clothing' || shop.page_type === 'storefront';
             const check = canAddProduct(shop as unknown as Shop, activeCount || 0);
-            if (!check.allowed) {
+            if (!check.allowed && !isClothingShop) {
               setIsAtLimit(true);
               setShowUpgradeModal(true);
             }
@@ -620,7 +621,13 @@ export const AddProduct: React.FC = () => {
 
         if (isLimitReached) {
           toast.dismiss(apiToast);
-          toast.error('You have reached the maximum 9 products allowed on the Free trial. Upgrade to Pro ($9 one-off) to add unlimited products.', { duration: 6000 });
+          const isClothingShop = (shopData?.page_type || 'clothing').toLowerCase() === 'clothing' || shopData?.page_type === 'storefront';
+          if (isClothingShop) {
+            toast.error('Free clothing shops have unlimited products. Refresh and try publishing again.', { duration: 6000 });
+            setPublishing(false);
+            return;
+          }
+          toast.error('Your vehicle listing limit has been reached. Upgrade to Vehicle Premium to add another vehicle.', { duration: 6000 });
           setIsAtLimit(true);
           setShowUpgradeModal(true);
           setPublishing(false);
@@ -739,11 +746,11 @@ export const AddProduct: React.FC = () => {
     })
   };
 
-  if (isAtLimit && !isSuccess) {
+  if (isAtLimit && !isSuccess && shopData?.page_type === 'vehicles') {
     return (
       <ProUpgradePaywallCard
         shop={shopData}
-        productCount={publishedCount || 9}
+        productCount={publishedCount || 0}
         onBack={() => navigate('/inventory')}
         onSuccess={() => {
           setIsAtLimit(false);
@@ -799,7 +806,7 @@ export const AddProduct: React.FC = () => {
       {/* CORE CONTAINER */}
       <div className="flex-1 w-full max-w-[430px] mx-auto px-5 pt-4 pb-24 flex flex-col justify-start relative">
         <AnimatePresence initial={false} custom={direction} mode="wait">
-          {isAtLimit && !isSuccess ? (
+          {isAtLimit && !isSuccess && shopData?.page_type === 'vehicles' ? (
             <motion.div
               key="limit-paywall"
               initial={{ opacity: 0, y: 10 }}
@@ -814,17 +821,17 @@ export const AddProduct: React.FC = () => {
 
                 <div className="space-y-2">
                   <span className="text-[10px] font-mono font-extrabold uppercase tracking-widest text-zinc-950 bg-[#C8FF00] px-3 py-1 rounded-full border border-black/10">
-                    Free Trial Limit ({publishedCount || 9} / 9 Products)
+                    Vehicle Free limit · {publishedCount || 0} active vehicles
                   </span>
                   <h1 className="text-2xl font-black uppercase tracking-tight text-zinc-950 mt-2">
                     Product Limit Reached
                   </h1>
                   <p className="text-xs text-zinc-600 font-medium leading-relaxed max-w-xs mx-auto">
-                    You have published {publishedCount || 9} products on the Free trial. Upgrade to ThreadZW Pro to unlock unlimited products for your storefront.
+                    Your Free vehicle plan has reached its active-listing limit. Upgrade to Vehicle Premium to keep growing your showroom.
                   </p>
                 </div>
 
-                {/* Pro Tier Summary Card */}
+                {/* Vehicle Premium Summary Card */}
                 <div className="bg-zinc-950 text-white p-6 rounded-3xl border border-zinc-800 space-y-4 text-left shadow-lg">
                   <div className="flex items-center justify-between">
                     <div>
@@ -832,12 +839,12 @@ export const AddProduct: React.FC = () => {
                         Growth Tier
                       </span>
                       <h3 className="text-lg font-black uppercase tracking-tight text-white mt-1">
-                        ThreadZW Pro
+                        Vehicle Premium
                       </h3>
                     </div>
                     <div className="text-right">
-                      <span className="text-2xl font-black text-[#C8FF00]">$9</span>
-                      <span className="text-[10px] text-zinc-400 font-semibold block uppercase font-mono">One-Off</span>
+                        <span className="text-2xl font-black text-[#C8FF00]">$30</span>
+                        <span className="text-[10px] text-zinc-400 font-semibold block uppercase font-mono">Per Year</span>
                     </div>
                   </div>
 
@@ -877,7 +884,7 @@ export const AddProduct: React.FC = () => {
                   className="w-full h-14 rounded-2xl bg-[#C8FF00] hover:bg-[#b2e600] text-zinc-950 font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
                   <Sparkles size={16} />
-                  <span>Upgrade to Pro — $9 USD One-Off</span>
+                  <span>Upgrade to Vehicle Premium — $30 USD / Year</span>
                 </button>
 
                 <button

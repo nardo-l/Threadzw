@@ -2,7 +2,7 @@ import { SellerCategory, Shop, Product, Vehicle } from '../types';
 import { resolveSellerCategory } from './sellerCategories';
 export { resolveSellerCategory };
 
-export type SellerPlan = 'free' | 'pro';
+export type SellerPlan = 'free' | 'premium';
 export type BillingCycle = 'none' | 'monthly' | 'yearly';
 
 export interface PlanConfig {
@@ -52,21 +52,21 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
       price: 0,
       currency: 'USD',
       billingCycle: 'none',
-      maxActiveListings: 9,
+      maxActiveListings: null,
       maxImagesPerListing: 5,
-      description: 'Get started with essential online fashion storefront tools',
+      description: 'Launch a free fashion storefront with unlimited products and lifetime usage thresholds',
       features: [
-        'Up to 9 active products',
+        'Unlimited active products',
+        '50 unique storefront visits for life',
+        '10 WhatsApp and directions interests for life',
         '1 basic storefront template',
-        'WhatsApp direct ordering',
         'Basic inventory management',
-        'Standard sizes & colors',
         'ThreadZW branding badge'
       ]
     },
-    pro: {
-      id: 'pro',
-      name: 'Clothing Pro',
+    premium: {
+      id: 'premium',
+      name: 'Clothing Premium',
       category: 'clothing',
       price: 9,
       currency: 'USD',
@@ -109,9 +109,9 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
         'ThreadZW branding badge'
       ]
     },
-    pro: {
-      id: 'pro',
-      name: 'Vehicle Pro',
+    premium: {
+      id: 'premium',
+      name: 'Vehicle Premium',
       category: 'vehicles',
       price: 30,
       currency: 'USD',
@@ -153,9 +153,9 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
         'Order logging'
       ]
     },
-    pro: {
-      id: 'pro',
-      name: 'General Pro',
+    premium: {
+      id: 'premium',
+      name: 'General Premium',
       category: 'general',
       price: 9,
       currency: 'USD',
@@ -175,23 +175,23 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
 };
 
 /**
- * Normalizes raw database plan strings ('free', 'pro', legacy 'premium') into SellerPlan.
+ * Normalizes raw database plan strings ('free', legacy 'pro', and 'premium') into SellerPlan.
  */
 export function normalizePlan(rawPlan: string | null | undefined): SellerPlan {
   if (!rawPlan) return 'free';
   const lower = rawPlan.toLowerCase().trim();
   if (lower === 'pro' || lower === 'premium') {
-    return 'pro';
+    return 'premium';
   }
   return 'free';
 }
 
 /**
- * Checks if a shop is on a Pro plan.
+ * Checks if a shop is on the Premium plan.
  */
 export function isPro(shop: Shop | null | undefined): boolean {
   if (!shop) return false;
-  return normalizePlan(shop.plan) === 'pro';
+  return normalizePlan(shop.plan) === 'premium';
 }
 
 /**
@@ -203,13 +203,13 @@ export function getPlanForCategory(category: SellerCategory, plan: SellerPlan = 
 }
 
 /**
- * Returns available plans for a category (e.g. [Free, Pro] for clothing/vehicles, [Free] for general).
+ * Returns available plans for a category (e.g. [Free, Premium] for clothing/vehicles, [Free] for general).
  */
 export function getPlansForCategory(category: SellerCategory): PlanConfig[] {
   if (category === 'general') {
     return [PLANS_CONFIG.general.free];
   }
-  return [PLANS_CONFIG[category].free, PLANS_CONFIG[category].pro];
+  return [PLANS_CONFIG[category].free, PLANS_CONFIG[category].premium];
 }
 
 /**
@@ -222,15 +222,13 @@ export function getPlanConfig(shop: Shop | null | undefined): PlanConfig {
 }
 
 /**
- * Active listing limit for clothing products.
- * - Free trial: 9 active products
- * - Pro plan: null (unlimited)
+ * Clothing products are not quota-limited by count.
+ * Free clothing shops are gated by lifetime usage in Supabase instead.
  */
 export function getProductLimit(shop: Shop | null | undefined): number | null {
-  if (isPro(shop)) {
-    return null;
-  }
-  return 9; // Free trial allows up to 9 products
+  const category = resolveSellerCategory(shop?.page_type);
+  if (category === 'clothing' || isPro(shop)) return null;
+  return 9;
 }
 
 /**
@@ -314,7 +312,7 @@ export function canAddProduct(
     count: currentActiveCount,
     reason: allowed
       ? undefined
-      : `You've reached the ${limit}-product limit on the Free trial. Upgrade to Pro ($9 one-off) for unlimited products.`
+      : `You've reached the ${limit}-product limit. Upgrade to Premium ($9 one-off) for unlimited products.`
   };
 }
 

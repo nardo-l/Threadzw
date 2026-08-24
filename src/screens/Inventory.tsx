@@ -296,19 +296,18 @@ export const Inventory: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h1 className="text-2xl font-black text-zinc-950 tracking-tight leading-none uppercase">Products</h1>
-                <p className="text-xs text-zinc-500 mt-1.5 font-medium">Manage and organize your store products.</p>
+                <p className="text-xs text-zinc-500 mt-1.5 font-medium">Manage your drop. Free clothing shops can list unlimited products.</p>
               </div>
               
               <div className="flex items-center gap-2.5 self-start sm:self-center">
                 {(() => {
                   const isClothing = (shop?.page_type || 'clothing').toLowerCase() === 'clothing' || shop?.page_type === 'storefront';
-                  const activeCount = products.filter(p => p.is_published !== false).length;
                   const pro = isPro(shop);
 
                   if (isClothing && !pro) {
                     return (
                       <span className="px-3 py-1.5 bg-zinc-100 border border-zinc-200 rounded-xl text-[11px] font-bold text-zinc-700">
-                        {activeCount} / 2 used
+                        Unlimited products
                       </span>
                     );
                   }
@@ -383,17 +382,19 @@ export const Inventory: React.FC = () => {
             <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Syncing ledger list...</span>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="py-24 text-center border border-dashed border-zinc-200 rounded-3xl bg-white space-y-4">
-            <ShoppingBag size={40} className="mx-auto text-zinc-300" />
+          <div className="py-20 px-6 text-center border border-dashed border-zinc-200 rounded-3xl bg-white space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-[#C6FF00]/20 text-zinc-900 flex items-center justify-center">
+              <ShoppingBag size={28} />
+            </div>
             <div>
-              <h3 className="font-bold text-sm text-zinc-900">No listings found</h3>
-              <p className="text-zinc-400 text-xs mt-1 max-w-[240px] mx-auto leading-relaxed">Modify your keywords or add items matching other categories.</p>
+              <h3 className="font-bold text-sm text-zinc-900">{search || activeTab !== 'all' ? 'No products match this view' : 'Your catalog is ready for its first drop'}</h3>
+              <p className="text-zinc-500 text-xs mt-1 max-w-[280px] mx-auto leading-relaxed">{search || activeTab !== 'all' ? 'Try another search or filter.' : 'Add a photo, price, size and stock so customers can start browsing.'}</p>
             </div>
             <button 
               onClick={() => navigate('/add-product')}
-              className="px-4 py-2 bg-zinc-950 text-white font-bold text-xs rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-zinc-950 text-white font-bold text-xs rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer"
             >
-              Add New Listing
+              {search || activeTab !== 'all' ? 'Clear filters' : 'Add your first product'}
             </button>
           </div>
         ) : (

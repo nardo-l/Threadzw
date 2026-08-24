@@ -101,7 +101,7 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (localStorage.getItem('threadzw_just_subscribed') === 'true') {
       localStorage.removeItem('threadzw_just_subscribed');
-      toast.success('Subscription activated successfully! Welcome to ThreadZW Pro 🚀');
+      toast.success('Premium access is active. Welcome to ThreadZW.');
     }
   }, []);
 
@@ -123,7 +123,7 @@ export const Dashboard: React.FC = () => {
   const handleCopyShopLink = async () => {
     if (!shop) return;
     try {
-      const url = `https://threadzw.vercel.app/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
+      const url = `${window.location.origin}/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
       await navigator.clipboard.writeText(url);
       toast.success('Shop link copied to clipboard!');
     } catch (err) {
@@ -189,7 +189,7 @@ export const Dashboard: React.FC = () => {
         <div className="space-y-2 max-w-sm">
           <h3 className="text-2xl font-bold tracking-tight">No Shop Registered</h3>
           <p className="text-xs text-zinc-500 font-normal leading-relaxed">
-            Initialize your storefront to start receiving WhatsApp orders on ThreadZW.
+            Initialize your storefront so customers can browse and send WhatsApp enquiries on ThreadZW.
           </p>
         </div>
         <button 
@@ -298,10 +298,10 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Card 2: WhatsApp Orders (Replaced Orders) */}
+          {/* Card 2: Customer Interests */}
           <div className="bg-white border border-zinc-200/70 rounded-2xl p-4 shadow-2xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-normal text-zinc-500">WhatsApp Orders</span>
+              <span className="text-xs font-normal text-zinc-500">Customer Interests</span>
               <div className="w-7 h-7 rounded-lg bg-[#CCFF00] flex items-center justify-center text-black font-bold">
                 <MessageSquare size={15} className="stroke-[2.5]" />
               </div>
@@ -428,7 +428,7 @@ export const Dashboard: React.FC = () => {
           <div className="grid grid-cols-3 gap-3 text-center">
             <button 
               onClick={() => {
-                const url = `https://threadzw.vercel.app/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
+                const url = `${window.location.origin}/shop/${shop.slug ? shop.slug.trim() : shop.id.trim()}?page=home`;
                 window.open(url, '_blank');
               }}
               className="flex flex-col items-center gap-2 group cursor-pointer"
@@ -472,11 +472,11 @@ export const Dashboard: React.FC = () => {
 
         {/* 2-Column Section: Recent Activity & Top Products (NO DUMMY DATA) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Recent WhatsApp Orders & Activity */}
+          {/* Recent Customer Enquiries & Activity */}
           <div className="bg-white border border-zinc-200/70 rounded-2xl p-5 shadow-2xs space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-zinc-900">
-                {shop?.page_type === 'vehicles' ? 'Recent WhatsApp Inquiries' : 'Recent WhatsApp Orders'}
+                {shop?.page_type === 'vehicles' ? 'Recent WhatsApp Inquiries' : 'Recent Customer Enquiries'}
               </h3>
               <button 
                 onClick={() => navigate('/analytics')}

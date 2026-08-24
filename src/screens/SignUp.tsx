@@ -47,7 +47,7 @@ import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
 import { FREE_TRIAL_DAYS } from '../lib/plans';
 import { uploadImage } from '../utils/uploadImage';
-import { paymentService } from '../services/paymentService';
+import { subscriptionClient } from '../services/subscriptionClient';
 import { SuccessScreen } from '../components/onboarding/SuccessScreen';
 import { CategorySelectionStep } from '../components/onboarding/CategorySelectionStep';
 import { SellerCategory } from '../types';
@@ -567,8 +567,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           banner_url: null,
           is_active: true,
           plan: 'free',
-          product_limit: 9,
-          premium_status: 'coming_soon',
+          product_limit: null,
+          premium_status: 'inactive',
           page_type: selectedSellerCategory || 'clothing',
           template_id: null,
           page_config: {},
@@ -840,8 +840,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 9,
-          premium_status: 'coming_soon',
+          product_limit: null,
+          premium_status: 'inactive',
         };
         const { data: insertedShop, error: insertErr } = await supabase
           .from('shops')
@@ -974,20 +974,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         if (dbShop) targetShopId = dbShop.id;
       }
 
-      if (targetShopId && user?.id) {
-        await paymentService.createPaymentSession({
-          shopId: targetShopId,
-          userId: user.id,
-          amount: 9.00,
-          currency: 'USD',
-          provider: 'nardopay'
-        });
+      if (!targetShopId) {
+        throw new Error('Create your storefront before choosing Premium.');
       }
 
+      const payment = await subscriptionClient.createPaymentLink(targetShopId);
       try { await refreshShop(); } catch (e) {}
 
-      // Open official Nardo Pay link
-      window.open('https://nardopay.com/pay/efb2bff4ee35cc08', '_blank');
+      // Open the server-created NardoPay link. Premium is activated only by a verified webhook.
+      window.open(payment.url, '_blank', 'noopener,noreferrer');
 
       await new Promise((resolve) => setTimeout(resolve, 800));
       toast.success('Redirected to Nardo Pay payment.');
@@ -1046,11 +1041,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 9,
-          premium_status: 'coming_soon',
+          product_limit: null,
+          premium_status: 'inactive',
           payment_status: 'free',
           payment_required: false,
-          paid_at: nowIso
+          paid_at: null
         };
         const { error: updateErr } = await supabase
           .from('shops')
@@ -1073,11 +1068,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 9,
-          premium_status: 'coming_soon',
+          product_limit: null,
+          premium_status: 'inactive',
           payment_status: 'free',
           payment_required: false,
-          paid_at: nowIso
+          paid_at: null
         };
         const { data: newShop, error: insertErr } = await supabase
           .from('shops')
@@ -1096,15 +1091,6 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       if (targetShopId) {
         setCreatedShopId(targetShopId);
-        try {
-          await paymentService.activateShopPayment({
-            shopId: targetShopId,
-            userId: activeUser?.id || '',
-            paymentReference: `FREE-${Date.now()}`
-          });
-        } catch (payErr) {
-          console.warn('Payment activation note:', payErr);
-        }
       }
 
       if (activeUser?.id) {
@@ -1243,11 +1229,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 9,
-          premium_status: 'coming_soon',
+          product_limit: null,
+          premium_status: 'inactive',
           payment_status: 'free',
           payment_required: false,
-          paid_at: nowIso
+          paid_at: null
         };
         const { error: updateErr } = await supabase
           .from('shops')
@@ -1270,11 +1256,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           whatsapp_number: whatsappPhone.trim() || phone.trim() || null,
           is_active: true,
           plan: 'free',
-          product_limit: 9,
-          premium_status: 'coming_soon',
+          product_limit: null,
+          premium_status: 'inactive',
           payment_status: 'free',
           payment_required: false,
-          paid_at: nowIso
+          paid_at: null
         };
         const { data: newShop, error: insertErr } = await supabase
           .from('shops')
@@ -1322,15 +1308,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         }
       }
 
-      try {
-        await paymentService.activateShopPayment({
-          shopId: targetShopId,
-          userId: activeUser.id,
-          paymentReference: `FREE-${Date.now()}`
-        });
-      } catch (payErr) {
-        console.warn('Payment activation note:', payErr);
-      }
+      // Free onboarding never activates Premium; only a verified NardoPay webhook can grant it.
 
       // Fetch fresh shop record to ensure localStorage cache & state are fully updated
       const { data: freshShop } = await supabase
@@ -2271,7 +2249,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         Choose Your Plan
                       </h1>
                       <p className="text-xs text-zinc-500 font-medium">
-                        Select a plan to get started with your ThreadZW storefront.
+                        Start free, then upgrade only when your shop needs more customer access.
                       </p>
                     </div>
 
@@ -2283,7 +2261,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                           <div className="text-2xl font-black text-black">$0</div>
                         </div>
                         <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider border border-black/10">
-                          Free Forever
+                          Free for life
                         </span>
                       </div>
 
@@ -2294,15 +2272,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
-                          <span>Up to 9 products</span>
+                          <span>Unlimited products</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
-                          <span>Dynamic themes</span>
+                          <span>Mobile-first storefront</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
-                          <span>Video backgrounds</span>
+                          <span>Product photos, prices & sizes</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
@@ -2310,7 +2288,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
-                          <span>WhatsApp ordering</span>
+                          <span>WhatsApp & directions enquiries</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
@@ -2318,7 +2296,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         </div>
                         <div className="flex items-center gap-2">
                           <Check className="w-4 h-4 text-[#25D366] stroke-[3] shrink-0" />
-                          <span>Basic shop management</span>
+                          <span>50 unique visits + 10 interests for life</span>
                         </div>
                       </div>
 
@@ -2340,47 +2318,44 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     </div>
 
                     {/* Plan 2: THREADZW PREMIUM */}
-                    <div className="bg-zinc-50 border border-zinc-200 rounded-3xl p-4 space-y-3 relative overflow-hidden opacity-90">
-                      <div className="flex items-center justify-between">
+                    <div className="bg-zinc-950 text-white border border-zinc-900 rounded-3xl p-4 space-y-3 relative overflow-hidden">
+                      <div className="absolute -right-12 -top-12 w-28 h-28 rounded-full bg-[#C6FF00]/20 blur-2xl" />
+                      <div className="flex items-center justify-between relative">
                         <div>
-                          <div className="text-xs font-black text-black uppercase tracking-wider">THREADZW PREMIUM</div>
-                          <div className="text-lg font-black text-zinc-500">Coming Soon</div>
+                          <div className="text-xs font-black text-[#C6FF00] uppercase tracking-wider">THREADZW PREMIUM</div>
+                          <div className="text-lg font-black text-white">Available after setup</div>
                         </div>
-                        <span className="bg-zinc-200 text-zinc-700 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
-                          Coming Soon
+                        <span className="bg-[#C6FF00] text-black text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                          Secure upgrade
                         </span>
                       </div>
 
-                      <div className="border-t border-zinc-200 pt-3 space-y-1.5 text-xs font-semibold text-zinc-600">
+                      <div className="border-t border-zinc-800 pt-3 space-y-1.5 text-xs font-semibold text-zinc-300 relative">
                         <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
-                          <span>Unlimited products</span>
+                          <Sparkles className="w-4 h-4 text-[#C6FF00] shrink-0" />
+                          <span>Unlimited products and customer actions</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
+                          <Sparkles className="w-4 h-4 text-[#C6FF00] shrink-0" />
                           <span>Advanced storefront customization</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
-                          <span>More customization options</span>
+                          <Sparkles className="w-4 h-4 text-[#C6FF00] shrink-0" />
+                          <span>Verified NardoPay activation</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
-                          <span>Premium features</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-zinc-400 shrink-0" />
-                          <span>Future advanced shop tools</span>
+                          <Sparkles className="w-4 h-4 text-[#C6FF00] shrink-0" />
+                          <span>Upgrade from your dashboard after launch</span>
                         </div>
                       </div>
 
                       <button
                         type="button"
-                        disabled
-                        onClick={() => toast.info('Premium is coming soon.')}
-                        className="w-full bg-zinc-200 text-zinc-500 font-extrabold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed mt-2"
+                        onClick={() => toast.info('Start free, then upgrade from your dashboard when you need more customer access.')}
+                        className="w-full bg-white text-black hover:bg-[#C6FF00] font-extrabold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer mt-2"
                       >
-                        <span>Coming Soon</span>
+                        <span>Upgrade after setup</span>
+                        <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                       </button>
                     </div>
                   </div>
@@ -2419,10 +2394,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         Congratulations!
                       </h1>
                       <div className="bg-[#C6FF00] text-black text-xs font-black uppercase px-3 py-1 rounded-full tracking-wider border border-black/10 inline-block">
-                        YOUR SHOP HAS BEEN ACTIVATED 🎉
+                        FREE STOREFRONT ACTIVE
                       </div>
                       <p className="text-xs text-zinc-500 font-medium max-w-xs leading-relaxed pt-1">
-                        Your shop <span className="font-extrabold text-black">"{shopName || 'Your Shop'}"</span> is now live on ThreadZW and ready to start taking orders!
+                        Your shop <span className="font-extrabold text-black">"{shopName || 'Your Shop'}"</span> is live and ready for customers to browse and enquire on WhatsApp.
                       </p>
                     </div>
 
@@ -2440,7 +2415,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
                       <div className="bg-zinc-100 p-2.5 rounded-2xl border border-zinc-200 flex items-center justify-center">
                         <span className="text-xs font-mono font-black text-black truncate px-1">
-                          threadzw.co/shop/{(shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-')}
+                          {window.location.origin}/shop/{(shopName || 'shop').toLowerCase().replace(/[^a-z0-9_-]/g, '-')}
                         </span>
                       </div>
                     </div>
@@ -2449,15 +2424,23 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                     <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-3 space-y-2 text-xs">
                       <div className="flex items-center gap-2 font-bold text-black">
                         <CheckCircle2 size={14} className="text-[#25D366]" />
-                        <span>WhatsApp direct ordering enabled</span>
+                        <span>WhatsApp enquiries and directions are ready</span>
                       </div>
                       <div className="flex items-center gap-2 font-bold text-black">
                         <CheckCircle2 size={14} className="text-[#25D366]" />
-                        <span>Custom storefront banner & logo online</span>
+                        <span>Unlimited products on the Free plan</span>
                       </div>
                       <div className="flex items-center gap-2 font-bold text-black">
                         <CheckCircle2 size={14} className="text-[#25D366]" />
-                        <span>Lifetime active subscription</span>
+                        <span>50 unique visits + 10 interests included for life</span>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-zinc-200 bg-white p-3 space-y-2">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Your next three moves</div>
+                      <div className="grid grid-cols-3 gap-2 text-[10px] font-bold text-zinc-700">
+                        <div className="rounded-xl bg-zinc-50 p-2"><span className="block text-base text-[#8db500]">01</span>Add your first drop</div>
+                        <div className="rounded-xl bg-zinc-50 p-2"><span className="block text-base text-[#8db500]">02</span>Add your shop details</div>
+                        <div className="rounded-xl bg-zinc-50 p-2"><span className="block text-base text-[#8db500]">03</span>Share your link</div>
                       </div>
                     </div>
                   </div>
@@ -2813,7 +2796,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
               </div>
             </div>
 
-            {/* CARD 10: LAUNCH FREE TIER */}
+            {/* CARD 10: LAUNCH FREE STORE */}
             <div className="bg-white rounded-[32px] border border-zinc-200 p-6 shadow-md flex flex-col justify-between h-[620px] max-w-[340px] mx-auto w-full relative">
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between pb-2">
@@ -2824,16 +2807,16 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                 <div className="space-y-3 py-2">
                   <div className="space-y-1">
                     <h1 className="text-2xl font-extrabold text-black tracking-tight leading-tight">
-                      Free Tier Launch
+                      Free storefront launch
                     </h1>
                     <p className="text-xs text-zinc-500 font-normal">
-                      Limited free tier with up to 9 products for Zimbabwean merchants.
+                      Unlimited clothing products, with 50 unique visits and 10 customer interests for life.
                     </p>
                   </div>
 
                   <div className="bg-lime-50 border border-lime-200 p-4 rounded-2xl text-center space-y-1">
                     <div className="text-3xl font-black text-black">$0</div>
-                    <div className="text-[10px] font-bold text-lime-800 uppercase">Instant Storefront Activation</div>
+                    <div className="text-[10px] font-bold text-lime-800 uppercase">No setup fee · live in minutes</div>
                   </div>
                 </div>
 

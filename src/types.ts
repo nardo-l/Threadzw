@@ -1,5 +1,5 @@
 export type SellerCategory = 'clothing' | 'vehicles' | 'general';
-export type SellerPlan = 'free' | 'pro';
+export type SellerPlan = 'free' | 'premium';
 export type PlanType = SellerPlan;
 
 /**
@@ -117,6 +117,9 @@ export interface Shop {
   payment_amount?: number;
   payment_currency?: string;
   paid_at?: string | null;
+  lifetime_unique_visits?: number;
+  lifetime_interest_events?: number;
+  usage_quota_exceeded?: boolean;
 
   // New Link-in-Bio Page Architecture Fields
   page_type?: PageType;

@@ -7,6 +7,7 @@ import { getPlanForCategory } from '../../config/plans';
 
 export type UpgradeTriggerReason = 
   | 'product_limit'
+  | 'usage_quota'
   | 'vehicle_limit'
   | 'image_limit'
   | 'template_locked'
@@ -37,7 +38,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
   if (!isOpen) return null;
 
   const category = propCategory || resolveSellerCategory(shop?.page_type);
-  const proPlan = getPlanForCategory(category, 'pro');
+  const proPlan = getPlanForCategory(category, 'premium');
 
   // Title and message resolution
   let title = customTitle;
@@ -46,30 +47,34 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
 
   if (!title) {
     if (reason === 'product_limit') {
-      title = "You've reached the 9-product limit on the Free trial";
-      message = "The Free trial allows up to 9 products. Upgrade to Pro for $9 one-off to unlock unlimited products and full storefront power.";
+      title = "Your catalog is ready to grow";
+      message = "Clothing storefronts have unlimited products on Free. Your upgrade unlocks premium branding and continued customer actions after the lifetime usage thresholds are reached.";
       icon = <ShoppingBag className="w-6 h-6 text-black" />;
+    } else if (reason === 'usage_quota') {
+      title = "Your free storefront usage is complete";
+      message = "Free clothing shops include 50 unique visits and 10 WhatsApp or directions interests for life. Upgrade to Premium to keep receiving customer enquiries without usage gating.";
+      icon = <ShieldAlert className="w-6 h-6 text-black" />;
     } else if (reason === 'vehicle_limit') {
       title = "You've reached the 1-vehicle limit on the Free plan";
-      message = "Upgrade to Vehicle Pro to list up to 20 active vehicles in your digital showroom.";
+      message = "Upgrade to Vehicle Premium to list up to 20 active vehicles in your digital showroom.";
       icon = <Car className="w-6 h-6 text-black" />;
     } else if (reason === 'image_limit') {
       title = "Maximum Photo Limit Reached";
       message = category === 'vehicles'
-        ? "Free vehicle listings support up to 8 photos. Upgrade to Vehicle Pro for up to 20 photos per listing."
-        : "Free product listings support up to 5 photos. Upgrade to Pro for up to 10 photos per listing.";
+        ? "Free vehicle listings support up to 8 photos. Upgrade to Vehicle Premium for up to 20 photos per listing."
+        : "Free product listings support up to 5 photos. Upgrade to Premium for up to 10 photos per listing.";
       icon = <Layers className="w-6 h-6 text-black" />;
     } else if (reason === 'branding_locked') {
-      title = "Custom Branding is a Pro Feature";
-      message = "Upgrade to Pro ($9 one-off) to remove ThreadZW branding and use custom themes, banners, and logos.";
+      title = "Custom Branding is a Premium Feature";
+      message = "Upgrade to Premium ($9 one-off) to remove ThreadZW branding and use custom themes, banners, and logos.";
       icon = <Sparkles className="w-6 h-6 text-black" />;
     } else if (reason === 'template_locked') {
       title = "Premium Theme Locked";
-      message = "Access all premium storefront themes and customization options with a Pro plan ($9 one-off).";
+      message = "Access all premium storefront themes and customization options with Premium ($9 one-off).";
       icon = <Sparkles className="w-6 h-6 text-black" />;
     } else {
-      title = "Unlock Pro Features";
-      message = "Take your storefront to the next level with unlimited products and premium tools.";
+      title = "Unlock Premium Features";
+      message = "Keep your storefront open to customer enquiries with Premium branding and usage access.";
       icon = <ShieldAlert className="w-6 h-6 text-black" />;
     }
   }
@@ -106,7 +111,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-lime-100 text-lime-900 text-[10px] font-extrabold uppercase tracking-wide mb-1.5">
-              {isVehicle ? 'Vehicle Pro' : 'Pro Plan'}
+              {isVehicle ? 'Vehicle Premium' : 'Premium Plan'}
             </div>
             <h3 className="text-lg sm:text-xl font-black text-zinc-950 tracking-tight leading-snug">
               {title}
@@ -123,9 +128,9 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
         <div className="bg-zinc-50 border border-zinc-200/90 rounded-2xl p-4.5 space-y-3">
           <div className="flex items-baseline justify-between border-b border-zinc-200/70 pb-3">
             <div>
-              <div className="text-xs font-bold text-zinc-900">{isVehicle ? 'Vehicle Pro' : 'ThreadZW Pro'}</div>
+              <div className="text-xs font-bold text-zinc-900">{isVehicle ? 'Vehicle Premium' : 'ThreadZW Premium'}</div>
               <div className="text-[11px] text-zinc-500 font-medium">
-                {isVehicle ? 'Full digital showroom for auto dealerships' : 'Unlimited products & premium seller branding ($9 one-off)'}
+                {isVehicle ? 'Full digital showroom for auto dealerships' : 'Lifetime usage access, unlimited products & premium seller branding'}
               </div>
             </div>
             <div className="text-right">
@@ -140,7 +145,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
               <div className="w-4 h-4 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shrink-0">
                 <Check size={10} strokeWidth={3} />
               </div>
-              <span>{isVehicle ? 'Up to 20 active showroom vehicles' : 'Unlimited active products (no 9-product limit)'}</span>
+              <span>{isVehicle ? 'Up to 20 active showroom vehicles' : 'Unlimited active products and customer enquiries'}</span>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-zinc-800 font-medium">
               <div className="w-4 h-4 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shrink-0">
@@ -158,7 +163,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
               <div className="w-4 h-4 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shrink-0">
                 <Check size={10} strokeWidth={3} />
               </div>
-              <span>Priority WhatsApp direct ordering & inventory analytics</span>
+              <span>Continued WhatsApp ordering, directions and visitor analytics</span>
             </div>
           </div>
         </div>
@@ -169,7 +174,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
             onClick={handleUpgrade}
             className="w-full sm:flex-1 py-3.5 px-5 bg-[#CCFF00] hover:bg-[#bbf000] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98]"
           >
-            <span>Upgrade to Pro — {priceDisplay} {periodDisplay}</span>
+            <span>Upgrade to Premium — {priceDisplay} {periodDisplay}</span>
             <ArrowRight size={15} className="stroke-[2.5]" />
           </button>
           
@@ -177,7 +182,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
             onClick={onClose}
             className="w-full sm:w-auto py-3.5 px-5 text-zinc-500 hover:text-zinc-800 text-xs font-bold rounded-xl transition-colors cursor-pointer"
           >
-            Stay on Free Plan
+            Stay on Free
           </button>
         </div>
       </div>

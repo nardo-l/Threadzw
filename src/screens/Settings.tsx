@@ -231,11 +231,11 @@ export const Settings: React.FC = () => {
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#25D366] shrink-0" />
                 <span className="text-sm font-black text-black uppercase">
-                  Limited Free Tier Active
+                  Free plan active
                 </span>
               </div>
               <p className="text-xs text-zinc-500 font-medium leading-relaxed">
-                Your ThreadZW storefront is running on the limited free tier (up to 9 products) with zero monthly fees and WhatsApp ordering enabled.
+                Your ThreadZW clothing storefront has unlimited products, 50 unique visits and 10 WhatsApp or directions interests for life. Premium keeps customer actions open beyond those thresholds.
               </p>
             </div>
           </div>

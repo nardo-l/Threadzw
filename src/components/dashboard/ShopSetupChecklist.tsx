@@ -62,9 +62,6 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   // 2. Product added check
   const isProductAdded = productsCount > 0;
 
-  // 3. Plan Activation check (Free Plan Active by default)
-  const isProActive = true;
-
   // 4. Share shop check
   const isShopShared = shopShared;
 
@@ -105,7 +102,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   async function handleShareShop() {
     if (!shop) return;
     const slugOrId = shop.slug ? shop.slug.trim() : shop.id.trim();
-    const url = `https://threadzw.vercel.app/shop/${slugOrId}`;
+    const url = `${window.location.origin}/shop/${slugOrId}`;
 
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.writeText) {
@@ -162,7 +159,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-extrabold uppercase tracking-widest text-[#CCFF00]">
-                  5/5 Completed
+                  {completedCount}/{totalTasks} Completed
                 </span>
                 <span className="inline-flex items-center gap-1 bg-[#CCFF00]/20 text-[#CCFF00] text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#CCFF00]/30">
                   <Check size={10} /> Fully Setup
@@ -172,7 +169,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
                 🎉 Your shop is ready to grow!
               </h3>
               <p className="text-xs text-zinc-400 mt-1 max-w-lg leading-relaxed">
-                All store setup tasks are completed. Your storefront is fully optimized to receive WhatsApp orders and daily performance summaries.
+                All setup tasks are complete. Your storefront is ready for customer enquiries and your next clothing drop.
               </p>
             </div>
           </div>
