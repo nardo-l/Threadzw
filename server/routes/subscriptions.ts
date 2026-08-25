@@ -1,8 +1,8 @@
 // server/routes/subscriptions.ts
 
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { subscriptionController } from '../controllers/subscriptionController';
+import { requireAuth } from '../middleware/auth.js';
+import { subscriptionController } from '../controllers/subscriptionController.js';
 
 const router = Router();
 

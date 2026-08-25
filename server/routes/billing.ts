@@ -1,9 +1,9 @@
 // server/routes/billing.ts
 
 import { Router } from 'express';
-import { requireAuth } from '../middleware/auth';
-import { billingController } from '../controllers/billing';
-import { subscriptionController } from '../controllers/subscriptionController';
+import { requireAuth } from '../middleware/auth.js';
+import { billingController } from '../controllers/billing.js';
+import { subscriptionController } from '../controllers/subscriptionController.js';
 
 const router = Router();
 

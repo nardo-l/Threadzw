@@ -1,9 +1,9 @@
 // server/controllers/billing.ts
 
 import { Response } from 'express';
-import { AuthenticatedRequest, serverSupabase } from '../middleware/auth';
-import { nardoPay } from '../lib/nardopay';
-import { billingService } from '../services/billing';
+import { AuthenticatedRequest, serverSupabase } from '../middleware/auth.js';
+import { nardoPay } from '../lib/nardopay.js';
+import { billingService } from '../services/billing.js';
 
 export class BillingController {
   /**

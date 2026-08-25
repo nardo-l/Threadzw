@@ -1,7 +1,7 @@
-import { serverSupabase } from '../middleware/auth';
-import { nardopayClient } from '../lib/nardopayClient';
-import { resolveProPlanForShop, resolveServerSellerCategory } from './planResolver';
-import { createNotification } from './notificationService';
+import { serverSupabase } from '../middleware/auth.js';
+import { nardopayClient } from '../lib/nardopayClient.js';
+import { resolveProPlanForShop, resolveServerSellerCategory } from './planResolver.js';
+import { createNotification } from './notificationService.js';
 
 // NardoPay's settled payment status is exactly `successful`.
 // Generic, missing, or gateway-specific states such as `paid` or `completed` must not activate entitlements.

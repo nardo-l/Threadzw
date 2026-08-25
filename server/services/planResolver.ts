@@ -1,6 +1,6 @@
 // server/services/planResolver.ts
 
-import { SellerCategory, SellerPlan } from '../../src/types';
+import { SellerCategory, SellerPlan } from '../../src/types.js';
 
 export interface ResolvedPlanDetails {
   category: SellerCategory;

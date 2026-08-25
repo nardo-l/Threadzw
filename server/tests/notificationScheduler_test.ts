@@ -7,9 +7,9 @@ import {
   formatLocalDate,
   getLocalDayRange,
   isShopProfileComplete
-} from '../services/scheduledNotificationService';
-import { isValidCronSecret } from '../lib/cronAuth';
-import { withTimeout } from '../../src/lib/withTimeout';
+} from '../services/scheduledNotificationService.js';
+import { isValidCronSecret } from '../lib/cronAuth.js';
+import { withTimeout } from '../../src/lib/withTimeout.js';
 
 const completeShop = {
   id: 'shop-1',

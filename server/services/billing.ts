@@ -1,7 +1,7 @@
 // server/services/billing.ts
 
-import { serverSupabase, getUserSupabaseClient } from '../middleware/auth';
-import { createNotification } from './notificationService';
+import { serverSupabase, getUserSupabaseClient } from '../middleware/auth.js';
+import { createNotification } from './notificationService.js';
 
 export class BillingService {
   /**

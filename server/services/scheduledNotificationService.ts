@@ -1,5 +1,5 @@
-import { createNotification } from './notificationService';
-import { sendPushToProfile } from './pushService';
+import { createNotification } from './notificationService.js';
+import { sendPushToProfile } from './pushService.js';
 
 export type NotificationSlot = 'midday' | 'evening';
 

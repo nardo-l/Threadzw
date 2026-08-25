@@ -1,12 +1,12 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import billingRouter from '../server/routes/billing';
-import aiRouter from '../server/routes/ai';
-import subscriptionsRouter from '../server/routes/subscriptions';
-import pushRouter from '../server/routes/push';
-import notificationsRouter from '../server/routes/notifications';
-import cronRouter from '../server/routes/cron';
-import { subscriptionController } from '../server/controllers/subscriptionController';
+import billingRouter from '../server/routes/billing.js';
+import aiRouter from '../server/routes/ai.js';
+import subscriptionsRouter from '../server/routes/subscriptions.js';
+import pushRouter from '../server/routes/push.js';
+import notificationsRouter from '../server/routes/notifications.js';
+import cronRouter from '../server/routes/cron.js';
+import { subscriptionController } from '../server/controllers/subscriptionController.js';
 
 dotenv.config();
 

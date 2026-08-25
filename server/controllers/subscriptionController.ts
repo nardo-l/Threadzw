@@ -1,8 +1,8 @@
 // server/controllers/subscriptionController.ts
 
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../middleware/auth';
-import { subscriptionService } from '../services/subscriptionService';
+import { AuthenticatedRequest } from '../middleware/auth.js';
+import { subscriptionService } from '../services/subscriptionService.js';
 
 export class SubscriptionController {
   /**

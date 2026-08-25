@@ -1,8 +1,8 @@
 // server/tests/phase6b_test.ts
 
 import crypto from 'crypto';
-import { resolveProPlanForShop, resolveServerSellerCategory } from '../services/planResolver';
-import { nardopayClient } from '../lib/nardopayClient';
+import { resolveProPlanForShop, resolveServerSellerCategory } from '../services/planResolver.js';
+import { nardopayClient } from '../lib/nardopayClient.js';
 
 const TEST_API_KEY = 'test-api-key';
 const TEST_WEBHOOK_SECRET = 'test-webhook-secret';

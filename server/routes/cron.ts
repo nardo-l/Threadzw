@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { checkExpiredSubscriptions } from '../services/expiryService';
-import { sendScheduledMerchantNotifications, type NotificationSlot } from '../services/scheduledNotificationService';
-import { serverSupabase } from '../middleware/auth';
-import { isValidCronSecret } from '../lib/cronAuth';
+import { checkExpiredSubscriptions } from '../services/expiryService.js';
+import { sendScheduledMerchantNotifications, type NotificationSlot } from '../services/scheduledNotificationService.js';
+import { serverSupabase } from '../middleware/auth.js';
+import { isValidCronSecret } from '../lib/cronAuth.js';
 
 const router = Router();
 

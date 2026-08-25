@@ -1,5 +1,5 @@
-import { sendPushToProfile } from './pushService';
-import { createNotification } from './notificationService';
+import { sendPushToProfile } from './pushService.js';
+import { createNotification } from './notificationService.js';
 
 export async function sendDailyDigestToAll(supabase: any) {
   try {

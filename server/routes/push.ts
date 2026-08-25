@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { sendPushToProfile } from '../services/pushService';
-import { sendDailyDigestToAll } from '../services/pushDigestService';
-import { serverSupabase, requireAuth, AuthenticatedRequest } from '../middleware/auth';
-import { isValidCronSecret } from '../lib/cronAuth';
+import { sendPushToProfile } from '../services/pushService.js';
+import { sendDailyDigestToAll } from '../services/pushDigestService.js';
+import { serverSupabase, requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
+import { isValidCronSecret } from '../lib/cronAuth.js';
 
 const router = Router();
 
