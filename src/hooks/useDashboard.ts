@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { AnalyticsService } from '../lib/AnalyticsService';
 import { getShopVehicles } from '../services/vehicleService';
+import { withTimeout } from '../lib/withTimeout';
+
+const DASHBOARD_REQUEST_TIMEOUT_MS = 15000;
 
 export interface TrafficSourceStat {
   name: string;
@@ -116,18 +119,26 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
 
     try {
       const [productsRes, analyticsRes, todayAnalytics, vehiclesList] = await Promise.all([
-        supabase
-          .from('products')
-          .select('*')
-          .eq('shop_id', shopId)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('shop_analytics')
-          .select('*')
-          .eq('shop_id', shopId)
-          .order('created_at', { ascending: false }),
-        AnalyticsService.getTodayAnalytics(shopId),
-        getShopVehicles(shopId).catch(() => [])
+        withTimeout(
+          supabase
+            .from('products')
+            .select('*')
+            .eq('shop_id', shopId)
+            .order('created_at', { ascending: false }),
+          DASHBOARD_REQUEST_TIMEOUT_MS,
+          'PRODUCTS_LOAD'
+        ),
+        withTimeout(
+          supabase
+            .from('shop_analytics')
+            .select('*')
+            .eq('shop_id', shopId)
+            .order('created_at', { ascending: false }),
+          DASHBOARD_REQUEST_TIMEOUT_MS,
+          'ANALYTICS_LOAD'
+        ),
+        withTimeout(AnalyticsService.getTodayAnalytics(shopId), DASHBOARD_REQUEST_TIMEOUT_MS, 'TODAY_ANALYTICS_LOAD'),
+        withTimeout(getShopVehicles(shopId).catch(() => []), DASHBOARD_REQUEST_TIMEOUT_MS, 'VEHICLES_LOAD')
       ]);
 
       if (productsRes.error) throw productsRes.error;
