@@ -43,7 +43,7 @@ const metrics = aggregateMetrics(
     { shop_id: 'shop-1', event_type: 'shop_visit', visitor_id: 'visitor-a' },
     { shop_id: 'shop-1', event_type: 'shop_view', visitor_id: 'visitor-b' },
     { shop_id: 'shop-1', event_type: 'whatsapp_click', product_id: 'product-1' },
-    { shop_id: 'shop-1', event_type: 'whatsapp_click', product_id: 'product-1' },
+    { shop_id: 'shop-1', event_type: 'whatsapp_click', metadata: { product_id: 'product-1' } },
     { shop_id: 'shop-1', event_type: 'map_open' },
     { shop_id: 'shop-1', event_type: 'product_view', product_id: 'product-1' }
   ],

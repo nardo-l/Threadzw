@@ -173,7 +173,8 @@ export function aggregateMetrics(events: AnalyticsRecord[], products: ProductRec
       if (event.visitor_id) visitorIds.add(event.visitor_id);
     } else if (event.event_type === 'whatsapp_click') {
       whatsappClicks += 1;
-      if (event.product_id) productClicks.set(event.product_id, (productClicks.get(event.product_id) || 0) + 1);
+      const productId = event.product_id || event.metadata?.product_id;
+      if (productId) productClicks.set(productId, (productClicks.get(productId) || 0) + 1);
     } else if (event.event_type === 'map_open' || event.event_type === 'visit_shop_click') {
       directionsClicks += 1;
     } else if (event.event_type === 'product_view') {
@@ -450,7 +451,7 @@ export async function sendScheduledMerchantNotifications(
       const profileShopIds = profileShops.map(shop => shop.id);
       const { data: events, error: eventsError } = await supabase
         .from('shop_analytics')
-        .select('shop_id, event_type, visitor_id, product_id, metadata, created_at')
+        .select('shop_id, event_type, visitor_id, metadata, created_at')
         .in('shop_id', profileShopIds)
         .gte('created_at', range.start.toISOString())
         .lt('created_at', range.end.toISOString());
