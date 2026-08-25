@@ -91,7 +91,7 @@ export const StorefrontCheckout: React.FC<StorefrontCheckoutProps> = ({
           {/* Order on WhatsApp */}
           <button
             onClick={handleOrderCartOnWhatsApp}
-            className="w-full py-4 bg-[#bef715] hover:bg-[#aef000] text-black font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm font-sans"
+            className="w-full py-4 store-accent-bg  text-black font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm font-sans"
           >
             <MessageCircle className="w-4 h-4 fill-black/20" />
             <span>Order on WhatsApp</span>

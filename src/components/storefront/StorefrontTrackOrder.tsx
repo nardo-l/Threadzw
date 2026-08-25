@@ -74,7 +74,7 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
   return (
     <div className="space-y-6 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       <div className="space-y-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Track Shipments</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Track Shipments</span>
         <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Order Support</h2>
       </div>
 
@@ -88,7 +88,7 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
             value={orderRef}
             onChange={(e) => setOrderRef(e.target.value)}
             placeholder="e.g. #CAP-1829"
-            className="w-full text-xs font-bold uppercase font-mono bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none p-3 text-zinc-800"
+            className="w-full text-xs font-bold uppercase font-mono bg-white border border-zinc-200 rounded-xl focus:ring-2 store-accent-ring outline-none p-3 text-zinc-800"
           />
         </div>
 
@@ -99,14 +99,14 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="e.g. +263772123456"
-            className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none p-3 text-zinc-800"
+            className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 store-accent-ring outline-none p-3 text-zinc-800"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs disabled:opacity-50"
+          className="w-full py-3 store-accent-bg  text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs disabled:opacity-50"
         >
           {loading ? (
             <>
@@ -143,7 +143,7 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
 
             {/* Glowing filled bar indicator */}
             <div 
-              className="absolute left-[13px] top-3 w-[2px] bg-green-500 transition-all duration-1000" 
+              className="absolute left-[13px] top-3 w-[2px] store-accent-bg transition-all duration-1000"
               style={{ height: `${(activeStepIdx / 3) * 100}%`, maxHeight: '100%' }}
             />
 
@@ -158,7 +158,7 @@ export const StorefrontTrackOrder: React.FC<StorefrontTrackOrderProps> = ({
                   <div 
                     className={`absolute -left-[27px] w-7 h-7 rounded-full border flex items-center justify-center transition-all duration-300 ${
                       isPast 
-                        ? 'bg-green-600 border-green-600 text-white shadow-md shadow-green-100' 
+                        ? 'store-accent-bg store-accent-border text-white shadow-md shadow-store-accent'
                         : 'bg-white border-zinc-200 text-zinc-400'
                     }`}
                   >

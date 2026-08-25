@@ -47,7 +47,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
   return (
     <div className="space-y-6 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       <div className="space-y-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Help Center</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Help Center</span>
         <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Contact Us</h2>
       </div>
 
@@ -72,7 +72,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
             </div>
             <div>
               <span className="text-[9px] font-bold uppercase text-zinc-400 block tracking-wider">WhatsApp Chat</span>
-              <span className="text-xs font-semibold text-zinc-800 group-hover:text-green-600 transition-colors">
+              <span className="text-xs font-semibold text-zinc-800 group-store-accent-hover-text transition-colors">
                 {shop.whatsapp_number || shop.whatsapp || shop.phone || '+263771234567'}
               </span>
             </div>
@@ -90,7 +90,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
             </div>
             <div>
               <span className="text-[9px] font-bold uppercase text-zinc-400 block tracking-wider">Instagram</span>
-              <span className="text-xs font-semibold text-zinc-800 group-hover:text-green-600 transition-colors">
+              <span className="text-xs font-semibold text-zinc-800 group-store-accent-hover-text transition-colors">
                 @{shop.instagram_handle || shop.slug || 'threadzw'}
               </span>
             </div>
@@ -108,7 +108,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
             </div>
             <div>
               <span className="text-[9px] font-bold uppercase text-zinc-400 block tracking-wider">Facebook</span>
-              <span className="text-xs font-semibold text-zinc-800 group-hover:text-green-600 transition-colors">
+              <span className="text-xs font-semibold text-zinc-800 group-store-accent-hover-text transition-colors">
                 {shop.name} Official
               </span>
             </div>
@@ -124,7 +124,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
             </div>
             <div>
               <span className="text-[9px] font-bold uppercase text-zinc-400 block tracking-wider">Email Coordinates</span>
-              <span className="text-xs font-semibold text-zinc-800 group-hover:text-green-600 transition-colors truncate block max-w-[240px]">
+              <span className="text-xs font-semibold text-zinc-800 group-store-accent-hover-text transition-colors truncate block max-w-[240px]">
                 {shop.email || `contact@${shop.slug || 'threadzw'}.co.zw`}
               </span>
             </div>
@@ -132,7 +132,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
 
           {/* Physical Location */}
           <div className="flex items-center gap-3.5">
-            <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/15 flex items-center justify-center text-green-600">
+            <div className="w-9 h-9 rounded-xl store-accent-soft-bg border store-accent-soft-border flex items-center justify-center store-accent-text">
               <MapPin className="w-4.5 h-4.5" />
             </div>
             <div>
@@ -157,7 +157,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
               exit={{ opacity: 0, scale: 0.95 }}
               className="py-12 flex flex-col items-center justify-center text-center space-y-3"
             >
-              <div className="w-12 h-12 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-600 animate-bounce">
+              <div className="w-12 h-12 rounded-full store-accent-soft-bg border store-accent-soft-border flex items-center justify-center store-accent-text animate-bounce">
                 <CheckCircle className="w-6 h-6" />
               </div>
               <div>
@@ -177,7 +177,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Brian"
-                  className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none p-3 text-zinc-800 font-sans"
+                  className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 store-accent-ring outline-none p-3 text-zinc-800 font-sans"
                 />
               </div>
 
@@ -188,7 +188,7 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. brian@gmail.com"
-                  className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none p-3 text-zinc-800 font-sans"
+                  className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 store-accent-ring outline-none p-3 text-zinc-800 font-sans"
                 />
               </div>
 
@@ -200,14 +200,14 @@ export const StorefrontContact: React.FC<StorefrontContactProps> = ({ shop }) =>
                   value={msg}
                   onChange={(e) => setMsg(e.target.value)}
                   placeholder="How can we help you?"
-                  className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none resize-none p-3 text-zinc-800 font-sans leading-relaxed"
+                  className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 store-accent-ring outline-none resize-none p-3 text-zinc-800 font-sans leading-relaxed"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-green-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer hover:bg-green-700 transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 store-accent-bg text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer  transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending message...' : (
                   <>

@@ -94,20 +94,20 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
 
           {/* Icon + Title */}
           <div className="flex flex-col items-center text-center mt-2 mb-6">
-            <div className="w-12 h-12 rounded-full bg-[#f4fde8] border border-[#bef715]/40 flex items-center justify-center text-green-700 mb-3 shadow-2xs">
-              <MapPin className="w-6 h-6 text-green-700 fill-green-100" />
+            <div className="w-12 h-12 rounded-full bg-[#f4fde8] border store-accent-soft-border flex items-center justify-center store-accent-text mb-3 shadow-2xs">
+              <MapPin className="w-6 h-6 store-accent-text fill-green-100" />
             </div>
             <h2 className="text-2xl font-black tracking-tight text-zinc-900">Visit our shop</h2>
             <p className="text-xs font-medium text-zinc-500 mt-0.5">Find us easily.</p>
           </div>
 
           {/* Green Showroom Card */}
-          <div className="bg-[#f7fee7] border border-[#bef715]/50 rounded-2xl p-4 flex items-center gap-3.5 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-white border border-[#bef715]/60 flex items-center justify-center text-zinc-800 shrink-0 shadow-2xs">
+          <div className="bg-[#f7fee7] border store-accent-soft-border rounded-2xl p-4 flex items-center gap-3.5 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-white border store-accent-soft-border flex items-center justify-center text-zinc-800 shrink-0 shadow-2xs">
               <Store className="w-6 h-6 text-zinc-800" />
             </div>
             <div className="min-w-0 flex-1 text-left">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-green-800 block">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider store-accent-text block">
                 {shopName.toUpperCase()} SHOWROOM
               </span>
               <p className="text-xs font-bold text-zinc-900 truncate">{address}</p>
@@ -123,9 +123,9 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
               {directionSteps.map((step, idx) => (
                 <div key={idx} className="flex items-start gap-3 relative">
                   <div className="flex flex-col items-center mt-1 shrink-0">
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-600 border-2 border-white ring-1 ring-green-600" />
+                    <div className="w-2.5 h-2.5 rounded-full store-accent-bg border-2 border-white ring-1 ring-green-600" />
                     {idx < directionSteps.length - 1 && (
-                      <div className="w-0.5 bg-green-200 h-6 -mb-2 mt-0.5" />
+                      <div className="w-0.5 store-accent-soft-strong-bg h-6 -mb-2 mt-0.5" />
                     )}
                   </div>
                   <p className="text-xs font-semibold text-zinc-700 leading-snug pt-0.5">{step}</p>
@@ -153,7 +153,7 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
           {/* Open in Maps Button */}
           <button
             onClick={handleOpenGoogleMaps}
-            className="w-full py-4 bg-[#bef715] hover:bg-[#aef000] text-black font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer font-sans"
+            className="w-full py-4 store-accent-bg  text-black font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer font-sans"
           >
             <Map className="w-5 h-5 stroke-[2.5]" />
             <span>Open in Maps</span>

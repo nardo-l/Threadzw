@@ -75,7 +75,7 @@ export const StorefrontCategories: React.FC<StorefrontCategoriesProps> = ({
   return (
     <div className="space-y-6 px-5 pb-20 select-none text-left bg-white min-h-screen pt-4">
       <div className="space-y-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Curated Drops</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Curated Drops</span>
         <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Categories</h2>
       </div>
 
@@ -117,7 +117,7 @@ export const StorefrontCategories: React.FC<StorefrontCategoriesProps> = ({
                   </div>
                 </div>
 
-                <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-xs border border-white/15 flex items-center justify-center text-white group-hover:bg-green-600 group-hover:border-green-600 transition-colors">
+                <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-xs border border-white/15 flex items-center justify-center text-white group-hover:store-accent-bg group-hover:store-accent-border transition-colors">
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </div>

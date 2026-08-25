@@ -599,24 +599,13 @@ img.loaded {
   color: #09090b !important;
 }
 
-/* Primary Button Redesign (#BEF715, text-black, large pill, soft shadow) */
+/* Primary storefront button styling. The theme variables are supplied by StorefrontPage. */
 .storefront-root .btn-primary,
-.storefront-root button[class*="bg-[#bef715]"],
-.storefront-root a[class*="bg-[#bef715]"],
-.storefront-root button[class*="bg-neon"],
-.storefront-root a[class*="bg-neon"],
-.storefront-root button[class*="bg-lime"],
-.storefront-root a[class*="bg-lime"],
-.storefront-root button.bg-neon,
-.storefront-root a.bg-neon,
-.storefront-root button.bg-lime,
-.storefront-root a.bg-lime,
-.storefront-root button[class*="bg-green-600"],
-.storefront-root a[class*="bg-green-600"] {
-  background-color: #bef715 !important;
-  color: #000000 !important;
+.storefront-root .store-accent-bg {
+  background-color: var(--store-accent, #bef715) !important;
+  color: var(--store-accent-text, #000000) !important;
   border: none !important;
-  border-radius: 9999px !important; /* Pure pill */
+  border-radius: 9999px !important;
   font-family: 'Space Grotesk', sans-serif !important;
   font-weight: 700 !important;
   font-size: 13px !important;
@@ -624,7 +613,7 @@ img.loaded {
   text-transform: uppercase !important;
   padding: 12px 28px !important;
   min-height: 46px !important;
-  box-shadow: 0 4px 14px rgba(190, 247, 21, 0.25) !important;
+  box-shadow: 0 4px 14px rgba(var(--store-accent-rgb, 190, 247, 21), 0.25) !important;
   transition: all 0.2s ease !important;
   cursor: pointer !important;
   display: inline-flex !important;
@@ -633,21 +622,10 @@ img.loaded {
 }
 
 .storefront-root .btn-primary:hover,
-.storefront-root button[class*="bg-[#bef715]"]:hover,
-.storefront-root a[class*="bg-[#bef715]"]:hover,
-.storefront-root button[class*="bg-neon"]:hover,
-.storefront-root a[class*="bg-neon"]:hover,
-.storefront-root button[class*="bg-lime"]:hover,
-.storefront-root a[class*="bg-lime"]:hover,
-.storefront-root button.bg-neon:hover,
-.storefront-root a.bg-neon:hover,
-.storefront-root button.bg-lime:hover,
-.storefront-root a.bg-lime:hover,
-.storefront-root button[class*="bg-green-600"]:hover,
-.storefront-root a[class*="bg-green-600"]:hover {
-  background-color: #aae010 !important;
+.storefront-root .store-accent-bg:hover {
+  background-color: var(--store-accent-strong, #aae010) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 20px rgba(190, 247, 21, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(var(--store-accent-rgb, 190, 247, 21), 0.4) !important;
 }
 
 /* Secondary Button Redesign (white background, gray border, black text) */
@@ -694,19 +672,18 @@ img.loaded {
 }
 
 /* Boutique Horizontal Category Capsules */
-.storefront-root button[class*="bg-green-600"][class*="rounded-full"],
-.storefront-root button[class*="bg-[#bef715]"][class*="rounded-full"],
-.storefront-root button[class*="bg-[#bef715]"][class*="text-black"] {
-  background-color: #bef715 !important;
-  color: #000000 !important;
-  border: 1px solid #bef715 !important;
+.storefront-root button.store-accent-bg[class*="rounded-full"],
+.storefront-root button.store-accent-bg[class*="text-black"] {
+  background-color: var(--store-accent, #bef715) !important;
+  color: var(--store-accent-text, #000000) !important;
+  border: 1px solid var(--store-accent-strong, #bef715) !important;
   font-family: 'Space Grotesk', sans-serif !important;
   font-weight: 700 !important;
   font-size: 11px !important;
   letter-spacing: 0.02em !important;
   min-height: 32px !important;
   padding: 6px 14px !important;
-  box-shadow: 0 2px 6px rgba(190, 247, 21, 0.2) !important;
+  box-shadow: 0 2px 6px rgba(var(--store-accent-rgb, 190, 247, 21), 0.2) !important;
 }
 
 .storefront-root button[class*="bg-white"][class*="text-zinc-600"],
@@ -745,9 +722,10 @@ img.loaded {
 .storefront-root input:focus,
 .storefront-root select:focus,
 .storefront-root textarea:focus {
-  border-color: #bef715 !important;
+  border-color: var(--store-accent-strong, #bef715) !important;
   background-color: #ffffff !important;
   outline: none !important;
+  box-shadow: 0 0 0 3px rgba(var(--store-accent-rgb, 190, 247, 21), 0.16) !important;
 }
 
 /* Curated elegant card styling */
@@ -781,29 +759,26 @@ img.loaded {
   border-color: #e4e4e7 !important;
 }
 
-/* Fix text-green/bg-green to look like #BEF715 and text-black */
-.storefront-root .text-[#a1df00],
-.storefront-root .text-[#bef715],
-.storefront-root .text-green-600,
-.storefront-root .text-green-700 {
-  color: #8bb700 !important; /* Slightly optimized for high-contrast on light background */
+/* Dynamic storefront theme tokens are set inline by StorefrontPage. */
+.storefront-root .store-accent-text {
+  color: var(--store-accent-strong, #8bb700) !important;
 }
 
-.storefront-root .bg-green-50,
-.storefront-root .bg-[#bef715]\/10,
-.storefront-root .bg-green-100 {
-  background-color: #f7fee7 !important;
-  color: #4d7c0f !important;
+.storefront-root .store-accent-soft-bg {
+  background-color: var(--store-accent-soft, #f7fee7) !important;
 }
 
-.storefront-root .border-green-100 {
-  border-color: #d9f99d !important;
+.storefront-root .store-accent-soft-strong-bg {
+  background-color: var(--store-accent-soft-strong, #e6f8b8) !important;
 }
 
-/* Selection custom styling */
+.storefront-root .store-accent-soft-border {
+  border-color: var(--store-accent-soft-strong, #d9f99d) !important;
+}
+
 .storefront-root ::selection {
-  background-color: #bef715 !important;
-  color: #000000 !important;
+  background-color: var(--store-accent, #bef715) !important;
+  color: var(--store-accent-text, #000000) !important;
 }
 
 

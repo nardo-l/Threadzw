@@ -41,13 +41,13 @@ export const StorefrontOrderSuccess: React.FC<StorefrontOrderSuccessProps> = ({
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 15 }}
-          className="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/25 flex items-center justify-center text-green-600"
+          className="w-16 h-16 rounded-full store-accent-soft-bg border store-accent-soft-border flex items-center justify-center store-accent-text"
         >
           <CheckCircle className="w-8 h-8 stroke-[2]" />
         </motion.div>
 
         <div className="space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Boutique Purchase</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Boutique Purchase</span>
           <h2 className="text-xl font-bold tracking-tight text-zinc-900 leading-none font-sans">Order Confirmed!</h2>
         </div>
 
@@ -118,12 +118,12 @@ export const StorefrontOrderSuccess: React.FC<StorefrontOrderSuccessProps> = ({
           onClick={handleContactSeller}
           className="w-full py-3 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors border border-zinc-200"
         >
-          <MessageCircle className="w-4 h-4 text-green-600 fill-green-100" /> Contact Seller Agent
+          <MessageCircle className="w-4 h-4 store-accent-text fill-green-100" /> Contact Seller Agent
         </button>
 
         <button
           onClick={() => onNavigateToPage('home')}
-          className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
+          className="w-full py-3 store-accent-bg  text-white font-bold text-xs uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
         >
           Continue Shopping <ArrowRight className="w-4 h-4" />
         </button>

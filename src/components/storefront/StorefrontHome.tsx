@@ -156,7 +156,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
           
 
           
-          <p className="text-[10px] font-bold text-green-600 mt-2 tracking-wider uppercase font-sans flex items-center gap-1">
+          <p className="text-[10px] font-bold store-accent-text mt-2 tracking-wider uppercase font-sans flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5 fill-current" />
             {shop.city || 'Zimbabwe'} Store Link
           </p>
@@ -172,7 +172,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
             <div className="flex gap-2.5 w-full">
               <button
                 onClick={() => onNavigateToPage('shop')}
-                className="flex-grow py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                className="flex-grow py-2.5 store-accent-bg  text-white font-semibold text-xs rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5"
               >
                 Browse Catalog <ArrowRight className="w-3.5 h-3.5" />
               </button>
@@ -207,7 +207,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       {/* ----------------- 2. SHOP HIGHLIGHT CARDS (DYNAMIC DIRECTIVES) ----------------- */}
       <div id="home-highlight-cards" className="space-y-3">
         <div className="px-5 space-y-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Featured Info</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Featured Info</span>
           <h3 className="text-base font-bold text-zinc-900">Why Shop With Us</h3>
         </div>
 
@@ -235,12 +235,12 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
       <div id="home-products-section" className="px-5 space-y-4 pt-2">
         <div className="flex justify-between items-center">
           <div className="space-y-0.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Available Drops</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Available Drops</span>
             <h3 className="text-base font-bold text-zinc-900">Active Products</h3>
           </div>
           <button 
             onClick={() => onNavigateToPage('shop')}
-            className="text-xs font-semibold text-green-600 hover:text-green-700 flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold store-accent-text store-accent-hover-text flex items-center gap-1 cursor-pointer"
           >
             <Grid className="w-3.5 h-3.5" /> View All
           </button>
@@ -296,7 +296,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                       <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">
                         {p.category || 'Apparel'}
                       </span>
-                      <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-hover:text-green-600 transition-colors">
+                      <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-store-accent-hover-text transition-colors">
                         {p.name}
                       </h4>
                     </div>
@@ -320,7 +320,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
                           console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
                           trackWhatsAppClick(shop.id, p.id, p.name);
                         }}
-                        className="mt-2.5 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
+                        className="mt-2.5 w-full py-2 store-accent-bg  text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-current" /> WA Order
                       </a>

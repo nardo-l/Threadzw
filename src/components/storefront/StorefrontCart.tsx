@@ -74,7 +74,7 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans block">Shopping Bag</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans block">Shopping Bag</span>
           <h2 className="text-xl font-black tracking-tight text-zinc-900 font-sans">Your Cart</h2>
         </div>
         {cart.length > 0 && (
@@ -95,7 +95,7 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
           </div>
           <button
             onClick={() => onNavigateToPage('shop')}
-            className="px-6 py-3 bg-[#bef715] hover:bg-[#aef000] text-black text-xs font-extrabold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-xs font-sans mt-2"
+            className="px-6 py-3 store-accent-bg  text-black text-xs font-extrabold uppercase tracking-wider rounded-xl transition-all cursor-pointer shadow-xs font-sans mt-2"
           >
             Browse Catalog
           </button>
@@ -185,7 +185,7 @@ export const StorefrontCart: React.FC<StorefrontCartProps> = ({
             {/* Order on WhatsApp */}
             <button
               onClick={handleOrderCartOnWhatsApp}
-              className="flex-1 py-3.5 px-3 bg-[#bef715] hover:bg-[#aef000] text-black text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm font-sans"
+              className="flex-1 py-3.5 px-3 store-accent-bg  text-black text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm font-sans"
             >
               <MessageCircle className="w-4 h-4 fill-black/20" />
               <span>Order on WhatsApp</span>

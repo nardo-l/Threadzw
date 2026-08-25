@@ -17,7 +17,7 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
     <div className="space-y-8 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       {/* Editorial Header */}
       <div className="space-y-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Our Story</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Our Story</span>
         <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">About Brand</h2>
       </div>
 
@@ -34,7 +34,7 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
               <h3 className="text-sm font-bold text-white leading-tight font-sans">
                 {shop.name}
               </h3>
-              <span className="text-[10px] font-bold text-green-300 mt-0.5 block font-sans">
+              <span className="text-[10px] font-bold store-accent-on-dark mt-0.5 block font-sans">
                 EST. {shop.created_at ? new Date(shop.created_at).getFullYear() : '2026'}
               </span>
             </div>
@@ -43,8 +43,8 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
       </div>
 
       {/* Brand Story Statement */}
-      <div className="bg-zinc-50 border-l-[3px] border-green-600 pl-4 py-2.5 space-y-1 rounded-r-xl">
-        <h4 className="text-[10px] uppercase tracking-wider text-green-700 font-bold font-sans">Our Mission</h4>
+      <div className="bg-zinc-50 border-l-[3px] store-accent-border pl-4 py-2.5 space-y-1 rounded-r-xl">
+        <h4 className="text-[10px] uppercase tracking-wider store-accent-text font-bold font-sans">Our Mission</h4>
         <p className="text-zinc-600 text-xs leading-relaxed font-sans font-medium">
           {shop.description || 'Constructed with premium textiles, tailored shapes, and graphic identity. Our boutique represents a cultural movement designed in Zimbabwe to challenge international luxury standards, bringing pure fashion expression to everyday streetwear.'}
         </p>
@@ -59,7 +59,7 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
         <div className="grid gap-4">
           {/* Value 1 */}
           <div className="p-4 bg-zinc-50 border border-zinc-150 rounded-2xl flex gap-3.5 items-start">
-            <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-xl store-accent-soft-bg flex items-center justify-center store-accent-text shrink-0 mt-0.5">
               <Feather className="w-4.5 h-4.5" />
             </div>
             <div className="space-y-1">
@@ -72,7 +72,7 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
 
           {/* Value 2 */}
           <div className="p-4 bg-zinc-50 border border-zinc-150 rounded-2xl flex gap-3.5 items-start">
-            <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-xl store-accent-soft-bg flex items-center justify-center store-accent-text shrink-0 mt-0.5">
               <Sparkles className="w-4.5 h-4.5" />
             </div>
             <div className="space-y-1">
@@ -85,7 +85,7 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
 
           {/* Value 3 */}
           <div className="p-4 bg-zinc-50 border border-zinc-150 rounded-2xl flex gap-3.5 items-start">
-            <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600 shrink-0 mt-0.5">
+            <div className="w-8 h-8 rounded-xl store-accent-soft-bg flex items-center justify-center store-accent-text shrink-0 mt-0.5">
               <Shield className="w-4.5 h-4.5" />
             </div>
             <div className="space-y-1">
@@ -99,14 +99,14 @@ export const StorefrontAbout: React.FC<StorefrontAboutProps> = ({
       </div>
 
       {/* Sustainable Local Mission */}
-      <div className="bg-green-50/40 border border-green-100/50 rounded-2xl p-5 text-center space-y-3">
-        <h4 className="text-xs font-bold text-green-800 font-sans">Our Local Mission</h4>
+      <div className="store-accent-soft-bg/40 border store-accent-soft-border/50 rounded-2xl p-5 text-center space-y-3">
+        <h4 className="text-xs font-bold store-accent-text font-sans">Our Local Mission</h4>
         <p className="text-[11px] text-zinc-600 leading-relaxed font-sans font-medium">
           We prioritize sustainable production runs to minimize waste and support high-standard creative collaborations. Thank you for supporting local Zimbabwe fashion.
         </p>
         <button
           onClick={() => onNavigateToPage('shop')}
-          className="px-5 py-2 bg-green-600 text-white hover:bg-green-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
+          className="px-5 py-2 store-accent-bg text-white  text-xs font-semibold rounded-xl transition-colors cursor-pointer shadow-xs"
         >
           Explore Collection
         </button>

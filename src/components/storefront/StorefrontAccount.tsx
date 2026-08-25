@@ -33,14 +33,14 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
   return (
     <div className="space-y-6 px-5 pb-24 select-none text-left bg-white min-h-screen pt-4 font-sans">
       <div className="space-y-1.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Customer Area</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Customer Area</span>
         <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">Your Account</h2>
       </div>
 
       {/* ----------------- SAVED ADDRESS SECTION ----------------- */}
       <div className="bg-zinc-50 border border-zinc-150 rounded-[20px] p-5 space-y-4 shadow-xs">
         <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block flex items-center gap-1.5 font-sans">
-          <MapPin className="w-4 h-4 text-green-600" /> Saved Delivery Coordinates
+          <MapPin className="w-4 h-4 store-accent-text" /> Saved Delivery Coordinates
         </span>
 
         <div className="space-y-2.5 text-left">
@@ -49,11 +49,11 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
             value={addressInput}
             onChange={(e) => setAddressInput(e.target.value)}
             placeholder="Configure your physical delivery address to prefill Checkout..."
-            className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none resize-none p-3 text-zinc-800 font-sans leading-relaxed"
+            className="w-full text-xs bg-white border border-zinc-200 rounded-xl focus:ring-2 store-accent-ring outline-none resize-none p-3 text-zinc-800 font-sans leading-relaxed"
           />
           <button
             onClick={handleSaveAddress}
-            className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
+            className="w-full py-2.5 store-accent-bg  text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
           >
             <Save className="w-4 h-4" /> Save Address
           </button>
@@ -63,10 +63,10 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
       {/* ----------------- WISHLIST ROUTING SHORTCUT ----------------- */}
       <div 
         onClick={() => onNavigateToPage('wishlist')}
-        className="p-4 rounded-xl bg-zinc-50 border border-zinc-150 hover:border-green-200 cursor-pointer flex items-center justify-between transition-all shadow-2xs"
+        className="p-4 rounded-xl bg-zinc-50 border border-zinc-150 store-accent-hover-soft-border cursor-pointer flex items-center justify-between transition-all shadow-2xs"
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center text-green-600">
+          <div className="w-9 h-9 rounded-xl store-accent-soft-bg flex items-center justify-center store-accent-text">
             <Heart className="w-4 h-4 fill-green-100" />
           </div>
           <div className="text-left">
@@ -80,7 +80,7 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
       {/* ----------------- WHATSAPP SUPPORT SECTION ----------------- */}
       <div className="bg-zinc-50 border border-zinc-150 rounded-[20px] p-5 space-y-3 shadow-xs">
         <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block flex items-center gap-1.5 font-sans">
-          <Clipboard className="w-4 h-4 text-green-600" /> Customer Support
+          <Clipboard className="w-4 h-4 store-accent-text" /> Customer Support
         </span>
         <p className="text-xs text-zinc-600 leading-relaxed font-medium">
           Threadzw sends clothing enquiries directly to the shop on WhatsApp. Use the product buttons to ask about size, colour, stock, delivery or collection.
@@ -89,7 +89,7 @@ export const StorefrontAccount: React.FC<StorefrontAccountProps> = ({
           href={`https://wa.me/${(shop.whatsapp_number || shop.whatsapp || shop.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${shop.name}, I need help with an item from your Threadzw shop.`)}`}
           target="_blank"
           rel="noreferrer"
-          className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
+          className="w-full py-2.5 store-accent-bg  text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
         >
           Message {shop.name} on WhatsApp <ArrowRight className="w-4 h-4" />
         </a>

@@ -103,7 +103,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
     <div className="space-y-6 px-4 pb-20 select-none text-left bg-white min-h-screen">
       {/* ----------------- SHOP HEADER & SEARCH ----------------- */}
       <div className="space-y-1.5 pt-4">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">
+        <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">
           Boutique Catalog
         </span>
         <h2 className="text-xl font-bold tracking-tight text-zinc-900 font-sans">
@@ -122,7 +122,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
             setVisibleCount(8); // reset when searching
           }}
           placeholder="Search items, categories, descriptions..."
-          className="w-full text-xs font-medium bg-zinc-50 border border-zinc-200/60 focus:border-green-600 focus:bg-white focus:ring-1 focus:ring-green-600 outline-none rounded-xl pl-10 pr-8 py-2.5 text-zinc-900 placeholder-zinc-400 transition-colors font-sans"
+          className="w-full text-xs font-medium bg-zinc-50 border border-zinc-200/60 focus:store-accent-border focus:bg-white focus:ring-1 store-accent-ring outline-none rounded-xl pl-10 pr-8 py-2.5 text-zinc-900 placeholder-zinc-400 transition-colors font-sans"
         />
         {searchQuery && (
           <button
@@ -145,7 +145,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
             }}
             className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 cursor-pointer ${
               selectedCategory === 'all'
-                ? 'bg-green-600 text-white border-green-600 shadow-xs'
+                ? 'store-accent-bg text-white store-accent-border shadow-xs'
                 : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
             }`}
           >
@@ -160,7 +160,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
               }}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0 cursor-pointer ${
                 selectedCategory.toLowerCase() === cat.name.toLowerCase()
-                  ? 'bg-green-600 text-white border-green-600 shadow-xs'
+                  ? 'store-accent-bg text-white store-accent-border shadow-xs'
                   : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'
               }`}
             >
@@ -198,10 +198,10 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                         setVisibleCount(8);
                         setShowSortDropdown(false);
                       }}
-                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-zinc-700 hover:bg-zinc-50 hover:text-green-600 flex items-center justify-between transition-colors"
+                      className="w-full text-left px-3 py-2 rounded-lg text-xs font-medium text-zinc-700 hover:bg-zinc-50 store-accent-hover-text flex items-center justify-between transition-colors"
                     >
                       {opt.label}
-                      {sortBy === opt.value && <Check className="w-3.5 h-3.5 text-green-600" />}
+                      {sortBy === opt.value && <Check className="w-3.5 h-3.5 store-accent-text" />}
                     </button>
                   ))}
                 </motion.div>
@@ -256,7 +256,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                       <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">
                         {p.category || 'Apparel'}
                       </span>
-                      <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-hover:text-green-600 transition-colors">
+                      <h4 className="font-semibold text-xs text-zinc-800 line-clamp-1 group-store-accent-hover-text transition-colors">
                         {p.name}
                       </h4>
                     </div>
@@ -281,7 +281,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                           console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
                           trackWhatsAppClick(shop.id, p.id, p.name);
                         }}
-                        className="mt-2 w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-colors duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
+                        className="mt-2 w-full py-2 store-accent-bg  text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-colors duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
                       >
                         <MessageCircle className="w-3.5 h-3.5 fill-current" /> Order WA
                       </a>
@@ -296,7 +296,7 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
           {hasMore && (
             <div className="flex flex-col items-center justify-center pt-4">
               {loadingMore ? (
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-green-600 tracking-wide animate-pulse">
+                <div className="flex items-center gap-1.5 text-xs font-semibold store-accent-text tracking-wide animate-pulse">
                   <div className="w-3.5 h-3.5 border-2 border-zinc-200 border-t-green-600 rounded-full animate-spin" />
                   Loading Drops...
                 </div>

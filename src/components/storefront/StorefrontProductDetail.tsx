@@ -272,7 +272,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 font-sans">Product Details</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider store-accent-text font-sans">Product Details</span>
         <button
           onClick={() => onToggleWishlist(product.id)}
           className="p-2 bg-zinc-50 border border-zinc-150 rounded-full hover:bg-zinc-100 text-zinc-600 flex items-center justify-center cursor-pointer transition-colors"
@@ -303,7 +303,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
           )}
 
           {product.original_price && product.original_price > product.price && (
-            <span className="absolute top-4 left-4 bg-green-600 text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">
+            <span className="absolute top-4 left-4 store-accent-bg text-white text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg shadow-sm">
               Sale -{Math.round(((product.original_price - product.price) / product.original_price) * 100)}%
             </span>
           )}
@@ -338,7 +338,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
 
       {/* ----------------- 2. METADATA ----------------- */}
       <div className="space-y-1.5 text-left">
-        <span className="text-[10px] uppercase tracking-wider text-green-600 font-bold block font-sans">
+        <span className="text-[10px] uppercase tracking-wider store-accent-text font-bold block font-sans">
           {product.category || 'Curated releases'}
         </span>
         <h2 className="text-xl font-bold tracking-tight text-zinc-900 leading-tight font-sans">
@@ -358,7 +358,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
               ● Out of Stock
             </span>
           ) : (
-            <span className="text-[9px] font-bold uppercase tracking-wider font-sans text-green-700 bg-green-50 border border-green-100 px-2.5 py-1 rounded-full">
+            <span className="text-[9px] font-bold uppercase tracking-wider font-sans store-accent-text store-accent-soft-bg border store-accent-soft-border px-2.5 py-1 rounded-full">
               ● In Stock & Ready to Ship
             </span>
           )}
@@ -372,7 +372,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
             <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-bold block font-sans">Select Size</span>
             <button 
               onClick={() => toast.info("Sizing runs true-to-size. Oversized garments are labeled.")}
-              className="text-[10px] uppercase font-bold text-zinc-500 hover:text-green-600 flex items-center gap-1 cursor-pointer transition-colors"
+              className="text-[10px] uppercase font-bold text-zinc-500 store-accent-hover-text flex items-center gap-1 cursor-pointer transition-colors"
             >
               Size Guide <HelpCircle className="w-3.5 h-3.5" />
             </button>
@@ -387,7 +387,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
                   onClick={() => setSelectedSize(sz)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold font-sans border transition-all cursor-pointer ${
                     selectedSize === sz 
-                      ? 'bg-green-600 text-white border-green-600 shadow-sm' 
+                      ? 'store-accent-bg text-white store-accent-border shadow-sm'
                       : isOutOf
                         ? 'bg-zinc-100 text-zinc-350 border-zinc-100 line-through cursor-not-allowed opacity-50'
                         : 'bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300'
@@ -412,7 +412,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
                 onClick={() => setSelectedColor(col)}
                 className={`px-4 py-2 rounded-xl text-xs font-bold font-sans border transition-all cursor-pointer ${
                   selectedColor === col
-                    ? 'bg-green-500/10 text-green-700 border-green-300'
+                    ? 'store-accent-soft-bg store-accent-text store-accent-soft-border'
                     : 'bg-white text-zinc-750 border-zinc-200 hover:border-zinc-300'
                 }`}
               >
@@ -486,7 +486,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
           className={`flex-1 py-3.5 px-3 text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
             isSoldOut
               ? 'bg-zinc-100 text-zinc-400 cursor-not-allowed line-through'
-              : 'bg-[#bef715] hover:bg-[#aef000] text-black shadow-sm'
+              : 'store-accent-bg  text-black shadow-sm'
           }`}
         >
           <MessageCircle className="w-4 h-4 fill-black/20" />

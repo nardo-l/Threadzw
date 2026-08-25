@@ -32,6 +32,8 @@ import { VehicleStorefrontView } from '../components/vehicles/VehicleStorefrontV
 import { CartItem, StorefrontPageType } from '../components/storefront/types';
 import { ShopLogo } from '../components/ui/ShopImage';
 import { getAbsoluteShopUrl } from '../utils/shopUrl';
+import { getImageUrl } from '../utils/imageUrl';
+import { DEFAULT_STOREFRONT_THEME, extractLogoTheme } from '../utils/storefrontTheme';
 
 interface StorefrontPageProps {
   preloadedShop?: any;
@@ -44,6 +46,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
 
   // Shop & product data states
   const [shop, setShop] = useState<any>(null);
+  const [storefrontTheme, setStorefrontTheme] = useState(DEFAULT_STOREFRONT_THEME);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,6 +61,22 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
 
   // Hamburger menu toggler
   const [showMenu, setShowMenu] = useState(false);
+
+  const logoThemeSource = useMemo(
+    () => getImageUrl(shop?.logo_url || shop?.avatar_url, 'shop-avatars'),
+    [shop?.logo_url, shop?.avatar_url]
+  );
+
+  useEffect(() => {
+    let active = true;
+    setStorefrontTheme(DEFAULT_STOREFRONT_THEME);
+    extractLogoTheme(logoThemeSource).then(theme => {
+      if (active) setStorefrontTheme(theme);
+    });
+    return () => {
+      active = false;
+    };
+  }, [logoThemeSource]);
 
   // Location sheet toggler
   const [showLocationSheet, setShowLocationSheet] = useState(false);
@@ -618,6 +637,21 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
       <div className="min-h-screen bg-white text-zinc-900 font-sans flex flex-col select-none max-w-[480px] mx-auto border-x border-zinc-100/50 relative shadow-2xs">
         {/* Style block containing premium shimmer-bg style and animations */}
         <style dangerouslySetInnerHTML={{ __html: `
+          .storefront-root ::selection { background: var(--store-accent); color: var(--store-accent-text); }
+          .storefront-root .store-accent-bg { background-color: var(--store-accent) !important; color: var(--store-accent-text) !important; }
+          .storefront-root .store-accent-bg:hover { background-color: var(--store-accent-strong) !important; }
+          .storefront-root .store-accent-text { color: var(--store-accent-strong) !important; }
+          .storefront-root .store-accent-hover-text:hover { color: var(--store-accent-strong) !important; }
+          .storefront-root .store-accent-group-hover-text:hover { color: var(--store-accent-strong) !important; }
+          .storefront-root .store-accent-hover-soft-border:hover { border-color: var(--store-accent-soft-strong) !important; }
+          .storefront-root .shadow-store-accent { --tw-shadow-color: var(--store-accent-soft-strong) !important; }
+          .storefront-root .store-accent-border { border-color: var(--store-accent-strong) !important; }
+          .storefront-root .store-accent-soft-bg { background-color: var(--store-accent-soft) !important; }
+          .storefront-root .store-accent-soft-strong-bg { background-color: var(--store-accent-soft-strong) !important; }
+          .storefront-root .store-accent-strong-bg { background-color: var(--store-accent-strong) !important; color: var(--store-accent-text) !important; }
+          .storefront-root .store-accent-soft-border { border-color: var(--store-accent-soft-strong) !important; }
+          .storefront-root .store-accent-on-dark { color: var(--store-accent-soft-strong) !important; }
+          .storefront-root .store-accent-ring:focus { box-shadow: 0 0 0 3px rgba(var(--store-accent-rgb), 0.18) !important; border-color: var(--store-accent-strong) !important; }
           @keyframes shimmer-sweep {
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
@@ -818,7 +852,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
   const renderPolicyPage = (title: string, bodyText: string) => (
     <div className="space-y-6 px-5 pb-16 text-left select-none bg-white min-h-screen pt-6">
       <div className="space-y-1">
-        <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-green-600 font-sans">Brand Policy</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.1em] store-accent-text font-sans">Brand Policy</span>
         <h2 className="font-sans text-xl font-bold tracking-tight text-zinc-900">{title}</h2>
       </div>
       <div className="bg-zinc-50 border border-zinc-100 p-6 rounded-2xl">
@@ -835,7 +869,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
 
   const render404Page = () => (
     <div className="py-24 text-center px-5 space-y-4 select-none bg-white min-h-screen">
-      <h3 className="font-sans text-5xl font-extrabold text-green-600 tracking-tighter leading-none">404</h3>
+      <h3 className="font-sans text-5xl font-extrabold store-accent-text tracking-tighter leading-none">404</h3>
       <div className="space-y-1">
         <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 font-sans">Page Not Found</span>
         <h4 className="text-sm font-bold text-zinc-900">This view does not exist</h4>
@@ -852,7 +886,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
         </button>
         <button
           onClick={() => navigateToPage('shop')}
-          className="flex-grow py-2.5 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 cursor-pointer transition-colors"
+          className="flex-grow py-2.5 store-accent-bg text-white text-xs font-semibold rounded-xl  cursor-pointer transition-colors"
         >
           Browse Shop
         </button>
@@ -860,15 +894,24 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
     </div>
   );
 
+  const themeStyle = {
+    '--store-accent': storefrontTheme.accent,
+    '--store-accent-strong': storefrontTheme.accentStrong,
+    '--store-accent-soft': storefrontTheme.accentSoft,
+    '--store-accent-soft-strong': storefrontTheme.accentSoftStrong,
+    '--store-accent-text': storefrontTheme.accentText,
+    '--store-accent-rgb': storefrontTheme.accentRgb
+  } as React.CSSProperties;
+
   return (
-    <div className="storefront-root min-h-screen bg-zinc-50 text-zinc-900 flex justify-center font-sans antialiased overflow-x-hidden selection:bg-[#bef715] selection:text-black">
+    <div className="storefront-root min-h-screen bg-zinc-50 text-zinc-900 flex justify-center font-sans antialiased overflow-x-hidden" style={themeStyle}>
       {/* Centered Mobile Frame container on desktop */}
       <div className="w-full max-w-[480px] bg-white min-h-screen flex flex-col relative border-x border-zinc-200/60 shadow-xl relative select-none">
         
         {/* THREADZW BRAND GREEN BANNER */}
         <div 
           onClick={() => navigate('/')}
-          className="bg-[#bef715] hover:opacity-90 text-black py-1.5 px-4 text-[10px] font-bold tracking-wider uppercase text-center cursor-pointer transition-all flex items-center justify-center gap-1 select-none font-sans"
+          className="store-accent-bg hover:opacity-90 text-black py-1.5 px-4 text-[10px] font-bold tracking-wider uppercase text-center cursor-pointer transition-all flex items-center justify-center gap-1 select-none font-sans"
         >
           <span>Powered by ThreadZW 💚</span>
         </div>
@@ -918,7 +961,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
             >
               <ShoppingBag className="w-5 h-5 stroke-[2.5]" />
               {cart.length > 0 && (
-                <div className="absolute -top-1 -right-1 bg-[#bef715] text-black text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+                <div className="absolute -top-1 -right-1 store-accent-bg text-black text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                   {cart.reduce((s, i) => s + i.quantity, 0)}
                 </div>
               )}
@@ -954,14 +997,14 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
               {/* Navigation links */}
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-zinc-600">
                 <div className="space-y-2.5">
-                  <button onClick={() => navigateToPage('shop')} className="block hover:text-green-600 cursor-pointer text-left">Browse Shop</button>
-                  <button onClick={() => navigateToPage('about')} className="block hover:text-green-600 cursor-pointer text-left">About Brand</button>
-                  <button onClick={() => navigateToPage('contact')} className="block hover:text-green-600 cursor-pointer text-left">Contact Us</button>
+                  <button onClick={() => navigateToPage('shop')} className="block store-accent-hover-text cursor-pointer text-left">Browse Shop</button>
+                  <button onClick={() => navigateToPage('about')} className="block store-accent-hover-text cursor-pointer text-left">About Brand</button>
+                  <button onClick={() => navigateToPage('contact')} className="block store-accent-hover-text cursor-pointer text-left">Contact Us</button>
                 </div>
                 <div className="space-y-2.5">
-                  <button onClick={() => navigateToPage('track')} className="block hover:text-green-600 cursor-pointer text-left">Track Order</button>
-                  <button onClick={() => navigateToPage('terms')} className="block hover:text-green-600 cursor-pointer text-left">Terms & Conditions</button>
-                  <button onClick={() => navigateToPage('privacy')} className="block hover:text-green-600 cursor-pointer text-left">Privacy Policy</button>
+                  <button onClick={() => navigateToPage('track')} className="block store-accent-hover-text cursor-pointer text-left">Track Order</button>
+                  <button onClick={() => navigateToPage('terms')} className="block store-accent-hover-text cursor-pointer text-left">Terms & Conditions</button>
+                  <button onClick={() => navigateToPage('privacy')} className="block store-accent-hover-text cursor-pointer text-left">Privacy Policy</button>
                 </div>
               </div>
 
@@ -983,7 +1026,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
           >
             <Home className="w-5 h-5" />
             <span className="text-[10px]">Home</span>
-            {activePage === 'home' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
+            {activePage === 'home' && <div className="w-1 h-1 rounded-full store-accent-bg" />}
           </button>
 
           <button
@@ -994,7 +1037,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
           >
             <Grid className="w-5 h-5" />
             <span className="text-[10px]">Shop</span>
-            {activePage === 'shop' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
+            {activePage === 'shop' && <div className="w-1 h-1 rounded-full store-accent-bg" />}
           </button>
 
           <button
@@ -1005,12 +1048,12 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
           >
             <ShoppingBag className="w-5 h-5" />
             {cart.length > 0 && (
-              <div className="absolute top-1 right-5 bg-[#bef715] text-black text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
+              <div className="absolute top-1 right-5 store-accent-bg text-black text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-sm">
                 {cart.reduce((s, i) => s + i.quantity, 0)}
               </div>
             )}
             <span className="text-[10px]">Cart</span>
-            {activePage === 'cart' && <div className="w-1 h-1 rounded-full bg-[#bef715] mt-0.5" />}
+            {activePage === 'cart' && <div className="w-1 h-1 rounded-full store-accent-bg mt-0.5" />}
           </button>
 
           <button
@@ -1026,7 +1069,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
               </div>
             )}
             <span className="text-[10px]">Wishlist</span>
-            {activePage === 'wishlist' && <div className="w-1 h-1 rounded-full bg-[#bef715]" />}
+            {activePage === 'wishlist' && <div className="w-1 h-1 rounded-full store-accent-bg" />}
           </button>
         </nav>
 
@@ -1067,7 +1110,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
                 {/* Header Section */}
                 <div className="px-5 pb-4 border-b border-zinc-100/80 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shrink-0 shadow-sm border border-green-100/50">
+                    <div className="w-10 h-10 rounded-xl store-accent-soft-bg flex items-center justify-center store-accent-text shrink-0 shadow-sm border store-accent-soft-border">
                       <MapPin className="w-5 h-5 animate-pulse" />
                     </div>
                     <div>
@@ -1094,7 +1137,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
                   <div className="space-y-1.5 px-1 pt-1">
                     <span className="text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest block">Trading Hours</span>
                     <div className="flex items-center gap-2.5 text-zinc-700 font-medium">
-                      <Clock className="w-4 h-4 text-green-600 shrink-0" />
+                      <Clock className="w-4 h-4 store-accent-text shrink-0" />
                       <p className="leading-none text-xs">{shop.hours || "Monday - Saturday: 8:30 AM - 6:00 PM (Closed Sundays)"}</p>
                     </div>
                   </div>
@@ -1102,10 +1145,10 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
                   {/* Delivery Availability */}
                   <div className="space-y-1.5 px-1">
                     <span className="text-[9px] font-extrabold text-zinc-400 uppercase tracking-widest block">Delivery & Shipping</span>
-                    <div className="flex items-start gap-2.5 text-zinc-700 bg-green-50/30 border border-green-100/40 p-3 rounded-xl">
-                      <Truck className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+                    <div className="flex items-start gap-2.5 text-zinc-700 store-accent-soft-bg border store-accent-soft-border p-3 rounded-xl">
+                      <Truck className="w-4 h-4 store-accent-text shrink-0 mt-0.5" />
                       <div className="space-y-0.5">
-                        <span className="text-[10px] font-extrabold text-green-700 uppercase tracking-wider block">Availability</span>
+                        <span className="text-[10px] font-extrabold store-accent-text uppercase tracking-wider block">Availability</span>
                         <p className="text-zinc-650 leading-relaxed font-sans font-medium text-[11px]">
                           {shop.delivery_info?.trim() || `Showroom pickup available in ${shop.city || 'Zimbabwe'}. Secured nationwide courier shipping & door delivery options are calculated during checkout.`}
                         </p>
@@ -1128,7 +1171,7 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
                         )}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="w-full py-3 bg-green-600 hover:bg-green-700 text-white text-center rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer text-xs shadow-sm hover:shadow-md uppercase tracking-wider"
+                        className="w-full py-3 store-accent-bg  text-white text-center rounded-xl font-bold transition-all flex items-center justify-center gap-2 cursor-pointer text-xs shadow-sm hover:shadow-md uppercase tracking-wider"
                       >
                         <MessageSquare className="w-4 h-4" />
                         <span>Enquire via WhatsApp</span>
@@ -1175,16 +1218,16 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
 
                 {/* Sidebar Links */}
                 <div className="space-y-4 text-xs font-semibold text-zinc-600 flex-grow">
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-green-600 pb-1 block">Menu Directory</div>
-                  <button onClick={() => navigateToPage('home')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Home</button>
-                  <button onClick={() => navigateToPage('shop')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Shop</button>
-                  <button onClick={() => navigateToPage('categories')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">Categories</button>
-                  <button onClick={() => navigateToPage('wishlist')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left flex items-center justify-between border-b border-zinc-50">
+                  <div className="text-[10px] uppercase font-bold tracking-wider store-accent-text pb-1 block">Menu Directory</div>
+                  <button onClick={() => navigateToPage('home')} className="block store-accent-hover-text py-2 cursor-pointer w-full text-left border-b border-zinc-50">Home</button>
+                  <button onClick={() => navigateToPage('shop')} className="block store-accent-hover-text py-2 cursor-pointer w-full text-left border-b border-zinc-50">Shop</button>
+                  <button onClick={() => navigateToPage('categories')} className="block store-accent-hover-text py-2 cursor-pointer w-full text-left border-b border-zinc-50">Categories</button>
+                  <button onClick={() => navigateToPage('wishlist')} className="block store-accent-hover-text py-2 cursor-pointer w-full text-left flex items-center justify-between border-b border-zinc-50">
                     <span>Wishlist</span>
-                    <Heart className="w-4 h-4 text-green-600" />
+                    <Heart className="w-4 h-4 store-accent-text" />
                   </button>
-                  <button onClick={() => navigateToPage('about')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left border-b border-zinc-50">About Brand</button>
-                  <button onClick={() => navigateToPage('contact')} className="block hover:text-green-600 py-2 cursor-pointer w-full text-left">Contact Us</button>
+                  <button onClick={() => navigateToPage('about')} className="block store-accent-hover-text py-2 cursor-pointer w-full text-left border-b border-zinc-50">About Brand</button>
+                  <button onClick={() => navigateToPage('contact')} className="block store-accent-hover-text py-2 cursor-pointer w-full text-left">Contact Us</button>
                 </div>
 
                 {/* Bottom coordinates */}
