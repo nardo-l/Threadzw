@@ -5,7 +5,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { withTimeout } from '../lib/withTimeout';
 import { toast } from 'sonner';
+
+const LOGIN_REQUEST_TIMEOUT_MS = 15000;
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -33,10 +36,10 @@ export const Login: React.FC = () => {
     try {
       console.log("[LOGIN] Calling supabase.auth.signInWithPassword...");
       const t0 = performance.now();
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await withTimeout(supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password
-      });
+      }), LOGIN_REQUEST_TIMEOUT_MS, 'SIGNIN');
       const t1 = performance.now();
       console.log(`[LOGIN] supabase.auth.signInWithPassword returned after ${(t1 - t0).toFixed(2)}ms`);
 

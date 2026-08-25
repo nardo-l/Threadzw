@@ -485,7 +485,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       let currentUser = null;
 
       // Always authenticate with the provided email and password to ensure auth.users record exists
-      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpErr } = await withTimeout(supabase.auth.signUp({
         email: emailVal,
         password: passVal,
         options: {
@@ -494,14 +494,14 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
             phone_number: phoneVal,
           }
         }
-      });
+      }), SIGNUP_REQUEST_TIMEOUT_MS, 'SIGNUP');
 
       if (signUpErr) {
         if (signUpErr.message.toLowerCase().includes('already registered')) {
-          const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          const { data: signInData, error: signInErr } = await withTimeout(supabase.auth.signInWithPassword({
             email: emailVal,
             password: passVal
-          });
+          }), SIGNUP_REQUEST_TIMEOUT_MS, 'SIGNIN');
           if (signInErr) throw signInErr;
           currentUser = signInData.user;
         } else {
@@ -510,10 +510,10 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       } else {
         currentUser = signUpData.user;
         if (!signUpData.session) {
-          const { data: signInData } = await supabase.auth.signInWithPassword({
+          const { data: signInData } = await withTimeout(supabase.auth.signInWithPassword({
             email: emailVal,
             password: passVal
-          });
+          }), SIGNUP_REQUEST_TIMEOUT_MS, 'SIGNIN');
           if (signInData?.user) {
             currentUser = signInData.user;
           }
@@ -531,11 +531,11 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       const slug = shopName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-');
       const loc = shopAddress.trim() || null;
 
-      const { data: existingShop } = await supabase
+      const { data: existingShop } = await withTimeout(supabase
         .from('shops')
         .select('id')
         .eq('owner_id', currentUser.id)
-        .maybeSingle();
+        .maybeSingle(), SIGNUP_REQUEST_TIMEOUT_MS, 'SHOP_LOOKUP');
 
       let activeShopId = existingShop?.id;
 
@@ -596,7 +596,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       }
 
       try {
-        await refreshShop();
+        await withTimeout(refreshShop(), SIGNUP_REQUEST_TIMEOUT_MS, 'SHOP_REFRESH');
       } catch (e) {
         console.warn('refreshShop error:', e);
       }
