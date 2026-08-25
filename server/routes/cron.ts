@@ -21,7 +21,7 @@ router.post('/merchant-notifications', async (req: Request, res: Response) => {
     return res.status(401).json({ success: false, error: 'Invalid cron secret' });
   }
 
-  const slot = req.body?.slot as NotificationSlot;
+  const slot = (req.body?.slot || req.query?.slot) as NotificationSlot;
   if (slot !== 'midday' && slot !== 'evening') {
     return res.status(400).json({ success: false, error: 'slot must be midday or evening' });
   }

@@ -76,6 +76,7 @@ const migration = readFileSync(new URL('../../supabase/migrations/20260825000000
 assert.match(workflow, /0 10 \* \* \*/);
 assert.match(workflow, /0 17 \* \* \*/);
 assert.match(workflow, /THREADZW_CRON_SECRET/);
+assert.match(workflow, /merchant-notifications\?slot=\$SLOT/);
 assert.match(migration, /CREATE TABLE IF NOT EXISTS public.notification_preferences/);
 assert.match(migration, /CREATE TABLE IF NOT EXISTS public.notification_deliveries/);
 assert.match(migration, /idx_notifications_dedupe_key_unique/);
