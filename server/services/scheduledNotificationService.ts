@@ -373,7 +373,7 @@ export async function sendScheduledMerchantNotifications(
 ) {
   const { data: shops, error: shopsError } = await supabase
     .from('shops')
-    .select('id, owner_id, name, description, logo_url, avatar_url, banner_url, location, whatsapp_number, whatsapp, instagram, page_type')
+    .select('id, owner_id, name, description, logo_url, banner_url, location, whatsapp_number, whatsapp, instagram, page_type')
     .not('owner_id', 'is', null);
 
   if (shopsError) throw shopsError;
