@@ -1,17 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://placeholder.supabase.co';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+let serverClient: any | null = null;
 
-const hasServiceRole = !!serviceRoleKey;
-console.log(`SERVICE ROLE KEY LOADED: ${hasServiceRole}`);
+function getServerSupabase() {
+  if (!serverClient) {
+    const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const supabaseKey = serviceRoleKey || process.env.VITE_SUPABASE_ANON_KEY || '';
 
-const supabaseKey = serviceRoleKey || process.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
-export const serverSupabase = createClient(supabaseUrl, supabaseKey);
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_SERVER_CONFIGURATION_MISSING');
+    }
+
+    console.log(`SERVICE ROLE KEY LOADED: ${Boolean(serviceRoleKey)}`);
+    serverClient = createClient(supabaseUrl, supabaseKey);
+  }
+  return serverClient;
+}
+
+// Keep the existing import contract while resolving credentials only when a request uses the client.
+export const serverSupabase: any = new Proxy({}, {
+  get(_target, property) {
+    return getServerSupabase()[property];
+  }
+});
 
 export function getUserSupabaseClient(token?: string) {
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const supabaseKey = serviceRoleKey || process.env.VITE_SUPABASE_ANON_KEY || '';
+
   if (token) {
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_SERVER_CONFIGURATION_MISSING');
+    }
     return createClient(supabaseUrl, supabaseKey, {
       global: {
         headers: {
