@@ -1,17 +1,33 @@
 import webpush from 'web-push';
 
-if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY && process.env.VAPID_SUBJECT) {
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT,
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
+let vapidConfigured = false;
+
+function configureVapid() {
+  if (vapidConfigured) return true;
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+  const subject = process.env.VAPID_SUBJECT;
+  if (!publicKey || !privateKey || !subject) return false;
+
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  vapidConfigured = true;
+  return true;
 }
 
-export async function sendPushToProfile(supabase: any, profileId: string, payload: { title: string; body: string; [key: string]: any }) {
-  if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY || !process.env.VAPID_SUBJECT) {
-    console.warn('VAPID keys not fully configured. Skipping push notification.');
-    return;
+export interface PushDeliveryResult {
+  attempted: number;
+  sentCount: number;
+  expiredCount: number;
+}
+
+export async function sendPushToProfile(
+  supabase: any,
+  profileId: string,
+  payload: { title: string; body: string; [key: string]: any }
+): Promise<PushDeliveryResult> {
+  if (!configureVapid()) {
+    console.warn('[PushService] VAPID keys are not fully configured. Skipping push notification.');
+    return { attempted: 0, sentCount: 0, expiredCount: 0 };
   }
 
   const { data: subscriptions, error } = await supabase
@@ -19,7 +35,11 @@ export async function sendPushToProfile(supabase: any, profileId: string, payloa
     .select('endpoint, p256dh, auth')
     .eq('profile_id', profileId);
 
-  if (error || !subscriptions?.length) return;
+  if (error) {
+    console.error('[PushService] Failed to load push subscriptions:', error.message);
+    return { attempted: 0, sentCount: 0, expiredCount: 0 };
+  }
+  if (!subscriptions?.length) return { attempted: 0, sentCount: 0, expiredCount: 0 };
 
   const results = await Promise.allSettled(
     subscriptions.map((sub: any) =>
@@ -33,12 +53,25 @@ export async function sendPushToProfile(supabase: any, profileId: string, payloa
     )
   );
 
-  // Clean up dead subscriptions (expired/unsubscribed browsers return 410)
-  results.forEach((result, i) => {
-    if (result.status === 'rejected' && (result.reason?.statusCode === 410 || result.reason?.statusCode === 404)) {
-      supabase.from('push_subscriptions')
+  let sentCount = 0;
+  let expiredCount = 0;
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      sentCount += 1;
+      return;
+    }
+
+    const statusCode = result.reason?.statusCode;
+    if (statusCode === 410 || statusCode === 404) {
+      expiredCount += 1;
+      void supabase
+        .from('push_subscriptions')
         .delete()
-        .eq('endpoint', subscriptions[i].endpoint);
+        .eq('endpoint', subscriptions[index].endpoint);
+    } else {
+      console.error('[PushService] Push delivery failed:', result.reason?.message || result.reason);
     }
   });
+
+  return { attempted: subscriptions.length, sentCount, expiredCount };
 }

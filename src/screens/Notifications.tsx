@@ -14,6 +14,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
+import {
+  fetchNotifications as fetchNotificationFeed,
+  markAllNotificationsRead,
+  markNotificationRead
+} from '../services/notificationService';
 
 interface NotificationItem {
   id: string;
@@ -35,8 +40,7 @@ export const Notifications: React.FC = () => {
     if (!user?.id) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/notifications?profileId=${user.id}`);
-      const data = await res.json();
+      const data = await fetchNotificationFeed();
       if (data && data.notifications) {
         setNotifications(data.notifications);
       }
@@ -54,12 +58,7 @@ export const Notifications: React.FC = () => {
   const handleMarkAllAsRead = async () => {
     if (!user?.id) return;
     try {
-      const res = await fetch('/api/notifications/mark-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId: user.id })
-      });
-      const data = await res.json();
+      const data = await markAllNotificationsRead();
       if (data.success) {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         toast.success('All notifications marked as read');
@@ -73,11 +72,7 @@ export const Notifications: React.FC = () => {
     // Mark single as read if unread
     if (!item.read && user?.id) {
       try {
-        await fetch('/api/notifications/mark-one', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notificationId: item.id })
-        });
+        await markNotificationRead(item.id);
         setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, read: true } : n));
       } catch (e) {
         // ignore
@@ -109,6 +104,7 @@ export const Notifications: React.FC = () => {
   const renderIcon = (type: string) => {
     switch (type) {
       case 'daily_summary':
+      case 'daily_performance_summary':
       case 'summary':
         return <TrendingUp size={20} className="text-lime-600" />;
       case 'new_order':
@@ -117,6 +113,9 @@ export const Notifications: React.FC = () => {
       case 'pro_expiry':
       case 'expiry':
         return <Crown size={20} className="text-amber-600" />;
+      case 'setup_reminder':
+      case 'first_product_reminder':
+        return <Gift size={20} className="text-indigo-600" />;
       case 'pro_activated':
       case 'subscription':
         return <CheckCircle2 size={20} className="text-purple-600" />;
@@ -133,6 +132,7 @@ export const Notifications: React.FC = () => {
   const getIconBg = (type: string) => {
     switch (type) {
       case 'daily_summary':
+      case 'daily_performance_summary':
       case 'summary':
         return 'bg-lime-500/10 border-lime-500/20';
       case 'new_order':
@@ -141,6 +141,9 @@ export const Notifications: React.FC = () => {
       case 'pro_expiry':
       case 'expiry':
         return 'bg-amber-500/10 border-amber-500/20';
+      case 'setup_reminder':
+      case 'first_product_reminder':
+        return 'bg-indigo-500/10 border-indigo-500/20';
       case 'pro_activated':
       case 'subscription':
         return 'bg-purple-500/10 border-purple-500/20';
@@ -197,7 +200,7 @@ export const Notifications: React.FC = () => {
             </div>
             <h2 className="text-lg font-bold text-zinc-900 mb-1.5">No notifications yet</h2>
             <p className="text-sm text-zinc-500 max-w-sm mb-6 leading-relaxed">
-              You'll see important updates about your shop, orders and account here.
+              You’ll see setup nudges, daily performance summaries and important account updates here.
             </p>
             <button
               onClick={() => navigate('/dashboard')}

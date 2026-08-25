@@ -1,38 +1,39 @@
 import { Router } from 'express';
 import { sendPushToProfile } from '../services/pushService';
 import { sendDailyDigestToAll } from '../services/pushDigestService';
-import { createClient } from '@supabase/supabase-js';
+import { serverSupabase, requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { isValidCronSecret } from '../lib/cronAuth';
 
 const router = Router();
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-router.post('/send', async (req, res) => {
+router.post('/send', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const { profileId, payload } = req.body;
+    const { payload } = req.body || {};
+    const profileId = req.user?.id;
     if (!profileId || !payload) {
-      return res.status(400).json({ error: 'Missing profileId or payload' });
+      return res.status(400).json({ error: 'Missing payload' });
     }
 
-    await sendPushToProfile(supabase, profileId, payload);
-    res.json({ success: true });
+    const result = await sendPushToProfile(serverSupabase, profileId, payload);
+    return res.json({ success: true, ...result });
   } catch (err: any) {
     console.error('Error sending push notification:', err);
-    res.status(500).json({ error: err.message || 'Failed to send push notification' });
+    return res.status(500).json({ error: err.message || 'Failed to send push notification' });
   }
 });
 
 router.post('/daily-digest', async (req, res) => {
+  if (!isValidCronSecret(req)) {
+    return res.status(401).json({ error: 'Invalid cron secret' });
+  }
+
   try {
-    const result = await sendDailyDigestToAll(supabase);
-    res.json(result);
+    const result = await sendDailyDigestToAll(serverSupabase);
+    return res.json(result);
   } catch (err: any) {
     console.error('Error sending daily digest push notifications:', err);
-    res.status(500).json({ error: err.message || 'Failed to send daily digest' });
+    return res.status(500).json({ error: err.message || 'Failed to send daily digest' });
   }
 });
 
 export default router;
-

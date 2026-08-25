@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { fetchNotifications } from '../services/notificationService';
 
 export const NotificationBell: React.FC<{ className?: string }> = ({ className = '' }) => {
   const navigate = useNavigate();
@@ -11,25 +11,25 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
 
   useEffect(() => {
     if (!user?.id) return;
+    let mounted = true;
 
-    async function fetchUnreadCount() {
+    async function refreshUnreadCount() {
       try {
-        const res = await fetch(`/api/notifications?profileId=${user.id}`);
-        const data = await res.json();
-        if (data && data.notifications) {
-          const unread = data.notifications.filter((n: any) => !n.read).length;
-          setUnreadCount(unread);
+        const data = await fetchNotifications();
+        if (mounted) {
+          setUnreadCount(Number(data.unreadCount ?? (data.notifications || []).filter((n: any) => !n.read).length));
         }
-      } catch (err) {
-        // Fallback or ignore network error
+      } catch {
+        // Keep the existing badge state during transient network failures.
       }
     }
 
-    fetchUnreadCount();
-
-    // Poll every 30s or listen to supabase realtime
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
+    void refreshUnreadCount();
+    const interval = window.setInterval(refreshUnreadCount, 30000);
+    return () => {
+      mounted = false;
+      window.clearInterval(interval);
+    };
   }, [user?.id]);
 
   return (
@@ -37,6 +37,7 @@ export const NotificationBell: React.FC<{ className?: string }> = ({ className =
       onClick={() => navigate('/notifications')}
       className={`relative p-2 rounded-xl hover:bg-zinc-100 transition-colors cursor-pointer text-zinc-700 hover:text-zinc-900 ${className}`}
       title="Notifications"
+      aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
     >
       <Bell size={20} />
       {unreadCount > 0 && (

@@ -10,13 +10,22 @@ import {
   LogOut, 
   ChevronRight, 
   CheckCircle2, 
-  AlertTriangle
+  AlertTriangle,
+  Bell,
+  Clock3,
+  Smartphone
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
 import { toast } from 'sonner';
 import { BottomNavBar } from '../components/dashboard/BottomNavBar';
+import { subscribeToPushNotifications } from '../services/pushNotificationService';
+import {
+  fetchNotificationPreferences,
+  saveNotificationPreferences,
+  NotificationPreferences
+} from '../services/notificationService';
 
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +33,15 @@ export const Settings: React.FC = () => {
   const { shop } = useShopContext();
 
   const [loading, setLoading] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
+    timezone: 'Africa/Harare',
+    setup_reminders_enabled: true,
+    daily_summary_enabled: true,
+    push_enabled: true
+  });
+  const [loadingNotificationPreferences, setLoadingNotificationPreferences] = useState(true);
+  const [savingNotificationPreferences, setSavingNotificationPreferences] = useState(false);
+  const [enablingPush, setEnablingPush] = useState(false);
 
   // Profile Form State
   const [displayName, setDisplayName] = useState('');
@@ -44,6 +62,51 @@ export const Settings: React.FC = () => {
       setEmail(user.email || '');
     }
   }, [profile, user]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    let mounted = true;
+    fetchNotificationPreferences()
+      .then((preferences) => {
+        if (mounted) setNotificationPreferences(preferences);
+      })
+      .catch((error) => {
+        console.warn('Notification preferences are unavailable:', error);
+      })
+      .finally(() => {
+        if (mounted) setLoadingNotificationPreferences(false);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [user?.id]);
+
+  const handleSaveNotificationPreferences = async () => {
+    setSavingNotificationPreferences(true);
+    try {
+      const saved = await saveNotificationPreferences(notificationPreferences);
+      setNotificationPreferences(saved);
+      toast.success('Notification preferences saved');
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not save notification preferences');
+    } finally {
+      setSavingNotificationPreferences(false);
+    }
+  };
+
+  const handleEnablePushFromSettings = async () => {
+    setEnablingPush(true);
+    try {
+      await subscribeToPushNotifications();
+      const saved = await saveNotificationPreferences({ ...notificationPreferences, push_enabled: true });
+      setNotificationPreferences(saved);
+      toast.success('Push notifications enabled on this device');
+    } catch (error: any) {
+      toast.error(error?.message || 'Push notifications could not be enabled');
+    } finally {
+      setEnablingPush(false);
+    }
+  };
 
   // Check if shop payment is complete
   const isPaidShop = useMemo(() => {
@@ -219,7 +282,96 @@ export const Settings: React.FC = () => {
           </form>
         </section>
 
-        {/* SECTION 3: Subscription & Billing */}
+        {/* SECTION 3: Notifications */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2 text-zinc-400">
+            <Bell size={16} className="text-black" />
+            <h2 className="text-xs font-black uppercase tracking-wider text-black">Shop Notifications</h2>
+          </div>
+
+          <div className="bg-zinc-50 border border-zinc-100 rounded-3xl p-6 text-left shadow-xs space-y-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#BEF715]/30 flex items-center justify-center shrink-0">
+                <Clock3 size={18} className="text-zinc-900" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-zinc-950">Daily at the right time</h3>
+                <p className="text-xs text-zinc-500 leading-relaxed mt-1">
+                  ThreadZW sends setup help at 12:00 and your shop summary at 19:00 in Zimbabwe time.
+                </p>
+              </div>
+            </div>
+
+            {loadingNotificationPreferences ? (
+              <div className="h-20 rounded-2xl bg-white border border-zinc-200 animate-pulse" />
+            ) : (
+              <div className="space-y-2">
+                <label className="flex items-center justify-between gap-4 bg-white border border-zinc-200 rounded-2xl p-4 cursor-pointer">
+                  <span>
+                    <span className="block text-sm font-bold text-zinc-900">Setup reminders</span>
+                    <span className="block text-xs text-zinc-500 mt-0.5">Finish your shop or add your first product.</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={notificationPreferences.setup_reminders_enabled}
+                    onChange={(event) => setNotificationPreferences(prev => ({ ...prev, setup_reminders_enabled: event.target.checked }))}
+                    className="h-5 w-5 accent-lime-500"
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-4 bg-white border border-zinc-200 rounded-2xl p-4 cursor-pointer">
+                  <span>
+                    <span className="block text-sm font-bold text-zinc-900">Daily performance summary</span>
+                    <span className="block text-xs text-zinc-500 mt-0.5">Visits, enquiries, directions and your top product.</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={notificationPreferences.daily_summary_enabled}
+                    onChange={(event) => setNotificationPreferences(prev => ({ ...prev, daily_summary_enabled: event.target.checked }))}
+                    className="h-5 w-5 accent-lime-500"
+                  />
+                </label>
+                <div className="flex items-center justify-between gap-4 bg-white border border-zinc-200 rounded-2xl p-4">
+                  <span>
+                    <span className="block text-sm font-bold text-zinc-900">Browser and phone push</span>
+                    <span className="block text-xs text-zinc-500 mt-0.5">Allow alerts even when ThreadZW is closed.</span>
+                  </span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={notificationPreferences.push_enabled}
+                      onChange={(event) => setNotificationPreferences(prev => ({ ...prev, push_enabled: event.target.checked }))}
+                      className="h-5 w-5 accent-lime-500"
+                      aria-label="Enable browser and phone push notifications"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleEnablePushFromSettings}
+                      disabled={enablingPush}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-950 text-white px-3 py-2 text-[11px] font-black uppercase tracking-wide disabled:opacity-50"
+                    >
+                      <Smartphone size={13} />
+                      {enablingPush ? 'Enabling' : 'Set up'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <p className="text-[11px] text-zinc-500 font-medium">Timezone: Africa/Harare (Zimbabwe)</p>
+              <button
+                type="button"
+                onClick={handleSaveNotificationPreferences}
+                disabled={savingNotificationPreferences || loadingNotificationPreferences}
+                className="h-10 px-4 bg-[#BEF715] hover:bg-[#d4ff4d] text-zinc-950 font-black text-[11px] uppercase tracking-wider rounded-xl transition-all flex items-center justify-center disabled:opacity-50"
+              >
+                {savingNotificationPreferences ? 'Saving...' : 'Save alerts'}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 4: Subscription & Billing */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-zinc-400">
             <Calendar size={16} className="text-black" />

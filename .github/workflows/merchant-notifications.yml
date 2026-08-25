@@ -1,0 +1,60 @@
+name: ThreadZW merchant notifications
+
+on:
+  schedule:
+    # GitHub Actions schedules use UTC. Zimbabwe is UTC+2.
+    - cron: '0 10 * * *' # 12:00 Africa/Harare
+    - cron: '0 17 * * *' # 19:00 Africa/Harare
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: 'Notification slot to run'
+        required: true
+        type: choice
+        options:
+          - midday
+          - evening
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Resolve notification slot
+        id: slot
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          MANUAL_SLOT: ${{ inputs.slot }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            SLOT="$MANUAL_SLOT"
+          elif [ "$EVENT_SCHEDULE" = "0 10 * * *" ]; then
+            SLOT="midday"
+          elif [ "$EVENT_SCHEDULE" = "0 17 * * *" ]; then
+            SLOT="evening"
+          else
+            echo "Unknown scheduler invocation: $EVENT_SCHEDULE" >&2
+            exit 1
+          fi
+          echo "slot=$SLOT" >> "$GITHUB_OUTPUT"
+
+      - name: Send merchant notifications
+        env:
+          THREADZW_CRON_SECRET: ${{ secrets.THREADZW_CRON_SECRET }}
+          THREADZW_APP_URL: https://threadzw.vercel.app
+          SLOT: ${{ steps.slot.outputs.slot }}
+        run: |
+          if [ -z "$THREADZW_CRON_SECRET" ]; then
+            echo "Missing repository secret THREADZW_CRON_SECRET" >&2
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 5 \
+            --request POST \
+            --url "$THREADZW_APP_URL/api/cron/merchant-notifications" \
+            --header "Content-Type: application/json" \
+            --header "X-ThreadZW-Cron-Secret: $THREADZW_CRON_SECRET" \
+            --data "{\"slot\":\"$SLOT\"}"

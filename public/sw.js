@@ -4,6 +4,8 @@ self.addEventListener('push', function(event) {
     body: data.body || '',
     icon: data.icon || '/icon.png',
     badge: data.badge || '/icon.png',
+    tag: data.tag || undefined,
+    renotify: false,
     data: data.data || {}
   };
   event.waitUntil(
@@ -13,16 +15,17 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/dashboard';
+  const targetUrl = new URL(event.notification.data?.url || '/dashboard', self.location.origin);
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
-      for (let client of windowClients) {
-        if (client.url === targetUrl && 'focus' in client) {
+      for (const client of windowClients) {
+        const clientUrl = new URL(client.url);
+        if (clientUrl.pathname === targetUrl.pathname && 'focus' in client) {
           return client.focus();
         }
       }
       if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
+        return clients.openWindow(targetUrl.href);
       }
     })
   );

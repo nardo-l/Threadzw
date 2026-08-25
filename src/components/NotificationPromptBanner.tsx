@@ -3,6 +3,7 @@ import { Bell, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { subscribeToPushNotifications } from '../services/pushNotificationService';
 import { toast } from 'sonner';
+import { saveNotificationPreferences } from '../services/notificationService';
 
 interface NotificationPromptBannerProps {
   userId?: string;
@@ -88,7 +89,8 @@ export const NotificationPromptBanner: React.FC<NotificationPromptBannerProps> =
     try {
       setLoading(true);
       await subscribeToPushNotifications();
-      toast.success('Notifications enabled successfully! 🔔');
+      await saveNotificationPreferences({ push_enabled: true });
+      toast.success('Notifications enabled successfully!');
       await markPromptedInDbAndLocal();
     } catch (err: any) {
       console.error('Failed to enable push notifications:', err);
@@ -119,7 +121,7 @@ export const NotificationPromptBanner: React.FC<NotificationPromptBannerProps> =
         <div>
           <h3 className="text-sm font-bold text-zinc-900 mb-1">Turn on notifications</h3>
           <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-            Get your daily shop summary, WhatsApp order alerts and Pro reminders instantly.
+            Get setup help at midday and a performance summary at 19:00, in the app and on your phone.
           </p>
         </div>
       </div>
