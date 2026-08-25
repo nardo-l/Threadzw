@@ -64,6 +64,7 @@ process.env.THREADZW_CRON_SECRET = 'test-cron-secret';
 const validRequest = { header: (name: string) => name.toLowerCase() === 'x-threadzw-cron-secret' ? 'test-cron-secret' : undefined } as any;
 const invalidRequest = { header: () => 'wrong-secret' } as any;
 assert.equal(isValidCronSecret(validRequest), true);
+assert.equal(isValidCronSecret({ header: (name: string) => name.toLowerCase() === 'x-threadzw-cron-secret' ? '  test-cron-secret\n' : undefined } as any), true);
 assert.equal(isValidCronSecret(invalidRequest), false);
 await assert.rejects(
   withTimeout(new Promise<void>((resolve) => setTimeout(resolve, 40)), 5, 'BOOTSTRAP'),
