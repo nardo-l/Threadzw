@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { withTimeout } from '../lib/withTimeout';
+
+const SHOP_REQUEST_TIMEOUT_MS = 15000;
 
 export const useShop = () => {
   const { user, loading: authLoading } = useAuth();
@@ -66,10 +69,10 @@ export const useShop = () => {
 
       console.log("[SHOP] fetch start...");
       const tShop0 = performance.now();
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from('shops')
         .select('*')
-        .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+        .eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle(), SHOP_REQUEST_TIMEOUT_MS, 'SHOP_LOAD');
       const tShop1 = performance.now();
       console.log(`[SHOP] fetch completion. Query returned in ${(tShop1 - tShop0).toFixed(2)}ms. Data:`, data, "Error:", error);
 

@@ -52,8 +52,11 @@ import { SuccessScreen } from '../components/onboarding/SuccessScreen';
 import { CategorySelectionStep } from '../components/onboarding/CategorySelectionStep';
 import { SellerCategory } from '../types';
 import { ONBOARDING_CATEGORY_OPTIONS, getSellerCategoryConfig } from '../config/sellerCategories';
+import { withTimeout } from '../lib/withTimeout';
 
 // Brand SVGs
+const SIGNUP_REQUEST_TIMEOUT_MS = 15000;
+
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -620,15 +623,15 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
     setLoading(true);
     try {
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      const user = session?.user || (await withTimeout(supabase.auth.getUser(), SIGNUP_REQUEST_TIMEOUT_MS, 'AUTH_USER_LOAD')).data.user;
       let targetShopId = createdShopId || shop?.id;
 
       if (!targetShopId && user?.id) {
-        const { data: dbShop } = await supabase
+        const { data: dbShop } = await withTimeout(supabase
           .from('shops')
           .select('id')
           .eq('owner_id', user.id)
-          .maybeSingle();
+          .maybeSingle(), SIGNUP_REQUEST_TIMEOUT_MS, 'SHOP_LOOKUP');
         if (dbShop) {
           targetShopId = dbShop.id;
           setCreatedShopId(targetShopId);
@@ -637,18 +640,18 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
 
       if (targetShopId) {
         const config = getSellerCategoryConfig(selectedSellerCategory);
-        const { error: updateErr } = await supabase
+        const { error: updateErr } = await withTimeout(supabase
           .from('shops')
           .update({
             page_type: selectedSellerCategory,
             category: config.defaultCategoryName || 'General Products',
           })
-          .eq('id', targetShopId);
+          .eq('id', targetShopId), SIGNUP_REQUEST_TIMEOUT_MS, 'SHOP_CATEGORY_UPDATE');
         if (updateErr) throw updateErr;
       }
 
       try {
-        await refreshShop();
+        await withTimeout(refreshShop(), SIGNUP_REQUEST_TIMEOUT_MS, 'SHOP_REFRESH');
       } catch (e) {
         console.warn('refreshShop error:', e);
       }
@@ -666,7 +669,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const handleSaveBrand = async () => {
     setLoading(true);
     try {
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      const user = session?.user || (await withTimeout(supabase.auth.getUser(), SIGNUP_REQUEST_TIMEOUT_MS, 'AUTH_USER_LOAD')).data.user;
       if (!user) {
         toast.error('Please create your account first');
         setStep(4);
@@ -744,7 +747,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const handleSaveBio = async () => {
     setLoading(true);
     try {
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      const user = session?.user || (await withTimeout(supabase.auth.getUser(), SIGNUP_REQUEST_TIMEOUT_MS, 'AUTH_USER_LOAD')).data.user;
       if (!user) {
         toast.error('Please create your account first');
         setStep(4);
@@ -789,7 +792,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const handleSaveDirections = async () => {
     setLoading(true);
     try {
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      const user = session?.user || (await withTimeout(supabase.auth.getUser(), SIGNUP_REQUEST_TIMEOUT_MS, 'AUTH_USER_LOAD')).data.user;
       if (!user) {
         toast.error('Please create your account first');
         setStep(4);
@@ -873,7 +876,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const handleSaveFirstProduct = async (skip = false) => {
     setLoading(true);
     try {
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      const user = session?.user || (await withTimeout(supabase.auth.getUser(), SIGNUP_REQUEST_TIMEOUT_MS, 'AUTH_USER_LOAD')).data.user;
       if (!user) {
         toast.error('Please create your account first');
         setStep(4);
@@ -956,7 +959,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
   const handlePayment = async () => {
     setLoading(true);
     try {
-      const user = session?.user || (await supabase.auth.getUser()).data.user;
+      const user = session?.user || (await withTimeout(supabase.auth.getUser(), SIGNUP_REQUEST_TIMEOUT_MS, 'AUTH_USER_LOAD')).data.user;
       if (!user) {
         toast.error('Please create your account first before paying');
         setStep(4);

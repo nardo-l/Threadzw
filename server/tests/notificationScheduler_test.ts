@@ -9,6 +9,7 @@ import {
   isShopProfileComplete
 } from '../services/scheduledNotificationService';
 import { isValidCronSecret } from '../lib/cronAuth';
+import { withTimeout } from '../../src/lib/withTimeout';
 
 const completeShop = {
   id: 'shop-1',
@@ -64,6 +65,10 @@ const validRequest = { header: (name: string) => name.toLowerCase() === 'x-threa
 const invalidRequest = { header: () => 'wrong-secret' } as any;
 assert.equal(isValidCronSecret(validRequest), true);
 assert.equal(isValidCronSecret(invalidRequest), false);
+await assert.rejects(
+  withTimeout(new Promise<void>((resolve) => setTimeout(resolve, 40)), 5, 'BOOTSTRAP'),
+  /BOOTSTRAP_TIMEOUT/
+);
 
 delete process.env.THREADZW_CRON_SECRET;
 const workflow = readFileSync(new URL('../../.github/workflows/merchant-notifications.yml', import.meta.url), 'utf8');

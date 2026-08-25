@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { withTimeout } from '../lib/withTimeout'
 
 interface AuthContextType {
   session: any | null
@@ -20,6 +21,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AUTH_REQUEST_TIMEOUT_MS = 15000
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<any | null>(null)
@@ -39,11 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let profileResult;
       
       try {
-        profileResult = await supabase
+        profileResult = await withTimeout(supabase
           .from('profiles')
           .select('*')
           .eq('id', userId)
-          .maybeSingle();
+          .maybeSingle(), AUTH_REQUEST_TIMEOUT_MS, 'PROFILE_LOAD');
         const tProfile1 = performance.now();
         console.log(`[LOGIN] [FORENSIC-AUTH] STEP 1 PROFILE: (AWAIT_PROFILE_AFTER) Query resolved in ${(tProfile1 - tProfile0).toFixed(2)}ms.`);
       } catch (profileExc: any) {
@@ -86,11 +88,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let subResult;
       
       try {
-        subResult = await supabase
+        subResult = await withTimeout(supabase
           .from('subscriptions')
           .select('*')
           .eq('profile_id', userId)
-          .maybeSingle();
+          .maybeSingle(), AUTH_REQUEST_TIMEOUT_MS, 'SUBSCRIPTION_LOAD');
         const tSub1 = performance.now();
         console.log(`[LOGIN] [FORENSIC-AUTH] STEP 2 SUB: (AWAIT_SUB_AFTER) Query resolved in ${(tSub1 - tSub0).toFixed(2)}ms.`);
       } catch (subExc: any) {
@@ -142,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const t0 = performance.now();
         let sessionResult;
         try {
-          sessionResult = await supabase.auth.getSession();
+          sessionResult = await withTimeout(supabase.auth.getSession(), AUTH_REQUEST_TIMEOUT_MS, 'SESSION_LOAD');
           const t1 = performance.now();
           console.log(`[LOGIN] [FORENSIC-AUTH] (AWAIT_INIT_SESSION_AFTER) supabase.auth.getSession returned in ${(t1 - t0).toFixed(2)}ms.`);
         } catch (sessExc: any) {
