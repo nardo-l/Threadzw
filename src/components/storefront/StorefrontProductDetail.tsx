@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, MessageCircle, ArrowLeft, ZoomIn, ZoomOut, Heart, HelpCircle, X, Compass, Truck, Map, MapPin, Star, Camera, Image, ThumbsUp, ThumbsDown, Trash2 } from 'lucide-react';
 import { ProductImage, ShopLogo } from '../ui/ShopImage';
 import { DirectionsModal } from './DirectionsModal';
+import { OrderBuilderModal, OrderSelection } from './OrderBuilderModal';
 import { parseShopConfig } from '../../utils/configHelper';
 import { toast } from 'sonner';
 import { trackPurchaseIntent, createMerchantNotification, trackWhatsAppClick, trackProductView, trackMapOpen } from '../../lib/analytics';
@@ -38,6 +39,7 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
   const [selectedColor, setSelectedColor] = useState('');
   const [zoomMode, setZoomMode] = useState(false);
   const [showDirections, setShowDirections] = useState(false);
+  const [showOrderBuilder, setShowOrderBuilder] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [zoomScale, setZoomScale] = useState(1);
@@ -177,34 +179,19 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
 
   const isFavorited = wishlist.includes(product.id);
 
-  // WhatsApp helper
-  const handleWhatsAppSeller = async () => {
+  // Open the guided selector first; analytics and WhatsApp launch happen only after confirmation.
+  const handleWhatsAppSeller = () => {
+    if (!isSoldOut) setShowOrderBuilder(true);
+  };
+
+  const handleConfirmWhatsAppOrder = async ({ color, size, quantity }: OrderSelection) => {
     const customerId = localStorage.getItem('boutique_customer_id') || 'cust_' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('boutique_customer_id', customerId);
 
     const randomId = Math.floor(1000 + Math.random() * 9000);
     const prefix = shop.name ? shop.name.substring(0, 3).toUpperCase() : 'TZW';
     const orderRef = `#${prefix}-${randomId}`;
-
-    // Log professional purchase intent event and notify
-    console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
-    await trackPurchaseIntent(
-      shop.id, 
-      product.id, 
-      product.name, 
-      product.price, 
-      'whatsapp',
-      selectedSize || 'M',
-      selectedColor || 'Black'
-    );
-    
-    await createMerchantNotification(
-      shop.owner_id,
-      "new_whatsapp_intent",
-      "New WhatsApp Buyer Intent! 💬",
-      `Someone showed interest in "${product.name}" ($${product.price}) and clicked Order on WhatsApp. Check your buyer intents log.`,
-      { order_reference: orderRef, product_id: product.id, total_price: product.price }
-    );
+    const quantityTotal = Number(product.price || 0) * quantity;
 
     const whatsappNum = shop.whatsapp_number || shop.whatsapp || shop.phone || '+263771234567';
     let clean = whatsappNum.replace(/\D/g, '');
@@ -213,9 +200,46 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
     } else if (clean.length === 9 && (clean.startsWith('77') || clean.startsWith('71') || clean.startsWith('73') || clean.startsWith('78'))) {
       clean = '263' + clean;
     }
-    const textMsg = `Hi *${shop.name}*, I want to order *${product.name}* (Size: ${selectedSize || 'M'}, Qty: 1) for $${product.price} USD.\n\nMy session ID is ${customerId}. Reference: ${orderRef}.`;
+
+    const textMsg = [
+      `Hi *${shop.name}*, I want to order *${product.name}*.`,
+      '',
+      `Colour: ${color}`,
+      `Size: ${size}`,
+      `Quantity: ${quantity}`,
+      `Subtotal: $${quantityTotal.toFixed(2)} USD`,
+      '',
+      `My session ID is ${customerId}. Reference: ${orderRef}.`
+    ].join('\n');
     const whatsappUrl = `https://wa.me/${clean}?text=${encodeURIComponent(textMsg)}`;
-    window.open(whatsappUrl, '_blank');
+
+    // Open immediately from the button gesture so mobile browsers do not block the new tab.
+    const whatsappWindow = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    setShowOrderBuilder(false);
+    if (!whatsappWindow) toast.error('WhatsApp could not be opened. Please allow pop-ups and try again.');
+
+    try {
+      console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
+      await trackPurchaseIntent(
+        shop.id,
+        product.id,
+        product.name,
+        quantityTotal,
+        'whatsapp',
+        size,
+        color
+      );
+
+      await createMerchantNotification(
+        shop.owner_id,
+        "new_whatsapp_intent",
+        "New WhatsApp Buyer Intent! 💬",
+        `Someone showed interest in "${product.name}" (${quantity} × $${product.price}) and clicked Order on WhatsApp. Check your buyer intents log.`,
+        { order_reference: orderRef, product_id: product.id, quantity, total_price: quantityTotal, size, color }
+      );
+    } catch (error) {
+      console.error('[OrderBuilder] Could not record WhatsApp intent:', error);
+    }
   };
 
   // Add To Cart handler
@@ -499,6 +523,19 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
         isOpen={showDirections}
         onClose={() => setShowDirections(false)}
         shop={shop}
+      />
+
+      <OrderBuilderModal
+        isOpen={showOrderBuilder}
+        product={product}
+        shop={shop}
+        coloursList={coloursList}
+        sizesList={sizesList}
+        initialColor={selectedColor}
+        initialSize={selectedSize}
+        isSizeOutOfStock={isSizeOutOfStock}
+        onClose={() => setShowOrderBuilder(false)}
+        onConfirm={handleConfirmWhatsAppOrder}
       />
 
       {/* ----------------- ZOOM MODAL OVERLAY ----------------- */}
