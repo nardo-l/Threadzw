@@ -117,6 +117,49 @@ function chooseAccent(imageData: ImageData): Rgb | null {
   return winner?.color || null;
 }
 
+/**
+ * Monochrome logos still have a brand color: usually their darkest ink.
+ * Keep this as a fallback after the saturated-color pass so black/white
+ * logos do not silently inherit ThreadZW's lime default.
+ */
+function chooseNeutralAccent(imageData: ImageData): Rgb | null {
+  const buckets = new Map<string, { color: Rgb; score: number }>();
+
+  for (let index = 0; index < imageData.data.length; index += 16) {
+    const alpha = imageData.data[index + 3];
+    if (alpha < 150) continue;
+
+    const color: Rgb = {
+      r: imageData.data[index],
+      g: imageData.data[index + 1],
+      b: imageData.data[index + 2]
+    };
+    const max = Math.max(color.r, color.g, color.b);
+    const min = Math.min(color.r, color.g, color.b);
+    const saturation = max === 0 ? 0 : (max - min) / max;
+    const brightness = max / 255;
+
+    // Ignore white/near-white logo backgrounds and retain only neutral ink.
+    if (brightness > 0.93 || saturation >= 0.18) continue;
+
+    const darknessPreference = 1 - brightness;
+    const midTonePreference = 1 - Math.min(1, Math.abs(brightness - 0.42) / 0.42);
+    const score = darknessPreference * 0.72 + midTonePreference * 0.28;
+    const bucketColor: Rgb = {
+      r: Math.round(color.r / 16) * 16,
+      g: Math.round(color.g / 16) * 16,
+      b: Math.round(color.b / 16) * 16
+    };
+    const key = `${bucketColor.r}-${bucketColor.g}-${bucketColor.b}`;
+    const current = buckets.get(key);
+    if (current) current.score += score;
+    else buckets.set(key, { color: bucketColor, score });
+  }
+
+  const winner = [...buckets.values()].sort((first, second) => second.score - first.score)[0];
+  return winner?.color || null;
+}
+
 const themeCache = new Map<string, Promise<StorefrontTheme>>();
 
 export function extractLogoTheme(source?: string | null): Promise<StorefrontTheme> {
@@ -136,7 +179,8 @@ export function extractLogoTheme(source?: string | null): Promise<StorefrontThem
         const context = canvas.getContext('2d', { willReadFrequently: true });
         if (!context) return resolve(DEFAULT_STOREFRONT_THEME);
         context.drawImage(image, 0, 0, size, size);
-        const accent = chooseAccent(context.getImageData(0, 0, size, size));
+        const imageData = context.getImageData(0, 0, size, size);
+        const accent = chooseAccent(imageData) || chooseNeutralAccent(imageData);
         resolve(accent ? toTheme(accent) : DEFAULT_STOREFRONT_THEME);
       } catch {
         resolve(DEFAULT_STOREFRONT_THEME);
