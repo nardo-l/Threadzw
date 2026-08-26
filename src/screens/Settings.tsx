@@ -393,18 +393,6 @@ export const Settings: React.FC = () => {
           </div>
         </section>
 
-        {/* REPLAY WALKTHROUGH */}
-        <div className="pt-2">
-          <button 
-            onClick={() => {
-              localStorage.setItem('threadzw_needs_walkthrough', 'true');
-              navigate('/dashboard');
-            }}
-            className="w-full h-12 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 font-bold text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-zinc-200"
-          >
-            <span>Replay Dashboard Walkthrough</span>
-          </button>
-        </div>
 
         {/* LOGOUT BUTTON */}
         <div className="pt-4">
