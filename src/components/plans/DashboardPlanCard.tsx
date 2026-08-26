@@ -9,6 +9,8 @@ interface DashboardPlanCardProps {
   shop: Shop | null;
   productsCount: number;
   liveProductsCount: number;
+  lifetimeUniqueVisitors?: number;
+  lifetimeInterestEvents?: number;
 }
 
 const UsageMeter: React.FC<{
@@ -40,7 +42,9 @@ const UsageMeter: React.FC<{
 export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
   shop,
   productsCount,
-  liveProductsCount
+  liveProductsCount,
+  lifetimeUniqueVisitors,
+  lifetimeInterestEvents
 }) => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   if (!shop) return null;
@@ -50,8 +54,8 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
   const entitlements = getEntitlements(shop, { products: liveProductsCount, vehicles: liveProductsCount });
   const isVehicle = category === 'vehicles';
   const isClothing = category === 'clothing';
-  const visits = Number(shop.lifetime_unique_visits || 0);
-  const interests = Number(shop.lifetime_interest_events || 0);
+  const visits = Number(lifetimeUniqueVisitors ?? shop.lifetime_unique_visits ?? 0);
+  const interests = Number(lifetimeInterestEvents ?? shop.lifetime_interest_events ?? 0);
   const usageReached = Boolean(shop.usage_quota_exceeded) || visits >= 50 || interests >= 10;
 
   const planTitle = isVehicle

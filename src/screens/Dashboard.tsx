@@ -67,8 +67,10 @@ export const Dashboard: React.FC = () => {
     productsCount,
     liveProductsCount,
     totalVisitors,
+    lifetimeUniqueVisitors,
     visitorsChangePercent,
     whatsappClicks,
+    lifetimeInterestEvents,
     whatsappClicksChangePercent,
     conversionRate,
     conversionRateChangePercent,
@@ -261,6 +263,8 @@ export const Dashboard: React.FC = () => {
           shop={shop}
           productsCount={productsCount}
           liveProductsCount={liveProductsCount}
+          lifetimeUniqueVisitors={lifetimeUniqueVisitors}
+          lifetimeInterestEvents={lifetimeInterestEvents}
         />
 
         {/* 4 Metric / KPI Cards Grid */}
@@ -323,7 +327,7 @@ export const Dashboard: React.FC = () => {
           {/* Card 4: Conversion Rate */}
           <div className="bg-white border border-zinc-200/70 rounded-2xl p-4 shadow-2xs space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-normal text-zinc-500">Conversion Rate</span>
+              <span className="text-xs font-normal text-zinc-500">Interest actions / visitor</span>
               <div className="w-7 h-7 rounded-lg bg-[#CCFF00] flex items-center justify-center text-black font-bold">
                 <TrendingUp size={15} className="stroke-[2.5]" />
               </div>

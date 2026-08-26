@@ -3,10 +3,15 @@ import { Bell, BellRing, CheckCircle2, X } from 'lucide-react';
 import { subscribeToPushNotifications } from '../services/pushNotificationService';
 import { toast } from 'sonner';
 import { saveNotificationPreferences } from '../services/notificationService';
+import { useAuth } from '../context/AuthContext';
+import { withTimeout } from '../lib/withTimeout';
 
 interface NotificationPromptBannerProps {
   userId?: string;
 }
+
+const PUSH_REQUEST_TIMEOUT_MS = 12000;
+const PROMPT_DISMISSED_STORAGE_PREFIX = 'threadzw_notifications_prompt_dismissed:';
 
 const canUseBrowserPush = () => (
   typeof window !== 'undefined' &&
@@ -16,33 +21,65 @@ const canUseBrowserPush = () => (
 );
 
 export const NotificationPromptBanner: React.FC<NotificationPromptBannerProps> = ({ userId }) => {
+  const { profile, updateProfile } = useAuth();
   const [showPrompt, setShowPrompt] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!userId || !canUseBrowserPush()) return;
+    if (!userId || !canUseBrowserPush()) {
+      setShowPrompt(false);
+      return;
+    }
+
+    const dismissedKey = `${PROMPT_DISMISSED_STORAGE_PREFIX}${userId}`;
+    const locallyDismissed = window.localStorage.getItem(dismissedKey) === 'true';
 
     // Let the dashboard settle first, then show an in-app explanation. The
     // browser permission dialog must be opened by the Enable button below.
     const timer = window.setTimeout(() => {
-      setShowPrompt(window.Notification.permission === 'default');
+      setShowPrompt(
+        window.Notification.permission === 'default' &&
+        !locallyDismissed &&
+        profile?.notifications_prompted !== true
+      );
     }, 450);
 
     return () => window.clearTimeout(timer);
-  }, [userId]);
+  }, [userId, profile?.notifications_prompted]);
+
+  const handleDismiss = async () => {
+    if (!userId) return;
+    setShowPrompt(false);
+    window.localStorage.setItem(`${PROMPT_DISMISSED_STORAGE_PREFIX}${userId}`, 'true');
+    try {
+      const result = await withTimeout(updateProfile({ notifications_prompted: true }), 5000, 'NOTIFICATION_PROMPT_DISMISS');
+      if (result?.error) throw result.error;
+    } catch (error) {
+      console.warn('Could not persist notification prompt dismissal:', error);
+    }
+  };
 
   const handleEnable = async () => {
     try {
       setLoading(true);
-      const subscription = await subscribeToPushNotifications();
+      const subscription = await withTimeout(
+        subscribeToPushNotifications(),
+        PUSH_REQUEST_TIMEOUT_MS,
+        'PUSH_ENABLE'
+      );
       if (!subscription) throw new Error('Push subscription was not created.');
 
-      await saveNotificationPreferences({ push_enabled: true });
+      await withTimeout(saveNotificationPreferences({ push_enabled: true }), 5000, 'PUSH_PREFERENCES_SAVE');
+      const result = await withTimeout(updateProfile({ notifications_prompted: true }), 5000, 'NOTIFICATION_PROMPT_ENABLE');
+      if (result?.error) throw result.error;
+      window.localStorage.setItem(`${PROMPT_DISMISSED_STORAGE_PREFIX}${userId}`, 'true');
       setShowPrompt(false);
       toast.success('Phone notifications enabled on this device.');
     } catch (error: any) {
       console.error('Failed to enable push notifications:', error);
-      if (typeof window !== 'undefined' && window.Notification?.permission === 'denied') {
+      if (error?.message?.includes('TIMEOUT')) {
+        toast.info('Notification setup took too long. Check browser permissions and try again.');
+      } else if (typeof window !== 'undefined' && window.Notification?.permission === 'denied') {
         toast.info('Notifications are blocked in this browser. Enable them in your browser settings, then try again.');
       } else if (error?.message?.includes('VAPID_PUBLIC_KEY')) {
         toast.error('Phone notifications are not configured yet. Your in-app inbox will still work.');
@@ -83,7 +120,8 @@ export const NotificationPromptBanner: React.FC<NotificationPromptBannerProps> =
         <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
           <button
             type="button"
-            onClick={() => setShowPrompt(false)}
+            onClick={handleDismiss}
+            disabled={loading}
             className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer"
           >
             <X size={14} />

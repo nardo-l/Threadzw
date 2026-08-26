@@ -43,9 +43,11 @@ export interface DashboardData {
   lowStockCount: number;
   
   totalVisitors: number;
+  lifetimeUniqueVisitors: number;
   visitorsChangePercent: number;
   
   whatsappClicks: number;
+  lifetimeInterestEvents: number;
   whatsappClicksChangePercent: number;
   
   conversionRate: string;
@@ -85,8 +87,10 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
     missingImagesCount: 0,
     lowStockCount: 0,
     totalVisitors: 0,
+    lifetimeUniqueVisitors: 0,
     visitorsChangePercent: 0,
     whatsappClicks: 0,
+    lifetimeInterestEvents: 0,
     whatsappClicksChangePercent: 0,
     conversionRate: '0.0',
     conversionRateChangePercent: 0,
@@ -225,8 +229,9 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
           if (isCurr) currWhatsapp++;
           if (isPrev) prevWhatsapp++;
           
-          if (e.product_id) {
-            productWhatsappMap.set(e.product_id, (productWhatsappMap.get(e.product_id) || 0) + 1);
+          const productId = e.product_id || e.metadata?.product_id;
+          if (productId) {
+            productWhatsappMap.set(productId, (productWhatsappMap.get(productId) || 0) + 1);
           }
         }
 
@@ -351,8 +356,10 @@ export const useDashboard = (shopId?: string | null): DashboardData => {
         missingImagesCount: missingImages,
         lowStockCount: lowStock,
         totalVisitors,
+        lifetimeUniqueVisitors: totalVisitors,
         visitorsChangePercent,
         whatsappClicks,
+        lifetimeInterestEvents: whatsappClicks + visitShopClicks,
         whatsappClicksChangePercent,
         conversionRate: conversionRateVal,
         conversionRateChangePercent,

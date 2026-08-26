@@ -134,10 +134,24 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
           .order('created_at', { ascending: false })
           .limit(5);
         
+        const { data: analyticsEvents } = await supabase
+          .from('shop_analytics')
+          .select('event_type, visitor_id')
+          .eq('shop_id', data.id)
+          .limit(5000);
+        const visitorIds = new Set(
+          (analyticsEvents || [])
+            .filter((event: any) => event.event_type === 'shop_visit' && event.visitor_id)
+            .map((event: any) => event.visitor_id)
+        );
+        const analyticsWhatsAppClicks = (analyticsEvents || []).filter(
+          (event: any) => event.event_type === 'whatsapp_click'
+        ).length;
+
         setStats({
           products: count || 0,
-          views: data.view_count ? String(data.view_count) : '0',
-          whatsappClicks: data.whatsapp_clicks ? Number(data.whatsapp_clicks) : 0
+          views: String(visitorIds.size),
+          whatsappClicks: analyticsWhatsAppClicks
         });
 
         // Build dynamic activity feed from real shop history

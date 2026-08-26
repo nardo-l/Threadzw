@@ -3,7 +3,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, ArrowUpDown, Check, ShoppingBag, MessageCircle } from 'lucide-react';
 import { ProductImage } from '../ui/ShopImage';
-import { trackWhatsAppClick } from '../../lib/analytics';
 
 interface StorefrontShopProps {
   shop: any;
@@ -269,22 +268,16 @@ export const StorefrontShop: React.FC<StorefrontShopProps> = ({
                         )}
                       </div>
 
-                      {/* Instagram-inspired Direct WhatsApp Order CTA */}
-                      <a
-                        href={`https://wa.me/${(shop.whatsapp_number || shop.whatsapp || '').replace(/\D/g, '')}?text=${encodeURIComponent(
-                          `Hi ${shop.name}, I want to order "${p.name}" ($${p.price}) directly from your catalog!`
-                        )}`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log("TRACK START", { shopId: shop?.id, eventType: 'whatsapp_click' });
-                          trackWhatsAppClick(shop.id, p.id, p.name);
+                          onNavigateToPage('product', { productId: p.id });
                         }}
-                        className="mt-2 w-full py-2 store-accent-bg  text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-colors duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
+                        className="mt-2 w-full py-2 store-accent-bg text-white rounded-xl text-[10px] font-bold tracking-wider uppercase transition-colors duration-200 flex items-center justify-center gap-1 cursor-pointer text-center"
                       >
-                        <MessageCircle className="w-3.5 h-3.5 fill-current" /> Order WA
-                      </a>
+                        <MessageCircle className="w-3.5 h-3.5 fill-current" /> Choose options
+                      </button>
                     </div>
                   </div>
                 </motion.div>
