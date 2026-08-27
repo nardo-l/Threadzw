@@ -219,34 +219,48 @@ export const AddProduct: React.FC = () => {
       });
     }, 200);
 
-    const toastId = toast.loading('Uploading photo to secure storage...');
+    const toastId = toast.loading('Preparing photos for upload...');
+    let uploadedCount = 0;
+    let failedCount = 0;
     try {
       for (const file of files) {
-        if (file.size > 5 * 1024 * 1024) {
-          toast.error(`"${file.name}" exceeds max size of 5MB.`);
-          continue;
-        }
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-        if (!allowedTypes.includes(file.type)) {
-          toast.error(`"${file.name}" has invalid format. JPG, PNG, and WebP only.`);
-          continue;
-        }
+        try {
+          if (file.size > 12 * 1024 * 1024) {
+            throw new Error('Max 12MB per photo.');
+          }
+          const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+          if (!allowedTypes.includes(file.type.toLowerCase())) {
+            throw new Error('JPG, PNG, or WebP only.');
+          }
 
-        const publicUrl = await uploadImage({
-          supabase,
-          file,
-          bucket: 'product-images',
-          folder: 'product',
-          userId: shopId || 'unknown'
-        });
+          toast.loading(`Uploading photo ${uploadedCount + failedCount + 1} of ${files.length}...`, { id: toastId });
+          const publicUrl = await uploadImage({
+            supabase,
+            file,
+            bucket: 'product-images',
+            folder: 'product',
+            userId: shopId || 'unknown'
+          });
 
-        setImages(prev => [...prev, publicUrl]);
+          setImages(prev => [...prev, publicUrl]);
+          uploadedCount += 1;
+        } catch (error: any) {
+          failedCount += 1;
+          console.error(`Error uploading ${file.name}:`, error);
+          toast.error(`Could not upload "${file.name}": ${error?.message || 'Please try again.'}`);
+        }
       }
       clearInterval(progressInterval);
       setUploadProgress(100);
-      toast.success('Uploaded successfully!', { id: toastId });
+      if (uploadedCount > 0 && failedCount === 0) {
+        toast.success(`${uploadedCount} photo${uploadedCount === 1 ? '' : 's'} uploaded successfully.`, { id: toastId });
+      } else if (uploadedCount > 0) {
+        toast.success(`${uploadedCount} uploaded. ${failedCount} failed—tap upload to retry.`, { id: toastId });
+      } else {
+        toast.error('No photos uploaded. Check your connection and try again.', { id: toastId });
+      }
     } catch (err: any) {
-      console.error('Error uploading image:', err);
+      console.error('Error preparing image upload:', err);
       toast.error('Upload failed: ' + err.message, { id: toastId });
     } finally {
       clearInterval(progressInterval);
@@ -261,8 +275,8 @@ export const AddProduct: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file || replacingIndex === null) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image exceeds maximum size of 5MB.');
+    if (file.size > 12 * 1024 * 1024) {
+      toast.error('Image exceeds maximum size of 12MB.');
       return;
     }
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
@@ -968,7 +982,7 @@ export const AddProduct: React.FC = () => {
                     {/* Section 2: Product Description */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <label className="text-xs font-bold text-zinc-900 uppercase tracking-wider">Product Description <span className="text-red-500">*</span></label>
+                        <label className="text-xs font-bold text-zinc-900 uppercase tracking-wider">Product Description <span className="text-zinc-400 normal-case tracking-normal">(optional)</span></label>
                         <span className="text-[11px] font-mono text-zinc-400">{description.length} / 500</span>
                       </div>
                       <textarea 
@@ -1007,12 +1021,18 @@ export const AddProduct: React.FC = () => {
 
                   {/* Continue Button */}
                   <div className="pt-4">
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <p className="text-[11px] text-zinc-500">You can add details later from Edit Product.</p>
+                      <button type="button" onClick={goNext} className="text-[11px] font-bold text-zinc-500 underline underline-offset-2 hover:text-black cursor-pointer whitespace-nowrap">
+                        Skip description
+                      </button>
+                    </div>
                     <button
                       type="button"
-                      disabled={name.trim().length < 3 || !price || parseFloat(price) <= 0 || description.trim().length < 2 || !selectedCategory}
+                      disabled={name.trim().length < 3 || !price || parseFloat(price) <= 0 || !selectedCategory}
                       onClick={goNext}
                       className={`w-full h-14 rounded-2xl font-extrabold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg ${
-                        name.trim().length >= 3 && price && parseFloat(price) > 0 && description.trim().length >= 2 && selectedCategory
+                        name.trim().length >= 3 && price && parseFloat(price) > 0 && selectedCategory
                           ? 'bg-[#C8FF00] text-black hover:bg-[#b8eb00] cursor-pointer active:scale-[0.98] shadow-[#C8FF00]/20'
                           : 'bg-zinc-200 text-zinc-400 cursor-not-allowed shadow-none'
                       }`}
@@ -1041,6 +1061,15 @@ export const AddProduct: React.FC = () => {
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
                       onClick={triggerFilePicker}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          triggerFilePicker();
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Upload product photos"
                       className="h-44 w-full bg-white border-2 border-dashed border-zinc-300 hover:border-zinc-400 rounded-3xl flex flex-col items-center justify-center p-6 text-center transition-all cursor-pointer group relative overflow-hidden shadow-sm"
                     >
                       {uploading ? (
@@ -1060,7 +1089,7 @@ export const AddProduct: React.FC = () => {
                           <span className="text-sm font-extrabold text-zinc-950 group-hover:text-black transition-colors">
                             Tap to upload or drag and drop
                           </span>
-                          <p className="text-xs text-zinc-400 mt-1">PNG, JPG or WebP • Max 10MB each</p>
+                          <p className="text-xs text-zinc-400 mt-1">PNG, JPG or WebP • Up to 12MB (compressed automatically)</p>
                         </>
                       )}
                     </div>
