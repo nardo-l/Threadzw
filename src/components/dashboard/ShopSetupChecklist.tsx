@@ -13,11 +13,16 @@ import {
   X, 
   Loader2,
   PartyPopper,
-  Check
+  Check,
+  Bell,
+  BellRing
 } from 'lucide-react';
 import { Shop } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'sonner';
+import { subscribeToPushNotifications } from '../../services/pushNotificationService';
+import { saveNotificationPreferences } from '../../services/notificationService';
+import { withTimeout } from '../../lib/withTimeout';
 
 interface ShopSetupChecklistProps {
   shop: Shop | null;
@@ -31,7 +36,12 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   isShopPaidAndActive,
 }) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, updateProfile } = useAuth();
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const [browserNotificationPermission, setBrowserNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
+    return window.Notification.permission;
+  });
 
   // Track shop shared state
   const [shopShared, setShopShared] = useState<boolean>(() => {
@@ -62,6 +72,10 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
   // 2. Product added check
   const isProductAdded = productsCount > 0;
 
+  // 3. Notification permission check
+  const notificationsSupported = browserNotificationPermission !== 'unsupported';
+  const isNotificationsAllowed = browserNotificationPermission === 'granted' || profile?.notifications_prompted === true;
+
   // 4. Share shop check
   const isShopShared = shopShared;
 
@@ -84,6 +98,14 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
       onClick: () => navigate('/inventory')
     },
     {
+      id: 'notifications',
+      title: 'Allow Notifications',
+      subtitle: isNotificationsAllowed ? 'Alerts are enabled on this device' : 'Get setup reminders and daily shop summaries',
+      completed: isNotificationsAllowed,
+      icon: BellRing,
+      onClick: handleEnableNotifications
+    },
+    {
       id: 'share',
       title: 'Share your Shop',
       subtitle: 'Share your store link on WhatsApp or Instagram',
@@ -91,12 +113,47 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
       icon: Share2,
       onClick: handleShareShop
     }
-  ], [isProfileComplete, isProductAdded, isShopShared, navigate]);
+  ], [isProfileComplete, isProductAdded, isNotificationsAllowed, isShopShared, navigate]);
 
   const completedCount = tasks.filter(t => t.completed).length;
   const totalTasks = tasks.length;
   const progressPercent = Math.round((completedCount / totalTasks) * 100);
   const isAllComplete = completedCount === totalTasks;
+
+  // Handle notification permission flow
+  async function handleEnableNotifications() {
+    if (notificationBusy) return;
+    if (!notificationsSupported) {
+      toast.info('This browser does not support phone notifications.');
+      return;
+    }
+    if (window.Notification.permission === 'denied') {
+      toast.info('Notifications are blocked. Enable them in your browser settings, then try again.');
+      return;
+    }
+
+    setNotificationBusy(true);
+    try {
+      const subscription = await withTimeout(subscribeToPushNotifications(), 12000, 'CHECKLIST_PUSH_ENABLE');
+      if (!subscription) throw new Error('Push subscription was not created.');
+      await withTimeout(saveNotificationPreferences({ push_enabled: true }), 5000, 'CHECKLIST_PUSH_PREFERENCES');
+      const profileResult = await withTimeout(updateProfile({ notifications_prompted: true }), 5000, 'CHECKLIST_NOTIFICATION_PROFILE');
+      if (profileResult?.error) throw profileResult.error;
+      setBrowserNotificationPermission(window.Notification.permission);
+      toast.success('Notifications enabled on this device.');
+    } catch (error: any) {
+      console.error('Checklist notification setup failed:', error);
+      if (error?.message?.includes('TIMEOUT')) {
+        toast.info('Notification setup timed out. Check browser permissions and try again.');
+      } else if ((window.Notification.permission as NotificationPermission) === 'denied') {
+        toast.info('Notifications are blocked in this browser.');
+      } else {
+        toast.info('Notifications could not be enabled yet. You can try again from this checklist.');
+      }
+    } finally {
+      setNotificationBusy(false);
+    }
+  }
 
   // Handle Share Shop flow
   async function handleShareShop() {
@@ -221,14 +278,14 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
       </div>
 
       {/* Checklist Task Items Grid */}
-      <div className="grid grid-cols-1 divide-y divide-zinc-100 border-t border-zinc-100 pt-1">
+      <div className="grid grid-cols-1 gap-2 border-t border-zinc-100 pt-3">
         {tasks.map((task) => {
           const TaskIcon = task.icon;
           return (
             <div 
               key={task.id}
               onClick={task.onClick}
-              className={`group flex items-center justify-between py-3 px-2 rounded-xl transition-all cursor-pointer ${
+              className={`group relative flex min-h-[72px] items-center justify-between gap-3 py-3 px-3 rounded-xl border border-zinc-100 bg-white transition-all cursor-pointer overflow-hidden ${
                 task.completed ? 'opacity-75 hover:opacity-100 hover:bg-zinc-50/60' : 'hover:bg-zinc-50'
               }`}
             >
@@ -248,12 +305,12 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
                 </div>
 
                 <div className="min-w-0">
-                  <h4 className={`text-xs font-bold tracking-tight truncate ${
+                  <h4 className={`text-xs font-bold tracking-tight leading-snug ${
                     task.completed ? 'line-through text-zinc-400' : 'text-zinc-900 group-hover:text-black'
                   }`}>
                     {task.title}
                   </h4>
-                  <p className="text-[11px] text-zinc-500 truncate font-normal">
+                  <p className="text-[11px] text-zinc-500 leading-snug font-normal">
                     {task.subtitle}
                   </p>
                 </div>
@@ -265,7 +322,7 @@ export const ShopSetupChecklist: React.FC<ShopSetupChecklistProps> = ({
                     Done
                   </span>
                 ) : (
-                  <button className="text-xs font-bold text-zinc-900 group-hover:text-black bg-zinc-100 group-hover:bg-[#CCFF00] group-hover:text-black px-3 py-1.5 rounded-lg transition-all flex items-center gap-1">
+                  <button type="button" disabled={task.id === 'notifications' && notificationBusy} className="text-xs font-bold text-zinc-900 group-hover:text-black bg-zinc-100 group-hover:bg-[#CCFF00] group-hover:text-black px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 disabled:opacity-60">
                     <span>Start</span>
                     <ChevronRight size={13} />
                   </button>
