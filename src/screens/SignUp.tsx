@@ -451,6 +451,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
       }
     }
     setPhone(val);
+    // This is the number customers will use for product orders.
+    setWhatsappPhone(val);
   };
 
   // Category-specific Bio Presets
@@ -544,7 +546,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
         const shopPayload: any = {
           name: shopName.trim() || 'My Shop',
           slug: slug || `shop-${Date.now().toString(36)}`,
-          whatsapp_number: phoneVal || '+263771234567',
+          whatsapp_number: phoneVal || whatsappPhone || '+263771234567',
           location: loc,
           city: loc,
           logo_url: logoUrl,
@@ -563,7 +565,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
           slug: slug || `shop-${Date.now().toString(36)}`,
           category: selectedBioCategory || initialCat,
           description: bioText.trim() || `${shopName} official storefront on ThreadZW.`,
-          whatsapp_number: phoneVal || '+263771234567',
+          whatsapp_number: phoneVal || whatsappPhone || '+263771234567',
           location: loc,
           city: loc,
           logo_url: null,
@@ -1655,7 +1657,7 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                       </p>
                     </div>
 
-                    {/* Direct Sign Up Form (Email, Phone with +263 preset, Password) */}
+                    {/* Direct Sign Up Form (Email, WhatsApp order number, Password) */}
                     <form onSubmit={handleSignUp} className="space-y-3 pt-1">
                       {authError && (
                         <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-medium">
@@ -1675,7 +1677,8 @@ export const SignUp: React.FC<SignUpProps> = ({ initialStep }) => {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-bold text-zinc-600 mb-1 block">WhatsApp phone number</label>
+                        <label className="text-xs font-bold text-zinc-600 mb-1 block">WhatsApp number for orders</label>
+                        <p className="text-[10px] text-zinc-500 mb-1.5">Customers will use this number to place orders from your storefront.</p>
                         <input
                           type="tel"
                           required

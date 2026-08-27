@@ -123,7 +123,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
       try {
         const { data, count, error } = await supabase
           .from('shops')
-          .select('id, name, slug, description, logo_url, banner_url, location, category, categories, is_active, created_at', { count: 'exact' })
+          .select('id, name, slug, description, logo_url, banner_url, city, location, category, categories, is_active, created_at', { count: 'exact' })
           .order('created_at', { ascending: false })
           .limit(8);
 
@@ -656,10 +656,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartFree }) => {
                   <div>
                     <h3 className="text-base font-extrabold text-white truncate">{shop.name}</h3>
                     <p className="text-xs font-mono text-zinc-400 truncate">threadzw.vercel.app/shop/{shop.slug}</p>
-                    {shop.location && (
+                    {(shop.city || shop.location) && (
                       <p className="text-[11px] text-zinc-500 font-medium mt-1 flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-[#C6FF00]" />
-                        <span>{shop.location}</span>
+                        <span>{shop.city || shop.location}</span>
                       </p>
                     )}
                   </div>

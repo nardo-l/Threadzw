@@ -64,6 +64,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
   const [shopName, setShopName] = useState('');
   const [handle, setHandle] = useState('');
   const [description, setDescription] = useState('');
+  const [locatedIn, setLocatedIn] = useState('');
   const [directions, setDirections] = useState('');
   const [category, setCategory] = useState('Streetwear');
   const [whatsapp, setWhatsapp] = useState('');
@@ -77,7 +78,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // Active Field Editing Modal
-  const [activeModal, setActiveModal] = useState<null | 'shopName' | 'handle' | 'bio' | 'directions' | 'category' | 'whatsapp'>(null);
+  const [activeModal, setActiveModal] = useState<null | 'shopName' | 'handle' | 'bio' | 'locatedIn' | 'directions' | 'category' | 'whatsapp'>(null);
   const [tempValue, setTempValue] = useState('');
 
   // Stats
@@ -113,7 +114,9 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
         setShopName(data.name || 'My Shop');
         setHandle(data.slug || 'myshop');
         setDescription(data.description || data.tagline || '');
-        setDirections(data.directions || data.location || data.city || '');
+        // Keep the short public location separate from step-by-step directions.
+        setLocatedIn(data.city || '');
+        setDirections(data.directions || '');
         setCategory(data.categories?.[0] || data.category || 'Streetwear');
         
         // Format WhatsApp
@@ -188,6 +191,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
         setShopName('My Shop');
         setHandle('myshop');
         setDescription('');
+        setLocatedIn('');
         setDirections('');
         setWhatsapp('');
         setBannerUrl(null);
@@ -306,7 +310,9 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
         description: description || '',
         category: category || 'Streetwear',
         whatsapp_number: whatsapp || '',
-        location: directions || '',
+        city: locatedIn.trim() || '',
+        location: directions.trim() || locatedIn.trim() || '',
+        directions: directions.trim() || '',
       };
 
       if (avatarUrl && !avatarUrl.startsWith('data:')) {
@@ -404,10 +410,11 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
     }
   };
 
-  const openFieldModal = (field: 'shopName' | 'handle' | 'bio' | 'directions' | 'category' | 'whatsapp') => {
+  const openFieldModal = (field: 'shopName' | 'handle' | 'bio' | 'locatedIn' | 'directions' | 'category' | 'whatsapp') => {
     if (field === 'shopName') setTempValue(shopName);
     if (field === 'handle') setTempValue(handle);
     if (field === 'bio') setTempValue(description);
+    if (field === 'locatedIn') setTempValue(locatedIn);
     if (field === 'directions') setTempValue(directions);
     if (field === 'category') setTempValue(category);
     if (field === 'whatsapp') setTempValue(whatsapp);
@@ -418,6 +425,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
     if (activeModal === 'shopName') setShopName(tempValue);
     if (activeModal === 'handle') setHandle(tempValue.replace(/^@/, ''));
     if (activeModal === 'bio') setDescription(tempValue);
+    if (activeModal === 'locatedIn') setLocatedIn(tempValue);
     if (activeModal === 'directions') setDirections(tempValue);
     if (activeModal === 'category') setCategory(tempValue);
     if (activeModal === 'whatsapp') setWhatsapp(tempValue);
@@ -754,7 +762,19 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
               </div>
             </div>
 
-            {/* 6. Shop Directions */}
+            {/* 6. Located in */}
+            <div
+              onClick={() => openFieldModal('locatedIn')}
+              className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
+            >
+              <span className="text-xs font-bold text-black">Located in</span>
+              <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                <span className="text-xs font-medium text-zinc-600 truncate">{locatedIn || 'Add town or city'}</span>
+                <ChevronRight className="w-4 h-4 text-zinc-400 group-hover:text-black transition-colors shrink-0" />
+              </div>
+            </div>
+
+            {/* 7. Shop Directions */}
             <div 
               onClick={() => openFieldModal('directions')}
               className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
@@ -766,7 +786,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
               </div>
             </div>
 
-            {/* 7. Category */}
+            {/* 8. Category */}
             <div 
               onClick={() => openFieldModal('category')}
               className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
@@ -778,7 +798,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
               </div>
             </div>
 
-            {/* 8. WhatsApp Number */}
+            {/* 9. WhatsApp Number */}
             <div 
               onClick={() => openFieldModal('whatsapp')}
               className="p-4 flex items-center justify-between hover:bg-zinc-50/80 transition-colors cursor-pointer group"
@@ -828,6 +848,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
                   {activeModal === 'shopName' && 'Edit Shop Name'}
                   {activeModal === 'handle' && 'Edit Username'}
                   {activeModal === 'bio' && 'Edit Bio'}
+                  {activeModal === 'locatedIn' && 'Edit Located in'}
                   {activeModal === 'directions' && 'Edit Shop Directions'}
                   {activeModal === 'category' && 'Select Category'}
                   {activeModal === 'whatsapp' && 'Edit WhatsApp Number'}
@@ -836,6 +857,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
                   {activeModal === 'shopName' && 'The public name shown on your storefront'}
                   {activeModal === 'handle' && 'Your unique storefront handle and link (@handle)'}
                   {activeModal === 'bio' && 'Short description of what your shop sells'}
+                  {activeModal === 'locatedIn' && 'The town or city shown publicly on your storefront'}
                   {activeModal === 'directions' && 'Clear walking or driving directions to your location'}
                   {activeModal === 'category' && 'Primary category for your catalog'}
                   {activeModal === 'whatsapp' && 'Customers will tap this number to place orders'}
@@ -867,7 +889,7 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
                   </button>
                 ))}
               </div>
-            ) : activeModal === 'bio' || activeModal === 'directions' ? (
+            ) : activeModal === 'bio' || activeModal === 'locatedIn' || activeModal === 'directions' ? (
               <div className="space-y-2">
                 <textarea
                   value={tempValue}
@@ -877,13 +899,20 @@ export const ShopEdit: React.FC<ShopEditProps> = ({ initialSubView = 'account' }
                   placeholder={
                     activeModal === 'directions'
                       ? "e.g. Go to Mbali Mall first floor shop number 23 opposite the game arena..."
-                      : "e.g. Premium streetwear & sneakers in Harare. Nationwide delivery..."
+                      : activeModal === 'locatedIn'
+                        ? 'e.g. Harare, Bulawayo, Mutare'
+                        : 'e.g. Premium streetwear & sneakers in Harare. Nationwide delivery...'
                   }
                   className="w-full bg-zinc-50 border-2 border-zinc-200 focus:border-black rounded-2xl p-3.5 text-xs text-black font-medium focus:outline-none transition-colors resize-y min-h-[120px] max-h-[220px] overflow-y-auto leading-relaxed"
                 />
                 {activeModal === 'directions' && (
                   <p className="text-[10px] text-zinc-500 font-medium pl-1">
                     Tip: Enter each direction step on a new line for easy reading.
+                  </p>
+                )}
+                {activeModal === 'locatedIn' && (
+                  <p className="text-[10px] text-zinc-500 font-medium pl-1">
+                    This is the short location customers see on your shop card. Add detailed directions separately below.
                   </p>
                 )}
               </div>
