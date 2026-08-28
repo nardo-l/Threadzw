@@ -473,10 +473,6 @@ export const AddProduct: React.FC = () => {
         toast.error('Please enter a valid product price.');
         return;
       }
-      if (!description.trim() || description.trim().length < 2) {
-        toast.error('Please enter a product description.');
-        return;
-      }
       if (!selectedCategory) {
         toast.error('Please select a product category.');
         return;
