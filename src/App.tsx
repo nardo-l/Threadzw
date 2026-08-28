@@ -6,6 +6,7 @@ const appStartTime = performance.now();
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { SignUp } from './screens/SignUp';
+import { QuickOnboarding } from './screens/QuickOnboarding';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
@@ -87,7 +88,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/edit-shop') {
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/edit-shop' || path === '/edit-profile') {
     return { stage: 'dashboard' };
   }
   if (path === '/pricing') {
@@ -122,7 +123,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -199,7 +200,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -356,6 +357,7 @@ function AppContent() {
       cleanPath === '/settings' ||
       cleanPath === '/notifications' ||
       cleanPath === '/edit-shop' ||
+      cleanPath === '/edit-profile' ||
       cleanPath === '/add-product' ||
       cleanPath.startsWith('/edit-product/') ||
       cleanPath === '/add-vehicle' ||
@@ -592,9 +594,7 @@ function AppContent() {
   }
 
   if (appStage === 'onboarding') {
-    return (
-      <SignUp />
-    );
+    return <QuickOnboarding />;
   }
 
   if (appStage === 'building') {
@@ -641,6 +641,7 @@ function AppContent() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
+        <Route path="/edit-profile" element={<ShopEdit initialSubView="edit-profile" />} />
         <Route path="/account" element={<ShopEdit />} />
         <Route path="/edit-profile" element={<ShopEdit initialSubView="edit-profile" />} />
         <Route path="/add-product" element={<AddProduct />} />
