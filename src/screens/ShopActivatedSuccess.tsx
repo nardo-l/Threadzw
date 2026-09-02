@@ -10,7 +10,6 @@ import {
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useShopContext } from '../context/ShopContext';
-import { paymentService } from '../services/paymentService';
 
 interface PaymentDetails {
   amount: string;
@@ -58,13 +57,10 @@ export const ShopActivatedSuccess: React.FC = () => {
 
           const shopId = userShop?.id || shop?.id;
 
-          let paymentRecord: any = null;
-          if (shopId) {
-            paymentRecord = await paymentService.getPaymentByShop(shopId);
-          }
+          const paymentRecord = null;
 
           // Format dynamic date
-          const rawDate = paymentRecord?.paid_at || userShop?.paid_at || paymentRecord?.created_at || new Date().toISOString();
+          const rawDate = userShop?.paid_at || userShop?.created_at || new Date().toISOString();
           const parsedDate = new Date(rawDate);
           
           const formattedDate = parsedDate.toLocaleDateString('en-US', {
@@ -78,8 +74,8 @@ export const ShopActivatedSuccess: React.FC = () => {
           });
 
           // Generate clean formatted reference & transaction id
-          const ref = queryRef || paymentRecord?.payment_reference || userShop?.payment_reference || `NRD-${parsedDate.toISOString().slice(0, 10)}-${(shopId || '8F7Q').slice(0, 4).toUpperCase()}`;
-          const txn = queryTxn ? `TXN_${queryTxn.replace(/-/g, '').slice(0, 12).toUpperCase()}` : paymentRecord?.id ? `TXN_${paymentRecord.id.replace(/-/g, '').slice(0, 12).toUpperCase()}` : `TXN_${(shopId || '8F7Q').slice(0, 4).toUpperCase()}2024M19D`;
+          const ref = queryRef || userShop?.payment_reference || `NRD-${parsedDate.toISOString().slice(0, 10)}-${(shopId || '8F7Q').slice(0, 4).toUpperCase()}`;
+          const txn = queryTxn ? `TXN_${queryTxn.replace(/-/g, '').slice(0, 12).toUpperCase()}` : `TXN_${(shopId || '8F7Q').slice(0, 4).toUpperCase()}${parsedDate.toISOString().slice(0, 10).replace(/-/g, '')}`;
           const amt = queryAmount ? `$${Number(queryAmount).toFixed(2)} USD` : '$9.00 USD';
 
           setPaymentDetails({
