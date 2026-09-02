@@ -134,12 +134,6 @@ export class SubscriptionService {
       link_code: linkCode
     };
 
-    const { error: paymentLinkUpdateError } = await serverSupabase
-      .from('shop_payments')
-      .update({ payment_reference: linkCode, checkout_url: checkoutUrl, metadata: providerMetadata })
-      .eq('id', paymentAttempt.id);
-    if (paymentLinkUpdateError) throw new Error(`PAYMENT_ATTEMPT_UPDATE_FAILED: ${paymentLinkUpdateError.message}`);
-
     const { error: subscriptionLinkUpdateError } = await serverSupabase
       .from('subscriptions')
       .update({ nardopay_link_code: linkCode, updated_at: new Date().toISOString() })
@@ -274,7 +268,7 @@ export class SubscriptionService {
           status: 'active',
           plan: 'premium',
           amount: expectedAmount,
-          currency: String(targetPayment.currency).toUpperCase(),
+          currency: String(targetSubscription.currency).toUpperCase(),
           billing_cycle: 'none',
           nardopay_link_code: resolvedLinkCode,
           current_period_start: null,
@@ -297,7 +291,7 @@ export class SubscriptionService {
           payment_status: 'paid',
           payment_reference: resolvedLinkCode || transactionId,
           payment_amount: expectedAmount,
-          payment_currency: String(targetPayment.currency).toUpperCase(),
+          payment_currency: String(targetSubscription.currency).toUpperCase(),
           paid_at: now.toISOString()
         })
         .eq('id', targetShop.id);
