@@ -302,7 +302,7 @@ function AppContent() {
     }
     else if (stage === 'onboarding') {
       console.log("[ROUTER] navigation decisions. Redirecting to onboarding signup: /signup");
-      navigate('/signup');
+      navigate('/onboarding');
     }
     else if (stage === 'dashboard') {
       console.log("[ROUTER] navigation decisions. Preparing dashboard stage. Calling refreshShop()...");
@@ -506,8 +506,8 @@ function AppContent() {
     return <Login />;
   }
 
-  if (cleanPath === '/signup') {
-    return <SignUp />;
+  if (cleanPath === '/signup' || cleanPath === '/onboarding') {
+    return <ThreadzwOnboarding />;
   }
 
   if (cleanPath === '/auth/confirm') {
