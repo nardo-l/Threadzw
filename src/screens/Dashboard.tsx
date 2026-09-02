@@ -30,7 +30,6 @@ import { BottomNavBar } from '../components/dashboard/BottomNavBar';
 import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
-import { paymentService } from '../services/paymentService';
 import { DashboardPlanCard } from '../components/plans/DashboardPlanCard';
 
 export const Dashboard: React.FC = () => {
@@ -39,7 +38,6 @@ export const Dashboard: React.FC = () => {
   const { shop, loading: shopLoading, refreshShop } = useShopContext();
   const [dateFilter, setDateFilter] = useState('May 20 – May 26');
   const [chartFilter, setChartFilter] = useState('Last 7 days');
-  const [dbPaymentVerified, setDbPaymentVerified] = useState<boolean | null>(null);
 
   // Force refresh shop record on mount to guarantee fresh Supabase state
   useEffect(() => {
@@ -47,21 +45,6 @@ export const Dashboard: React.FC = () => {
       refreshShop().catch(err => console.warn('Dashboard refreshShop note:', err));
     }
   }, [session, user]);
-
-  // Check shop_payments table if shop object isn't marked paid yet
-  useEffect(() => {
-    let isMounted = true;
-    if (shop?.id) {
-      paymentService.getShopPaymentStatus(shop.id).then(res => {
-        if (isMounted) {
-          setDbPaymentVerified(res.isPaid);
-        }
-      }).catch(() => {
-        if (isMounted) setDbPaymentVerified(false);
-      });
-    }
-    return () => { isMounted = false; };
-  }, [shop?.id, shop?.payment_status]);
 
   const {
     productsCount,
@@ -98,9 +81,6 @@ export const Dashboard: React.FC = () => {
   const isShopPaidAndActive = useMemo(() => {
     if (!session || !user) return false;
 
-    // Check verified database payment or shop object flags
-    if (dbPaymentVerified === true) return true;
-
     if (shop) {
       if (shop.payment_status === 'paid' && shop.payment_required === false) {
         return true;
@@ -108,7 +88,7 @@ export const Dashboard: React.FC = () => {
     }
 
     return false;
-  }, [shop, session, user, dbPaymentVerified]);
+  }, [shop, session, user]);
 
   const handleCopyShopLink = async () => {
     if (!shop) return;
