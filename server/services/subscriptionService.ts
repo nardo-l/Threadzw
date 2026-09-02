@@ -105,7 +105,7 @@ export class SubscriptionService {
       billing_cycle: planDetails.billing_cycle,
       amount: planDetails.amount,
       currency: planDetails.currency,
-      status: 'trial',
+      status: 'pending',
       provider: 'nardopay',
       nardopay_link_code: null,
       created_at: nowISO,
@@ -328,11 +328,6 @@ export class SubscriptionService {
       if (amount !== null && Math.abs(amount - expectedAmount) > 0.005) throw new Error('PAYMENT_AMOUNT_MISMATCH');
       if (currency !== String(targetPayment.currency).toUpperCase()) throw new Error('PAYMENT_CURRENCY_MISMATCH');
 
-      const periodStart = now;
-      const currentEnd = targetSubscription?.current_period_end ? new Date(targetSubscription.current_period_end) : null;
-      const baseDate = currentEnd && currentEnd > periodStart ? currentEnd : periodStart;
-      const periodEnd = addMonths(baseDate, 1);
-
       const { error: paymentUpdateError } = await serverSupabase
         .from('shop_payments')
         .update({
@@ -350,10 +345,10 @@ export class SubscriptionService {
           plan: 'premium',
           amount: expectedAmount,
           currency: String(targetPayment.currency).toUpperCase(),
-          billing_cycle: 'monthly',
+          billing_cycle: 'none',
           nardopay_link_code: resolvedLinkCode,
-          current_period_start: periodStart.toISOString(),
-          current_period_end: periodEnd.toISOString(),
+          current_period_start: null,
+          current_period_end: null,
           grace_period_end: null,
           cancelled_at: null,
           updated_at: now.toISOString()
@@ -431,11 +426,11 @@ export class SubscriptionService {
     return {
       shopId,
       category: resolveServerSellerCategory(shop.page_type),
-      plan: shop.plan || 'free',
-      status: subscription?.status || (shop.plan === 'premium' ? 'active' : 'trial'),
-      amount: subscription?.amount || Number(process.env.THREADZW_CLOTHING_PRO_PRICE_USD || 1.59),
+      plan: shop.plan === 'premium' ? 'premium' : 'free',
+      status: subscription?.status || (shop.plan === 'premium' ? 'active' : 'inactive'),
+      amount: subscription?.amount || Number(process.env.THREADZW_CLOTHING_PRO_PRICE_USD || 9),
       currency: subscription?.currency || 'USD',
-      billingCycle: subscription?.billing_cycle || 'monthly',
+      billingCycle: subscription?.billing_cycle || 'none',
       currentPeriodStart: subscription?.current_period_start || null,
       currentPeriodEnd: subscription?.current_period_end || null,
       gracePeriodEnd: subscription?.grace_period_end || null,
