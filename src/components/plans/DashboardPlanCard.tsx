@@ -54,9 +54,6 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
   const entitlements = getEntitlements(shop, { products: liveProductsCount, vehicles: liveProductsCount });
   const isVehicle = category === 'vehicles';
   const isClothing = category === 'clothing';
-  const visits = Number(lifetimeUniqueVisitors ?? shop.lifetime_unique_visits ?? 0);
-  const interests = Number(lifetimeInterestEvents ?? shop.lifetime_interest_events ?? 0);
-  const usageReached = Boolean(shop.usage_quota_exceeded) || visits >= 50 || interests >= 10;
 
   const planTitle = isVehicle
     ? (pro ? 'Vehicle Premium' : 'Vehicle Free')
@@ -80,7 +77,7 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
                 </span>
               </div>
               <h3 className="text-sm font-bold text-zinc-900 mt-0.5">
-                {isClothing && !pro ? `${productsCount} products · no product-count limit` : isClothing ? `${productsCount} products · customer actions open` : isVehicle ? `${liveProductsCount} active vehicles` : `${productsCount} active catalog items`}
+                {isClothing && !pro ? `${productsCount} / 9 products` : isClothing ? `${productsCount} products · unlimited` : isVehicle ? `${liveProductsCount} active vehicles` : `${productsCount} active catalog items`}
               </h3>
             </div>
           </div>
@@ -103,23 +100,14 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
 
         {isClothing && !pro && (
           <div className="space-y-2.5 pt-1">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-wider text-zinc-900">Lifetime customer access</p>
-                <p className="text-[11px] text-zinc-500">Products stay unlimited. These two meters protect the Free allowance.</p>
-              </div>
-              {usageReached && <AlertCircle size={16} className="text-amber-600 shrink-0" />}
+            <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider">
+              <span>Product allowance</span>
+              <span>{Math.min(productsCount, 9)} / 9</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <UsageMeter label="Unique visitors" value={visits} limit={50} icon={<Users size={14} />} helper="One count per visitor for the shop’s lifetime." />
-              <UsageMeter label="Customer interests" value={interests} limit={10} icon={<MessageCircle size={14} />} helper="WhatsApp clicks and directions opens for life." />
+            <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
+              <div className="h-full rounded-full bg-[#CCFF00] transition-all duration-500" style={{ width: `${Math.min(100, (productsCount / 9) * 100)}%` }} />
             </div>
-            {usageReached && (
-              <div className="flex items-start gap-1.5 text-[11px] text-amber-700 font-medium pt-0.5">
-                <AlertCircle size={12} className="shrink-0 mt-0.5" />
-                <span>Free customer actions are paused after a threshold. Browsing and product management remain available.</span>
-              </div>
-            )}
+            <p className="text-[11px] text-zinc-500">Free includes up to 9 active products. Customer visits and interests are not capped.</p>
           </div>
         )}
 
@@ -144,7 +132,7 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
         onClose={() => setShowUpgradeModal(false)}
         shop={shop}
         category={category}
-        reason={isClothing ? 'usage_quota' : 'vehicle_limit'}
+        reason={isClothing ? 'product_limit' : 'vehicle_limit'}
       />
     </>
   );
