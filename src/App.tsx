@@ -32,6 +32,7 @@ import { BioPageView } from './components/public-pages/BioPageView';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
 import { Subscription } from './screens/Subscription';
+import { Paywall } from './screens/Paywall';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 import { Analytics } from './screens/Analytics';
 import { Notifications } from './screens/Notifications';
@@ -102,6 +103,9 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path.startsWith('/checkout')) {
     return { stage: 'checkout' };
   }
+  if (path === '/paywall') {
+    return { stage: 'paywall' };
+  }
   if (path === '/subscription') {
     return { stage: 'subscription' };
   }
@@ -122,7 +126,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -638,6 +642,7 @@ function AppContent() {
         <Route path="/edit-product/:id" element={<EditProduct />} />
         <Route path="/add-vehicle" element={<AddVehicle />} />
         <Route path="/edit-vehicle/:id" element={<EditVehicle />} />
+        <Route path="/paywall" element={<Paywall />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
