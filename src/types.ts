@@ -317,7 +317,7 @@ export interface Subscription {
   owner_id: string;
   category: SellerCategory;
   plan: SellerPlan;
-  billing_cycle: 'monthly' | 'yearly';
+  billing_cycle: 'none' | 'monthly' | 'yearly';
   amount: number;
   currency: string;
   status: SubscriptionStatus;

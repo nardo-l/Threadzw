@@ -52,13 +52,13 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
       price: 0,
       currency: 'USD',
       billingCycle: 'none',
-      maxActiveListings: null,
+      maxActiveListings: 9,
       maxImagesPerListing: 5,
-      description: 'Launch a free fashion storefront with unlimited products and lifetime usage thresholds',
+      description: 'Launch a free fashion storefront with up to 9 active products',
       features: [
-        'Unlimited active products',
-        '50 unique storefront visits for life',
-        '10 WhatsApp and directions interests for life',
+        'Up to 9 active products',
+        'Storefront visits',
+        'WhatsApp customer interests',
         '1 basic storefront template',
         'Basic inventory management',
         'ThreadZW branding badge'
@@ -222,13 +222,12 @@ export function getPlanConfig(shop: Shop | null | undefined): PlanConfig {
 }
 
 /**
- * Clothing products are not quota-limited by count.
- * Free clothing shops are gated by lifetime usage in Supabase instead.
+ * Free clothing shops can publish up to 9 active products. Premium is unlimited.
  */
 export function getProductLimit(shop: Shop | null | undefined): number | null {
   const category = resolveSellerCategory(shop?.page_type);
-  if (category === 'clothing' || isPro(shop)) return null;
-  return 9;
+  if (isPro(shop)) return null;
+  return category === 'clothing' ? 9 : 9;
 }
 
 /**

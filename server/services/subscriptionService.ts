@@ -18,12 +18,6 @@ function asString(value: unknown): string | null {
   return String(value);
 }
 
-function addMonths(date: Date, months: number): Date {
-  const result = new Date(date);
-  result.setMonth(result.getMonth() + months);
-  return result;
-}
-
 export class SubscriptionService {
   public async createPaymentLink(params: { userId: string; shopId: string; origin?: string }) {
     const { userId, shopId } = params;
@@ -63,29 +57,6 @@ export class SubscriptionService {
     const nowISO = new Date().toISOString();
     const internalReference = `NP-${shop.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
 
-    // Persist the internal attempt before calling NardoPay. This prevents a fast
-    // provider callback from arriving before Threadzw can resolve the payment.
-    const { data: paymentAttempt, error: paymentAttemptError } = await serverSupabase
-      .from('shop_payments')
-      .insert({
-        shop_id: shop.id,
-        user_id: userId,
-        amount: planDetails.amount,
-        currency: planDetails.currency,
-        plan: 'premium',
-        provider: 'nardopay',
-        payment_reference: internalReference,
-        status: 'pending',
-        metadata: { billing_cycle: planDetails.billing_cycle, internal_reference: internalReference },
-        created_at: nowISO
-      })
-      .select('id')
-      .single();
-
-    if (paymentAttemptError || !paymentAttempt) {
-      throw new Error(`PAYMENT_ATTEMPT_FAILED: ${paymentAttemptError?.message || 'Payment attempt was not recorded'}`);
-    }
-
     const { data: existingSubscription, error: existingSubscriptionError } = await serverSupabase
       .from('subscriptions')
       .select('id')
@@ -105,7 +76,7 @@ export class SubscriptionService {
       billing_cycle: planDetails.billing_cycle,
       amount: planDetails.amount,
       currency: planDetails.currency,
-      status: 'trial',
+      status: 'pending',
       provider: 'nardopay',
       nardopay_link_code: null,
       created_at: nowISO,
@@ -149,7 +120,6 @@ export class SubscriptionService {
         shop_id: shop.id,
         category: planDetails.category,
         plan: 'premium',
-        payment_attempt_id: String(paymentAttempt.id),
         subscription_id: String(subscriptionId),
         payment_reference: internalReference
       }
@@ -160,16 +130,9 @@ export class SubscriptionService {
     const providerMetadata = {
       billing_cycle: planDetails.billing_cycle,
       internal_reference: internalReference,
-      payment_attempt_id: String(paymentAttempt.id),
       subscription_id: String(subscriptionId),
       link_code: linkCode
     };
-
-    const { error: paymentLinkUpdateError } = await serverSupabase
-      .from('shop_payments')
-      .update({ payment_reference: linkCode, checkout_url: checkoutUrl, metadata: providerMetadata })
-      .eq('id', paymentAttempt.id);
-    if (paymentLinkUpdateError) throw new Error(`PAYMENT_ATTEMPT_UPDATE_FAILED: ${paymentLinkUpdateError.message}`);
 
     const { error: subscriptionLinkUpdateError } = await serverSupabase
       .from('subscriptions')
@@ -182,8 +145,7 @@ export class SubscriptionService {
       url: checkoutUrl,
       linkCode,
       subscriptionId,
-      paymentAttemptId: paymentAttempt.id,
-      amount: planDetails.amount,
+            amount: planDetails.amount,
       currency: planDetails.currency,
       billingCycle: planDetails.billing_cycle,
       category: 'clothing'
@@ -204,28 +166,16 @@ export class SubscriptionService {
     const providerEventId = asString(payload.event_id || payload.provider_event_id || payload.id || data.event_id);
     const reference = asString(payload.reference || payload.link_code || payload.linkCode || data.reference || data.link_code);
     const shopIdFromMetadata = asString(metadata.shop_id || payload.shop_id || data.shop_id);
-    const paymentAttemptId = asString(metadata.payment_attempt_id || payload.payment_attempt_id || data.payment_attempt_id);
     const subscriptionIdFromMetadata = asString(metadata.subscription_id || payload.subscription_id || data.subscription_id);
     const linkCode = asString(metadata.link_code || reference);
-    const stableId = providerEventId || transactionId || reference || paymentAttemptId || subscriptionIdFromMetadata;
+    const stableId = providerEventId || transactionId || reference || subscriptionIdFromMetadata;
 
-    if (!stableId) throw new Error('UNPROCESSABLE_WEBHOOK: No stable event, transaction, payment reference, or payment attempt');
+    if (!stableId) throw new Error('UNPROCESSABLE_WEBHOOK: No stable event, transaction, payment reference, or subscription');
 
     const idempotencyKey = `${stableId}:${normalizedEvent || 'payment.completed'}`;
 
     let targetShop: any = null;
     let targetSubscription: any = null;
-    let targetPayment: any = null;
-
-    if (paymentAttemptId) {
-      const { data: payment } = await serverSupabase
-        .from('shop_payments')
-        .select('*')
-        .eq('id', paymentAttemptId)
-        .eq('provider', 'nardopay')
-        .maybeSingle();
-      targetPayment = payment;
-    }
 
     if (subscriptionIdFromMetadata) {
       const { data: subscription } = await serverSupabase
@@ -245,18 +195,6 @@ export class SubscriptionService {
       targetShop = data;
     }
 
-    if (linkCode && !targetPayment) {
-      const { data: payment } = await serverSupabase
-        .from('shop_payments')
-        .select('*')
-        .eq('payment_reference', linkCode)
-        .eq('provider', 'nardopay')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      targetPayment = payment;
-    }
-
     if (linkCode && !targetSubscription) {
       const { data: subscription } = await serverSupabase
         .from('subscriptions')
@@ -268,10 +206,6 @@ export class SubscriptionService {
       targetSubscription = subscription;
     }
 
-    if (!targetShop && targetPayment) {
-      const { data } = await serverSupabase.from('shops').select('*').eq('id', targetPayment.shop_id).maybeSingle();
-      targetShop = data;
-    }
     if (!targetShop && targetSubscription) {
       const { data } = await serverSupabase.from('shops').select('*').eq('id', targetSubscription.shop_id).maybeSingle();
       targetShop = data;
@@ -284,7 +218,7 @@ export class SubscriptionService {
     const amount = asNumber(payload.amount ?? data.amount);
     const currency = String(payload.currency || data.currency || 'USD').toUpperCase();
     const eventStatus = String(payload.status || data.status || '').toLowerCase();
-    const resolvedLinkCode = linkCode || targetPayment?.payment_reference || targetSubscription?.nardopay_link_code || null;
+    const resolvedLinkCode = linkCode || targetSubscription?.nardopay_link_code || null;
     const now = new Date();
 
     const { data: insertedEvent, error: eventInsertError } = await serverSupabase
@@ -323,25 +257,10 @@ export class SubscriptionService {
         return { success: true, paymentRejected: true, event: normalizedType };
       }
 
-      if (!targetPayment) throw new Error('PAYMENT_ATTEMPT_NOT_FOUND');
-      const expectedAmount = Number(targetPayment.amount);
-      if (amount !== null && Math.abs(amount - expectedAmount) > 0.005) throw new Error('PAYMENT_AMOUNT_MISMATCH');
-      if (currency !== String(targetPayment.currency).toUpperCase()) throw new Error('PAYMENT_CURRENCY_MISMATCH');
-
-      const periodStart = now;
-      const currentEnd = targetSubscription?.current_period_end ? new Date(targetSubscription.current_period_end) : null;
-      const baseDate = currentEnd && currentEnd > periodStart ? currentEnd : periodStart;
-      const periodEnd = addMonths(baseDate, 1);
-
-      const { error: paymentUpdateError } = await serverSupabase
-        .from('shop_payments')
-        .update({
-          status: 'paid',
-          provider_transaction_id: transactionId,
-          paid_at: now.toISOString()
-        })
-        .eq('id', targetPayment.id);
-      if (paymentUpdateError) throw new Error(`SHOP_PAYMENT_UPDATE_FAILED: ${paymentUpdateError.message}`);
+      if (!targetSubscription) throw new Error('SUBSCRIPTION_NOT_FOUND');
+      const expectedAmount = Number(targetSubscription.amount);
+      if (amount === null || Math.abs(amount - expectedAmount) > 0.005) throw new Error('PAYMENT_AMOUNT_MISMATCH');
+      if (currency !== String(targetSubscription.currency).toUpperCase()) throw new Error('PAYMENT_CURRENCY_MISMATCH');
 
       const { data: activeSubscription, error: subscriptionError } = await serverSupabase
         .from('subscriptions')
@@ -349,11 +268,11 @@ export class SubscriptionService {
           status: 'active',
           plan: 'premium',
           amount: expectedAmount,
-          currency: String(targetPayment.currency).toUpperCase(),
-          billing_cycle: 'monthly',
+          currency: String(targetSubscription.currency).toUpperCase(),
+          billing_cycle: 'none',
           nardopay_link_code: resolvedLinkCode,
-          current_period_start: periodStart.toISOString(),
-          current_period_end: periodEnd.toISOString(),
+          current_period_start: null,
+          current_period_end: null,
           grace_period_end: null,
           cancelled_at: null,
           updated_at: now.toISOString()
@@ -364,18 +283,6 @@ export class SubscriptionService {
       if (subscriptionError) throw new Error(`SUBSCRIPTION_UPDATE_FAILED: ${subscriptionError.message}`);
 
       const subscriptionId = activeSubscription?.id || targetSubscription?.id;
-      const { error: paymentRecordError } = await serverSupabase.from('payments').insert({
-        subscription_id: subscriptionId,
-        provider: 'nardopay',
-        provider_transaction_id: transactionId,
-        amount: expectedAmount,
-        currency: String(targetPayment.currency).toUpperCase(),
-        status: 'successful',
-        paid_at: now.toISOString(),
-        updated_at: now.toISOString()
-      });
-      if (paymentRecordError) throw new Error(`PAYMENT_RECORD_FAILED: ${paymentRecordError.message}`);
-
       const { error: shopUpdateError } = await serverSupabase
         .from('shops')
         .update({
@@ -384,7 +291,7 @@ export class SubscriptionService {
           payment_status: 'paid',
           payment_reference: resolvedLinkCode || transactionId,
           payment_amount: expectedAmount,
-          payment_currency: String(targetPayment.currency).toUpperCase(),
+          payment_currency: String(targetSubscription.currency).toUpperCase(),
           paid_at: now.toISOString()
         })
         .eq('id', targetShop.id);
@@ -395,7 +302,7 @@ export class SubscriptionService {
       try {
         await createNotification(targetShop.owner_id, {
           title: 'Premium activated',
-          body: 'Your Threadzw Premium access is active for 30 days.',
+          body: 'Your Threadzw Premium access is active for life.',
           type: 'subscription_activated',
           target_url: '/subscription'
         });
@@ -431,11 +338,11 @@ export class SubscriptionService {
     return {
       shopId,
       category: resolveServerSellerCategory(shop.page_type),
-      plan: shop.plan || 'free',
-      status: subscription?.status || (shop.plan === 'premium' ? 'active' : 'trial'),
-      amount: subscription?.amount || Number(process.env.THREADZW_CLOTHING_PRO_PRICE_USD || 1.59),
+      plan: shop.plan === 'premium' ? 'premium' : 'free',
+      status: subscription?.status || (shop.plan === 'premium' ? 'active' : 'inactive'),
+      amount: subscription?.amount || Number(process.env.THREADZW_CLOTHING_PRO_PRICE_USD || 9),
       currency: subscription?.currency || 'USD',
-      billingCycle: subscription?.billing_cycle || 'monthly',
+      billingCycle: subscription?.billing_cycle || 'none',
       currentPeriodStart: subscription?.current_period_start || null,
       currentPeriodEnd: subscription?.current_period_end || null,
       gracePeriodEnd: subscription?.grace_period_end || null,

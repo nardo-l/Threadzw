@@ -48,11 +48,11 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
   if (!title) {
     if (reason === 'product_limit') {
       title = "Your catalog is ready to grow";
-      message = "Clothing storefronts have unlimited products on Free. Your upgrade unlocks premium branding and continued customer actions after the lifetime usage thresholds are reached.";
+      message = "You’ve reached the 9-product limit on the Free plan. Upgrade to Premium for unlimited products plus premium storefront features.";
       icon = <ShoppingBag className="w-6 h-6 text-black" />;
     } else if (reason === 'usage_quota') {
-      title = "Your free storefront usage is complete";
-      message = "Free clothing shops include 50 unique visits and 10 WhatsApp or directions interests for life. Upgrade to Premium to keep receiving customer enquiries without usage gating.";
+      title = "Your free product limit is reached";
+      message = "Free clothing shops can publish up to 9 active products. Upgrade to Premium for unlimited products and premium storefront features.";
       icon = <ShieldAlert className="w-6 h-6 text-black" />;
     } else if (reason === 'vehicle_limit') {
       title = "You've reached the 1-vehicle limit on the Free plan";
@@ -74,7 +74,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
       icon = <Sparkles className="w-6 h-6 text-black" />;
     } else {
       title = "Unlock Premium Features";
-      message = "Keep your storefront open to customer enquiries with Premium branding and usage access.";
+      message = "Get unlimited products, premium branding and advanced storefront features.";
       icon = <ShieldAlert className="w-6 h-6 text-black" />;
     }
   }
@@ -130,7 +130,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
             <div>
               <div className="text-xs font-bold text-zinc-900">{isVehicle ? 'Vehicle Premium' : 'ThreadZW Premium'}</div>
               <div className="text-[11px] text-zinc-500 font-medium">
-                {isVehicle ? 'Full digital showroom for auto dealerships' : 'Lifetime usage access, unlimited products & premium seller branding'}
+                {isVehicle ? 'Full digital showroom for auto dealerships' : 'Unlimited products & premium seller branding'}
               </div>
             </div>
             <div className="text-right">
@@ -145,7 +145,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
               <div className="w-4 h-4 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shrink-0">
                 <Check size={10} strokeWidth={3} />
               </div>
-              <span>{isVehicle ? 'Up to 20 active showroom vehicles' : 'Unlimited active products and customer enquiries'}</span>
+              <span>{isVehicle ? 'Up to 20 active showroom vehicles' : 'Unlimited active products'}</span>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-zinc-800 font-medium">
               <div className="w-4 h-4 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shrink-0">

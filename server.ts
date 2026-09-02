@@ -4,8 +4,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-import billingRouter from './server/routes/billing';
-import { billingController } from './server/controllers/billing';
 import subscriptionsRouter from './server/routes/subscriptions';
 import { subscriptionController } from './server/controllers/subscriptionController';
 import aiRouter from './server/routes/ai';
@@ -229,7 +227,6 @@ async function startServer() {
   // --- SECURE SERVER-SIDE BILLING & SUBSCRIPTIONS (NARDOPAY INTEGRATION) ---
   app.post('/api/nardopay-webhook', (req, res) => subscriptionController.webhook(req, res));
   app.use('/api/subscriptions', subscriptionsRouter);
-  app.use('/api/billing', billingRouter);
 
   // --- AI & MERCHANT PRODUCTIVITY SERVICES ---
   app.use('/api/ai', aiRouter);

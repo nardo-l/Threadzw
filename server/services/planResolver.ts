@@ -7,7 +7,7 @@ export interface ResolvedPlanDetails {
   plan: SellerPlan;
   amount: number;
   currency: 'USD';
-  billing_cycle: 'monthly' | 'yearly';
+  billing_cycle: 'none' | 'monthly' | 'yearly';
   planName: string;
   description: string;
 }
@@ -64,11 +64,11 @@ export function resolveProPlanForShop(shop: {
     return {
       category: 'clothing',
       plan: 'premium' as SellerPlan,
-      amount: envNumber('THREADZW_CLOTHING_PRO_PRICE_USD', 1.59),
+      amount: envNumber('THREADZW_CLOTHING_PRO_PRICE_USD', 9),
       currency: envCurrency(),
-      billing_cycle: 'monthly',
+      billing_cycle: 'none',
       planName: 'Threadzw Premium',
-      description: 'Unlimited clothing products and advanced storefront tools for 30 days'
+      description: 'Unlimited clothing products and advanced storefront tools with lifetime access'
     };
   }
 

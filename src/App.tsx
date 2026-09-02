@@ -6,7 +6,7 @@ const appStartTime = performance.now();
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { SignUp } from './screens/SignUp';
-import { QuickOnboarding } from './screens/QuickOnboarding';
+import { ThreadzwOnboarding } from './screens/ThreadzwOnboarding';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
@@ -31,7 +31,6 @@ import { StorefrontPage } from './pages/StorefrontPage';
 import { BioPageView } from './components/public-pages/BioPageView';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
-import { NardoPayCheckout } from './screens/NardoPayCheckout';
 import { Subscription } from './screens/Subscription';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 import { Analytics } from './screens/Analytics';
@@ -303,7 +302,7 @@ function AppContent() {
     }
     else if (stage === 'onboarding') {
       console.log("[ROUTER] navigation decisions. Redirecting to onboarding signup: /signup");
-      navigate('/signup');
+      navigate('/onboarding');
     }
     else if (stage === 'dashboard') {
       console.log("[ROUTER] navigation decisions. Preparing dashboard stage. Calling refreshShop()...");
@@ -326,10 +325,6 @@ function AppContent() {
     else if (stage === 'setup') {
       console.log("[ROUTER] navigation decisions. Redirecting to setup: /setup");
       navigate('/setup');
-    }
-    else if (stage === 'checkout') {
-      console.log("[ROUTER] navigation decisions. Redirecting to checkout: /checkout/nardopay");
-      navigate('/checkout/nardopay');
     }
     else if (stage === 'subscription') {
       console.log("[ROUTER] navigation decisions. Redirecting to subscription: /subscription");
@@ -435,7 +430,6 @@ function AppContent() {
       path === '/demo' || 
       path === '/admin' || 
       path.startsWith('/product/') ||
-      path.startsWith('/checkout') ||
       path.startsWith('/auth') ||
       path === '/reset-password' ||
       path === '/subscription' ||
@@ -512,8 +506,8 @@ function AppContent() {
     return <Login />;
   }
 
-  if (cleanPath === '/signup') {
-    return <SignUp />;
+  if (cleanPath === '/signup' || cleanPath === '/onboarding') {
+    return <ThreadzwOnboarding />;
   }
 
   if (cleanPath === '/auth/confirm') {
@@ -594,7 +588,7 @@ function AppContent() {
   }
 
   if (appStage === 'onboarding') {
-    return <QuickOnboarding />;
+    return <ThreadzwOnboarding />;
   }
 
   if (appStage === 'building') {
@@ -617,10 +611,6 @@ function AppContent() {
   }
   if (appStage === 'setup') {
     return <SignUp initialStep={6} />;
-  }
-
-  if (appStage === 'checkout') {
-    return <NardoPayCheckout />;
   }
 
   if (appStage === 'subscription' || cleanPath === '/subscription') {
