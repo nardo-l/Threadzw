@@ -10,7 +10,7 @@ export interface CreatePaymentLinkResponse {
   subscriptionId?: string;
   amount: number;
   currency: string;
-  billingCycle: 'monthly' | 'yearly';
+  billingCycle: 'none' | 'monthly' | 'yearly';
   category: SellerCategory;
   error?: string;
   message?: string;
