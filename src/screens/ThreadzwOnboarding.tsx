@@ -101,7 +101,7 @@ export const ThreadzwOnboarding: React.FC = () => {
   const createAccount = async () => {
     setError('');
     if (!email.trim() || !email.includes('@')) return setError('Enter a valid email address.');
-    if (phone.replace(/\\D/g, '').length < 9) return setError('Enter your WhatsApp number.');
+    if (phone.replace(/\D/g, '').length < 9) return setError('Enter your WhatsApp number.');
     if (password.length < 6) return setError('Use a password with at least 6 characters.');
     setLoading(true);
     try {
