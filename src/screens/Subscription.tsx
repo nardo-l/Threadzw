@@ -71,8 +71,8 @@ export const Subscription: React.FC = () => {
         plan: isPro(shop) ? 'premium' : 'free',
         category: category,
         status: isPro(shop) ? 'active' : 'inactive',
-        billingCycle: category === 'vehicles' ? 'yearly' : 'monthly',
-        amount: category === 'vehicles' ? 30 : Number(import.meta.env.VITE_THREADZW_CLOTHING_PRO_PRICE_USD || 1.59),
+        billingCycle: 'none',
+        amount: Number(import.meta.env.VITE_THREADZW_CLOTHING_PRO_PRICE_USD || 9),
         currency: 'USD'
       });
     } finally {
@@ -183,15 +183,11 @@ export const Subscription: React.FC = () => {
     }
   };
 
-  const clothingConfig = PLANS_CONFIG.clothing;
-  const vehicleConfig = PLANS_CONFIG.vehicles;
-  const generalConfig = PLANS_CONFIG.general;
-
-  const currentConfig = category === 'vehicles' ? vehicleConfig : category === 'clothing' ? clothingConfig : generalConfig;
+  const currentConfig = PLANS_CONFIG.clothing;
   const proPrice = currentConfig.premium.price;
-  const proBillingCycle = category === 'vehicles' ? 'year' : 'one-off';
+  const proBillingCycle = 'one-off';
 
-  if (currentPlan === 'free' && category !== 'vehicles') {
+  if (currentPlan === 'free' && false) {
     return (
       <ProUpgradePaywallCard
         shop={shop}
@@ -245,7 +241,7 @@ export const Subscription: React.FC = () => {
                 {category === 'vehicles' ? 'Dealership Plans' : 'Storefront Plans'}
               </h1>
               <p className="text-xs text-zinc-500 font-medium">
-                Transparent pricing tailored for Zimbabwean entrepreneurs and dealers.
+                Simple pricing for clothing sellers.
               </p>
             </div>
 
@@ -361,11 +357,7 @@ export const Subscription: React.FC = () => {
                     <span className="text-xs font-black uppercase tracking-wider text-[#C6FF00] block">
                       Active Premium Subscription
                     </span>
-                    {subStatus?.currentPeriodEnd && (
-                      <span className="text-[11px] text-zinc-400 block font-mono">
-                        Valid until {new Date(subStatus.currentPeriodEnd).toLocaleDateString()}
-                      </span>
-                    )}
+                    <span className="text-[11px] text-zinc-400 block font-mono">Lifetime access</span>
                   </div>
                 ) : (
                   <div className="space-y-3 pt-2">
