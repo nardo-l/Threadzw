@@ -6,7 +6,7 @@ const appStartTime = performance.now();
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { SignUp } from './screens/SignUp';
-import { QuickOnboarding } from './screens/QuickOnboarding';
+import { ThreadzwOnboarding } from './screens/ThreadzwOnboarding';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
@@ -588,7 +588,7 @@ function AppContent() {
   }
 
   if (appStage === 'onboarding') {
-    return <QuickOnboarding />;
+    return <ThreadzwOnboarding />;
   }
 
   if (appStage === 'building') {
