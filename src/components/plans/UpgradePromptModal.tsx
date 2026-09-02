@@ -81,7 +81,7 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
 
   const handleUpgrade = () => {
     onClose();
-    navigate('/subscription');
+    navigate('/paywall');
   };
 
   const isVehicle = category === 'vehicles';
