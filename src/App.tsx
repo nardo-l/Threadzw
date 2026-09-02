@@ -31,7 +31,6 @@ import { StorefrontPage } from './pages/StorefrontPage';
 import { BioPageView } from './components/public-pages/BioPageView';
 import { ShopDirectoryPage } from './pages/ShopDirectoryPage';
 import { Login } from './screens/Login';
-import { NardoPayCheckout } from './screens/NardoPayCheckout';
 import { Subscription } from './screens/Subscription';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 import { Analytics } from './screens/Analytics';
@@ -327,10 +326,6 @@ function AppContent() {
       console.log("[ROUTER] navigation decisions. Redirecting to setup: /setup");
       navigate('/setup');
     }
-    else if (stage === 'checkout') {
-      console.log("[ROUTER] navigation decisions. Redirecting to checkout: /checkout/nardopay");
-      navigate('/checkout/nardopay');
-    }
     else if (stage === 'subscription') {
       console.log("[ROUTER] navigation decisions. Redirecting to subscription: /subscription");
       navigate('/subscription');
@@ -435,7 +430,6 @@ function AppContent() {
       path === '/demo' || 
       path === '/admin' || 
       path.startsWith('/product/') ||
-      path.startsWith('/checkout') ||
       path.startsWith('/auth') ||
       path === '/reset-password' ||
       path === '/subscription' ||
@@ -617,10 +611,6 @@ function AppContent() {
   }
   if (appStage === 'setup') {
     return <SignUp initialStep={6} />;
-  }
-
-  if (appStage === 'checkout') {
-    return <NardoPayCheckout />;
   }
 
   if (appStage === 'subscription' || cleanPath === '/subscription') {
