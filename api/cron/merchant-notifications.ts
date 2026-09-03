@@ -1,12 +1,11 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { timingSafeEqual } from 'node:crypto';
 
-function json(res: VercelResponse, status: number, body: Record<string, unknown>) {
+function json(res: any, status: number, body: Record<string, unknown>) {
   return res.status(status).setHeader('Content-Type', 'application/json').json(body);
 }
 
-function validSecret(req: VercelRequest): boolean {
+function validSecret(req: any): boolean {
   const expected = (process.env.THREADZW_CRON_SECRET || '').trim();
   const supplied = (
     (req.headers['x-threadzw-cron-secret'] as string | undefined) ||
@@ -19,7 +18,7 @@ function validSecret(req: VercelRequest): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return json(res, 405, { success: false, error: 'Method not allowed' });
   }
