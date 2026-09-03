@@ -90,7 +90,7 @@ export function resolveProPlanForShop(shop: {
       plan: 'premium' as SellerPlan,
       amount: envNumber('THREADZW_GENERAL_PRO_PRICE_USD', 9),
       currency: 'USD',
-      billing_cycle: 'monthly',
+      billing_cycle: 'none',
       planName: 'Threadzw Premium',
       description: 'Premium seller tools for general stores'
     };
