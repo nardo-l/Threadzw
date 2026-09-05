@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { timingSafeEqual } from 'node:crypto';
+import { sendScheduledMerchantNotifications } from '../../server/services/scheduledNotificationService';
 
 function json(res: any, status: number, body: Record<string, unknown>) {
   return res.status(status).setHeader('Content-Type', 'application/json').json(body);
@@ -42,9 +43,6 @@ export default async function handler(req: any, res: any) {
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    const { sendScheduledMerchantNotifications } =
-      await import('../../server/services/scheduledNotificationService');
-
     const result = await sendScheduledMerchantNotifications(supabase, slot);
     return json(res, 200, result);
   } catch (error: any) {
