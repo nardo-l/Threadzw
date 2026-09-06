@@ -144,4 +144,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch, { once: true });
   else watch();
   window.addEventListener('popstate', watch);
+  window.setInterval(watch, 1000);
 })();
