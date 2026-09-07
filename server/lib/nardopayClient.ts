@@ -24,12 +24,6 @@ export interface NardoPayLinkResponse {
   [key: string]: unknown;
 }
 
-export interface VerifyPaymentParams {
-  link_code?: string;
-  transaction_id?: string;
-  reference?: string;
-}
-
 const CREATE_LINK_URL = 'https://mczqwqsvumfsneoknlep.supabase.co/functions/v1/create-payment-link-api';
 
 function requiredEnv(name: string): string {
@@ -48,33 +42,64 @@ export class NardoPayClient {
   }
 
   public async createPaymentLink(params: CreatePaymentLinkParams): Promise<NardoPayLinkResponse> {
-    const response = await fetch(CREATE_LINK_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.getApiKey()}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(params)
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(CREATE_LINK_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.getApiKey()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(params)
+      });
+    } catch (error: any) {
+      console.error('[NardoPay] Network error creating payment link:', error);
+      throw new Error(`PAYMENT_PROVIDER_UNAVAILABLE: ${error?.message || 'Unable to reach NardoPay'}`);
+    }
 
     const bodyText = await response.text();
-    let data: any;
+    let data: any = null;
     try {
       data = bodyText ? JSON.parse(bodyText) : null;
     } catch {
-      data = null;
+      // Keep the raw response for diagnostics below; do not expose it to the client
+      // unless it is short and clearly an ordinary provider error message.
     }
 
-    if (!response.ok || !data?.url || !(data.link_code || data.code)) {
-      throw new Error(`PAYMENT_PROVIDER_ERROR: NardoPay returned HTTP ${response.status}`);
+    const responseData = data?.data || data;
+    const linkCode = responseData?.link_code || responseData?.code;
+    const checkoutUrl = responseData?.url || responseData?.payment_url || responseData?.checkout_url;
+
+    if (!response.ok || !checkoutUrl || !linkCode) {
+      const providerMessage =
+        data?.message ||
+        data?.error?.message ||
+        data?.error ||
+        (typeof data?.detail === 'string' ? data.detail : null) ||
+        (bodyText && bodyText.length <= 500 ? bodyText : null);
+
+      console.error('[NardoPay] Payment-link creation failed:', {
+        status: response.status,
+        statusText: response.statusText,
+        message: providerMessage,
+        body: bodyText?.slice(0, 1000)
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('PAYMENT_PROVIDER_UNAVAILABLE: NardoPay rejected the server credentials');
+      }
+
+      throw new Error(
+        `PAYMENT_PROVIDER_ERROR: NardoPay returned HTTP ${response.status}${providerMessage ? ` - ${String(providerMessage).slice(0, 300)}` : ''}`
+      );
     }
 
-    const linkCode = String(data.link_code || data.code);
     return {
-      ...data,
-      link_code: linkCode,
-      url: String(data.url),
-      link_id: data.link_id || data.id || linkCode
+      ...responseData,
+      link_code: String(linkCode),
+      url: String(checkoutUrl),
+      link_id: responseData.link_id || responseData.id || String(linkCode)
     };
   }
 
