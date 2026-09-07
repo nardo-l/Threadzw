@@ -1,7 +1,7 @@
-// src/services/subscriptionClient.ts
-
 import { supabase } from '../lib/supabase';
 import { SubscriptionStatus, BillingCycle, SellerCategory, SellerPlan } from '../types';
+
+export const THREADZW_NARDOPAY_MONTHLY_LINK = 'https://threadzw.nardopay.com/pay/threadzwmonthlysubscriptions';
 
 export interface CreatePaymentLinkResponse {
   success: boolean;
@@ -30,6 +30,8 @@ export interface SubscriptionStatusResponse {
   gracePeriodEnd?: string | null;
   cancelledAt?: string | null;
   nardopayLinkCode?: string | null;
+  paymentVerificationStatus?: string | null;
+  paymentSubmittedAt?: string | null;
   error?: string;
 }
 
@@ -39,77 +41,38 @@ class SubscriptionClientService {
     return session?.access_token || null;
   }
 
-  /**
-   * Requests the server to create a NardoPay subscription payment link for a shop.
-   * Note: The client NEVER provides the price or billing cycle.
-   */
   public async createPaymentLink(shopId: string): Promise<CreatePaymentLinkResponse> {
     const token = await this.getAuthToken();
-    if (!token) {
-      throw new Error('Please sign in to upgrade your subscription.');
-    }
-
+    if (!token) throw new Error('Please sign in to upgrade your subscription.');
     const response = await fetch('/api/subscriptions/create-payment-link', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ shopId })
     });
-
     const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      const errorMsg = data.message || data.error || 'Failed to initialize payment link';
-      throw new Error(errorMsg);
-    }
-
+    if (!response.ok || !data.success) throw new Error(data.message || data.error || 'Failed to start subscription');
     return data as CreatePaymentLinkResponse;
   }
 
-  /**
-   * Retrieves verified subscription status for a shop from our authoritative server API.
-   */
   public async getStatus(shopId: string): Promise<SubscriptionStatusResponse> {
     const token = await this.getAuthToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
+    if (!token) throw new Error('Authentication required');
     const response = await fetch(`/api/subscriptions/status?shopId=${encodeURIComponent(shopId)}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
-
     const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message || data.error || 'Failed to fetch subscription status');
-    }
-
+    if (!response.ok) throw new Error(data.message || data.error || 'Failed to fetch subscription status');
     return data as SubscriptionStatusResponse;
   }
 
-  /**
-   * Fallback verification helper when webhook might have experienced latency.
-   */
-  public async verifyFallback(shopId: string, linkCode?: string): Promise<{ verified: boolean; plan?: string }> {
+  public async verifyFallback(shopId: string, linkCode?: string): Promise<{ verified: boolean; plan?: string; reason?: string }> {
     const token = await this.getAuthToken();
-    if (!token) {
-      throw new Error('Authentication required');
-    }
-
+    if (!token) throw new Error('Authentication required');
     const response = await fetch('/api/subscriptions/verify-fallback', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ shopId, linkCode })
     });
-
     return await response.json();
   }
 }
