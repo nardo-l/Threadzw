@@ -1,11 +1,14 @@
 {
-  "name": "Zimbabwe ThreadZW",
+  "name": "ThreadZW",
   "short_name": "ThreadZW",
-  "description": "Zimbabwe's Fashion Marketplace — Zimbabwe ThreadZW",
-  "start_url": "/",
+  "description": "Zimbabwe's fashion marketplace — discover and manage local fashion shops.",
+  "id": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#F8F9FA",
+  "theme_color": "#CCFF00",
   "orientation": "portrait",
   "icons": [
     {
@@ -21,17 +24,7 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": [
-    "shopping",
-    "lifestyle"
-  ],
+  "categories": ["shopping", "lifestyle"],
   "lang": "en",
-  "dir": "ltr",
-  "keywords": [
-    "Zimbabwe ThreadZW",
-    "Zimbabwe fashion",
-    "threadzw",
-    "Zimbabwe clothing",
-    "Zimbabwe marketplace"
-  ]
+  "dir": "ltr"
 }
