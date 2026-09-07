@@ -32,9 +32,9 @@ export class SubscriptionController {
 
       return res.status(200).json(result);
     } catch (err: any) {
-      console.error('[SubscriptionController] createPaymentLink error:', err.message);
+      const message = String(err?.message || '');
+      console.error('[SubscriptionController] createPaymentLink error:', message);
 
-      const message = err.message || '';
       if (message.includes('ALREADY_SUBSCRIBED')) {
         return res.status(400).json({ success: false, error: 'ALREADY_SUBSCRIBED', message: 'This shop already has an active subscription' });
       }
@@ -44,8 +44,26 @@ export class SubscriptionController {
       if (message.includes('INVALID_SHOP')) {
         return res.status(404).json({ success: false, error: 'INVALID_SHOP', message: 'Shop not found' });
       }
+      if (message.includes('PAYMENT_CONFIGURATION_MISSING')) {
+        return res.status(503).json({
+          success: false,
+          error: 'PAYMENT_CONFIGURATION_MISSING',
+          message: 'Premium checkout is temporarily unavailable. The payment provider is not configured on the server.'
+        });
+      }
       if (message.includes('PAYMENT_PROVIDER_UNAVAILABLE')) {
-        return res.status(503).json({ success: false, error: 'PAYMENT_PROVIDER_UNAVAILABLE', message: 'NardoPay is currently unavailable. Please try again shortly.' });
+        return res.status(503).json({
+          success: false,
+          error: 'PAYMENT_PROVIDER_UNAVAILABLE',
+          message: 'NardoPay is currently unavailable. Please try again shortly.'
+        });
+      }
+      if (message.includes('PAYMENT_PROVIDER_ERROR')) {
+        return res.status(502).json({
+          success: false,
+          error: 'PAYMENT_PROVIDER_ERROR',
+          message: message.replace(/^PAYMENT_PROVIDER_ERROR:\s*/, '').slice(0, 400) || 'NardoPay rejected the checkout request.'
+        });
       }
 
       return res.status(500).json({
