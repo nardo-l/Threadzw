@@ -1,5 +1,12 @@
 {
   "version": 2,
+  "redirects": [
+    {
+      "source": "/payment/success",
+      "destination": "/subscription/success",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/cron/merchant-notifications",
