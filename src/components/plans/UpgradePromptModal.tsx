@@ -40,7 +40,6 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
   const category = propCategory || resolveSellerCategory(shop?.page_type);
   const proPlan = getPlanForCategory(category, 'premium');
 
-  // Title and message resolution
   let title = customTitle;
   let message = customMessage;
   let icon = <Sparkles className="w-6 h-6 text-black" />;
@@ -81,7 +80,9 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
 
   const handleUpgrade = () => {
     onClose();
-    navigate('/paywall');
+    // /subscription is the active authenticated payment entry point.
+    // /paywall is currently caught by the public storefront fallback in App.tsx.
+    navigate('/subscription');
   };
 
   const isVehicle = category === 'vehicles';
@@ -95,7 +96,6 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
         role="dialog"
         aria-modal="true"
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
@@ -104,7 +104,6 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
           <X size={20} />
         </button>
 
-        {/* Header with Icon */}
         <div className="flex items-start gap-4 pr-8">
           <div className="w-12 h-12 rounded-2xl bg-[#CCFF00] flex items-center justify-center shrink-0 shadow-xs">
             {icon}
@@ -119,12 +118,10 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
           </div>
         </div>
 
-        {/* Message */}
         <p className="text-xs sm:text-sm text-zinc-600 font-normal leading-relaxed">
           {message}
         </p>
 
-        {/* Plan Value Card */}
         <div className="bg-zinc-50 border border-zinc-200/90 rounded-2xl p-4.5 space-y-3">
           <div className="flex items-baseline justify-between border-b border-zinc-200/70 pb-3">
             <div>
@@ -139,7 +136,6 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
             </div>
           </div>
 
-          {/* Benefits Checklist */}
           <div className="space-y-2 pt-1">
             <div className="flex items-center gap-2.5 text-xs text-zinc-800 font-medium">
               <div className="w-4 h-4 rounded-full bg-[#CCFF00] text-black flex items-center justify-center shrink-0">
@@ -168,7 +164,6 @@ export const UpgradePromptModal: React.FC<UpgradePromptModalProps> = ({
           </div>
         </div>
 
-        {/* CTA Actions */}
         <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
           <button
             onClick={handleUpgrade}
