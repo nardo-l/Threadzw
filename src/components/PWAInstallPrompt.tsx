@@ -6,7 +6,8 @@ type InstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 };
 
-const DISMISS_KEY = 'threadzw_pwa_install_dismissed_at';
+// Version the key so a previous dismissal during testing does not permanently hide the new prompt.
+const DISMISS_KEY = 'threadzw_pwa_install_dismissed_at_v2';
 const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 function isStandalone() {
@@ -37,15 +38,18 @@ export const PWAInstallPrompt: React.FC = () => {
   const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
   const [ios, setIos] = useState(false);
+  const [installable, setInstallable] = useState(false);
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as InstallPromptEvent);
+      setInstallable(true);
     };
 
     const onAppInstalled = () => {
       setInstallEvent(null);
+      setInstallable(false);
       setShow(false);
       localStorage.removeItem(DISMISS_KEY);
     };
@@ -69,9 +73,10 @@ export const PWAInstallPrompt: React.FC = () => {
         return;
       }
 
-      if (installEvent || onIOS) {
-        setShow(true);
-      }
+      // Show on the seller dashboard even when Chromium has not exposed
+      // beforeinstallprompt yet. The button then gives browser-specific
+      // installation guidance instead of silently doing nothing.
+      setShow(true);
     };
 
     checkVisibility();
@@ -82,9 +87,9 @@ export const PWAInstallPrompt: React.FC = () => {
       window.removeEventListener('appinstalled', onAppInstalled);
       window.clearInterval(interval);
     };
-  }, [installEvent]);
+  }, []);
 
-  if (!show || (!installEvent && !ios)) return null;
+  if (!show) return null;
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
@@ -96,6 +101,7 @@ export const PWAInstallPrompt: React.FC = () => {
     await installEvent.prompt();
     const choice = await installEvent.userChoice;
     setInstallEvent(null);
+    setInstallable(false);
     setShow(false);
     if (choice.outcome === 'dismissed') {
       localStorage.setItem(DISMISS_KEY, String(Date.now()));
@@ -128,7 +134,7 @@ export const PWAInstallPrompt: React.FC = () => {
             <p className="font-semibold text-zinc-900">On iPhone or iPad</p>
             <p className="mt-1 flex items-center gap-1.5">Tap <Share size={14} /> <strong>Share</strong>, then choose <strong>Add to Home Screen</strong> <PlusSquare size={14} />.</p>
           </div>
-        ) : (
+        ) : installable && installEvent ? (
           <button
             onClick={install}
             className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#CCFF00] text-sm font-bold text-black transition hover:opacity-90 active:scale-[0.99]"
@@ -136,6 +142,11 @@ export const PWAInstallPrompt: React.FC = () => {
             <Download size={17} />
             Install ThreadZW
           </button>
+        ) : (
+          <div className="mt-4 rounded-2xl bg-zinc-50 p-4 text-xs leading-5 text-zinc-600">
+            <p className="font-semibold text-zinc-900">Install from your browser</p>
+            <p className="mt-1">Open your browser menu (⋮) and choose <strong>Install ThreadZW</strong> or <strong>Add to Home screen</strong>. If you see an install icon in the address bar, you can use that instead.</p>
+          </div>
         )}
 
         <button
