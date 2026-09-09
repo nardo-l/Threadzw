@@ -6,6 +6,17 @@ import { isValidCronSecret } from '../lib/cronAuth.js';
 
 const router = Router();
 
+// The public VAPID key is safe to expose to browsers. The private key is
+// never returned by this endpoint and remains server-side only.
+router.get('/vapid-public-key', (_req, res) => {
+  const publicKey = process.env.VAPID_PUBLIC_KEY;
+  if (!publicKey) {
+    return res.status(503).json({ error: 'Push notifications are not configured.' });
+  }
+
+  return res.json({ publicKey });
+});
+
 router.post('/send', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { payload } = req.body || {};
