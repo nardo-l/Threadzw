@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowRight, CheckCircle2, Shield, Sparkles, AlertCircle, Users, MessageCircle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Shield, Sparkles } from 'lucide-react';
 import { Shop } from '../../types';
 import { resolveSellerCategory } from '../../config/sellerCategories';
-import { getEntitlements, isPro } from '../../config/plans';
+import { getEntitlements, isPro, getProductLimit } from '../../config/plans';
 import { UpgradePromptModal } from './UpgradePromptModal';
 
 interface DashboardPlanCardProps {
@@ -13,39 +13,7 @@ interface DashboardPlanCardProps {
   lifetimeInterestEvents?: number;
 }
 
-const UsageMeter: React.FC<{
-  label: string;
-  value: number;
-  limit: number;
-  icon: React.ReactNode;
-  helper: string;
-}> = ({ label, value, limit, icon, helper }) => {
-  const percentage = Math.min(100, (value / limit) * 100);
-  const reached = value >= limit;
-  return (
-    <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3 space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="w-7 h-7 rounded-lg bg-white border border-zinc-200 text-zinc-700 flex items-center justify-center shrink-0">{icon}</span>
-          <span className="text-xs font-bold text-zinc-800 truncate">{label}</span>
-        </div>
-        <span className={`text-xs font-black tabular-nums ${reached ? 'text-amber-700' : 'text-zinc-900'}`}>{value} / {limit}</span>
-      </div>
-      <div className="h-2 rounded-full bg-zinc-200 overflow-hidden" aria-label={`${label}: ${value} of ${limit}`}>
-        <div className={`h-full rounded-full transition-all duration-500 ${reached ? 'bg-amber-500' : 'bg-[#CCFF00]'}`} style={{ width: `${Math.max(3, percentage)}%` }} />
-      </div>
-      <p className="text-[10px] leading-relaxed text-zinc-500">{helper}</p>
-    </div>
-  );
-};
-
-export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
-  shop,
-  productsCount,
-  liveProductsCount,
-  lifetimeUniqueVisitors,
-  lifetimeInterestEvents
-}) => {
+export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, productsCount, liveProductsCount }) => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   if (!shop) return null;
 
@@ -54,12 +22,20 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
   const entitlements = getEntitlements(shop, { products: liveProductsCount, vehicles: liveProductsCount });
   const isVehicle = category === 'vehicles';
   const isClothing = category === 'clothing';
+  const productLimit = getProductLimit(shop);
+  const paymentVerificationStatus = String((shop as any)?.payment_verification_status || '').toLowerCase();
+  const awaitingPaymentVerification = isClothing && !pro && paymentVerificationStatus === 'pending';
+  const clothingLimit = productLimit ?? 3;
 
   const planTitle = isVehicle
     ? (pro ? 'Vehicle Premium' : 'Vehicle Free')
     : isClothing
       ? (pro ? 'Clothing Premium' : 'Clothing Free')
       : 'General Free';
+
+  const allowanceText = awaitingPaymentVerification
+    ? `${productsCount} / 9 products`
+    : `${productsCount} / ${clothingLimit} products`;
 
   return (
     <>
@@ -77,7 +53,7 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
                 </span>
               </div>
               <h3 className="text-sm font-bold text-zinc-900 mt-0.5">
-                {isClothing && !pro ? `${productsCount} / 9 products` : isClothing ? `${productsCount} products · unlimited` : isVehicle ? `${liveProductsCount} active vehicles` : `${productsCount} active catalog items`}
+                {isClothing && !pro ? allowanceText : isClothing ? `${productsCount} products · unlimited` : isVehicle ? `${liveProductsCount} active vehicles` : `${productsCount} active catalog items`}
               </h3>
             </div>
           </div>
@@ -102,18 +78,22 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({
           <div className="space-y-2.5 pt-1">
             <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider">
               <span>Product allowance</span>
-              <span>{Math.min(productsCount, 9)} / 9</span>
+              <span>{Math.min(productsCount, clothingLimit)} / {clothingLimit}</span>
             </div>
             <div className="h-2 rounded-full bg-zinc-100 overflow-hidden">
-              <div className="h-full rounded-full bg-[#CCFF00] transition-all duration-500" style={{ width: `${Math.min(100, (productsCount / 9) * 100)}%` }} />
+              <div className="h-full rounded-full bg-[#CCFF00] transition-all duration-500" style={{ width: `${Math.min(100, (productsCount / clothingLimit) * 100)}%` }} />
             </div>
-            <p className="text-[11px] text-zinc-500">Free includes up to 9 active products. Customer visits and interests are not capped.</p>
+            <p className="text-[11px] text-zinc-500">
+              {awaitingPaymentVerification
+                ? 'Payment submitted. You can use up to 9 active products while we verify your payment.'
+                : 'Free includes up to 3 active products. Upgrade to Pro for unlimited products.'}
+            </p>
           </div>
         )}
 
         {isClothing && pro && (
           <div className="rounded-xl border border-emerald-200/80 bg-emerald-50 p-3 text-xs text-emerald-800 font-semibold">
-            Premium keeps WhatsApp enquiries, directions and storefront analytics open beyond the Free lifetime allowance.
+            Premium gives you unlimited products plus premium storefront and analytics features.
           </div>
         )}
 
