@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { disablePushNotifications } from './pushNotificationService';
 
 export interface NotificationPreferences {
   profile_id?: string;
@@ -70,6 +71,14 @@ export async function saveNotificationPreferences(
 ): Promise<NotificationPreferences> {
   const headers = await getAuthHeaders(true);
   if (!headers) throw new Error('Not authenticated');
+
+  // The Settings toggle is the source of truth for browser push. Turning it
+  // off must also remove the browser subscription, otherwise the server can
+  // continue attempting delivery even though the UI says push is disabled.
+  if (preferences.push_enabled === false) {
+    await disablePushNotifications();
+  }
+
   const response = await fetch('/api/notifications/preferences', {
     method: 'PUT',
     headers,
