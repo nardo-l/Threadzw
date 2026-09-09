@@ -4,10 +4,15 @@ let vapidConfigured = false;
 
 function configureVapid() {
   if (vapidConfigured) return true;
+
+  // Production stores the VAPID key pair as VAPID_PUBLIC_KEY and
+  // VAPID_PRIVATE_KEY. Keep the subject optional so those two secrets are
+  // sufficient to enable Web Push.
   const publicKey = process.env.VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT;
-  if (!publicKey || !privateKey || !subject) return false;
+  const subject = process.env.VAPID_SUBJECT || 'https://threadzw.vercel.app';
+
+  if (!publicKey || !privateKey) return false;
 
   webpush.setVapidDetails(subject, publicKey, privateKey);
   vapidConfigured = true;
@@ -26,7 +31,7 @@ export async function sendPushToProfile(
   payload: { title: string; body: string; [key: string]: any }
 ): Promise<PushDeliveryResult> {
   if (!configureVapid()) {
-    console.warn('[PushService] VAPID keys are not fully configured. Skipping push notification.');
+    console.warn('[PushService] VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY are not configured. Skipping push notification.');
     return { attempted: 0, sentCount: 0, expiredCount: 0 };
   }
 
