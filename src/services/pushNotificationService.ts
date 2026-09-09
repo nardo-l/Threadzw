@@ -15,35 +15,21 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export async function subscribeUser(registration: ServiceWorkerRegistration, vapidPublicKey?: string): Promise<PushSubscription> {
-  const publicKey = vapidPublicKey || (import.meta.env as any).NEXT_PUBLIC_VAPID_PUBLIC_KEY || import.meta.env.VITE_VAPID_PUBLIC_KEY;
+function getVapidPublicKey(vapidPublicKey?: string): string {
+  const publicKey = vapidPublicKey
+    || (import.meta.env as any).VITE_VAPID_PUBLIC_KEY
+    || (import.meta.env as any).NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+
   if (!publicKey) {
-    throw new Error('VAPID_PUBLIC_KEY (or NEXT_PUBLIC_VAPID_PUBLIC_KEY) is not configured in environment variables.');
+    throw new Error('Push notifications are not configured. Add VITE_VAPID_PUBLIC_KEY to the frontend environment.');
   }
 
-  // Ensure notification permission was already granted
-  if (Notification.permission !== 'granted') {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      throw new Error('Notification permission was not granted.');
-    }
-  }
-
-  const convertedVapidKey = urlBase64ToUint8Array(publicKey);
-  const subscription = await registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: convertedVapidKey
-  });
-
-  return subscription;
+  return publicKey;
 }
 
-export async function subscribeToPushNotifications(vapidPublicKey?: string): Promise<PushSubscription | null> {
-  // 1. Get authenticated user via Supabase Auth, then resolve profile_id from profiles table
+async function getProfileId(): Promise<string> {
   const { data: { session }, error: authError } = await supabase.auth.getSession();
-  if (authError || !session?.user) {
-    throw new Error('User is not authenticated.');
-  }
+  if (authError || !session?.user) throw new Error('User is not authenticated.');
 
   const userId = session.user.id;
   const { data: profile, error: profileError } = await supabase
@@ -52,13 +38,27 @@ export async function subscribeToPushNotifications(vapidPublicKey?: string): Pro
     .eq('id', userId)
     .maybeSingle();
 
-  if (profileError) {
-    throw new Error(`Failed to fetch profile: ${profileError.message}`);
+  if (profileError) throw new Error(`Failed to fetch profile: ${profileError.message}`);
+  return profile?.id || userId;
+}
+
+async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration> {
+  if (!('serviceWorker' in navigator)) {
+    throw new Error('Service workers are not supported by this browser.');
   }
 
-  const profileId = profile?.id || userId;
+  const existing = await navigator.serviceWorker.getRegistration('/');
+  const registration = existing || await navigator.serviceWorker.register('/sw.js');
+  await navigator.serviceWorker.ready;
+  return registration;
+}
 
-  // 2. Request browser Notification permission
+export async function subscribeUser(
+  registration: ServiceWorkerRegistration,
+  vapidPublicKey?: string
+): Promise<PushSubscription> {
+  const publicKey = getVapidPublicKey(vapidPublicKey);
+
   if (!('Notification' in window)) {
     throw new Error('This browser does not support desktop notifications.');
   }
@@ -70,26 +70,27 @@ export async function subscribeToPushNotifications(vapidPublicKey?: string): Pro
     }
   }
 
-  // 3. Register public/sw.js as the service worker
-  if (!('serviceWorker' in navigator)) {
-    throw new Error('Service workers are not supported by this browser.');
-  }
+  const existingSubscription = await registration.pushManager.getSubscription();
+  if (existingSubscription) return existingSubscription;
 
-  const registration = await navigator.serviceWorker.register('/sw.js');
-  await navigator.serviceWorker.ready;
+  return registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(publicKey)
+  });
+}
 
-  // 4. Subscribe via subscribeUser helper (requires user gesture)
+export async function subscribeToPushNotifications(vapidPublicKey?: string): Promise<PushSubscription> {
+  const profileId = await getProfileId();
+  const registration = await getServiceWorkerRegistration();
   const subscription = await subscribeUser(registration, vapidPublicKey);
-
-  // 5. Extract endpoint, keys.p256dh, keys.auth from the subscription object
   const subJson = subscription.toJSON();
   const keys = subJson.keys;
-  if (!keys || !keys.p256dh || !keys.auth) {
+
+  if (!keys?.p256dh || !keys?.auth) {
     throw new Error('Push subscription keys are missing.');
   }
 
-  // 6. Upsert into push_subscriptions using profile_id and endpoint as the conflict target
-  const { error: upsertError } = await supabase
+  const { error } = await supabase
     .from('push_subscriptions')
     .upsert({
       profile_id: profileId,
@@ -99,13 +100,44 @@ export async function subscribeToPushNotifications(vapidPublicKey?: string): Pro
       updated_at: new Date().toISOString()
     }, { onConflict: 'profile_id,endpoint' });
 
-  if (upsertError) {
-    if (upsertError.code === '42P10' || upsertError.message?.includes('no unique or exclusion constraint')) {
-      throw new Error('Missing unique constraint on (profile_id, endpoint) required for upsert.');
+  if (error) {
+    if (error.code === '42P10' || error.message?.includes('no unique or exclusion constraint')) {
+      throw new Error('Push subscription storage is missing the required unique constraint.');
     }
-    throw upsertError;
+    throw new Error(`Could not save push subscription: ${error.message}`);
   }
 
   return subscription;
 }
 
+/**
+ * Disables push for the current browser and removes its subscription from
+ * Supabase. This is intentionally best-effort for the browser unsubscribe;
+ * the database row is removed even when the browser subscription is already gone.
+ */
+export async function disablePushNotifications(): Promise<void> {
+  const profileId = await getProfileId();
+  let endpoint: string | null = null;
+
+  if ('serviceWorker' in navigator) {
+    const registration = await navigator.serviceWorker.getRegistration('/');
+    const subscription = await registration?.pushManager.getSubscription();
+    if (subscription) {
+      endpoint = subscription.endpoint;
+      await subscription.unsubscribe().catch(() => false);
+    }
+  }
+
+  let query = supabase.from('push_subscriptions').delete().eq('profile_id', profileId);
+  if (endpoint) query = query.eq('endpoint', endpoint);
+
+  const { error } = await query;
+  if (error) throw new Error(`Could not disable push notifications: ${error.message}`);
+}
+
+export async function hasActivePushSubscription(): Promise<boolean> {
+  if (!('serviceWorker' in navigator)) return false;
+  const registration = await navigator.serviceWorker.getRegistration('/');
+  const subscription = await registration?.pushManager.getSubscription();
+  return Boolean(subscription);
+}
