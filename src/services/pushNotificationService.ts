@@ -15,16 +15,22 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-function getVapidPublicKey(vapidPublicKey?: string): string {
-  const publicKey = vapidPublicKey
-    || (import.meta.env as any).VITE_VAPID_PUBLIC_KEY
-    || (import.meta.env as any).NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+async function getVapidPublicKey(vapidPublicKey?: string): Promise<string> {
+  if (vapidPublicKey) return vapidPublicKey;
 
-  if (!publicKey) {
-    throw new Error('Push notifications are not configured. Add VITE_VAPID_PUBLIC_KEY to the frontend environment.');
+  // Do not read VAPID_PRIVATE_KEY in the browser. The server exposes only
+  // the public key from the VAPID_PUBLIC_KEY environment variable.
+  const response = await fetch('/api/push/vapid-public-key');
+  if (!response.ok) {
+    throw new Error('Push notifications are not configured on the server.');
   }
 
-  return publicKey;
+  const data = await response.json();
+  if (!data?.publicKey) {
+    throw new Error('Push notifications are not configured on the server.');
+  }
+
+  return data.publicKey;
 }
 
 async function getProfileId(): Promise<string> {
@@ -57,7 +63,7 @@ export async function subscribeUser(
   registration: ServiceWorkerRegistration,
   vapidPublicKey?: string
 ): Promise<PushSubscription> {
-  const publicKey = getVapidPublicKey(vapidPublicKey);
+  const publicKey = await getVapidPublicKey(vapidPublicKey);
 
   if (!('Notification' in window)) {
     throw new Error('This browser does not support desktop notifications.');
