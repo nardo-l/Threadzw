@@ -44,7 +44,7 @@ const PrimaryButton = ({
 
 const Field = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
   <input {...props}
-    className={`w-full rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-base font-semibold text-black outline-none transition placeholder:text-zinc-400 focus:border-black focus:ring-2 focus:ring-[#C6FF00]/30 ${props.className || ''}`} />
+    className={`w-full rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold text-white outline-none transition placeholder:text-zinc-500 focus:border-[#C6FF00] focus:ring-2 focus:ring-[#C6FF00]/30 ${props.className || ''}`} />
 );
 
 export const ThreadzwOnboarding: React.FC = () => {
@@ -279,11 +279,11 @@ export const ThreadzwOnboarding: React.FC = () => {
   };
 
   return (
-    <main className="min-h-screen bg-white text-black">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-5">
+    <main className="min-h-screen bg-[#050505] text-white">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-5 bg-[#050505]">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-2xl font-black tracking-tight">THREAD<span className="text-[#C6FF00]">ZW</span></div>
+            <div className="text-2xl font-black tracking-tight text-[#C6FF00]">THREAD<span className="text-white">ZW</span></div>
             <div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">Sell more. Stress less.</div>
           </div>
           <Progress step={step} />
@@ -297,7 +297,7 @@ export const ThreadzwOnboarding: React.FC = () => {
                 <ArrowLeft size={17} /> Back
               </button>
             )}
-            {error && <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{error}</div>}
+            {error && <div className="mb-5 rounded-2xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-semibold text-red-300">{error}</div>}
 
             {step === 1 && (
               <div className="flex flex-1 flex-col">
@@ -308,9 +308,9 @@ export const ThreadzwOnboarding: React.FC = () => {
                   <p className="mt-5 max-w-xs text-sm leading-6 text-zinc-500">Give customers one place to browse your products, prices and shop details.</p>
                 </div>
                 <div className="mt-auto space-y-3 pt-10">
-                  <div className="space-y-2 rounded-2xl bg-zinc-50 p-4 text-sm font-semibold text-zinc-700"><div>“How much?”</div><div>“Do you have black?”</div><div>“Send more pictures.”</div></div>
+                  <div className="space-y-2 rounded-2xl bg-[#141414] p-4 text-sm font-semibold text-zinc-300"><div>“How much?”</div><div>“Do you have black?”</div><div>“Send more pictures.”</div></div>
                   <PrimaryButton onClick={() => go(2)}><span>SEE HOW IT WORKS</span><ArrowRight size={20} /></PrimaryButton>
-                  <button onClick={() => navigate('/login')} className="w-full py-2 text-xs font-bold text-zinc-500">Already have an account? <span className="text-black underline">Log in</span></button>
+                  <button onClick={() => navigate('/login')} className="w-full py-2 text-xs font-bold text-zinc-500">Already have an account? <span className="text-[#C6FF00] underline">Log in</span></button>
                 </div>
               </div>
             )}
@@ -324,7 +324,7 @@ export const ThreadzwOnboarding: React.FC = () => {
             {step === 3 && (
               <div className="flex flex-1 flex-col">
                 <div className="pt-6"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">YOUR CUSTOMERS</p><h1 className="mt-4 text-4xl font-black leading-tight">Browse, order, or visit your shop.</h1><p className="mt-4 text-sm leading-6 text-zinc-500">Customers can see your products and prices, order on WhatsApp, or get directions to you.</p></div>
-                <div className="mt-8 space-y-3"><div className="rounded-2xl bg-zinc-50 p-4 font-black">Browse your catalog</div><div className="rounded-2xl bg-zinc-50 p-4 font-black">Order on WhatsApp</div><div className="rounded-2xl bg-zinc-50 p-4 font-black">Visit the shop</div></div>
+                <div className="mt-8 space-y-3"><div className="rounded-2xl bg-[#141414] p-4 font-black">Browse your catalog</div><div className="rounded-2xl bg-[#141414] p-4 font-black">Order on WhatsApp</div><div className="rounded-2xl bg-[#141414] p-4 font-black">Visit the shop</div></div>
                 <div className="mt-auto pt-7"><PrimaryButton onClick={() => go(4)}><span>CREATE MY SHOP</span><ArrowRight size={20} /></PrimaryButton></div>
               </div>
             )}
@@ -343,7 +343,7 @@ export const ThreadzwOnboarding: React.FC = () => {
                 </div>
                 <div className="mt-auto pt-7">
                   <PrimaryButton disabled={loading} onClick={createAccount}><span>{loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</PrimaryButton>
-                  <button onClick={() => navigate('/login')} className="mt-4 w-full text-center text-xs font-bold text-zinc-500">Already have an account? <span className="text-black underline">Log in</span></button>
+                  <button onClick={() => navigate('/login')} className="mt-4 w-full text-center text-xs font-bold text-zinc-500">Already have an account? <span className="text-[#C6FF00] underline">Log in</span></button>
                 </div>
               </div>
             )}
@@ -354,9 +354,9 @@ export const ThreadzwOnboarding: React.FC = () => {
                 <p className="mt-3 text-sm text-zinc-500">These details appear on your storefront.</p>
                 <div className="mt-8 space-y-4">
                   <Field autoFocus value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Shop name · e.g. Drip by Leo" />
-                  <select value={city} onChange={e => setCity(e.target.value)} className="w-full rounded-2xl border border-zinc-200 bg-white px-4 py-4 text-base font-semibold outline-none focus:border-black"><option value="">Where are you based?</option>{CITIES.map(c => <option key={c}>{c}</option>)}</select>
+                  <select value={city} onChange={e => setCity(e.target.value)} className="w-full rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold outline-none focus:border-black"><option value="">Where are you based?</option>{CITIES.map(c => <option key={c}>{c}</option>)}</select>
                   <Field value={phone} onChange={e => setPhone(e.target.value)} placeholder="+263 77 123 4567" type="tel" />
-                  <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="A short description of your brand (optional)" className="w-full resize-none rounded-2xl border border-zinc-200 px-4 py-4 text-sm font-semibold outline-none placeholder:text-zinc-400 focus:border-black" />
+                  <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="A short description of your brand (optional)" className="w-full resize-none rounded-2xl border border-zinc-700 px-4 py-4 text-sm font-semibold outline-none placeholder:text-zinc-400 focus:border-black" />
                 </div>
                 <div className="mt-auto pt-7"><PrimaryButton disabled={loading} onClick={saveShop}><span>{loading ? 'SAVING...' : 'CONTINUE'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</PrimaryButton></div>
               </div>
@@ -367,8 +367,8 @@ export const ThreadzwOnboarding: React.FC = () => {
                 <div className="pt-2"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">MAKE IT YOURS</p><h1 className="mt-4 text-4xl font-black leading-tight">Choose a look that feels like your business.</h1><p className="mt-3 text-sm leading-6 text-zinc-500">Every style is built to help customers browse and buy.</p></div>
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   {[['editorial','Editorial','Big visuals and story-led shopping'],['bento','Bento','Everything at a glance'],['catalog','Catalog','Fast product browsing'],['poster','Street Poster','Bold drops and big CTAs'],['luxury','Luxury','Premium and spacious'],['social','Social Feed','Content-led shopping'],['market','Map & Market','Local discovery'],['story','Lookbook','Brand story and proof']].map(([id,title,desc]) => (
-                    <button key={id} type="button" onClick={() => setSelectedTheme(id)} className={`rounded-2xl border p-3 text-left transition ${selectedTheme === id ? 'border-black bg-black text-white ring-2 ring-[#C6FF00]' : 'border-zinc-200 bg-zinc-50 text-black'}`}>
-                      <div className={`mb-3 h-14 rounded-xl ${selectedTheme === id ? 'bg-[#C6FF00]' : 'bg-zinc-300'} ${id === 'editorial' ? 'rounded-none' : id === 'poster' ? 'rotate-2' : id === 'luxury' ? 'rounded-full' : ''}`} />
+                    <button key={id} type="button" onClick={() => setSelectedTheme(id)} className={`rounded-2xl border p-3 text-left transition ${selectedTheme === id ? 'border-black bg-black text-white ring-2 ring-[#C6FF00]' : 'border-zinc-700 bg-[#141414] text-black'}`}>
+                      <div className={`mb-3 h-14 rounded-xl ${selectedTheme === id ? 'bg-[#C6FF00]' : 'bg-zinc-700'} ${id === 'editorial' ? 'rounded-none' : id === 'poster' ? 'rotate-2' : id === 'luxury' ? 'rounded-full' : ''}`} />
                       <div className="text-sm font-black">{title}</div><div className={`mt-1 text-[10px] leading-tight ${selectedTheme === id ? 'text-zinc-300' : 'text-zinc-500'}`}>{desc}</div>
                     </button>
                   ))}
@@ -383,7 +383,7 @@ export const ThreadzwOnboarding: React.FC = () => {
                 <div className="mt-7 space-y-4">
                   <label className="block cursor-pointer">
                     {productPreview ? <img src={productPreview} alt="Product preview" className="h-52 w-full rounded-3xl object-cover" /> :
-                      <div className="flex h-52 w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-300 bg-zinc-50"><Upload size={28} /><span className="mt-2 text-xs font-black uppercase">Add product photo</span></div>}
+                      <div className="flex h-52 w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-700 bg-[#141414]"><Upload size={28} /><span className="mt-2 text-xs font-black uppercase">Add product photo</span></div>}
                     <input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectProduct} className="sr-only" />
                   </label>
                   <Field value={productName} onChange={e => setProductName(e.target.value)} placeholder="Product name" />
@@ -399,7 +399,7 @@ export const ThreadzwOnboarding: React.FC = () => {
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">You're live</p>
                 <h1 className="mt-3 text-5xl font-black leading-none">Your shop<br />is live.</h1>
                 <p className="mt-5 max-w-xs text-sm leading-6 text-zinc-500">Your first product is published and customers can start discovering your store.</p>
-                {shopLink && <button onClick={() => window.open(shopLink, '_blank')} className="mt-7 flex items-center gap-2 rounded-full border border-zinc-200 px-4 py-2 text-xs font-bold"><ExternalLink size={14} /> Preview shop</button>}
+                {shopLink && <button onClick={() => window.open(shopLink, '_blank')} className="mt-7 flex items-center gap-2 rounded-full border border-zinc-700 px-4 py-2 text-xs font-bold"><ExternalLink size={14} /> Preview shop</button>}
                 <div className="mt-auto w-full pt-8"><PrimaryButton onClick={() => go(9)}><span>KEEP GOING</span><ArrowRight size={20} /></PrimaryButton></div>
               </div>
             )}
@@ -411,7 +411,7 @@ export const ThreadzwOnboarding: React.FC = () => {
                   <h1 className="text-4xl font-black leading-tight">Share your shop.<br />Start selling.</h1>
                   <p className="mt-3 text-sm leading-6 text-zinc-500">Send your link to Instagram, WhatsApp, TikTok or anyone who needs your drip.</p>
                 </div>
-                <div className="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                <div className="mt-8 rounded-2xl border border-zinc-700 bg-[#141414] p-4">
                   <p className="mb-2 text-[10px] font-black uppercase tracking-wider text-zinc-400">Your shop link</p>
                   <p className="truncate text-sm font-bold">{shopLink || 'Your shop link is ready'}</p>
                 </div>
