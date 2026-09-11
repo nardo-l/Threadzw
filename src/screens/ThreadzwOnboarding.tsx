@@ -356,7 +356,7 @@ export const ThreadzwOnboarding: React.FC = () => {
                   <Field autoFocus value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Shop name · e.g. Drip by Leo" />
                   <select value={city} onChange={e => setCity(e.target.value)} className="w-full rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold outline-none focus:border-black"><option value="">Where are you based?</option>{CITIES.map(c => <option key={c}>{c}</option>)}</select>
                   <Field value={phone} onChange={e => setPhone(e.target.value)} placeholder="+263 77 123 4567" type="tel" />
-                  <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="A short description of your brand (optional)" className="w-full resize-none rounded-2xl border border-zinc-700 px-4 py-4 text-sm font-semibold outline-none placeholder:text-zinc-400 focus:border-black" />
+                  <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="A short description of your brand (optional)" className="w-full resize-none rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-sm font-semibold text-white outline-none placeholder:text-zinc-500 focus:border-[#C6FF00]" />
                 </div>
                 <div className="mt-auto pt-7"><PrimaryButton disabled={loading} onClick={saveShop}><span>{loading ? 'SAVING...' : 'CONTINUE'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</PrimaryButton></div>
               </div>
@@ -367,7 +367,7 @@ export const ThreadzwOnboarding: React.FC = () => {
                 <div className="pt-2"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">MAKE IT YOURS</p><h1 className="mt-4 text-4xl font-black leading-tight">Choose a look that feels like your business.</h1><p className="mt-3 text-sm leading-6 text-zinc-500">Every style is built to help customers browse and buy.</p></div>
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   {[['editorial','Editorial','Big visuals and story-led shopping'],['bento','Bento','Everything at a glance'],['catalog','Catalog','Fast product browsing'],['poster','Street Poster','Bold drops and big CTAs'],['luxury','Luxury','Premium and spacious'],['social','Social Feed','Content-led shopping'],['market','Map & Market','Local discovery'],['story','Lookbook','Brand story and proof']].map(([id,title,desc]) => (
-                    <button key={id} type="button" onClick={() => setSelectedTheme(id)} className={`rounded-2xl border p-3 text-left transition ${selectedTheme === id ? 'border-black bg-black text-white ring-2 ring-[#C6FF00]' : 'border-zinc-700 bg-[#141414] text-black'}`}>
+                    <button key={id} type="button" onClick={() => setSelectedTheme(id)} className={`rounded-2xl border p-3 text-left transition ${selectedTheme === id ? 'border-[#C6FF00] bg-[#141414] text-white ring-2 ring-[#C6FF00]' : 'border-zinc-700 bg-[#141414] text-white'}`}>
                       <div className={`mb-3 h-14 rounded-xl ${selectedTheme === id ? 'bg-[#C6FF00]' : 'bg-zinc-700'} ${id === 'editorial' ? 'rounded-none' : id === 'poster' ? 'rotate-2' : id === 'luxury' ? 'rounded-full' : ''}`} />
                       <div className="text-sm font-black">{title}</div><div className={`mt-1 text-[10px] leading-tight ${selectedTheme === id ? 'text-zinc-300' : 'text-zinc-500'}`}>{desc}</div>
                     </button>
