@@ -71,6 +71,7 @@ export const ThreadzwOnboarding: React.FC = () => {
   const [productPreview, setProductPreview] = useState('');
   const [shopId, setShopId] = useState<string | null>(shop?.id || null);
   const [shopLink, setShopLink] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('threadzw_selected_theme') || 'editorial');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -174,6 +175,22 @@ export const ThreadzwOnboarding: React.FC = () => {
       go(6);
     } catch (e: any) {
       setError(e?.message || 'Could not save your shop.');
+    } finally { setLoading(false); }
+  };
+
+  const saveTheme = async () => {
+    const id = shopId || shop?.id;
+    if (!id) return setError('Save your shop details before choosing a theme.');
+    setLoading(true); setError('');
+    try {
+      const { error: updateError } = await supabase.from('shops').update({ template_id: selectedTheme }).eq('id', id);
+      if (updateError) throw updateError;
+      localStorage.setItem('threadzw_selected_theme', selectedTheme);
+      await refreshShop();
+      toast.success('Storefront style selected');
+      go(7);
+    } catch (e: any) {
+      setError(e?.message || 'Could not save your storefront style.');
     } finally { setLoading(false); }
   };
 
@@ -286,54 +303,31 @@ export const ThreadzwOnboarding: React.FC = () => {
               <div className="flex flex-1 flex-col">
                 <div className="pt-6">
                   <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C6FF00]"><Store size={30} /></div>
-                  <h1 className="text-[3.35rem] font-black leading-[0.96] tracking-tight">Let's set up<br />your shop.</h1>
-                  <p className="mt-5 text-2xl font-black leading-tight text-[#9BEA00]">We'll ask you<br />a few questions.</p>
-                  <p className="mt-5 max-w-xs text-sm leading-6 text-zinc-500">It only takes about a minute. Your answers help us personalize your ThreadZW store.</p>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">THE PROBLEM</p>
+                  <h1 className="mt-4 text-[3.15rem] font-black leading-[0.96] tracking-tight">Stop sending<br />product photos<br />one by one.</h1>
+                  <p className="mt-5 max-w-xs text-sm leading-6 text-zinc-500">Give customers one place to browse your products, prices and shop details.</p>
                 </div>
                 <div className="mt-auto space-y-3 pt-10">
-                  <PrimaryButton onClick={() => go(2)}><span>LET'S GET STARTED</span><ArrowRight size={20} /></PrimaryButton>
+                  <div className="space-y-2 rounded-2xl bg-zinc-50 p-4 text-sm font-semibold text-zinc-700"><div>“How much?”</div><div>“Do you have black?”</div><div>“Send more pictures.”</div></div>
+                  <PrimaryButton onClick={() => go(2)}><span>SEE HOW IT WORKS</span><ArrowRight size={20} /></PrimaryButton>
                   <button onClick={() => navigate('/login')} className="w-full py-2 text-xs font-bold text-zinc-500">Already have an account? <span className="text-black underline">Log in</span></button>
                 </div>
               </div>
             )}
-
             {step === 2 && (
               <div className="flex flex-1 flex-col">
-                <div className="flex flex-col items-center pt-6 text-center">
-                  <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-full border-4 border-[#C6FF00] bg-[#C6FF00]/20"><User size={28} /></div>
-                  <h1 className="text-4xl font-black leading-tight">What is your name?</h1>
-                  <p className="mt-3 text-sm text-zinc-500">What should we call you?</p>
-                </div>
-                <div className="mt-10">
-                  <Field autoFocus value={name} onChange={e => setName(e.target.value)} placeholder="Your name" />
-                  <p className="mt-3 text-xs font-medium text-zinc-400">This is how we'll address you inside ThreadZW.</p>
-                </div>
-                <div className="mt-auto pt-8">
-                  <PrimaryButton disabled={!name.trim()} onClick={() => { localStorage.setItem('threadzw_onboarding_name', name.trim()); go(3); }}><span>CONTINUE</span><ArrowRight size={20} /></PrimaryButton>
-                </div>
+                <div className="pt-6"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">ONE LINK</p><h1 className="mt-4 text-4xl font-black leading-tight">One link for your whole business.</h1><p className="mt-4 text-sm leading-6 text-zinc-500">Add it to your TikTok, Instagram and Facebook bio—or send it when customers ask what you sell.</p></div>
+                <div className="mt-10 rounded-2xl border-2 border-[#C6FF00] bg-black p-5 text-center text-lg font-black text-[#C6FF00]">threadzw.shop/yourshop</div>
+                <div className="mt-auto pt-8"><PrimaryButton onClick={() => go(3)}><span>CONTINUE</span><ArrowRight size={20} /></PrimaryButton></div>
               </div>
             )}
-
             {step === 3 && (
               <div className="flex flex-1 flex-col">
-                <div className="flex flex-col items-center pt-4 text-center">
-                  <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-full border-4 border-[#C6FF00] bg-[#C6FF00]/20"><Share2 size={27} /></div>
-                  <h1 className="text-4xl font-black leading-tight">Where did you<br />hear about us?</h1>
-                  <p className="mt-3 text-sm text-zinc-500">Help us know what's working.</p>
-                </div>
-                <div className="mt-8 space-y-2.5">
-                  {REFERRALS.map(({ id, icon: Icon }) => (
-                    <button key={id} type="button" onClick={() => setReferral(id)}
-                      className={`flex w-full items-center justify-between rounded-2xl border px-4 py-4 text-left transition ${referral === id ? 'border-black bg-zinc-50 ring-2 ring-[#C6FF00]' : 'border-zinc-200 bg-white'}`}>
-                      <span className="flex items-center gap-3 text-sm font-semibold"><Icon size={20} />{id}</span>
-                      <span className={`h-5 w-5 rounded-full border-2 ${referral === id ? 'border-black bg-[#C6FF00]' : 'border-zinc-300'}`}>{referral === id && <span className="mx-auto mt-1 block h-2 w-2 rounded-full bg-black" />}</span>
-                    </button>
-                  ))}
-                </div>
-                <div className="mt-auto pt-7"><PrimaryButton disabled={!referral} onClick={() => { localStorage.setItem('threadzw_onboarding_referral', referral); go(4); }}><span>CONTINUE</span><ArrowRight size={20} /></PrimaryButton></div>
+                <div className="pt-6"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">YOUR CUSTOMERS</p><h1 className="mt-4 text-4xl font-black leading-tight">Browse, order, or visit your shop.</h1><p className="mt-4 text-sm leading-6 text-zinc-500">Customers can see your products and prices, order on WhatsApp, or get directions to you.</p></div>
+                <div className="mt-8 space-y-3"><div className="rounded-2xl bg-zinc-50 p-4 font-black">Browse your catalog</div><div className="rounded-2xl bg-zinc-50 p-4 font-black">Order on WhatsApp</div><div className="rounded-2xl bg-zinc-50 p-4 font-black">Visit the shop</div></div>
+                <div className="mt-auto pt-7"><PrimaryButton onClick={() => go(4)}><span>CREATE MY SHOP</span><ArrowRight size={20} /></PrimaryButton></div>
               </div>
             )}
-
             {step === 4 && (
               <div className="flex flex-1 flex-col">
                 <div className="pt-5">
@@ -370,23 +364,18 @@ export const ThreadzwOnboarding: React.FC = () => {
 
             {step === 6 && (
               <div className="flex flex-1 flex-col">
-                <h1 className="text-4xl font-black leading-tight">Make it<br />feel like you.</h1>
-                <p className="mt-3 text-sm text-zinc-500">Add your logo and a short description. You can skip the logo.</p>
-                <div className="mt-8">
-                  <label className="mx-auto block w-fit cursor-pointer">
-                    {logoPreview ? <img src={logoPreview} alt="Shop logo preview" className="h-32 w-32 rounded-full border-4 border-black object-cover" /> :
-                      <div className="flex h-32 w-32 flex-col items-center justify-center rounded-full border-2 border-dashed border-zinc-300 bg-zinc-50"><ImagePlus size={27} /><span className="mt-2 text-[10px] font-black uppercase">Add logo</span></div>}
-                    <input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectLogo} className="sr-only" />
-                  </label>
-                  <div className="mt-6 rounded-2xl bg-zinc-50 px-4 py-3 text-xs text-zinc-500"><span className="font-bold text-black">Tip:</span> A clear logo makes your storefront look more trustworthy.</div>
+                <div className="pt-2"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400">MAKE IT YOURS</p><h1 className="mt-4 text-4xl font-black leading-tight">Choose a look that feels like your business.</h1><p className="mt-3 text-sm leading-6 text-zinc-500">Every style is built to help customers browse and buy.</p></div>
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  {[['editorial','Editorial','Big visuals and story-led shopping'],['bento','Bento','Everything at a glance'],['catalog','Catalog','Fast product browsing'],['poster','Street Poster','Bold drops and big CTAs'],['luxury','Luxury','Premium and spacious'],['social','Social Feed','Content-led shopping'],['market','Map & Market','Local discovery'],['story','Lookbook','Brand story and proof']].map(([id,title,desc]) => (
+                    <button key={id} type="button" onClick={() => setSelectedTheme(id)} className={`rounded-2xl border p-3 text-left transition ${selectedTheme === id ? 'border-black bg-black text-white ring-2 ring-[#C6FF00]' : 'border-zinc-200 bg-zinc-50 text-black'}`}>
+                      <div className={`mb-3 h-14 rounded-xl ${selectedTheme === id ? 'bg-[#C6FF00]' : 'bg-zinc-300'} ${id === 'editorial' ? 'rounded-none' : id === 'poster' ? 'rotate-2' : id === 'luxury' ? 'rounded-full' : ''}`} />
+                      <div className="text-sm font-black">{title}</div><div className={`mt-1 text-[10px] leading-tight ${selectedTheme === id ? 'text-zinc-300' : 'text-zinc-500'}`}>{desc}</div>
+                    </button>
+                  ))}
                 </div>
-                <div className="mt-auto space-y-3 pt-8">
-                  <PrimaryButton disabled={loading} onClick={saveIdentity}><span>{loading ? 'SAVING...' : 'CONTINUE'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</PrimaryButton>
-                  <button onClick={() => { setLogoFile(null); saveIdentity(); }} className="w-full py-2 text-xs font-black uppercase text-zinc-400">Skip for now</button>
-                </div>
+                <div className="mt-auto pt-6"><PrimaryButton disabled={loading} onClick={saveTheme}><span>{loading ? 'SAVING STYLE...' : 'USE THIS STYLE'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</PrimaryButton></div>
               </div>
             )}
-
             {step === 7 && (
               <div className="flex flex-1 flex-col">
                 <h1 className="text-4xl font-black leading-tight">Add your<br />first product.</h1>
