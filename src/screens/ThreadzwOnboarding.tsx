@@ -1,54 +1,41 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft, ArrowRight, Bell, Check, ChevronRight, Copy, ExternalLink,
-  Instagram, Loader2, MapPin, MessageCircle, Music2, Search, Share2, Store
-} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ArrowLeft, ArrowRight, Check, ExternalLink, Image as ImageIcon, Loader2, MessageCircle, Search, ShoppingBag, Sparkles, Store, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
+import { uploadImage } from '../utils/uploadImage';
 
-const GREEN = '#C6FF00';
-const TOTAL_STEPS = 11;
+const TOTAL_STEPS = 13;
 const CITIES = ['Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 'Masvingo', 'Other'];
-
 const THEMES = [
-  { id: 'editorial', name: 'Editorial Magazine', note: 'Big visuals and story-led shopping', shape: 'rounded-none' },
-  { id: 'bento', name: 'Bento Commerce', note: 'Everything at a glance', shape: 'rounded-2xl' },
-  { id: 'catalog', name: 'Product-first Catalog', note: 'Fast product browsing', shape: 'rounded-md' },
-  { id: 'poster', name: 'Street Poster', note: 'Bold drops and big CTAs', shape: 'skew-y-2' },
-  { id: 'luxury', name: 'Luxury Boutique', note: 'Premium and spacious', shape: 'rounded-full' },
-  { id: 'social', name: 'Social Feed Shop', note: 'Content-led shopping', shape: 'rounded-xl' },
-  { id: 'market', name: 'Map & Market', note: 'Local discovery', shape: 'rounded-lg' },
-  { id: 'story', name: 'Story-led Shop', note: 'Brand story and proof', shape: 'rounded-3xl' },
+  { id: 'urban', name: 'Urban', note: 'Bold. Modern. Street.', bg: '#0b0d0c', card: '#151917', accent: '#C6FF00', text: '#fff', muted: '#9aa39d' },
+  { id: 'minimal', name: 'Minimal', note: 'Clean. Simple. Timeless.', bg: '#f7f5ef', card: '#fff', accent: '#161616', text: '#111', muted: '#77736c' },
+  { id: 'bold', name: 'Bold', note: 'Vibrant. Energetic. Fresh.', bg: '#fff7f1', card: '#fff', accent: '#ff5a00', text: '#141414', muted: '#746b65' },
+  { id: 'luxury', name: 'Luxury', note: 'Elegant. Premium. Refined.', bg: '#10100e', card: '#1b1a17', accent: '#e8b84b', text: '#f7f0df', muted: '#aaa18f' },
+  { id: 'aesthetic', name: 'Aesthetic / Minimal', note: 'Soft. Elegant. Modern.', bg: '#f1eee6', card: '#fbfaf6', accent: '#222', text: '#171717', muted: '#777268' },
+  { id: 'neon', name: 'Neon / Dark', note: 'Bold. Modern. Energetic.', bg: '#070907', card: '#111511', accent: '#a9ff00', text: '#f4f7f1', muted: '#92998e' },
+  { id: 'pastel', name: 'Pastel / Fresh', note: 'Soft. Clean. Friendly.', bg: '#fff9f9', card: '#fff', accent: '#e986a5', text: '#202020', muted: '#81767a' },
+  { id: 'dark-luxury', name: 'Dark Luxury', note: 'Premium. Stylish. Exclusive.', bg: '#090908', card: '#171613', accent: '#d9a83e', text: '#f7f0dc', muted: '#938d7e' },
+] as const;
+type ThemeId = typeof THEMES[number]['id'];
+const SAMPLE_PRODUCTS = [
+  { id: 'hoodie', name: 'Signature Hoodie', category: 'Men', price: '$25', image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=700&q=80' },
+  { id: 'sneakers', name: 'Everyday Sneakers', category: 'Men', price: '$35', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=80' },
+  { id: 'bag', name: 'Canvas Tote', category: 'Accessories', price: '$15', image: 'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=700&q=80' },
+  { id: 'cap', name: 'Classic Cap', category: 'Accessories', price: '$12', image: 'https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=700&q=80' },
 ];
 
-const Progress = ({ step }: { step: number }) => (
-  <div className="flex items-center gap-1" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>
-    {Array.from({ length: TOTAL_STEPS }).map((_, index) => (
-      <div key={index} className={`h-1 w-4 rounded-full transition-all ${index < step ? 'bg-[#C6FF00]' : 'bg-zinc-800'}`} />
-    ))}
-  </div>
-);
+const Button = ({ children, onClick, disabled = false, secondary = false }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; secondary?: boolean }) => <button type="button" onClick={onClick} disabled={disabled} className={`flex w-full items-center justify-between rounded-2xl px-5 py-4 text-sm font-black tracking-wide transition disabled:opacity-40 ${secondary ? 'border border-zinc-700 bg-[#141414] text-white' : 'bg-[#C6FF00] text-black'}`}>{children}</button>;
+const Field = (props: React.InputHTMLAttributes<HTMLInputElement>) => <input {...props} className={`w-full rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold text-white outline-none placeholder:text-zinc-500 focus:border-[#C6FF00] ${props.className || ''}`} />;
 
-const Button = ({ children, onClick, disabled = false, secondary = false }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; secondary?: boolean }) => (
-  <button type="button" onClick={onClick} disabled={disabled} className={`flex w-full items-center justify-between rounded-2xl px-5 py-4 text-sm font-black tracking-wide transition active:scale-[0.99] disabled:opacity-40 ${secondary ? 'border border-zinc-700 bg-[#141414] text-white' : 'bg-[#C6FF00] text-black'}`}>
-    {children}
-  </button>
-);
-
-const Field = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input {...props} className={`w-full rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold text-white outline-none placeholder:text-zinc-500 focus:border-[#C6FF00] ${props.className || ''}`} />
-);
+const MiniThemePreview = ({ theme, shopName, logoUrl, bannerUrl, selected, onSelect }: { theme: typeof THEMES[number]; shopName: string; logoUrl: string; bannerUrl: string; selected: boolean; onSelect: () => void }) => <button type="button" onClick={onSelect} className={`overflow-hidden rounded-3xl border-2 text-left transition ${selected ? 'border-[#C6FF00] shadow-[0_0_0_2px_rgba(198,255,0,.12)]' : 'border-white/10'}`}><div style={{ background: theme.bg, color: theme.text }} className="p-3"><div className="mb-2 flex items-center gap-2 text-[10px] font-black"><div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full" style={{ background: theme.card }}>{logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" /> : <Store size={12} style={{ color: theme.accent }} />}</div><span className="truncate">{shopName || 'Your Shop'}</span><ShoppingBag size={12} className="ml-auto" /></div><div className="mb-2 h-16 overflow-hidden rounded-xl" style={{ background: theme.card }}>{bannerUrl ? <img src={bannerUrl} className="h-full w-full object-cover" /> : <div className="flex h-full items-center px-3 text-[11px] font-black" style={{ color: theme.accent }}>Your storefront</div>}</div><div className="mb-2 grid grid-cols-2 gap-1.5">{SAMPLE_PRODUCTS.map(product => <div key={product.id} className="overflow-hidden rounded-lg" style={{ background: theme.card }}><img src={product.image} className="h-20 w-full object-cover" /><div className="p-1.5"><div className="truncate text-[8px] font-black">{product.name}</div><div className="text-[8px] font-bold" style={{ color: theme.accent }}>{product.price}</div></div></div>)}</div><div style={{ background: theme.accent, color: theme.id === 'minimal' || theme.id === 'pastel' ? '#fff' : '#000' }} className="rounded-lg py-2 text-center text-[9px] font-black">Order on WhatsApp</div></div><div className="bg-[#111] px-3 py-2 text-white"><div className="text-xs font-black">{theme.name}</div><div className="text-[10px] text-zinc-400">{theme.note}</div></div></button>;
 
 export const ThreadzwOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const { shop, refreshShop } = useShopContext();
-  const [step, setStep] = useState(() => {
-    const saved = Number(localStorage.getItem('threadzw_onboarding_step') || '1');
-    return saved >= 1 && saved <= TOTAL_STEPS ? saved : 1;
-  });
+  const [step, setStep] = useState(() => { const saved = Number(localStorage.getItem('threadzw_onboarding_step') || '1'); return saved >= 1 && saved <= TOTAL_STEPS ? saved : 1; });
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('+263 ');
@@ -56,29 +43,23 @@ export const ThreadzwOnboarding: React.FC = () => {
   const [shopName, setShopName] = useState(shop?.name || '');
   const [city, setCity] = useState(shop?.city || '');
   const [bio, setBio] = useState(shop?.description || '');
-  const [selectedTheme, setSelectedTheme] = useState(() => localStorage.getItem('threadzw_selected_theme') || 'editorial');
+  const [logoUrl, setLogoUrl] = useState(shop?.logo_url || shop?.avatar_url || '');
+  const [bannerUrl, setBannerUrl] = useState(shop?.banner_url || '');
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>((localStorage.getItem('threadzw_selected_theme') as ThemeId) || 'urban');
   const [shopId, setShopId] = useState<string | null>(shop?.id || null);
-  const [shopLink, setShopLink] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => { localStorage.setItem('threadzw_onboarding_step', String(step)); }, [step]);
-  useEffect(() => {
-    if (!shop) return;
-    setShopId(shop.id);
-    if (!shopName) setShopName(shop.name || '');
-    if (!city) setCity(shop.city || '');
-    if (!bio) setBio(shop.description || '');
-    if (shop.slug) setShopLink(`${window.location.origin}/${shop.slug}`);
-  }, [shop]);
-
+  const [discovery, setDiscovery] = useState<string[]>([]);
+  const [previewCategory, setPreviewCategory] = useState('All');
+  const [previewProduct, setPreviewProduct] = useState<typeof SAMPLE_PRODUCTS[number] | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+  const theme = THEMES.find(item => item.id === selectedTheme) || THEMES[0];
   const slug = useMemo(() => shopName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), [shopName]);
+  useEffect(() => { localStorage.setItem('threadzw_onboarding_step', String(step)); }, [step]);
+  useEffect(() => { if (!shop) return; setShopId(shop.id); if (!shopName) setShopName(shop.name || ''); if (!city) setCity(shop.city || ''); if (!bio) setBio(shop.description || ''); if (!logoUrl) setLogoUrl(shop.logo_url || shop.avatar_url || ''); if (!bannerUrl) setBannerUrl(shop.banner_url || ''); if (shop.template_id && THEMES.some(item => item.id === shop.template_id)) setSelectedTheme(shop.template_id as ThemeId); }, [shop]);
   const go = (next: number) => { setError(''); setStep(Math.max(1, Math.min(TOTAL_STEPS, next))); };
-  const getUser = async () => {
-    const { data, error: authError } = await supabase.auth.getUser();
-    if (authError || !data.user) throw new Error('Please log in again to continue.');
-    return data.user;
-  };
+  const getUser = async () => { const { data, error: authError } = await supabase.auth.getUser(); if (authError || !data.user) throw new Error('Please log in again to continue.'); return data.user; };
 
   const createAccount = async () => {
     if (!email.trim() || !email.includes('@')) return setError('Enter a valid email address.');
@@ -88,103 +69,49 @@ export const ThreadzwOnboarding: React.FC = () => {
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({ email: email.trim(), password, options: { data: { full_name: name.trim() || 'Shop Owner', phone_number: phone.trim() } } });
       let user = data.user;
-      if (signUpError?.message.toLowerCase().includes('already registered')) {
-        const signedIn = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        if (signedIn.error) throw signedIn.error;
-        user = signedIn.data.user;
-      } else if (signUpError) throw signUpError;
-      else if (!data.session) {
-        const signedIn = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        if (signedIn.error) throw signedIn.error;
-        user = signedIn.data.user;
-      }
+      if (signUpError?.message.toLowerCase().includes('already registered')) { const signedIn = await supabase.auth.signInWithPassword({ email: email.trim(), password }); if (signedIn.error) throw signedIn.error; user = signedIn.data.user; }
+      else if (signUpError) throw signUpError;
+      else if (!data.session) { const signedIn = await supabase.auth.signInWithPassword({ email: email.trim(), password }); if (signedIn.error) throw signedIn.error; user = signedIn.data.user; }
       if (!user) throw new Error('Your account could not be created.');
-      localStorage.setItem('threadzw_logged_in', 'true');
-      localStorage.setItem('supabase_logged_in_user_id', user.id);
-      toast.success('Account created');
-      go(6);
-    } catch (e: any) { setError(e?.message || 'Could not create your account.'); }
-    finally { setLoading(false); }
+      localStorage.setItem('threadzw_logged_in', 'true'); localStorage.setItem('supabase_logged_in_user_id', user.id); toast.success('Account created'); go(4);
+    } catch (e: any) { setError(e?.message || 'Could not create your account.'); } finally { setLoading(false); }
   };
 
-  const saveShop = async () => {
-    if (shopName.trim().length < 2) return setError('Enter your shop name.');
-    if (!city) return setError('Choose your city or area.');
-    if (phone.replace(/\D/g, '').length < 9) return setError('Enter your WhatsApp number.');
-    setLoading(true); setError('');
-    try {
-      const user = await getUser();
-      const existing = shopId || (await supabase.from('shops').select('id').eq('owner_id', user.id).maybeSingle()).data?.id;
-      const payload = { name: shopName.trim(), slug: slug || `shop-${Date.now().toString(36)}`, category: 'Streetwear & Fashion', description: bio.trim() || `${shopName.trim()} official storefront on ThreadZW.`, whatsapp_number: phone.trim(), city, location: city, is_active: true, page_type: 'clothing', plan: 'free', premium_status: 'inactive', product_limit: 9 };
-      let id = existing;
-      if (id) { const { error: updateError } = await supabase.from('shops').update(payload).eq('id', id); if (updateError) throw updateError; }
-      else { const { data: inserted, error: insertError } = await supabase.from('shops').insert({ ...payload, owner_id: user.id }).select('id, slug').single(); if (insertError) throw insertError; id = inserted.id; }
-      setShopId(id || null); setShopLink(`${window.location.origin}/${payload.slug}`); await refreshShop(); toast.success('Shop details saved'); go(7);
-    } catch (e: any) { setError(e?.message || 'Could not save your shop.'); }
-    finally { setLoading(false); }
+  const ensureShop = async () => {
+    const user = await getUser();
+    const existing = shopId || (await supabase.from('shops').select('id').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle()).data?.id;
+    const payload = { name: shopName.trim(), slug: slug || `shop-${Date.now().toString(36)}`, category: 'Streetwear & Fashion', description: bio.trim() || `${shopName.trim()} official storefront on ThreadZW.`, whatsapp_number: phone.trim(), city, location: city, page_type: 'clothing', template_id: selectedTheme, is_active: false, plan: 'free', premium_status: 'inactive', product_limit: 9 };
+    let id = existing;
+    if (id) { const { error: updateError } = await supabase.from('shops').update(payload).eq('id', id); if (updateError) throw updateError; }
+    else { const { data: inserted, error: insertError } = await supabase.from('shops').insert({ ...payload, owner_id: user.id }).select('id').single(); if (insertError) throw insertError; id = inserted.id; }
+    setShopId(id || null); await refreshShop(); return id as string;
   };
 
-  const saveTheme = async () => {
-    const id = shopId || shop?.id;
-    if (!id) return setError('Save your shop details before choosing a theme.');
-    setLoading(true); setError('');
-    try {
-      const { error: updateError } = await supabase.from('shops').update({ template_id: selectedTheme }).eq('id', id);
-      if (updateError) throw updateError;
-      localStorage.setItem('threadzw_selected_theme', selectedTheme);
-      await refreshShop(); toast.success('Storefront style selected'); go(8);
-    } catch (e: any) { setError(e?.message || 'Could not save your storefront style.'); }
-    finally { setLoading(false); }
-  };
+  const saveContact = async () => { if (phone.replace(/\D/g, '').length < 9) return setError('Enter your WhatsApp number.'); if (!shopId) return setError('Save your shop location first.'); setLoading(true); setError(''); try { const { error } = await supabase.from('shops').update({ whatsapp_number: phone.trim() }).eq('id', shopId); if (error) throw error; await refreshShop(); go(8); } catch (e: any) { setError(e?.message || 'Could not save contact details.'); } finally { setLoading(false); } };
+  const handleImage = async (file: File, type: 'logo' | 'banner') => { if (file.size > 5 * 1024 * 1024) return setError('Image size must be less than 5MB.'); if (!shopId) return setError('Save your shop details first.'); setLoading(true); setError(''); try { const publicUrl = await uploadImage({ supabase, file, bucket: type === 'logo' ? 'shop-avatars' : 'shop-banners', folder: type === 'logo' ? 'logo' : 'banner', userId: shopId }); if (type === 'logo') setLogoUrl(publicUrl); else setBannerUrl(publicUrl); const { error } = await supabase.from('shops').update(type === 'logo' ? { logo_url: publicUrl } : { banner_url: publicUrl }).eq('id', shopId); if (error) throw error; await refreshShop(); toast.success(`${type === 'logo' ? 'Logo' : 'Banner'} added`); } catch (e: any) { setError(e?.message || `Could not upload your ${type}.`); } finally { setLoading(false); } };
+  const saveBio = async () => { if (!shopId) return setError('Save your shop details first.'); setLoading(true); setError(''); try { const { error } = await supabase.from('shops').update({ description: bio.trim() }).eq('id', shopId); if (error) throw error; await refreshShop(); go(9); } catch (e: any) { setError(e?.message || 'Could not save your shop description.'); } finally { setLoading(false); } };
+  const saveTheme = async () => { if (!shopId) return setError('Save your shop details first.'); setLoading(true); setError(''); try { const { error } = await supabase.from('shops').update({ template_id: selectedTheme, is_active: false }).eq('id', shopId); if (error) throw error; localStorage.setItem('threadzw_selected_theme', selectedTheme); await refreshShop(); go(12); } catch (e: any) { setError(e?.message || 'Could not save your theme.'); } finally { setLoading(false); } };
+  const startPayment = () => { localStorage.removeItem('threadzw_onboarding_step'); localStorage.setItem('threadzw_onboarding_completed', 'true'); navigate('/subscription'); };
+  const categories = ['All', 'Men', 'Women', 'Accessories'];
+  const filteredProducts = previewCategory === 'All' ? SAMPLE_PRODUCTS : SAMPLE_PRODUCTS.filter(p => p.category === previewCategory);
+  const renderProgress = () => <div className="flex items-center gap-1.5" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>{Array.from({ length: TOTAL_STEPS }).map((_, index) => <div key={index} className={`h-1 flex-1 rounded-full ${index < step ? 'bg-[#C6FF00]' : 'bg-zinc-800'}`} />)}</div>;
 
-  const finish = () => {
-    localStorage.removeItem('threadzw_onboarding_step');
-    localStorage.setItem('threadzw_onboarding_completed', 'true');
-    navigate('/dashboard', { replace: true });
-  };
+  const renderPreview = () => <div className="fixed inset-0 z-50 bg-[#070707] text-white"><div className="mx-auto flex h-full max-w-md flex-col"><div className="border-b border-white/10 bg-black/80 px-4 py-3 backdrop-blur-xl"><div className="flex items-center justify-between"><div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#C6FF00]">STOREFRONT PREVIEW</div><div className="text-sm font-black">This is not live yet</div></div><button onClick={() => setStep(11)} className="rounded-full bg-white/10 p-2"><X size={16} /></button></div></div><div className="flex-1 overflow-y-auto" style={{ background: theme.bg, color: theme.text }}><div className="sticky top-0 z-10 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-xl" style={{ borderColor: `${theme.text}15`, background: `${theme.bg}e8` }}><div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full" style={{ background: theme.card }}>{logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" /> : <Store size={17} style={{ color: theme.accent }} />}</div><div className="min-w-0 flex-1"><div className="truncate text-sm font-black">{shopName || 'Your Shop'}</div><div className="text-[10px]" style={{ color: theme.muted }}>{city || 'Zimbabwe'} · Preview</div></div><Search size={17} /><ShoppingBag size={17} /></div>{bannerUrl ? <div className="mx-4 mt-4 h-44 overflow-hidden rounded-3xl"><img src={bannerUrl} className="h-full w-full object-cover" /></div> : <div className="mx-4 mt-4 flex h-44 items-end rounded-3xl p-5" style={{ background: theme.card }}><div><div className="text-xs font-black uppercase tracking-[0.18em]" style={{ color: theme.accent }}>Your brand</div><div className="mt-1 text-2xl font-black">{shopName || 'Your Shop'}</div><div className="mt-1 text-xs" style={{ color: theme.muted }}>{bio || 'Quality fashion. Better days.'}</div></div></div>}<div className="px-4 py-4"><div className="flex gap-2 overflow-x-auto pb-1">{categories.map(cat => <button key={cat} onClick={() => setPreviewCategory(cat)} className="whitespace-nowrap rounded-full px-4 py-2 text-[10px] font-black" style={{ background: previewCategory === cat ? theme.accent : theme.card, color: previewCategory === cat ? '#000' : theme.text }}>{cat}</button>)}</div></div><div className="grid grid-cols-2 gap-3 px-4 pb-24">{filteredProducts.map(product => <button key={product.id} onClick={() => setPreviewProduct(product)} className="overflow-hidden rounded-2xl text-left" style={{ background: theme.card }}><img src={product.image} className="aspect-square w-full object-cover" /><div className="p-3"><div className="truncate text-xs font-black">{product.name}</div><div className="mt-1 text-xs font-black" style={{ color: theme.accent }}>{product.price}</div><div className="mt-1 text-[9px]" style={{ color: theme.muted }}>Tap to view</div></div></button>)}</div><div className="fixed bottom-20 left-1/2 z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2"><button onClick={() => toast.info('Preview only — customer orders are disabled until your shop is live.')} className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-xs font-black" style={{ background: theme.accent, color: '#000' }}><MessageCircle size={17} /> Order on WhatsApp</button></div>{previewProduct && <div className="fixed inset-0 z-30 flex items-end bg-black/70 p-4" onClick={() => setPreviewProduct(null)}><div className="max-h-[85vh] w-full overflow-hidden rounded-3xl" style={{ background: theme.bg, color: theme.text }} onClick={e => e.stopPropagation()}><img src={previewProduct.image} className="h-56 w-full object-cover" /><div className="p-5"><div className="text-xl font-black">{previewProduct.name}</div><div className="mt-1 text-lg font-black" style={{ color: theme.accent }}>{previewProduct.price}</div><p className="mt-3 text-sm" style={{ color: theme.muted }}>Sample product for your preview. Your real products will replace these when you add them from the dashboard.</p><button onClick={() => toast.info('Sample products cannot be ordered. Add your own products after setup.')} className="mt-5 w-full rounded-2xl py-4 text-xs font-black" style={{ background: theme.accent, color: '#000' }}>PREVIEW ORDER FLOW</button></div></div></div>}</div><div className="border-t border-white/10 bg-black p-3"><button onClick={() => setStep(13)} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C6FF00] py-4 text-xs font-black text-black"><Sparkles size={16} /> MAKE MY SHOP LIVE — SUBSCRIBE</button></div></div></div>;
 
-  const renderHeader = () => (
-    <header className="flex items-start justify-between gap-4">
-      <div><div className="text-2xl font-black tracking-tight text-[#C6FF00]">THREAD<span className="text-white">ZW</span></div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Your shop. One link.</div></div>
-      <Progress step={step} />
-    </header>
-  );
+  return <main className="min-h-screen bg-[#050505] text-white"><div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-[#050505] px-6 py-5"><header className="flex items-start justify-between gap-4"><div><div className="text-2xl font-black tracking-tight text-[#C6FF00]">THREAD<span className="text-white">ZW</span></div><div className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Build it. Preview it. Launch it.</div></div>{renderProgress()}</header><AnimatePresence mode="wait"><motion.section key={step} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: 0.18 }} className="flex flex-1 flex-col pt-10">{step > 1 && <button onClick={() => go(step - 1)} className="mb-6 flex w-fit items-center gap-2 text-sm font-bold text-zinc-500"><ArrowLeft size={17} /> Back</button>}{error && <div className="mb-5 rounded-2xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-semibold text-red-300">{error}</div>}
 
-  return (
-    <main className="min-h-screen bg-[#050505] text-white">
-      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-[#050505] px-6 py-5">
-        {renderHeader()}
-        <AnimatePresence mode="wait">
-          <motion.section key={step} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: 0.18 }} className="flex flex-1 flex-col pt-10">
-            {step > 1 && <button onClick={() => go(step - 1)} className="mb-6 flex w-fit items-center gap-2 text-sm font-bold text-zinc-500"><ArrowLeft size={17} /> Back</button>}
-            {error && <div className="mb-5 rounded-2xl border border-red-900 bg-red-950/50 px-4 py-3 text-sm font-semibold text-red-300">{error}</div>}
-
-            {step === 1 && <div className="flex flex-1 flex-col"><div className="pt-3"><div className="mb-7 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#C6FF00] text-black"><MessageCircle size={27} /><span className="sr-only">Problem</span></div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">PHASE 1: THE PROBLEM</p><h1 className="mt-4 text-[3.1rem] font-black leading-[0.96] tracking-tight">Stop sending product photos one by one.</h1><p className="mt-5 text-sm leading-6 text-zinc-400">Give customers one place to browse your products, prices and shop details.</p></div><div className="mt-auto space-y-3 pt-8"><div className="space-y-2 rounded-2xl bg-[#141414] p-4 text-sm font-semibold text-zinc-300"><div>“How much?”</div><div>“Do you have black?”</div><div>“Send more pictures.”</div></div><Button onClick={() => go(2)}><span>SEE HOW IT WORKS</span><ArrowRight size={20} /></Button></div></div>}
-
-            {step === 2 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">PHASE 2: ONE LINK</p><h1 className="mt-4 text-4xl font-black leading-tight">One link for your whole business.</h1><p className="mt-4 text-sm leading-6 text-zinc-400">Add it to your TikTok, Instagram and Facebook bio—or send it when customers ask what you sell.</p></div><div className="mt-10 space-y-3"><div className="grid grid-cols-3 gap-2"><div className="rounded-xl border border-zinc-700 bg-[#141414] p-3 text-center"><Music2 className="mx-auto text-white" size={22} /><span className="mt-2 block text-[10px] font-bold">TikTok</span></div><div className="rounded-xl border border-zinc-700 bg-[#141414] p-3 text-center"><Instagram className="mx-auto text-white" size={22} /><span className="mt-2 block text-[10px] font-bold">Instagram</span></div><div className="rounded-xl border border-zinc-700 bg-[#141414] p-3 text-center"><Share2 className="mx-auto text-white" size={22} /><span className="mt-2 block text-[10px] font-bold">Facebook</span></div></div><div className="rounded-2xl border-2 border-[#C6FF00] bg-[#141414] p-5 text-center text-lg font-black text-[#C6FF00]">threadzw.shop/yourshop</div></div><div className="mt-auto pt-8"><Button onClick={() => go(3)}><span>CONTINUE</span><ArrowRight size={20} /></Button></div></div>}
-
-            {step === 3 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">PHASE 3: YOUR STORE</p><h1 className="mt-4 text-4xl font-black leading-tight">Customers see your products before they ask.</h1><p className="mt-4 text-sm leading-6 text-zinc-400">They can browse your catalogue, check prices, view details and choose what they want.</p></div><div className="mt-8 rounded-2xl bg-[#141414] p-4"><div className="mb-4 flex items-center gap-3"><div className="h-9 w-9 rounded-full bg-[#C6FF00]" /><div><div className="font-black">Your storefront</div><div className="text-xs text-zinc-500">Products, prices and details</div></div><Search className="ml-auto text-zinc-500" size={18} /></div><div className="grid grid-cols-2 gap-2"><div className="h-24 rounded-xl bg-zinc-800" /><div className="h-24 rounded-xl bg-zinc-700" /><div className="h-24 rounded-xl bg-zinc-700" /><div className="h-24 rounded-xl bg-zinc-800" /></div><div className="mt-4 rounded-xl bg-[#C6FF00] py-3 text-center text-sm font-black text-black">BROWSE CATALOG →</div></div><div className="mt-auto pt-7"><Button onClick={() => go(4)}><span>CONTINUE</span><ArrowRight size={20} /></Button></div></div>}
-
-            {step === 4 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">PHASE 4: HOW TO BUY</p><h1 className="mt-4 text-4xl font-black leading-tight">Customers choose how to buy.</h1><p className="mt-4 text-sm leading-6 text-zinc-400">They can order directly on WhatsApp or get directions to visit your shop.</p></div><div className="mt-8 space-y-3"><div className="rounded-2xl bg-[#141414] p-5"><MessageCircle className="mb-3 text-[#C6FF00]" size={25} /><div className="font-black">Order on WhatsApp</div><div className="mt-1 text-xs text-zinc-500">Chat, ask questions and place the order.</div></div><div className="rounded-2xl bg-[#141414] p-5"><MapPin className="mb-3 text-[#C6FF00]" size={25} /><div className="font-black">Visit the shop</div><div className="mt-1 text-xs text-zinc-500">Show your location and opening hours.</div></div></div><div className="mt-auto pt-7"><Button onClick={() => go(5)}><span>CREATE MY SHOP</span><ArrowRight size={20} /></Button></div></div>}
-
-            {step === 5 && <div className="flex flex-1 flex-col"><div className="pt-3"><div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#C6FF00] text-black"><Store size={27} /></div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">YOUR ACCOUNT</p><h1 className="mt-4 text-4xl font-black leading-tight">Save your shop and keep building.</h1><p className="mt-4 text-sm leading-6 text-zinc-400">Create an account so your storefront preview and settings are saved securely.</p></div><div className="mt-7 space-y-3"><Field autoFocus type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" /><Field type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="WhatsApp number · +263" /><Field type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password · 6+ characters" /></div><div className="mt-auto pt-7"><Button disabled={loading} onClick={createAccount}><span>{loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</Button><button onClick={() => navigate('/login')} className="mt-4 w-full text-center text-xs font-bold text-zinc-500">Already have an account? <span className="text-[#C6FF00] underline">Log in</span></button></div></div>}
-
-            {step === 6 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">YOUR BUSINESS</p><h1 className="mt-4 text-4xl font-black leading-tight">What’s your shop called?</h1><p className="mt-4 text-sm leading-6 text-zinc-400">This is the name customers will see on your ThreadZW storefront.</p></div><div className="mt-8 space-y-4"><Field autoFocus value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Shop name · e.g. Byo streetwear" /><select value={city} onChange={e => setCity(e.target.value)} className="w-full rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold text-white outline-none focus:border-[#C6FF00]"><option value="">Where are you based?</option>{CITIES.map(item => <option key={item}>{item}</option>)}</select><Field value={phone} onChange={e => setPhone(e.target.value)} placeholder="WhatsApp number · +263" /><textarea value={bio} onChange={e => setBio(e.target.value)} rows={3} placeholder="A short description of your brand (optional)" className="w-full resize-none rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-sm font-semibold text-white outline-none placeholder:text-zinc-500 focus:border-[#C6FF00]" /></div><div className="mt-auto pt-7"><Button disabled={loading} onClick={saveShop}><span>{loading ? 'SAVING...' : 'CONTINUE'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</Button></div></div>}
-
-            {step === 7 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">MAKE IT YOURS</p><h1 className="mt-4 text-4xl font-black leading-tight">Choose a look that feels like your business.</h1><p className="mt-3 text-sm leading-6 text-zinc-400">Eight different storefront designs. All built to help customers browse and buy.</p></div><div className="mt-6 grid grid-cols-2 gap-3">{THEMES.map(theme => <button key={theme.id} type="button" onClick={() => setSelectedTheme(theme.id)} className={`rounded-2xl border p-3 text-left transition ${selectedTheme === theme.id ? 'border-[#C6FF00] bg-[#141414] ring-2 ring-[#C6FF00]' : 'border-zinc-700 bg-[#141414]'}`}><div className={`mb-3 h-14 bg-zinc-700 ${theme.shape} ${selectedTheme === theme.id ? 'bg-[#C6FF00]' : ''}`} /><div className="text-sm font-black">{theme.name}</div><div className="mt-1 text-[10px] leading-tight text-zinc-500">{theme.note}</div></button>)}</div><div className="mt-auto pt-6"><Button disabled={loading} onClick={saveTheme}><span>{loading ? 'SAVING STYLE...' : 'USE THIS STYLE'}</span>{loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} />}</Button></div></div>}
-
-            {step === 8 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">YOUR PREVIEW</p><h1 className="mt-4 text-4xl font-black leading-tight">Your storefront is taking shape.</h1><p className="mt-3 text-sm leading-6 text-zinc-400">This is a private preview. Sample products show you how your shop will look.</p></div><div className="mt-7 overflow-hidden rounded-3xl border border-zinc-700 bg-white text-black"><div className="bg-[#C6FF00] py-2 text-center text-[9px] font-black uppercase tracking-widest">Powered by ThreadZW</div><div className="p-4"><div className="flex items-center gap-3"><div className="h-12 w-12 rounded-full bg-zinc-200" /><div><div className="font-black">{shopName || 'Your Shop'}</div><div className="text-xs text-zinc-500">Zimbabwe store link</div></div></div><div className="mt-4 h-28 rounded-2xl bg-zinc-200" /><div className="mt-4 text-xl font-black">Your products, all in one place.</div><div className="mt-3 grid grid-cols-2 gap-2"><div className="h-20 rounded-xl bg-zinc-200" /><div className="h-20 rounded-xl bg-zinc-300" /></div><div className="mt-4 rounded-full bg-[#C6FF00] py-3 text-center text-xs font-black">BROWSE CATALOG →</div></div></div><div className="mt-auto pt-7"><Button onClick={() => go(9)}><span>PREVIEW STOREFRONT</span><ExternalLink size={19} /></Button></div></div>}
-
-            {step === 9 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">READY TO GO LIVE</p><h1 className="mt-4 text-4xl font-black leading-tight">Your shop is ready.</h1><p className="mt-3 text-sm leading-6 text-zinc-400">Activate it to replace the sample products with your own and start sharing your link.</p></div><div className="mt-8 space-y-3"><div className="flex items-center gap-3 rounded-2xl bg-[#141414] p-4"><Check className="text-[#C6FF00]" /><span className="text-sm font-bold">Private storefront preview</span></div><div className="flex items-center gap-3 rounded-2xl bg-[#141414] p-4"><Check className="text-[#C6FF00]" /><span className="text-sm font-bold">Choose your storefront design</span></div><div className="flex items-center gap-3 rounded-2xl bg-[#141414] p-4"><Check className="text-[#C6FF00]" /><span className="text-sm font-bold">Ready for WhatsApp orders</span></div></div><div className="mt-auto pt-7"><Button onClick={() => go(10)}><span>ACTIVATE MY STOREFRONT</span><ArrowRight size={20} /></Button></div></div>}
-
-            {step === 10 && <div className="flex flex-1 flex-col"><div className="pt-3"><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">CHOOSE YOUR PLAN</p><h1 className="mt-4 text-4xl font-black leading-tight">Put your shop online.</h1><p className="mt-3 text-sm leading-6 text-zinc-400">Choose the plan that works for your business.</p></div><div className="mt-7 space-y-3"><div className="rounded-2xl border-2 border-[#C6FF00] bg-[#141414] p-5"><div className="flex items-center justify-between"><div><div className="text-2xl font-black">$1 <span className="text-sm text-zinc-400">/ month</span></div><div className="mt-1 text-xs text-zinc-500">Flexible monthly plan · cancel anytime</div></div><div className="rounded-full bg-[#C6FF00] px-3 py-1 text-[10px] font-black text-black">FLEXIBLE</div></div></div><div className="rounded-2xl border border-zinc-700 bg-[#141414] p-5"><div className="flex items-center justify-between"><div><div className="text-2xl font-black">$9 <span className="text-sm text-zinc-400">once-off</span></div><div className="mt-1 text-xs text-zinc-500">One payment · best for long-term use</div></div><div className="rounded-full bg-[#C6FF00] px-3 py-1 text-[10px] font-black text-black">POPULAR</div></div></div></div><div className="mt-auto pt-7"><Button onClick={() => navigate('/paywall')}><span>CONTINUE TO PAYMENT</span><ArrowRight size={20} /></Button><button onClick={finish} className="mt-4 w-full py-2 text-xs font-bold text-zinc-500">Keep my private preview</button></div></div>}
-
-            {step === 11 && <div className="flex flex-1 flex-col items-center justify-center text-center"><div className="mb-7 flex h-20 w-20 items-center justify-center rounded-full bg-[#C6FF00] text-black"><Bell size={34} /></div><h1 className="text-4xl font-black leading-tight">You’re ready to sell.</h1><p className="mt-4 max-w-xs text-sm leading-6 text-zinc-400">Your ThreadZW storefront is ready. Share one link and let customers browse, order on WhatsApp or visit your shop.</p><div className="mt-auto w-full pt-8"><Button onClick={finish}><span>GO TO MY DASHBOARD</span><ArrowRight size={20} /></Button></div></div>}
-          </motion.section>
-        </AnimatePresence>
-      </div>
-    </main>
-  );
+{step === 1 && <div className="flex flex-1 flex-col"><div className="pt-3"><div className="mb-7 inline-flex rounded-full bg-white/5 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">🇿🇼 Made in Zimbabwe</div><h1 className="text-[3.25rem] font-black leading-[0.92] tracking-tight">Create your online shop in <span className="underline decoration-[#C6FF00] decoration-4 underline-offset-4">minutes.</span></h1><p className="mt-5 text-sm leading-6 text-zinc-400">No website skills needed. Add your brand, preview your storefront and make it live when you're ready.</p></div><div className="mt-auto space-y-3 pt-8"><Button onClick={() => go(2)}><span>START FREE</span><ArrowRight size={20} /></Button><Button secondary onClick={() => navigate('/demo')}><span>VIEW DEMO SHOP</span><ExternalLink size={18} /></Button><div className="pt-2 text-center text-xs font-bold text-zinc-500">+50 shops already live 🇿🇼</div></div></div>}
+{step === 2 && <div className="flex flex-1 flex-col"><div className="flex flex-1 flex-col items-center justify-center text-center"><div className="text-6xl">👋</div><h1 className="mt-7 text-4xl font-black">Hey, quick question.</h1><p className="mt-3 text-sm text-zinc-400">Be honest. It’ll take about 30 seconds.</p></div><Button onClick={() => go(3)}><span>LET’S GO</span><ArrowRight size={20} /></Button></div>}
+{step === 3 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">ACCOUNT</p><h1 className="mt-4 text-4xl font-black leading-tight">Let’s create your account.</h1><p className="mt-3 text-sm text-zinc-400">We’ll save your shop as you build it.</p><div className="mt-7 space-y-3"><Field value={name} onChange={e => setName(e.target.value)} placeholder="Your name" /><Field value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" type="email" /><Field value={phone} onChange={e => setPhone(e.target.value)} placeholder="WhatsApp number" inputMode="tel" /><Field value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type="password" /></div></div><div className="mt-auto pt-7"><Button onClick={createAccount} disabled={loading}>{loading ? <Loader2 size={18} className="animate-spin" /> : <span>CONTINUE</span>}<ArrowRight size={20} /></Button></div></div>}
+{step === 4 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">PHASE 1: REALITY CHECK</p><h1 className="mt-4 text-4xl font-black leading-tight">What’s your shop called?</h1><Field className="mt-7" value={shopName} onChange={e => setShopName(e.target.value)} placeholder="e.g. Byo Streetwear" autoFocus /></div><div className="mt-auto pt-7"><Button onClick={() => { if (shopName.trim().length < 2) return setError('Enter your shop name.'); go(5); }}><span>CONTINUE</span><ArrowRight size={20} /></Button></div></div>}
+{step === 5 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">PHASE 1: REALITY CHECK</p><h1 className="mt-4 text-4xl font-black leading-tight">How do customers find your products right now?</h1><p className="mt-3 text-sm text-zinc-400">Select all that apply:</p><div className="mt-6 space-y-3">{[['WhatsApp messages','They DM me for prices and photos','💬'],['Instagram / TikTok','They find me on social media','◎'],['Walk-in / word of mouth','People know my physical location','🏪'],['I don’t have online presence','Currently no way to find me online','🌐']].map(([title, desc, icon]) => { const selected = discovery.includes(title); return <button key={title} type="button" onClick={() => setDiscovery(prev => selected ? prev.filter(x => x !== title) : [...prev, title])} className={`flex w-full items-center gap-4 rounded-2xl border p-4 text-left ${selected ? 'border-[#C6FF00] bg-[#C6FF00]/10' : 'border-zinc-800 bg-[#141414]'}`}><span className="text-xl">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-black">{title}</span><span className="block text-xs text-zinc-500">{desc}</span></span><span className={`flex h-6 w-6 items-center justify-center rounded-full border ${selected ? 'border-[#C6FF00] bg-[#C6FF00] text-black' : 'border-zinc-700'}`}>{selected && <Check size={14} />}</span></button>; })}</div></div><div className="mt-auto pt-7"><Button onClick={() => go(6)}><span>CONTINUE</span><ArrowRight size={20} /></Button></div></div>}
+{step === 6 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">SHOP LOCATION</p><h1 className="mt-4 text-4xl font-black leading-tight">Where is your shop based?</h1><div className="mt-7 grid grid-cols-2 gap-2">{CITIES.map(item => <button key={item} onClick={() => setCity(item)} className={`rounded-2xl border px-4 py-4 text-sm font-black ${city === item ? 'border-[#C6FF00] bg-[#C6FF00] text-black' : 'border-zinc-800 bg-[#141414] text-white'}`}>{item}</button>)}</div></div><div className="mt-auto pt-7"><Button onClick={async () => { if (!city) return setError('Choose your city or area.'); setLoading(true); try { await ensureShop(); go(7); } catch (e: any) { setError(e?.message || 'Could not save your location.'); } finally { setLoading(false); } }} disabled={loading}>{loading ? <Loader2 size={18} className="animate-spin" /> : <span>SAVE & CONTINUE</span>}<ArrowRight size={20} /></Button></div></div>}
+{step === 7 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">SHOP CONTACT</p><h1 className="mt-4 text-4xl font-black leading-tight">Where should customers message you?</h1><p className="mt-3 text-sm text-zinc-400">This becomes your main WhatsApp order button.</p><Field className="mt-7" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+263 77 123 4567" inputMode="tel" /></div><div className="mt-auto pt-7"><Button onClick={saveContact} disabled={loading}>{loading ? <Loader2 size={18} className="animate-spin" /> : <span>SAVE & CONTINUE</span>}<ArrowRight size={20} /></Button></div></div>}
+{step === 8 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">SHOP STORY</p><h1 className="mt-4 text-4xl font-black leading-tight">Tell customers what your brand is about.</h1><textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="Trendy fashion. Better prices. Based in Bulawayo." className="mt-7 min-h-36 w-full resize-none rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold text-white outline-none placeholder:text-zinc-500 focus:border-[#C6FF00]" /><p className="mt-2 text-xs text-zinc-500">Keep it short. You can change this later.</p></div><div className="mt-auto pt-7"><Button onClick={saveBio} disabled={loading}>{loading ? <Loader2 size={18} className="animate-spin" /> : <span>SAVE & CONTINUE</span>}<ArrowRight size={20} /></Button></div></div>}
+{step === 9 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">BRAND</p><h1 className="mt-4 text-4xl font-black leading-tight">Add your logo.</h1><p className="mt-3 text-sm text-zinc-400">This appears across your storefront.</p><div className="mt-8 flex flex-col items-center"><button onClick={() => logoInputRef.current?.click()} className="flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-zinc-700 bg-[#141414]">{logoUrl ? <img src={logoUrl} className="h-full w-full object-cover" /> : <div className="text-center"><Upload className="mx-auto mb-2 text-zinc-500" /><span className="text-xs font-bold text-zinc-500">Upload logo</span></div>}</button><input ref={logoInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleImage(e.target.files[0], 'logo')} /></div></div><div className="mt-auto space-y-3 pt-7"><Button secondary onClick={() => go(10)}><span>SKIP FOR NOW</span><ArrowRight size={18} /></Button><Button onClick={() => go(10)} disabled={!logoUrl || loading}>{loading ? <Loader2 size={18} className="animate-spin" /> : <span>CONTINUE</span>}<ArrowRight size={20} /></Button></div></div>}
+{step === 10 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">BRAND</p><h1 className="mt-4 text-4xl font-black leading-tight">Add your banner.</h1><p className="mt-3 text-sm text-zinc-400">Give the top of your storefront a strong first impression.</p><button onClick={() => bannerInputRef.current?.click()} className="mt-7 flex h-48 w-full items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-zinc-700 bg-[#141414]">{bannerUrl ? <img src={bannerUrl} className="h-full w-full object-cover" /> : <div className="text-center"><ImageIcon className="mx-auto mb-2 text-zinc-500" /><span className="text-xs font-bold text-zinc-500">Upload banner</span></div>}</button><input ref={bannerInputRef} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleImage(e.target.files[0], 'banner')} /></div><div className="mt-auto space-y-3 pt-7"><Button secondary onClick={() => go(11)}><span>SKIP FOR NOW</span><ArrowRight size={18} /></Button><Button onClick={() => go(11)} disabled={!bannerUrl || loading}>{loading ? <Loader2 size={18} className="animate-spin" /> : <span>CONTINUE</span>}<ArrowRight size={20} /></Button></div></div>}
+{step === 11 && <div className="flex flex-1 flex-col"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-zinc-500">STOREFRONT DESIGN</p><h1 className="mt-4 text-4xl font-black leading-tight">Choose the look of your shop.</h1><p className="mt-3 text-sm text-zinc-400">You can change this later. Pick the style that fits your brand.</p><div className="mt-6 grid grid-cols-2 gap-3">{THEMES.map(item => <MiniThemePreview key={item.id} theme={item} shopName={shopName} logoUrl={logoUrl} bannerUrl={bannerUrl} selected={selectedTheme === item.id} onSelect={() => setSelectedTheme(item.id)} />)}</div></div><div className="mt-auto pt-7"><Button onClick={saveTheme} disabled={loading}>{loading ? <Loader2 size={18} className="animate-spin" /> : <span>PREVIEW MY SHOP</span>}<ArrowRight size={20} /></Button></div></div>}
+{step === 12 && renderPreview()}
+{step === 13 && <div className="flex flex-1 flex-col"><div className="flex flex-1 flex-col items-center justify-center text-center"><div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#C6FF00] text-black"><Check size={34} /></div><h1 className="mt-7 text-4xl font-black">Your shop is ready.</h1><p className="mt-3 max-w-sm text-sm leading-6 text-zinc-400">Everything you added is saved. Your storefront is still private. Subscribe to make it live.</p></div><Button onClick={startPayment}><span>MAKE MY SHOP LIVE — SUBSCRIBE</span><ExternalLink size={18} /></Button></div>}
+</motion.section></AnimatePresence></div></main>;
 };
-
-export default ThreadzwOnboarding;
