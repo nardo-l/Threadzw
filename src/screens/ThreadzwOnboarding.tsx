@@ -71,52 +71,24 @@ export const ThreadzwOnboarding: React.FC = () => {
 
       if (!user) throw new Error('Your account could not be created.');
 
-      // Shop creation is intentionally performed after authentication exists.
-      // The previous onboarding tried to insert the shop before auth existed,
-      // which caused the Supabase shops RLS error.
-      const { data: existing, error: lookupError } = await supabase.from('shops').select('id').eq('owner_id', user.id).maybeSingle();
-      if (lookupError) throw lookupError;
-
-      const payload = {
-        name: shopName.trim(),
-        slug: slug || `shop-${Date.now().toString(36)}`,
-        category: 'Streetwear & Fashion',
-        description: bio.trim() || `${shopName.trim()} official storefront on ThreadZW.`,
-        bio: bio.trim() || null,
-        whatsapp_number: phone.trim(),
-        city,
-        location: city,
-        page_type: 'clothing',
-        template_id: 'urban',
-        is_active: false,
-        storefront_published: false,
-        setup_completed: true,
-        onboarding_completed: true,
-        setup_step: TOTAL_STEPS,
-        plan: 'free',
-        premium_status: 'inactive',
-        product_limit: 0,
-        account_status: 'free',
-        payment_required: true,
-        payment_status: 'unpaid',
-        payment_verification_status: 'none'
-      };
-
-      let shopId = existing?.id;
-      if (shopId) {
-        const { error: updateError } = await supabase.from('shops').update(payload).eq('id', shopId);
-        if (updateError) throw updateError;
-      } else {
-        const { data: inserted, error: insertError } = await supabase.from('shops').insert({ ...payload, owner_id: user.id }).select('id').single();
-        if (insertError) throw insertError;
-        shopId = inserted.id;
-      }
+      const { data: shopId, error: shopError } = await supabase.rpc('create_shop_from_onboarding', {
+        p_shop: {
+          name: shopName.trim(),
+          slug: slug || `shop-${Date.now().toString(36)}`,
+          description: bio.trim() || `${shopName.trim()} official storefront on ThreadZW.`,
+          bio: bio.trim() || null,
+          whatsapp_number: phone.trim(),
+          city,
+        }
+      });
+      if (shopError) throw shopError;
+      if (!shopId) throw new Error('Your shop could not be created.');
 
       localStorage.removeItem('threadzw_onboarding_step');
       localStorage.setItem('threadzw_onboarding_completed', 'true');
       localStorage.setItem('threadzw_logged_in', 'true');
       localStorage.setItem('supabase_logged_in_user_id', user.id);
-      localStorage.setItem('threadzw_shop_id', shopId || '');
+      localStorage.setItem('threadzw_shop_id', shopId);
       toast.success('Your shop is ready. Welcome to ThreadZW.');
       navigate('/dashboard', { replace: true });
     } catch (e: any) {
@@ -127,12 +99,7 @@ export const ThreadzwOnboarding: React.FC = () => {
   };
 
   const toggleDiscovery = (id: string) => setDiscovery(current => id === 'none' ? (current.includes('none') ? [] : ['none']) : [...current.filter(item => item !== 'none'), ...(current.includes(id) ? [] : [id])]);
-
-  const renderProgress = () => (
-    <div className="flex items-center gap-1.5" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>
-      {Array.from({ length: TOTAL_STEPS }).map((_, i) => <div key={i} className={`h-1 flex-1 rounded-full ${i < step ? 'bg-[#C6FF00]' : 'bg-zinc-800'}`} />)}
-    </div>
-  );
+  const renderProgress = () => <div className="flex items-center gap-1.5" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>{Array.from({ length: TOTAL_STEPS }).map((_, i) => <div key={i} className={`h-1 flex-1 rounded-full ${i < step ? 'bg-[#C6FF00]' : 'bg-zinc-800'}`} />)}</div>;
 
   const renderStep = () => {
     if (step === 1) return <div className="space-y-7"><p className="text-[10px] font-black uppercase tracking-[.2em] text-zinc-500">PHASE 1: THE PROBLEM</p><h1 className="text-4xl font-black leading-[.98]">Stop sending your product photos one by one.</h1><p className="text-sm leading-relaxed text-zinc-400">Give customers one place to browse your products, prices and shop details.</p><div className="space-y-2 rounded-3xl bg-[#101211] p-4">{['How much?', 'Do you have black?', 'Send more pictures.', 'Where are you located?'].map((text, i) => <div key={text} className="rounded-2xl bg-[#1a1d1b] px-4 py-3 text-sm font-semibold"><span className="mr-3 text-green-400">◉</span>{text}<span className="float-right text-[10px] text-zinc-600">10:{24 + i}</span></div>)}<div className="rounded-2xl bg-[#C6FF00] px-4 py-3 text-sm font-black text-black">🔗 threadzw.shop/yourshop <span className="float-right">10:30</span></div></div><Button onClick={() => go(2)}>Continue <ArrowRight size={16} /></Button></div>;
@@ -145,12 +112,5 @@ export const ThreadzwOnboarding: React.FC = () => {
     return <div className="space-y-6"><p className="text-[10px] font-black uppercase tracking-[.2em] text-zinc-500">PHASE 4: YOUR ACCOUNT</p><h1 className="text-4xl font-black leading-[.98]">Almost there. Let's create your account.</h1><p className="text-sm text-zinc-400">Your shop details are ready. Create your owner account and we'll take you straight to your dashboard.</p><div className="space-y-3"><Field autoFocus value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="What should we call you?" autoComplete="name" /><Field value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" type="email" autoComplete="email" /><div className="relative"><Field value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" className="pr-12" /><button type="button" onClick={() => setShowPassword(value => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-zinc-500 hover:text-white" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div></div>{error && <div className="rounded-xl border border-red-900/50 bg-red-950/30 px-4 py-3 text-xs font-semibold text-red-300">{error}</div>}<Button disabled={loading} onClick={createAccountAndShop}>{loading ? <><Loader2 size={17} className="animate-spin" /> Creating your shop...</> : <>Create my ThreadZW shop <ArrowRight size={16} /></>}</Button><p className="text-center text-[10px] text-zinc-600">By continuing, you agree to ThreadZW's terms and privacy policy.</p></div>;
   };
 
-  return (
-    <div className="fixed inset-0 z-[45] bg-[#070707] text-white font-sans overflow-hidden">
-      <div className="mx-auto flex h-full max-w-md flex-col">
-        <header className="shrink-0 px-5 pt-5 pb-4"><div className="flex items-center justify-between mb-5"><button type="button" onClick={() => step > 1 ? go(step - 1) : navigate('/')} className="w-10 h-10 rounded-full bg-[#111] border border-zinc-800 flex items-center justify-center"><ArrowLeft size={18} /></button><span className="text-lg font-black tracking-tight text-[#C6FF00]">ThreadZW</span><span className="w-10 text-right text-[10px] font-bold text-zinc-500">{step}/{TOTAL_STEPS}</span></div>{renderProgress()}</header>
-        <main className="flex-1 overflow-y-auto px-5 py-5"><AnimatePresence mode="wait"><motion.div key={step} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: .18 }} className="pb-10">{renderStep()}</motion.div></AnimatePresence></main>
-      </div>
-    </div>
-  );
+  return <div className="fixed inset-0 z-[45] bg-[#070707] text-white font-sans overflow-hidden"><div className="mx-auto flex h-full max-w-md flex-col"><header className="shrink-0 px-5 pt-5 pb-4"><div className="flex items-center justify-between mb-5"><button type="button" onClick={() => step > 1 ? go(step - 1) : navigate('/')} className="w-10 h-10 rounded-full bg-[#111] border border-zinc-800 flex items-center justify-center"><ArrowLeft size={18} /></button><span className="text-lg font-black tracking-tight text-[#C6FF00]">ThreadZW</span><span className="w-10 text-right text-[10px] font-bold text-zinc-500">{step}/{TOTAL_STEPS}</span></div>{renderProgress()}</header><main className="flex-1 overflow-y-auto px-5 py-5"><AnimatePresence mode="wait"><motion.div key={step} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: .18 }} className="pb-10">{renderStep()}</motion.div></AnimatePresence></main></div></div>;
 };
