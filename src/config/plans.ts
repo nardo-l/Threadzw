@@ -44,15 +44,15 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
   clothing: {
     free: {
       id: 'free', name: 'Clothing Free', category: 'clothing', price: 0, currency: 'USD', billingCycle: 'none',
-      maxActiveListings: 3, maxImagesPerListing: 5,
-      description: 'Launch a free fashion storefront with up to 3 active products',
-      features: ['Up to 3 active products', 'Storefront visits', 'WhatsApp customer interests', '1 basic storefront template', 'Basic inventory management', 'ThreadZW branding badge']
+      maxActiveListings: 0, maxImagesPerListing: 5,
+      description: 'Create your shop for free, then subscribe to start adding products',
+      features: ['Shop setup and dashboard', 'Shareable storefront link after approval', 'WhatsApp customer interests', 'Basic storefront tools']
     },
     premium: {
-      id: 'premium', name: 'Clothing Pro', category: 'clothing', price: 1.59, currency: 'USD', billingCycle: 'monthly',
-      maxActiveListings: null, maxImagesPerListing: 10, badge: 'Most Popular', popular: true,
-      description: 'Unlimited products and premium storefront features for $1.59/month',
-      features: ['Unlimited active products', '$1.59 USD per month', 'All clothing storefront templates', 'Custom storefront colours & branding', 'Remove ThreadZW branding', 'Featured products promotion', 'Advanced order & inventory tracking', 'Storefront visitor analytics']
+      id: 'premium', name: 'Clothing Pro', category: 'clothing', price: 9, currency: 'USD', billingCycle: 'none',
+      maxActiveListings: null, maxImagesPerListing: 10, badge: 'Lifetime', popular: true,
+      description: 'Unlimited products for a $9 once-off payment',
+      features: ['Unlimited active products', '$9 USD once-off', 'All clothing storefront templates', 'Custom storefront colours & branding', 'Remove ThreadZW branding', 'Featured products promotion', 'Advanced order & inventory tracking', 'Storefront visitor analytics']
     }
   },
   vehicles: {
@@ -112,7 +112,8 @@ export function getProductLimit(shop: Shop | null | undefined): number | null {
   const category = resolveSellerCategory(shop?.page_type);
   if (category === 'clothing') {
     const verificationStatus = String((shop as any)?.payment_verification_status || '').toLowerCase();
-    return verificationStatus === 'pending' ? 9 : 3;
+    const accountStatus = String((shop as any)?.account_status || '').toLowerCase();
+    return verificationStatus === 'pending' || accountStatus === 'pending_payment' ? 9 : 0;
   }
   return 9;
 }
@@ -142,12 +143,12 @@ export function canAddProduct(shop: Shop | null | undefined, currentActiveCount:
   const limit = getProductLimit(shop);
   if (limit === null) return { allowed: true, limit: null, count: currentActiveCount };
   const allowed = currentActiveCount < limit;
-  const pending = String((shop as any)?.payment_verification_status || '').toLowerCase() === 'pending';
+  const pending = String((shop as any)?.payment_verification_status || '').toLowerCase() === 'pending' || String((shop as any)?.account_status || '').toLowerCase() === 'pending_payment';
   return {
     allowed, limit, count: currentActiveCount,
     reason: allowed ? undefined : pending
-      ? 'Payment received. Your payment is being verified. You can use up to 9 products while we review it.'
-      : `You've reached the ${limit}-product Free plan limit. Upgrade to Pro for unlimited products.`
+      ? 'Your payment is being verified. You can add up to 9 products while we review it.'
+      : 'Subscribe for $9 once-off to start adding products and make your shop live.'
   };
 }
 
