@@ -1,8 +1,9 @@
 import { serverSupabase } from '../middleware/auth.js';
-import { resolveProPlanForShop, resolveServerSellerCategory } from './planResolver.js';
+import { resolveServerSellerCategory } from './planResolver.js';
 
 const FIXED_NARDOPAY_LINK = 'https://threadzw.nardopay.com/pay/threadzwmonthlysubscriptions';
 const SUCCESS_REDIRECT = 'https://threadzw.vercel.app/subscription/success';
+const PREMIUM_AMOUNT = 9;
 
 export class SubscriptionService {
   public async createPaymentLink(params: { userId: string; shopId: string; origin?: string }) {
@@ -22,7 +23,6 @@ export class SubscriptionService {
     if (category !== 'clothing') throw new Error('UNSUPPORTED_CATEGORY: Clothing subscriptions are currently supported here');
     if (shop.plan === 'premium') throw new Error('ALREADY_SUBSCRIBED: This shop already has Pro');
 
-    const planDetails = resolveProPlanForShop(shop);
     const now = new Date().toISOString();
     const internalReference = `NP-${shop.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
 
@@ -30,47 +30,60 @@ export class SubscriptionService {
       .from('subscriptions')
       .select('id')
       .eq('shop_id', shop.id)
-      .eq('category', 'clothing')
       .maybeSingle();
     if (existingError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${existingError.message}`);
 
     const subscriptionData = {
+      profile_id: userId,
       owner_id: userId,
       shop_id: shop.id,
       category: 'clothing',
       plan: 'premium',
-      billing_cycle: 'monthly',
-      amount: 1.59,
+      billing_cycle: 'none',
+      amount: PREMIUM_AMOUNT,
       currency: 'USD',
       status: 'pending',
       provider: 'nardopay',
       nardopay_link_code: null,
+      current_period_start: null,
+      current_period_end: null,
       updated_at: now
     };
 
     let subscriptionId: string;
     if (existingSubscription) {
       const { data, error } = await serverSupabase
-        .from('subscriptions').update(subscriptionData).eq('id', existingSubscription.id).select('id').single();
+        .from('subscriptions')
+        .update(subscriptionData)
+        .eq('id', existingSubscription.id)
+        .select('id')
+        .single();
       if (error || !data) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${error?.message || 'Unable to update subscription'}`);
       subscriptionId = data.id;
     } else {
       const { data, error } = await serverSupabase
-        .from('subscriptions').insert({ ...subscriptionData, created_at: now }).select('id').single();
+        .from('subscriptions')
+        .insert({ ...subscriptionData, created_at: now })
+        .select('id')
+        .single();
       if (error || !data) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${error?.message || 'Unable to create subscription'}`);
       subscriptionId = data.id;
     }
 
     const { error: shopUpdateError } = await serverSupabase.from('shops').update({
-      account_status: 'active',
+      account_status: 'pending_payment',
       subscription_status: 'pending',
       payment_required: true,
       payment_status: 'pending',
       payment_verification_status: 'pending',
       payment_submitted_at: now,
       payment_reference: internalReference,
-      payment_amount: 1.59,
+      payment_amount: PREMIUM_AMOUNT,
       payment_currency: 'USD',
+      product_limit: 9,
+      is_active: false,
+      storefront_published: false,
+      published_at: null,
       updated_at: now
     }).eq('id', shop.id);
     if (shopUpdateError) throw new Error(`PAYMENT_STATE_UPDATE_FAILED: ${shopUpdateError.message}`);
@@ -80,16 +93,16 @@ export class SubscriptionService {
       url: FIXED_NARDOPAY_LINK,
       linkCode: '',
       subscriptionId,
-      amount: 1.59,
+      amount: PREMIUM_AMOUNT,
       currency: 'USD',
-      billingCycle: 'monthly',
-      category: 'clothing',
+      billingCycle: 'none' as const,
+      category: 'clothing' as const,
       redirectUrl: SUCCESS_REDIRECT,
-      message: 'Payment started. Your account will be manually verified after payment.'
+      message: 'Payment started. Your shop is pending payment verification.'
     };
   }
 
-  /** NardoPay does not provide webhooks for this flow. Manual admin activation is authoritative. */
+  /** Manual admin verification is authoritative for the fixed NardoPay link flow. */
   public async handleWebhook(_params: { rawBody: string; signatureHeader?: string | string[] | null; payload: any }) {
     return { success: true, ignored: true, reason: 'MANUAL_VERIFICATION_REQUIRED' };
   }
@@ -114,9 +127,9 @@ export class SubscriptionService {
       category: resolveServerSellerCategory(shop.page_type),
       plan: shop.plan === 'premium' || shop.plan === 'pro' ? 'premium' : 'free',
       status: subscription?.status || (shop.plan === 'premium' || shop.plan === 'pro' ? 'active' : shop.payment_verification_status === 'pending' ? 'pending' : 'inactive'),
-      amount: subscription?.amount || 1.59,
+      amount: subscription?.amount || PREMIUM_AMOUNT,
       currency: subscription?.currency || 'USD',
-      billingCycle: subscription?.billing_cycle || 'monthly',
+      billingCycle: subscription?.billing_cycle || 'none',
       currentPeriodStart: subscription?.current_period_start || null,
       currentPeriodEnd: subscription?.current_period_end || null,
       gracePeriodEnd: subscription?.grace_period_end || null,
