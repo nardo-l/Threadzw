@@ -2,6 +2,8 @@ import { supabase } from '../lib/supabase';
 import { SubscriptionStatus, BillingCycle, SellerCategory, SellerPlan } from '../types';
 
 export const THREADZW_NARDOPAY_MONTHLY_LINK = 'https://threadzw.nardopay.com/pay/threadzwmonthlysubscriptions';
+export const THREADZW_NARDOPAY_SUCCESS_REDIRECT = 'https://threadzw.vercel.app/subscription/success';
+export const THREADZW_PREMIUM_PRICE = 9;
 
 export interface CreatePaymentLinkResponse {
   success: boolean;
@@ -12,6 +14,7 @@ export interface CreatePaymentLinkResponse {
   currency: string;
   billingCycle: 'none' | 'monthly' | 'yearly';
   category: SellerCategory;
+  redirectUrl?: string;
   error?: string;
   message?: string;
 }
@@ -32,6 +35,7 @@ export interface SubscriptionStatusResponse {
   nardopayLinkCode?: string | null;
   paymentVerificationStatus?: string | null;
   paymentSubmittedAt?: string | null;
+  paymentVerifiedAt?: string | null;
   error?: string;
 }
 
@@ -43,14 +47,14 @@ class SubscriptionClientService {
 
   public async createPaymentLink(shopId: string): Promise<CreatePaymentLinkResponse> {
     const token = await this.getAuthToken();
-    if (!token) throw new Error('Please sign in to upgrade your subscription.');
+    if (!token) throw new Error('Please sign in to upgrade your shop.');
     const response = await fetch('/api/subscriptions/create-payment-link', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ shopId })
     });
     const data = await response.json();
-    if (!response.ok || !data.success) throw new Error(data.message || data.error || 'Failed to start subscription');
+    if (!response.ok || !data.success) throw new Error(data.message || data.error || 'Failed to start payment');
     return data as CreatePaymentLinkResponse;
   }
 
@@ -61,7 +65,7 @@ class SubscriptionClientService {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || data.error || 'Failed to fetch subscription status');
+    if (!response.ok) throw new Error(data.message || data.error || 'Failed to fetch payment status');
     return data as SubscriptionStatusResponse;
   }
 
