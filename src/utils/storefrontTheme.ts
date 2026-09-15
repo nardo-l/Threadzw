@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 export interface StorefrontTheme {
   accent: string;
   accentStrong: string;
@@ -14,6 +16,17 @@ export const DEFAULT_STOREFRONT_THEME: StorefrontTheme = {
   accentSoftStrong: '#e6f8b8',
   accentText: '#172000',
   accentRgb: '190, 247, 21'
+};
+
+const SAVED_THEME_ACCENTS: Record<string, string> = {
+  'editorial-noir': '#111111',
+  'soft-studio': '#b88a62',
+  'gallery-minimal': '#6b7280',
+  'street-archive': '#d92d20',
+  'cobalt-club': '#2457ff',
+  'sage-atelier': '#6f7f63',
+  'cherry-pop': '#e5485d',
+  'earth-utility': '#6f6a45'
 };
 
 type Rgb = { r: number; g: number; b: number };
@@ -80,6 +93,47 @@ function toTheme(accent: Rgb): StorefrontTheme {
   };
 }
 
+function themeFromId(themeId?: string | null): StorefrontTheme | null {
+  if (!themeId) return null;
+  const accent = SAVED_THEME_ACCENTS[themeId];
+  return accent ? toTheme(hexToRgb(accent)) : null;
+}
+
+async function getSavedThemeFromCurrentStorefront(): Promise<StorefrontTheme | null> {
+  if (typeof window === 'undefined') return null;
+
+  const path = window.location.pathname.replace(/\/$/, '');
+  const segments = path.split('/').filter(Boolean);
+  let slug = '';
+
+  if (segments[0] === 'shop' || segments[0] === 'store') slug = segments[1] || '';
+  else if (segments[0] === 's') slug = segments[1] || '';
+  else if (segments[0] && segments[0] !== 'demo') slug = segments[0];
+
+  slug = slug.replace(/^@/, '').trim().toLowerCase();
+  if (!slug) return null;
+
+  // Permanent links may be slug--uuid. In that case the public page already
+  // supports the UUID fallback, so use the same lookup here.
+  let query = supabase.from('shops').select('page_config, slug').eq('slug', slug).maybeSingle();
+  const { data } = await query;
+
+  if (data?.page_config?.theme_id) {
+    return themeFromId(data.page_config.theme_id);
+  }
+
+  if (slug.includes('--')) {
+    const possibleId = slug.slice(slug.lastIndexOf('--') + 2);
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(possibleId)) {
+      const { data: byId } = await supabase.from('shops').select('page_config').eq('id', possibleId).maybeSingle();
+      if (byId?.page_config?.theme_id) return themeFromId(byId.page_config.theme_id);
+    }
+  }
+
+  return null;
+}
+
 function chooseAccent(imageData: ImageData): Rgb | null {
   const buckets = new Map<string, { color: Rgb; score: number }>();
 
@@ -97,7 +151,6 @@ function chooseAccent(imageData: ImageData): Rgb | null {
     const saturation = max === 0 ? 0 : (max - min) / max;
     const brightness = max / 255;
 
-    // Ignore transparent, near-white backgrounds, and near-black outlines.
     if (brightness > 0.93 || brightness < 0.08 || saturation < 0.18) continue;
 
     const midTonePreference = 1 - Math.min(1, Math.abs(brightness - 0.48) / 0.48);
@@ -117,11 +170,6 @@ function chooseAccent(imageData: ImageData): Rgb | null {
   return winner?.color || null;
 }
 
-/**
- * Monochrome logos still have a brand color: usually their darkest ink.
- * Keep this as a fallback after the saturated-color pass so black/white
- * logos do not silently inherit ThreadZW's lime default.
- */
 function chooseNeutralAccent(imageData: ImageData): Rgb | null {
   const buckets = new Map<string, { color: Rgb; score: number }>();
 
@@ -139,7 +187,6 @@ function chooseNeutralAccent(imageData: ImageData): Rgb | null {
     const saturation = max === 0 ? 0 : (max - min) / max;
     const brightness = max / 255;
 
-    // Ignore white/near-white logo backgrounds and retain only neutral ink.
     if (brightness > 0.93 || saturation >= 0.18) continue;
 
     const darknessPreference = 1 - brightness;
@@ -168,26 +215,33 @@ export function extractLogoTheme(source?: string | null): Promise<StorefrontThem
   if (cached) return cached;
 
   const promise = new Promise<StorefrontTheme>(resolve => {
-    const image = new Image();
-    image.crossOrigin = 'anonymous';
-    image.onload = () => {
-      try {
-        const size = 48;
-        const canvas = document.createElement('canvas');
-        canvas.width = size;
-        canvas.height = size;
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        if (!context) return resolve(DEFAULT_STOREFRONT_THEME);
-        context.drawImage(image, 0, 0, size, size);
-        const imageData = context.getImageData(0, 0, size, size);
-        const accent = chooseAccent(imageData) || chooseNeutralAccent(imageData);
-        resolve(accent ? toTheme(accent) : DEFAULT_STOREFRONT_THEME);
-      } catch {
-        resolve(DEFAULT_STOREFRONT_THEME);
+    getSavedThemeFromCurrentStorefront().then(savedTheme => {
+      if (savedTheme) {
+        resolve(savedTheme);
+        return;
       }
-    };
-    image.onerror = () => resolve(DEFAULT_STOREFRONT_THEME);
-    image.src = source;
+
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => {
+        try {
+          const size = 48;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const context = canvas.getContext('2d', { willReadFrequently: true });
+          if (!context) return resolve(DEFAULT_STOREFRONT_THEME);
+          context.drawImage(image, 0, 0, size, size);
+          const imageData = context.getImageData(0, 0, size, size);
+          const accent = chooseAccent(imageData) || chooseNeutralAccent(imageData);
+          resolve(accent ? toTheme(accent) : DEFAULT_STOREFRONT_THEME);
+        } catch {
+          resolve(DEFAULT_STOREFRONT_THEME);
+        }
+      };
+      image.onerror = () => resolve(DEFAULT_STOREFRONT_THEME);
+      image.src = source;
+    }).catch(() => resolve(DEFAULT_STOREFRONT_THEME));
   });
 
   themeCache.set(source, promise);
