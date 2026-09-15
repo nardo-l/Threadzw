@@ -1,45 +1,27 @@
-import { supabase } from '../lib/supabase';
+import { STOREFRONT_THEME_MAP } from '../config/storefrontThemes';
 
 export interface StorefrontTheme {
+  id: string;
   accent: string;
   accentStrong: string;
   accentSoft: string;
-  accentSoftStrong: string;
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+  text: string;
+  muted: string;
+  border: string;
+  mode: 'light' | 'dark';
+  radius: string;
+  buttonRadius: string;
+  font: 'editorial' | 'modern' | 'mono' | 'soft';
   accentText: string;
   accentRgb: string;
 }
 
-export const DEFAULT_STOREFRONT_THEME: StorefrontTheme = {
-  accent: '#bef715',
-  accentStrong: '#91bd00',
-  accentSoft: '#f4fde8',
-  accentSoftStrong: '#e6f8b8',
-  accentText: '#172000',
-  accentRgb: '190, 247, 21'
-};
+const DEFAULT_ID = 'editorial-noir';
 
-const SAVED_THEME_ACCENTS: Record<string, string> = {
-  'editorial-noir': '#111111',
-  'soft-studio': '#b88a62',
-  'gallery-minimal': '#6b7280',
-  'street-archive': '#d92d20',
-  'cobalt-club': '#2457ff',
-  'sage-atelier': '#6f7f63',
-  'cherry-pop': '#e5485d',
-  'earth-utility': '#6f6a45'
-};
-
-type Rgb = { r: number; g: number; b: number };
-
-function clamp(value: number, min = 0, max = 255): number {
-  return Math.max(min, Math.min(max, Math.round(value)));
-}
-
-function rgbToHex({ r, g, b }: Rgb): string {
-  return `#${[r, g, b].map(value => clamp(value).toString(16).padStart(2, '0')).join('')}`;
-}
-
-function hexToRgb(hex: string): Rgb {
+function hexToRgb(hex: string) {
   const value = hex.replace('#', '');
   return {
     r: parseInt(value.slice(0, 2), 16),
@@ -48,202 +30,130 @@ function hexToRgb(hex: string): Rgb {
   };
 }
 
-function mix(first: Rgb, second: Rgb, secondWeight: number): Rgb {
-  return {
-    r: clamp(first.r * (1 - secondWeight) + second.r * secondWeight),
-    g: clamp(first.g * (1 - secondWeight) + second.g * secondWeight),
-    b: clamp(first.b * (1 - secondWeight) + second.b * secondWeight)
-  };
-}
-
-function darken(color: Rgb, amount: number): Rgb {
-  return mix(color, { r: 0, g: 0, b: 0 }, amount);
-}
-
-function relativeLuminance({ r, g, b }: Rgb): number {
+function relativeLuminance({ r, g, b }: { r: number; g: number; b: number }) {
   const channels = [r, g, b].map(channel => {
     const normalized = channel / 255;
-    return normalized <= 0.03928
-      ? normalized / 12.92
-      : Math.pow((normalized + 0.055) / 1.055, 2.4);
+    return normalized <= 0.03928 ? normalized / 12.92 : Math.pow((normalized + 0.055) / 1.055, 2.4);
   });
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
-function contrastRatio(first: Rgb, second: Rgb): number {
-  const brighter = Math.max(relativeLuminance(first), relativeLuminance(second));
-  const darker = Math.min(relativeLuminance(first), relativeLuminance(second));
-  return (brighter + 0.05) / (darker + 0.05);
+function contrastRatio(first: ReturnType<typeof hexToRgb>, second: ReturnType<typeof hexToRgb>) {
+  const a = relativeLuminance(first);
+  const b = relativeLuminance(second);
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
 
-function toTheme(accent: Rgb): StorefrontTheme {
-  const accentHex = rgbToHex(accent);
-  const strong = darken(accent, 0.16);
-  const soft = mix(accent, { r: 255, g: 255, b: 255 }, 0.9);
-  const softStrong = mix(accent, { r: 255, g: 255, b: 255 }, 0.78);
-  const text = contrastRatio(accent, { r: 16, g: 16, b: 16 }) >= 4.5 ? '#101010' : '#ffffff';
+export function themeFromId(themeId?: string | null): StorefrontTheme | null {
+  const definition = STOREFRONT_THEME_MAP[themeId || ''];
+  if (!definition) return null;
+  const rgb = hexToRgb(definition.accent);
+  const accentText = contrastRatio(rgb, { r: 16, g: 16, b: 16 }) >= 4.5 ? '#101010' : '#ffffff';
 
   return {
-    accent: accentHex,
-    accentStrong: rgbToHex(strong),
-    accentSoft: rgbToHex(soft),
-    accentSoftStrong: rgbToHex(softStrong),
-    accentText: text,
-    accentRgb: `${accent.r}, ${accent.g}, ${accent.b}`
+    ...definition,
+    id: definition.id,
+    accentText,
+    accentRgb: `${rgb.r}, ${rgb.g}, ${rgb.b}`
   };
 }
 
-function themeFromId(themeId?: string | null): StorefrontTheme | null {
-  if (!themeId) return null;
-  const accent = SAVED_THEME_ACCENTS[themeId];
-  return accent ? toTheme(hexToRgb(accent)) : null;
+export const DEFAULT_STOREFRONT_THEME = themeFromId(DEFAULT_ID)!;
+
+type Rgb = { r: number; g: number; b: number };
+
+function clamp(value: number) {
+  return Math.max(0, Math.min(255, Math.round(value)));
 }
 
-async function getSavedThemeFromCurrentStorefront(): Promise<StorefrontTheme | null> {
-  if (typeof window === 'undefined') return null;
-
-  const path = window.location.pathname.replace(/\/$/, '');
-  const segments = path.split('/').filter(Boolean);
-  let slug = '';
-
-  if (segments[0] === 'shop' || segments[0] === 'store') slug = segments[1] || '';
-  else if (segments[0] === 's') slug = segments[1] || '';
-  else if (segments[0] && segments[0] !== 'demo') slug = segments[0];
-
-  slug = slug.replace(/^@/, '').trim().toLowerCase();
-  if (!slug) return null;
-
-  // Permanent links may be slug--uuid. In that case the public page already
-  // supports the UUID fallback, so use the same lookup here.
-  let query = supabase.from('shops').select('page_config, slug').eq('slug', slug).maybeSingle();
-  const { data } = await query;
-
-  if (data?.page_config?.theme_id) {
-    return themeFromId(data.page_config.theme_id);
-  }
-
-  if (slug.includes('--')) {
-    const possibleId = slug.slice(slug.lastIndexOf('--') + 2);
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(possibleId)) {
-      const { data: byId } = await supabase.from('shops').select('page_config').eq('id', possibleId).maybeSingle();
-      if (byId?.page_config?.theme_id) return themeFromId(byId.page_config.theme_id);
-    }
-  }
-
-  return null;
+function mix(first: Rgb, second: Rgb, weight: number): Rgb {
+  return {
+    r: clamp(first.r * (1 - weight) + second.r * weight),
+    g: clamp(first.g * (1 - weight) + second.g * weight),
+    b: clamp(first.b * (1 - weight) + second.b * weight)
+  };
 }
 
-function chooseAccent(imageData: ImageData): Rgb | null {
+function rgbToHex({ r, g, b }: Rgb) {
+  return `#${[r, g, b].map(value => clamp(value).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function logoAccentTheme(imageData: ImageData): StorefrontTheme {
   const buckets = new Map<string, { color: Rgb; score: number }>();
 
-  for (let index = 0; index < imageData.data.length; index += 16) {
-    const alpha = imageData.data[index + 3];
-    if (alpha < 150) continue;
-
-    const color: Rgb = {
-      r: imageData.data[index],
-      g: imageData.data[index + 1],
-      b: imageData.data[index + 2]
-    };
+  for (let i = 0; i < imageData.data.length; i += 16) {
+    if (imageData.data[i + 3] < 150) continue;
+    const color = { r: imageData.data[i], g: imageData.data[i + 1], b: imageData.data[i + 2] };
     const max = Math.max(color.r, color.g, color.b);
     const min = Math.min(color.r, color.g, color.b);
     const saturation = max === 0 ? 0 : (max - min) / max;
     const brightness = max / 255;
-
     if (brightness > 0.93 || brightness < 0.08 || saturation < 0.18) continue;
-
-    const midTonePreference = 1 - Math.min(1, Math.abs(brightness - 0.48) / 0.48);
-    const score = saturation * 0.72 + midTonePreference * 0.28;
-    const bucketColor: Rgb = {
+    const bucket = {
       r: Math.round(color.r / 16) * 16,
       g: Math.round(color.g / 16) * 16,
       b: Math.round(color.b / 16) * 16
     };
-    const key = `${bucketColor.r}-${bucketColor.g}-${bucketColor.b}`;
+    const key = `${bucket.r}-${bucket.g}-${bucket.b}`;
+    const score = saturation * 0.75 + (1 - Math.abs(brightness - 0.48)) * 0.25;
     const current = buckets.get(key);
     if (current) current.score += score;
-    else buckets.set(key, { color: bucketColor, score });
+    else buckets.set(key, { color: bucket, score });
   }
 
-  const winner = [...buckets.values()].sort((first, second) => second.score - first.score)[0];
-  return winner?.color || null;
-}
+  const winner = [...buckets.values()].sort((a, b) => b.score - a.score)[0]?.color;
+  if (!winner) return DEFAULT_STOREFRONT_THEME;
 
-function chooseNeutralAccent(imageData: ImageData): Rgb | null {
-  const buckets = new Map<string, { color: Rgb; score: number }>();
+  const accent = rgbToHex(winner);
+  const closest = Object.values(STOREFRONT_THEME_MAP).find(theme => theme.accent.toLowerCase() === accent.toLowerCase());
+  if (closest) return themeFromId(closest.id)!;
 
-  for (let index = 0; index < imageData.data.length; index += 16) {
-    const alpha = imageData.data[index + 3];
-    if (alpha < 150) continue;
-
-    const color: Rgb = {
-      r: imageData.data[index],
-      g: imageData.data[index + 1],
-      b: imageData.data[index + 2]
-    };
-    const max = Math.max(color.r, color.g, color.b);
-    const min = Math.min(color.r, color.g, color.b);
-    const saturation = max === 0 ? 0 : (max - min) / max;
-    const brightness = max / 255;
-
-    if (brightness > 0.93 || saturation >= 0.18) continue;
-
-    const darknessPreference = 1 - brightness;
-    const midTonePreference = 1 - Math.min(1, Math.abs(brightness - 0.42) / 0.42);
-    const score = darknessPreference * 0.72 + midTonePreference * 0.28;
-    const bucketColor: Rgb = {
-      r: Math.round(color.r / 16) * 16,
-      g: Math.round(color.g / 16) * 16,
-      b: Math.round(color.b / 16) * 16
-    };
-    const key = `${bucketColor.r}-${bucketColor.g}-${bucketColor.b}`;
-    const current = buckets.get(key);
-    if (current) current.score += score;
-    else buckets.set(key, { color: bucketColor, score });
-  }
-
-  const winner = [...buckets.values()].sort((first, second) => second.score - first.score)[0];
-  return winner?.color || null;
+  return {
+    ...DEFAULT_STOREFRONT_THEME,
+    accent,
+    accentStrong: rgbToHex(mix(winner, { r: 0, g: 0, b: 0 }, 0.16)),
+    accentSoft: rgbToHex(mix(winner, { r: 255, g: 255, b: 255 }, 0.9)),
+    accentText: contrastRatio(winner, { r: 16, g: 16, b: 16 }) >= 4.5 ? '#101010' : '#ffffff',
+    accentRgb: `${winner.r}, ${winner.g}, ${winner.b}`
+  };
 }
 
 const themeCache = new Map<string, Promise<StorefrontTheme>>();
 
-export function extractLogoTheme(source?: string | null): Promise<StorefrontTheme> {
+/**
+ * themeId is deliberately accepted from the loaded shop object. This avoids
+ * querying Supabase again and fixes stale themeCache values after a merchant
+ * changes their theme.
+ */
+export function extractLogoTheme(source?: string | null, themeId?: string | null): Promise<StorefrontTheme> {
+  const savedTheme = themeFromId(themeId);
+  if (savedTheme) return Promise.resolve(savedTheme);
   if (!source || typeof window === 'undefined') return Promise.resolve(DEFAULT_STOREFRONT_THEME);
-  const cached = themeCache.get(source);
+
+  const cacheKey = source;
+  const cached = themeCache.get(cacheKey);
   if (cached) return cached;
 
   const promise = new Promise<StorefrontTheme>(resolve => {
-    getSavedThemeFromCurrentStorefront().then(savedTheme => {
-      if (savedTheme) {
-        resolve(savedTheme);
-        return;
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 48;
+        canvas.height = 48;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) return resolve(DEFAULT_STOREFRONT_THEME);
+        context.drawImage(image, 0, 0, 48, 48);
+        resolve(logoAccentTheme(context.getImageData(0, 0, 48, 48)));
+      } catch {
+        resolve(DEFAULT_STOREFRONT_THEME);
       }
-
-      const image = new Image();
-      image.crossOrigin = 'anonymous';
-      image.onload = () => {
-        try {
-          const size = 48;
-          const canvas = document.createElement('canvas');
-          canvas.width = size;
-          canvas.height = size;
-          const context = canvas.getContext('2d', { willReadFrequently: true });
-          if (!context) return resolve(DEFAULT_STOREFRONT_THEME);
-          context.drawImage(image, 0, 0, size, size);
-          const imageData = context.getImageData(0, 0, size, size);
-          const accent = chooseAccent(imageData) || chooseNeutralAccent(imageData);
-          resolve(accent ? toTheme(accent) : DEFAULT_STOREFRONT_THEME);
-        } catch {
-          resolve(DEFAULT_STOREFRONT_THEME);
-        }
-      };
-      image.onerror = () => resolve(DEFAULT_STOREFRONT_THEME);
-      image.src = source;
-    }).catch(() => resolve(DEFAULT_STOREFRONT_THEME));
+    };
+    image.onerror = () => resolve(DEFAULT_STOREFRONT_THEME);
+    image.src = source;
   });
 
-  themeCache.set(source, promise);
+  themeCache.set(cacheKey, promise);
   return promise;
 }
