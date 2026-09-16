@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Check, ChevronLeft, ChevronRight, Palette, Sparkles } from 'lucide-react';
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, Palette, Sparkles, WandSparkles } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toast } from 'sonner';
 import { STOREFRONT_THEMES } from '../../config/storefrontThemes';
@@ -45,30 +45,54 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
     if (!open) return;
 
     const current = shop?.page_config?.theme_id || STOREFRONT_THEMES[0].id;
-    setSelectedId(current);
+    const index = Math.max(0, STOREFRONT_THEMES.findIndex(theme => theme.id === current));
+    setSelectedId(STOREFRONT_THEMES[index].id);
 
     requestAnimationFrame(() => {
-      const index = Math.max(0, STOREFRONT_THEMES.findIndex(theme => theme.id === current));
-      carouselRef.current?.scrollTo({
-        left: index * (carouselRef.current?.clientWidth || 1),
-        behavior: 'auto',
-      });
+      const container = carouselRef.current;
+      if (!container) return;
+      const slide = container.querySelector<HTMLElement>(`[data-theme-index="${index}"]`);
+      slide?.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
     });
   }, [open, shop?.page_config?.theme_id]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
 
   const scrollToIndex = (index: number) => {
     const safeIndex = Math.max(0, Math.min(index, STOREFRONT_THEMES.length - 1));
     setSelectedId(STOREFRONT_THEMES[safeIndex].id);
-    carouselRef.current?.scrollTo({
-      left: safeIndex * (carouselRef.current?.clientWidth || 1),
-      behavior: 'smooth',
-    });
+
+    const container = carouselRef.current;
+    const slide = container?.querySelector<HTMLElement>(`[data-theme-index="${safeIndex}"]`);
+    slide?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   };
 
   const handleCarouselScroll = (event: React.UIEvent<HTMLDivElement>) => {
-    const element = event.currentTarget;
-    const index = Math.round(element.scrollLeft / Math.max(element.clientWidth, 1));
-    const theme = STOREFRONT_THEMES[index];
+    const container = event.currentTarget;
+    const slides = Array.from(container.querySelectorAll<HTMLElement>('[data-theme-index]'));
+    if (!slides.length) return;
+
+    const center = container.scrollLeft + container.clientWidth / 2;
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    slides.forEach((slide, index) => {
+      const slideCenter = slide.offsetLeft + slide.offsetWidth / 2;
+      const distance = Math.abs(center - slideCenter);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    const theme = STOREFRONT_THEMES[closestIndex];
     if (theme && theme.id !== selectedId) setSelectedId(theme.id);
   };
 
@@ -142,58 +166,56 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
 
       {open && (
         <div
-          className="fixed inset-0 z-[100] text-zinc-950"
-          style={{ background: selectedTheme.background }}
+          className="fixed inset-0 z-[100] overflow-hidden text-[#10204b]"
+          style={{
+            background: 'linear-gradient(180deg, #f7faff 0%, #eef4ff 100%)',
+          }}
           role="dialog"
           aria-modal="true"
           aria-label="Choose storefront theme"
         >
-          <div className="mx-auto flex h-full w-full max-w-lg flex-col">
-            <header
-              className="flex items-center justify-between border-b px-5 py-4"
-              style={{ background: selectedTheme.surface, borderColor: selectedTheme.border }}
-            >
+          <div className="mx-auto flex h-full w-full max-w-[520px] flex-col">
+            <header className="relative flex shrink-0 items-center justify-between px-4 pb-3 pt-4 sm:px-6 sm:pt-5">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-10 w-10 items-center justify-center shadow-sm"
-                style={{
-                  background: selectedTheme.surfaceAlt,
-                  color: selectedTheme.text,
-                  borderRadius: selectedTheme.buttonRadius,
-                }}
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-[#10204b] shadow-[0_5px_18px_rgba(54,88,150,.12)] ring-1 ring-[#dfe8fa] transition-transform active:scale-95"
                 aria-label="Close theme picker"
               >
-                <ArrowLeft size={18} />
+                <ArrowLeft size={21} strokeWidth={2.2} />
               </button>
 
-              <div className="text-center">
-                <p
-                  className="text-[9px] font-black uppercase tracking-[.22em]"
-                  style={{ color: selectedTheme.accent }}
-                >
+              <div className="absolute left-1/2 top-4 -translate-x-1/2 text-center sm:top-5">
+                <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#2457ff]">
                   Storefront themes
                 </p>
-                <h2 className="text-base font-black" style={{ color: selectedTheme.text }}>
+                <h2 className="mt-0.5 whitespace-nowrap text-[19px] font-black tracking-[-.03em] text-[#10204b] sm:text-[21px]">
                   Choose your look
                 </h2>
               </div>
 
-              <div className="text-right text-[10px] font-black" style={{ color: selectedTheme.muted }}>
+              <div className="flex h-11 min-w-[51px] items-center justify-center rounded-2xl bg-white px-3 text-[11px] font-black text-[#18346f] shadow-[0_5px_18px_rgba(54,88,150,.12)] ring-1 ring-[#dfe8fa]">
                 {selectedIndex + 1}/{STOREFRONT_THEMES.length}
               </div>
             </header>
 
-            <div className="px-5 pt-4">
-              <div className="flex gap-1.5" aria-label="Theme progress">
+            <div className="shrink-0 px-5 pt-1 sm:px-7 sm:pt-2">
+              <p className="mx-auto mb-3 max-w-[340px] text-center text-[11px] font-medium leading-4 text-[#6376a3] sm:text-xs">
+                Swipe through the themes and find the perfect style for your storefront.
+              </p>
+              <div className="flex gap-2" aria-label="Theme progress">
                 {STOREFRONT_THEMES.map((theme, index) => (
                   <button
                     key={theme.id}
                     type="button"
                     onClick={() => scrollToIndex(index)}
                     aria-label={`View ${theme.name}`}
-                    className={`h-1.5 flex-1 transition-all ${selectedId === theme.id ? 'scale-y-150' : 'opacity-25'}`}
-                    style={{ background: theme.accent, borderRadius: theme.buttonRadius }}
+                    className="h-1.5 flex-1 rounded-full transition-all duration-200"
+                    style={{
+                      background: selectedId === theme.id ? theme.accent : '#c6d3eb',
+                      transform: selectedId === theme.id ? 'scaleY(1.35)' : undefined,
+                      boxShadow: selectedId === theme.id ? `0 2px 8px ${theme.accent}35` : undefined,
+                    }}
                   />
                 ))}
               </div>
@@ -201,9 +223,9 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
 
             <div
               ref={carouselRef}
-              className="mt-3 flex min-h-0 flex-1 snap-x snap-mandatory overflow-x-auto overscroll-x-contain scrollbar-hide"
               onScroll={handleCarouselScroll}
-              style={{ WebkitOverflowScrolling: 'touch' }}
+              className="mt-3 flex min-h-0 flex-1 snap-x snap-mandatory items-center gap-4 overflow-x-auto overscroll-x-contain px-[11%] py-2 scrollbar-hide sm:px-[12%]"
+              style={{ WebkitOverflowScrolling: 'touch', scrollPaddingInline: '11%' }}
             >
               {STOREFRONT_THEMES.map((theme, index) => {
                 const imageUrl = getThemeImage(theme.id);
@@ -212,93 +234,82 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                 return (
                   <section
                     key={theme.id}
-                    className="flex min-w-full snap-center flex-col items-center overflow-y-auto px-5 pb-5"
+                    data-theme-index={index}
+                    className="flex min-w-[78%] snap-center flex-col items-center justify-center"
                   >
-                    <div className="flex w-full flex-1 flex-col items-center justify-center py-2">
-                      <div
-                        className="relative w-full overflow-hidden border-2 bg-white shadow-2xl"
-                        style={{
-                          borderColor: isSelected ? theme.accent : theme.border,
-                          borderRadius: theme.radius,
-                          boxShadow: isSelected
-                            ? `0 24px 60px ${theme.accent}45`
-                            : `0 18px 45px ${theme.accent}18`,
-                        }}
-                      >
-                        <img
-                          src={imageUrl}
-                          alt={`${theme.name} storefront theme preview`}
-                          className="block h-auto max-h-[62vh] w-full object-contain"
-                          draggable={false}
-                          loading={index === selectedIndex ? 'eager' : 'lazy'}
-                        />
-                        {isSelected && (
-                          <div
-                            className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-lg"
-                            style={{ background: theme.accent, color: theme.accentText || '#fff' }}
-                          >
-                            <Check size={18} strokeWidth={3} />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div
-                      className="mt-3 w-full rounded-2xl border p-4"
+                    <button
+                      type="button"
+                      onClick={() => scrollToIndex(index)}
+                      aria-label={`Select ${theme.name}`}
+                      className="relative block w-full overflow-hidden rounded-[24px] bg-white text-left transition-all duration-300"
                       style={{
-                        background: theme.surface,
-                        borderColor: theme.border,
-                        color: theme.text,
+                        border: `2px solid ${isSelected ? theme.accent : '#d6e0f2'}`,
+                        boxShadow: isSelected
+                          ? `0 18px 45px ${theme.accent}30, 0 5px 16px rgba(45,72,120,.10)`
+                          : '0 10px 28px rgba(45,72,120,.10)',
+                        transform: isSelected ? 'translateY(-2px)' : 'scale(.985)',
                       }}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p
-                            className="text-[9px] font-black uppercase tracking-[.18em]"
-                            style={{ color: theme.accent }}
-                          >
-                            Theme {String(index + 1).padStart(2, '0')}
-                          </p>
-                          <h3 className="mt-1 text-lg font-black">{theme.name}</h3>
-                          <p className="mt-1 text-[11px] leading-relaxed" style={{ color: theme.muted }}>
-                            {theme.description}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 gap-1.5 pt-1">
-                          {[theme.background, theme.surfaceAlt, theme.accent, theme.text].map(color => (
-                            <span
-                              key={color}
-                              className="h-5 w-5 border border-black/10"
-                              style={{ background: color, borderRadius: theme.buttonRadius }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                      <img
+                        src={imageUrl}
+                        alt={`${theme.name} storefront theme preview`}
+                        className="block h-auto max-h-[48vh] w-full object-contain"
+                        draggable={false}
+                        loading={Math.abs(index - selectedIndex) <= 1 ? 'eager' : 'lazy'}
+                      />
+                      {isSelected && (
+                        <span
+                          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full shadow-lg ring-4 ring-white/40"
+                          style={{ background: theme.accent, color: theme.accentText || '#fff' }}
+                        >
+                          <Check size={18} strokeWidth={3} />
+                        </span>
+                      )}
+                    </button>
                   </section>
                 );
               })}
             </div>
 
-            <div className="shrink-0 px-5 pb-5 pt-2">
+            <div className="shrink-0 px-5 pb-[max(18px,env(safe-area-inset-bottom))] pt-1 sm:px-7 sm:pb-6">
+              <div className="mb-3 text-center">
+                <h3 className="text-[19px] font-black tracking-[-.025em] text-[#10204b]">
+                  {selectedTheme.name}
+                </h3>
+                <p className="mt-0.5 text-[12px] font-medium text-[#6a7ba5]">
+                  {selectedTheme.description.split('.')[0]}.
+                </p>
+              </div>
+
+              <div className="mb-3 flex items-center justify-center gap-1.5" aria-label="Current theme">
+                {STOREFRONT_THEMES.map((theme, index) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => scrollToIndex(index)}
+                    aria-label={`Go to ${theme.name}`}
+                    className="h-2.5 w-2.5 rounded-full transition-all duration-200"
+                    style={{
+                      background: selectedId === theme.id ? theme.accent : '#c8d5eb',
+                      transform: selectedId === theme.id ? 'scale(1.18)' : undefined,
+                    }}
+                  />
+                ))}
+              </div>
+
               <div className="mb-3 flex items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={() => scrollToIndex(selectedIndex - 1)}
                   disabled={selectedIndex === 0}
-                  className="flex h-10 w-10 items-center justify-center border shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
-                  style={{
-                    background: selectedTheme.surface,
-                    borderColor: selectedTheme.border,
-                    color: selectedTheme.text,
-                    borderRadius: selectedTheme.buttonRadius,
-                  }}
+                  className="flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-white px-4 text-xs font-bold text-[#35558f] shadow-[0_5px_18px_rgba(54,88,150,.10)] ring-1 ring-[#dfe8fa] transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Previous theme"
                 >
                   <ChevronLeft size={18} />
+                  <span className="hidden sm:inline">Previous</span>
                 </button>
 
-                <p className="text-center text-[10px] font-bold" style={{ color: selectedTheme.muted }}>
+                <p className="text-center text-[9px] font-semibold text-[#7283a8] sm:text-[10px]">
                   Swipe left or right to preview themes
                 </p>
 
@@ -306,15 +317,10 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                   type="button"
                   onClick={() => scrollToIndex(selectedIndex + 1)}
                   disabled={selectedIndex === STOREFRONT_THEMES.length - 1}
-                  className="flex h-10 w-10 items-center justify-center border shadow-sm disabled:cursor-not-allowed disabled:opacity-30"
-                  style={{
-                    background: selectedTheme.surface,
-                    borderColor: selectedTheme.border,
-                    color: selectedTheme.text,
-                    borderRadius: selectedTheme.buttonRadius,
-                  }}
+                  className="flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-white px-4 text-xs font-bold text-[#35558f] shadow-[0_5px_18px_rgba(54,88,150,.10)] ring-1 ring-[#dfe8fa] transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="Next theme"
                 >
+                  <span className="hidden sm:inline">Next</span>
                   <ChevronRight size={18} />
                 </button>
               </div>
@@ -323,13 +329,10 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                 type="button"
                 onClick={saveTheme}
                 disabled={saving}
-                className="w-full py-3.5 text-xs font-black uppercase tracking-wider shadow-lg transition-opacity disabled:opacity-60"
-                style={{
-                  background: selectedTheme.accent,
-                  color: selectedTheme.accentText || '#fff',
-                  borderRadius: selectedTheme.buttonRadius,
-                }}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-xs font-black uppercase tracking-[.04em] text-white shadow-[0_10px_24px_rgba(36,87,255,.25)] transition-all active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-60"
+                style={{ background: selectedTheme.accent }}
               >
+                <WandSparkles size={15} strokeWidth={2.5} />
                 {saving ? 'Saving theme…' : `Use ${selectedTheme.name}`}
               </button>
             </div>
