@@ -21,15 +21,53 @@ const THEME_IMAGES: Record<string, string> = {
   'earth-utility': '08_Earth_Utility.png',
 };
 
-function getThemeImage(themeId: string) {
-  const filename = THEME_IMAGES[themeId];
-  if (!filename) return '';
-  return supabase.storage.from(THEME_BUCKET).getPublicUrl(filename).data.publicUrl;
+const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+async function loadThemeImages(): Promise<Record<string, string>> {
+  const storage = supabase.storage.from(THEME_BUCKET);
+  const result: Record<string, string> = {};
+
+  // Prefer signed URLs so previews work even when the Supabase bucket is private.
+  const { data: files, error } = await storage.list('', {
+    limit: 100,
+    offset: 0,
+    sortBy: { column: 'name', order: 'asc' },
+  });
+
+  if (!error && files?.length) {
+    for (const theme of STOREFRONT_THEMES) {
+      const expected = THEME_IMAGES[theme.id];
+      const expectedNormalized = normalize(expected || '');
+      const themeNormalized = normalize(theme.name);
+      const match = files.find(file => {
+        const name = normalize(file.name);
+        return name === expectedNormalized || name.includes(themeNormalized) || themeNormalized.includes(name);
+      });
+
+      if (match?.name) {
+        const { data: signed } = await storage.createSignedUrl(match.name, 60 * 60);
+        if (signed?.signedUrl) result[theme.id] = signed.signedUrl;
+      }
+    }
+  }
+
+  // Fall back to the known object paths if listing is blocked by a storage policy.
+  for (const theme of STOREFRONT_THEMES) {
+    if (result[theme.id]) continue;
+    const filename = THEME_IMAGES[theme.id];
+    if (!filename) continue;
+    result[theme.id] = storage.getPublicUrl(filename).data.publicUrl;
+  }
+
+  return result;
 }
 
 export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [themeImages, setThemeImages] = useState<Record<string, string>>({});
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
   const [selectedId, setSelectedId] = useState(
     shop?.page_config?.theme_id || STOREFRONT_THEMES[0].id
   );
@@ -48,12 +86,30 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
     const index = Math.max(0, STOREFRONT_THEMES.findIndex(theme => theme.id === current));
     setSelectedId(STOREFRONT_THEMES[index].id);
 
+    let cancelled = false;
+    setLoadingImages(true);
+    setFailedImages({});
+    loadThemeImages()
+      .then(images => {
+        if (!cancelled) setThemeImages(images);
+      })
+      .catch(error => {
+        console.error('Theme preview images failed to load:', error);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingImages(false);
+      });
+
     requestAnimationFrame(() => {
       const container = carouselRef.current;
       if (!container) return;
       const slide = container.querySelector<HTMLElement>(`[data-theme-index="${index}"]`);
       slide?.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, shop?.page_config?.theme_id]);
 
   useEffect(() => {
@@ -68,9 +124,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
   const scrollToIndex = (index: number) => {
     const safeIndex = Math.max(0, Math.min(index, STOREFRONT_THEMES.length - 1));
     setSelectedId(STOREFRONT_THEMES[safeIndex].id);
-
-    const container = carouselRef.current;
-    const slide = container?.querySelector<HTMLElement>(`[data-theme-index="${safeIndex}"]`);
+    const slide = carouselRef.current?.querySelector<HTMLElement>(`[data-theme-index="${safeIndex}"]`);
     slide?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   };
 
@@ -101,9 +155,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
 
     setSaving(true);
     try {
-      const existing = shop.page_config && typeof shop.page_config === 'object'
-        ? shop.page_config
-        : {};
+      const existing = shop.page_config && typeof shop.page_config === 'object' ? shop.page_config : {};
       const nextConfig = { ...existing, theme_id: selectedId };
 
       const { error } = await supabase
@@ -167,9 +219,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
       {open && (
         <div
           className="fixed inset-0 z-[100] overflow-hidden text-[#10204b]"
-          style={{
-            background: 'linear-gradient(180deg, #f7faff 0%, #eef4ff 100%)',
-          }}
+          style={{ background: 'linear-gradient(180deg, #f7faff 0%, #eef4ff 100%)' }}
           role="dialog"
           aria-modal="true"
           aria-label="Choose storefront theme"
@@ -186,12 +236,8 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
               </button>
 
               <div className="absolute left-1/2 top-4 -translate-x-1/2 text-center sm:top-5">
-                <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#2457ff]">
-                  Storefront themes
-                </p>
-                <h2 className="mt-0.5 whitespace-nowrap text-[19px] font-black tracking-[-.03em] text-[#10204b] sm:text-[21px]">
-                  Choose your look
-                </h2>
+                <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#2457ff]">Storefront themes</p>
+                <h2 className="mt-0.5 whitespace-nowrap text-[19px] font-black tracking-[-.03em] text-[#10204b] sm:text-[21px]">Choose your look</h2>
               </div>
 
               <div className="flex h-11 min-w-[51px] items-center justify-center rounded-2xl bg-white px-3 text-[11px] font-black text-[#18346f] shadow-[0_5px_18px_rgba(54,88,150,.12)] ring-1 ring-[#dfe8fa]">
@@ -200,15 +246,13 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
             </header>
 
             <div className="shrink-0 px-5 pt-1 sm:px-7 sm:pt-2">
-              <p className="mx-auto mb-3 max-w-[340px] text-center text-[11px] font-medium leading-4 text-[#6376a3] sm:text-xs">
-                Swipe through the themes and find the perfect style for your storefront.
-              </p>
+              <p className="mx-auto mb-3 max-w-[340px] text-center text-[11px] font-medium leading-4 text-[#6376a3] sm:text-xs">Swipe through the themes and find the perfect style for your storefront.</p>
               <div className="flex gap-2" aria-label="Theme progress">
-                {STOREFRONT_THEMES.map((theme, index) => (
+                {STOREFRONT_THEMES.map(theme => (
                   <button
                     key={theme.id}
                     type="button"
-                    onClick={() => scrollToIndex(index)}
+                    onClick={() => scrollToIndex(STOREFRONT_THEMES.findIndex(item => item.id === theme.id))}
                     aria-label={`View ${theme.name}`}
                     className="h-1.5 flex-1 rounded-full transition-all duration-200"
                     style={{
@@ -228,35 +272,49 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
               style={{ WebkitOverflowScrolling: 'touch', scrollPaddingInline: '11%' }}
             >
               {STOREFRONT_THEMES.map((theme, index) => {
-                const imageUrl = getThemeImage(theme.id);
+                const imageUrl = themeImages[theme.id];
                 const isSelected = selectedId === theme.id;
+                const imageFailed = failedImages[theme.id];
 
                 return (
-                  <section
-                    key={theme.id}
-                    data-theme-index={index}
-                    className="flex min-w-[78%] snap-center flex-col items-center justify-center"
-                  >
+                  <section key={theme.id} data-theme-index={index} className="flex min-w-[78%] snap-center flex-col items-center justify-center">
                     <button
                       type="button"
                       onClick={() => scrollToIndex(index)}
                       aria-label={`Select ${theme.name}`}
-                      className="relative block w-full overflow-hidden rounded-[24px] bg-white text-left transition-all duration-300"
+                      className="relative block min-h-[280px] w-full overflow-hidden rounded-[24px] bg-white text-left transition-all duration-300"
                       style={{
                         border: `2px solid ${isSelected ? theme.accent : '#d6e0f2'}`,
-                        boxShadow: isSelected
-                          ? `0 18px 45px ${theme.accent}30, 0 5px 16px rgba(45,72,120,.10)`
-                          : '0 10px 28px rgba(45,72,120,.10)',
+                        boxShadow: isSelected ? `0 18px 45px ${theme.accent}30, 0 5px 16px rgba(45,72,120,.10)` : '0 10px 28px rgba(45,72,120,.10)',
                         transform: isSelected ? 'translateY(-2px)' : 'scale(.985)',
                       }}
                     >
-                      <img
-                        src={imageUrl}
-                        alt={`${theme.name} storefront theme preview`}
-                        className="block h-auto max-h-[48vh] w-full object-contain"
-                        draggable={false}
-                        loading={Math.abs(index - selectedIndex) <= 1 ? 'eager' : 'lazy'}
-                      />
+                      {imageUrl && !imageFailed ? (
+                        <img
+                          src={imageUrl}
+                          alt={`${theme.name} storefront theme preview`}
+                          className="block h-auto max-h-[48vh] min-h-[280px] w-full object-contain"
+                          draggable={false}
+                          loading={Math.abs(index - selectedIndex) <= 1 ? 'eager' : 'lazy'}
+                          onError={() => setFailedImages(current => ({ ...current, [theme.id]: true }))}
+                        />
+                      ) : (
+                        <div
+                          className="flex min-h-[280px] w-full flex-col items-center justify-center px-8 text-center"
+                          style={{ background: theme.background, color: theme.text }}
+                        >
+                          {loadingImages ? (
+                            <div className="animate-pulse text-sm font-bold">Loading preview…</div>
+                          ) : (
+                            <>
+                              <div className="mb-3 h-12 w-12 rounded-full" style={{ background: theme.accent }} />
+                              <div className="text-lg font-black">{theme.name}</div>
+                              <div className="mt-1 text-xs" style={{ color: theme.muted }}>Preview image unavailable</div>
+                            </>
+                          )}
+                        </div>
+                      )}
+
                       {isSelected && (
                         <span
                           className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full shadow-lg ring-4 ring-white/40"
@@ -273,12 +331,8 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
 
             <div className="shrink-0 px-5 pb-[max(18px,env(safe-area-inset-bottom))] pt-1 sm:px-7 sm:pb-6">
               <div className="mb-3 text-center">
-                <h3 className="text-[19px] font-black tracking-[-.025em] text-[#10204b]">
-                  {selectedTheme.name}
-                </h3>
-                <p className="mt-0.5 text-[12px] font-medium text-[#6a7ba5]">
-                  {selectedTheme.description.split('.')[0]}.
-                </p>
+                <h3 className="text-[19px] font-black tracking-[-.025em] text-[#10204b]">{selectedTheme.name}</h3>
+                <p className="mt-0.5 text-[12px] font-medium text-[#6a7ba5]">{selectedTheme.description.split('.')[0]}.</p>
               </div>
 
               <div className="mb-3 flex items-center justify-center gap-1.5" aria-label="Current theme">
@@ -289,10 +343,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                     onClick={() => scrollToIndex(index)}
                     aria-label={`Go to ${theme.name}`}
                     className="h-2.5 w-2.5 rounded-full transition-all duration-200"
-                    style={{
-                      background: selectedId === theme.id ? theme.accent : '#c8d5eb',
-                      transform: selectedId === theme.id ? 'scale(1.18)' : undefined,
-                    }}
+                    style={{ background: selectedId === theme.id ? theme.accent : '#c8d5eb', transform: selectedId === theme.id ? 'scale(1.18)' : undefined }}
                   />
                 ))}
               </div>
@@ -309,9 +360,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                   <span className="hidden sm:inline">Previous</span>
                 </button>
 
-                <p className="text-center text-[9px] font-semibold text-[#7283a8] sm:text-[10px]">
-                  Swipe left or right to preview themes
-                </p>
+                <p className="text-center text-[9px] font-semibold text-[#7283a8] sm:text-[10px]">Swipe left or right to preview themes</p>
 
                 <button
                   type="button"
