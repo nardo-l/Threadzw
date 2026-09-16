@@ -21,7 +21,11 @@ function applyThemeStyles(theme: StorefrontTheme) { if (typeof document === 'und
 .storefront-root header { background:${surface}ee !important; border-color:${border} !important; }
 .storefront-root main { background:${rootBg} !important; }
 .storefront-root footer { background:${surfaceAlt} !important; border-color:${border} !important; }
-.storefront-root nav { background:${surface}f2 !important; border-color:${border} !important; }
+.storefront-root nav { background:${theme.accent} !important; border-color:${theme.accentStrong} !important; color:${theme.accentText} !important; box-shadow:0 10px 30px ${dark ? 'rgba(0,0,0,.32)' : `${theme.accent}35`} !important; }
+.storefront-root nav button { color:${theme.accentText} !important; opacity:.72; }
+.storefront-root nav button:hover { opacity:1; }
+.storefront-root nav button.store-nav-active { background:${theme.accentStrong} !important; color:${theme.accentText} !important; opacity:1; box-shadow:0 4px 14px ${dark ? 'rgba(0,0,0,.22)' : `${theme.accentStrong}30`} !important; }
+.storefront-root nav button .store-nav-active-indicator { background:${theme.accentText} !important; }
 .storefront-root .bg-white { background-color:${surface} !important; }
 .storefront-root .bg-zinc-50 { background-color:${surfaceAlt} !important; }
 .storefront-root .bg-zinc-100 { background-color:${surfaceAlt} !important; }
