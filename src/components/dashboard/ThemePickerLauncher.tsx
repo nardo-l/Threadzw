@@ -6,22 +6,15 @@ import { STOREFRONT_THEMES } from '../../config/storefrontThemes';
 
 interface Props { shop: any; }
 
-const THEME_IMAGES: Record<string, string> = {
-  'editorial-noir': '01_Editorial_Noir.png',
-  'soft-studio': '02_Soft_Studio.png',
-  'gallery-minimal': '03_Gallery_Minimal.png',
-  'street-archive': '04_Street_Archive.png',
-  'cobalt-club': '05_Cobalt_Club.png',
-  'sage-atelier': '06_Sage_Atelier.png',
-  'cherry-pop': '07_Cherry_Pop.png',
-  'earth-utility': '08_Earth_Utility.png',
-};
-
-const THEME_PUBLIC_BASE = 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes';
-
-const getThemeImageUrl = (themeId: string) => {
-  const filename = THEME_IMAGES[themeId];
-  return filename ? `${THEME_PUBLIC_BASE}/${encodeURIComponent(filename)}` : '';
+const THEME_IMAGE_URLS: Record<string, string> = {
+  'editorial-noir': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/01_Editorial_Noir.png',
+  'soft-studio': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/02_Soft_Studio.png',
+  'gallery-minimal': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/03_Gallery_Minimal.png',
+  'street-archive': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/04_Street_Archive.png',
+  'cobalt-club': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/05_Cobalt_Club.png',
+  'sage-atelier': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/06_Sage_Atelier.png',
+  'cherry-pop': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/07_Cherry_Pop.png',
+  'earth-utility': 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/sample%20themes/08_Earth_Utility.png',
 };
 
 export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
@@ -142,6 +135,10 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
           aria-modal="true"
           aria-label="Choose storefront theme"
         >
+          <style>{`
+            .theme-picker-carousel { scrollbar-width: none; -ms-overflow-style: none; }
+            .theme-picker-carousel::-webkit-scrollbar { display: none; }
+          `}</style>
           <div className="mx-auto flex h-full w-full max-w-[720px] flex-col">
             <header className="relative flex shrink-0 items-center justify-between px-4 pb-3 pt-4 sm:px-8 sm:pb-5 sm:pt-6">
               <button type="button" onClick={() => setOpen(false)} className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#10204b] shadow-[0_7px_22px_rgba(54,88,150,.13)] ring-1 ring-[#e2eafb] sm:h-16 sm:w-16" aria-label="Close theme picker"><ArrowLeft size={25} strokeWidth={2.3} /></button>
@@ -161,7 +158,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
               </div>
             </div>
 
-            <div ref={carouselRef} onScroll={handleCarouselScroll} className="mt-3 flex min-h-0 flex-1 snap-x snap-mandatory items-center gap-4 overflow-x-auto overscroll-x-contain px-[10%] py-2 scrollbar-hide sm:mt-5 sm:gap-7" style={{ WebkitOverflowScrolling: 'touch', scrollPaddingInline: '10%' }}>
+            <div ref={carouselRef} onScroll={handleCarouselScroll} className="theme-picker-carousel mt-3 flex min-h-0 flex-1 snap-x snap-mandatory items-center gap-4 overflow-x-auto overscroll-x-contain px-[10%] py-2 sm:mt-5 sm:gap-7" style={{ WebkitOverflowScrolling: 'touch', scrollPaddingInline: '10%' }}>
               {STOREFRONT_THEMES.map((theme, index) => {
                 const imageFailed = failedImages[theme.id];
                 const isSelected = selectedId === theme.id;
@@ -177,7 +174,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                     >
                       {!imageFailed ? (
                         <img
-                          src={getThemeImageUrl(theme.id)}
+                          src={THEME_IMAGE_URLS[theme.id]}
                           alt={`${theme.name} storefront theme preview`}
                           className="block h-auto min-h-[300px] w-full object-contain sm:min-h-[380px]"
                           style={{ maxHeight: '58vh' }}
@@ -202,9 +199,6 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
               <div className="mb-3 text-center sm:mb-5">
                 <h3 className="text-[20px] font-black tracking-[-.03em] text-[#10204b] sm:text-[28px]">{selectedTheme.name}</h3>
                 <p className="mt-0.5 text-[12px] font-medium text-[#6a7ba5] sm:text-[17px]">{selectedTheme.description.split('.')[0]}.</p>
-              </div>
-              <div className="mb-3 flex items-center justify-center gap-2.5 sm:mb-5 sm:gap-3" aria-label="Current theme">
-                {STOREFRONT_THEMES.map((theme, index) => <button key={theme.id} type="button" onClick={() => scrollToIndex(index)} aria-label={`Go to ${theme.name}`} className="h-2.5 w-2.5 rounded-full transition-all duration-200 sm:h-3.5 sm:w-3.5" style={{ background: selectedId === theme.id ? '#1d55f5' : '#c7d5ed', transform: selectedId === theme.id ? 'scale(1.2)' : undefined }} />)}
               </div>
               <div className="mb-3 flex items-center justify-between gap-3 sm:mb-5">
                 <button type="button" onClick={() => scrollToIndex(selectedIndex - 1)} disabled={selectedIndex === 0} className="flex h-11 shrink-0 items-center gap-2 rounded-2xl bg-white px-3 text-xs font-bold text-[#35558f] shadow-[0_5px_18px_rgba(54,88,150,.10)] ring-1 ring-[#dfe8fa] disabled:cursor-not-allowed disabled:opacity-40 sm:h-14 sm:px-5 sm:text-base" aria-label="Previous theme"><ChevronLeft size={21} /><span>Previous</span></button>
