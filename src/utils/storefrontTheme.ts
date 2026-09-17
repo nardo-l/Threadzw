@@ -145,12 +145,12 @@ function applyThemeStyles(theme: StorefrontTheme) {
     .storefront-root main { background: ${theme.background} !important; }
     .storefront-root footer { background: ${theme.surfaceAlt} !important; border-color: ${theme.border} !important; }
 
-    /* Bottom taskbar: use the actual selected theme, never ThreadZW green/white. */
+    /* Bottom taskbar stays completely neutral. Storefront themes do not color the taskbar. */
     .storefront-root nav {
       background: ${theme.surface} !important;
       color: ${theme.text} !important;
       border-color: ${theme.border} !important;
-      box-shadow: 0 12px 32px ${dark ? 'rgba(0,0,0,.38)' : `${theme.accent}28`} !important;
+      box-shadow: 0 12px 32px ${dark ? 'rgba(0,0,0,.38)' : 'rgba(0,0,0,.10)'} !important;
       backdrop-filter: blur(18px);
     }
     .storefront-root nav button {
@@ -161,24 +161,24 @@ function applyThemeStyles(theme: StorefrontTheme) {
     }
     .storefront-root nav button:hover { color: ${theme.text} !important; }
     .storefront-root nav button.text-zinc-900 {
-      color: ${theme.accent} !important;
-      background: ${theme.accentSoft} !important;
+      color: ${theme.text} !important;
+      background: transparent !important;
     }
     .storefront-root nav button.text-zinc-900 svg {
-      background: ${theme.accent} !important;
-      color: ${theme.accentText} !important;
+      background: transparent !important;
+      color: ${theme.text} !important;
+      border-radius: 0 !important;
+      padding: 0 !important;
+      width: 20px !important;
+      height: 20px !important;
+      box-sizing: border-box !important;
+      box-shadow: none !important;
+    }
+    .storefront-root nav button > .store-accent-bg:not(.absolute) {
+      display: none !important;
+    }
+    .storefront-root nav .store-accent-bg {
       border-radius: 9999px !important;
-      padding: 5px !important;
-      width: 28px !important;
-      height: 28px !important;
-      box-sizing: content-box !important;
-      box-shadow: 0 5px 14px ${dark ? 'rgba(0,0,0,.3)' : `${theme.accent}35`} !important;
-    }
-    .storefront-root nav button.text-zinc-900 .store-accent-bg {
-      background: ${theme.accent} !important;
-    }
-    .storefront-root nav button:not(.text-zinc-900) .store-accent-bg {
-      background: ${theme.accent} !important;
     }
 
     .storefront-root .bg-white { background-color: ${theme.surface} !important; }
