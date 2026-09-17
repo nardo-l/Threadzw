@@ -177,7 +177,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                           src={THEME_IMAGE_URLS[theme.id]}
                           alt={`${theme.name} storefront theme preview`}
                           className="block h-auto min-h-[300px] w-full object-contain sm:min-h-[380px]"
-                          style={{ maxHeight: '58vh' }}
+                          style={{ maxHeight: '58vh', opacity: 1 }}
                           draggable={false}
                           loading={Math.abs(index - selectedIndex) <= 1 ? 'eager' : 'lazy'}
                           onError={() => setFailedImages(current => ({ ...current, [theme.id]: true }))}
