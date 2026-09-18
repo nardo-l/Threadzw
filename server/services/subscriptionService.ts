@@ -117,7 +117,9 @@ export class SubscriptionService {
 
     const category = resolveServerSellerCategory(shop.page_type);
     if (category !== 'clothing') throw new Error('UNSUPPORTED_CATEGORY: Clothing payments are currently supported here');
-    if (shop.plan === 'premium' || shop.plan === 'pro') throw new Error('ALREADY_SUBSCRIBED: This shop already has Pro');
+    if (shop.plan === 'premium' || shop.plan === 'pro') {
+      return { success: true, message: 'Your shop is already on Pro.' };
+    }
 
     const now = new Date().toISOString();
     const internalReference = `NP-${shop.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
