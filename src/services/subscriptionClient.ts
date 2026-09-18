@@ -45,6 +45,7 @@ class SubscriptionClientService {
     return session?.access_token || null;
   }
 
+  /** Legacy checkout-session API. The current app uses the fixed NardoPay URL directly. */
   public async createPaymentLink(shopId: string): Promise<CreatePaymentLinkResponse> {
     const token = await this.getAuthToken();
     if (!token) throw new Error('Please sign in to upgrade your shop.');
@@ -56,6 +57,19 @@ class SubscriptionClientService {
     const data = await response.json();
     if (!response.ok || !data.success) throw new Error(data.message || data.error || 'Failed to start payment');
     return data as CreatePaymentLinkResponse;
+  }
+
+  public async markPaymentSubmitted(shopId: string): Promise<{ success: boolean; message?: string }> {
+    const token = await this.getAuthToken();
+    if (!token) throw new Error('Please sign in to submit your payment.');
+    const response = await fetch('/api/subscriptions/mark-payment-submitted', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ shopId })
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || data.error || 'Could not update payment status');
+    return data;
   }
 
   public async getStatus(shopId: string): Promise<SubscriptionStatusResponse> {
