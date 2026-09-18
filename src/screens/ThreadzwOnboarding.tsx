@@ -108,8 +108,8 @@ export const ThreadzwOnboarding: React.FC = () => {
       // seeing a momentary hasShop=false and sending the new user back to onboarding.
       await refreshShop();
 
-      toast.success('Your shop is ready. Welcome to ThreadZW.');
-      navigate('/dashboard', { replace: true });
+      toast.success('Your shop is ready. Let’s get you started.');
+      navigate('/onboarding/paywall', { replace: true });
     } catch (e: any) {
       setError(e?.message || 'Could not finish your ThreadZW setup.');
     } finally {
