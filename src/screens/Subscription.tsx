@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useShop } from '../hooks/useShop';
 import { toast } from 'sonner';
-import { subscriptionClient, THREADZW_NARDOPAY_MONTHLY_LINK, THREADZW_PREMIUM_PRICE, SubscriptionStatusResponse } from '../services/subscriptionClient';
+import { THREADZW_NARDOPAY_MONTHLY_LINK, THREADZW_PREMIUM_PRICE, SubscriptionStatusResponse } from '../services/subscriptionClient';
 
 export const Subscription: React.FC = () => {
   const navigate = useNavigate();
@@ -31,11 +31,9 @@ export const Subscription: React.FC = () => {
     if (!shop?.id) return toast.error('Shop details could not be loaded.');
     setPaying(true);
     try {
-      // The backend records the payment attempt and moves the shop to pending_payment.
-      // NardoPay itself is a fixed ThreadZW payment link; the redirect is not trusted as approval.
-      await subscriptionClient.createPaymentLink(shop.id);
-      await refreshShop();
-      toast.info('Your shop is now pending payment. You can add up to 9 products while payment is checked.');
+      // The customer pays through ThreadZW's existing NardoPay checkout.
+      // No payment-link/session is created by the app. The success redirect records
+      // the payment submission and keeps the shop pending until admin approval.
       window.location.assign(THREADZW_NARDOPAY_MONTHLY_LINK);
     } catch (error: any) {
       toast.error(error?.message || 'Could not start payment');
