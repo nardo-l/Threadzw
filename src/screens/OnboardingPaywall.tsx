@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, Check, CreditCard, Lock, Loader2, Package, ShieldCheck, Sparkles, Store, Zap } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CreditCard, Lock, Package, ShieldCheck, Sparkles, Store, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useShopContext } from '../context/ShopContext';
-import { subscriptionClient } from '../services/subscriptionClient';
-import { toast } from 'sonner';
 
 const TOTAL_STEPS = 4;
 
@@ -17,29 +14,7 @@ const featureList = [
 
 export const OnboardingPaywall: React.FC = () => {
   const navigate = useNavigate();
-  const { shop, refreshShop } = useShopContext();
   const [step, setStep] = useState(1);
-  const [paying, setPaying] = useState(false);
-
-  const startPayment = async () => {
-    if (!shop?.id) {
-      toast.error('Your shop could not be loaded. Please refresh and try again.');
-      return;
-    }
-
-    setPaying(true);
-    try {
-      const payment = await subscriptionClient.createPaymentLink(shop.id);
-      if (!payment?.url) throw new Error('NardoPay did not return a payment link.');
-
-      await refreshShop();
-      toast.info('Opening NardoPay. Your shop will stay pending until the payment is manually verified.');
-      window.location.assign(payment.url);
-    } catch (error: any) {
-      toast.error(error?.message || 'Could not start payment.');
-      setPaying(false);
-    }
-  };
 
   const goNext = () => setStep(current => Math.min(TOTAL_STEPS, current + 1));
   const goBack = () => setStep(current => Math.max(1, current - 1));
@@ -72,7 +47,7 @@ export const OnboardingPaywall: React.FC = () => {
                 Turn your brand into a <span className="text-[#F05A00]">real online store.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                You've done the setup. One $9 payment unlocks Pro so you can add products and start sharing your store.
+                You've done the setup. Before you add your first product, ThreadZW Pro is unlocked with a simple $9 once-off payment.
               </p>
 
               <div className="relative mt-8 overflow-hidden rounded-[2rem] bg-zinc-950 p-5 text-white shadow-xl">
@@ -144,13 +119,13 @@ export const OnboardingPaywall: React.FC = () => {
                 Here's exactly <span className="text-[#F05A00]">what happens.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Your payment is handled by NardoPay. ThreadZW only activates Pro after the payment has been verified.
+                Your $9 payment is handled by NardoPay. ThreadZW only activates Pro after the payment has been manually verified.
               </p>
 
               <div className="mt-7 space-y-3">
-                <InfoRow number="01" icon={<CreditCard size={19} />} title="Pay $9 once-off" text="You'll be taken to the secure NardoPay checkout." />
-                <InfoRow number="02" icon={<ShieldCheck size={19} />} title="Payment is checked" text="Your shop is marked pending while ThreadZW verifies the payment." />
-                <InfoRow number="03" icon={<Zap size={19} />} title="Pro is activated" text="Once approved, your shop can add unlimited products and go live." />
+                <InfoRow number="01" icon={<CreditCard size={19} />} title="Pay $9 once-off" text="You'll use the secure NardoPay checkout when you're ready to activate Pro." />
+                <InfoRow number="02" icon={<ShieldCheck size={19} />} title="Payment is verified" text="Your payment is sent for verification. Your shop is not activated just because you reach the payment page." />
+                <InfoRow number="03" icon={<Zap size={19} />} title="Pro is activated" text="After approval, you can add your first product, go live and add unlimited products." />
               </div>
 
               <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200">
@@ -162,27 +137,27 @@ export const OnboardingPaywall: React.FC = () => {
               </div>
 
               <div className="mt-auto pt-7">
-                <PrimaryButton onClick={goNext}>Review & pay <ArrowRight size={18} /></PrimaryButton>
+                <PrimaryButton onClick={goNext}>See my dashboard <ArrowRight size={18} /></PrimaryButton>
               </div>
             </div>
           )}
 
           {step === 4 && (
             <div className="flex min-h-full flex-col">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#F05A00]">READY TO START?</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#F05A00]">YOUR NEXT STEP</p>
               <h1 className="mt-4 text-[2.7rem] font-black leading-[0.94] tracking-tight">
-                Your store is <span className="text-[#F05A00]">one payment away.</span>
+                Your store is <span className="text-[#F05A00]">ready to customise.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Pay $9 once-off, complete checkout, and your payment will be sent for verification.
+                Head to your dashboard to customise your shop, choose a storefront theme and see what your store could look like before you pay.
               </p>
 
               <div className="mt-7 overflow-hidden rounded-[2rem] bg-zinc-950 text-white shadow-xl">
                 <div className="border-b border-white/10 p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">ThreadZW</p>
-                      <h2 className="mt-1 text-xl font-black">Pro Plan</h2>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">THREADZW PRO</p>
+                      <h2 className="mt-1 text-xl font-black">One $9 payment</h2>
                     </div>
                     <Sparkles className="text-[#F05A00]" size={22} />
                   </div>
@@ -192,7 +167,7 @@ export const OnboardingPaywall: React.FC = () => {
                   </div>
                 </div>
                 <div className="space-y-3 p-5 text-sm">
-                  {['Add your first product', 'Custom storefront', 'Unlimited products after approval'].map(item => (
+                  {['Customise your storefront', 'Choose from your ThreadZW themes', 'See your store before paying', 'Pay $9 once-off when you’re ready'].map(item => (
                     <div key={item} className="flex items-center gap-3 font-semibold">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F05A00]"><Check size={13} /></div>
                       {item}
@@ -204,15 +179,14 @@ export const OnboardingPaywall: React.FC = () => {
               <div className="mt-auto pt-7">
                 <button
                   type="button"
-                  onClick={startPayment}
-                  disabled={paying}
-                  className="flex w-full items-center justify-between rounded-2xl bg-[#F05A00] px-5 py-4 text-sm font-black text-white shadow-lg shadow-orange-900/20 transition active:scale-[.99] disabled:opacity-50"
+                  onClick={() => navigate('/dashboard')}
+                  className="flex w-full items-center justify-between rounded-2xl bg-[#F05A00] px-5 py-4 text-sm font-black text-white shadow-lg shadow-orange-900/20 transition active:scale-[.99]"
                 >
-                  <span>{paying ? 'OPENING NARDOPAY...' : 'PAY $9 AND GET STARTED'}</span>
-                  {paying ? <Loader2 size={19} className="animate-spin" /> : <ArrowRight size={20} />}
+                  <span>GO TO DASHBOARD</span>
+                  <ArrowRight size={20} />
                 </button>
-                <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-[10px] font-semibold text-zinc-500">
-                  <Lock size={11} /> Secure one-time payment via NardoPay
+                <p className="mt-3 text-center text-[10px] font-semibold text-zinc-500">
+                  Customise first. Pay when you're ready to add products.
                 </p>
               </div>
             </div>
