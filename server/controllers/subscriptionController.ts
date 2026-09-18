@@ -75,6 +75,27 @@ export class SubscriptionController {
   }
 
   /**
+   * POST /api/subscriptions/mark-payment-submitted
+   * Records that the customer has returned from the fixed NardoPay checkout.
+   * This does not activate Pro; admin approval remains authoritative.
+   */
+  public async markPaymentSubmitted(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { shopId } = req.body;
+      if (!userId) return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required' });
+      if (!shopId) return res.status(400).json({ success: false, error: 'INVALID_SHOP', message: 'shopId is required' });
+      const result = await subscriptionService.markPaymentSubmitted({ userId, shopId });
+      return res.status(200).json(result);
+    } catch (err: any) {
+      const message = String(err?.message || '');
+      if (message.includes('UNAUTHORIZED')) return res.status(403).json({ success: false, error: 'UNAUTHORIZED', message: 'You do not own this shop' });
+      if (message.includes('INVALID_SHOP')) return res.status(404).json({ success: false, error: 'INVALID_SHOP', message: 'Shop not found' });
+      return res.status(500).json({ success: false, error: 'PAYMENT_STATE_UPDATE_FAILED', message: 'Could not record payment submission' });
+    }
+  }
+
+  /**
    * GET /api/subscriptions/status?shopId=...
    * Fetches verified subscription status for a shop.
    */
