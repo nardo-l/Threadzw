@@ -10,8 +10,7 @@ import { subscriptionClient, SubscriptionStatusResponse } from '../services/subs
 import { toast } from 'sonner';
 
 type PaywallStep = 'limit' | 'plan' | 'summary' | 'verifying' | 'success';
-
-const GREEN = '#C6FF00';
+ 
 
 export const Paywall: React.FC = () => {
   const navigate = useNavigate();
@@ -22,9 +21,6 @@ export const Paywall: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<SubscriptionStatusResponse | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
-
-  const price = 9;
-  const productCount = Math.min(9, Number(shop?.products_count ?? 9));
 
   const refreshStatus = async () => {
     if (!shop?.id || !user) return null;
