@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useShop } from '../hooks/useShop';
 import { toast } from 'sonner';
-import { THREADZW_NARDOPAY_MONTHLY_LINK, THREADZW_PREMIUM_PRICE, SubscriptionStatusResponse } from '../services/subscriptionClient';
+import { subscriptionClient, THREADZW_NARDOPAY_MONTHLY_LINK, THREADZW_PREMIUM_PRICE, SubscriptionStatusResponse } from '../services/subscriptionClient';
 
 export const Subscription: React.FC = () => {
   const navigate = useNavigate();
