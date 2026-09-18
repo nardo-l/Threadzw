@@ -15,6 +15,7 @@ export const SubscriptionSuccess: React.FC = () => {
   const checkStatus = async () => {
     if (!user || !shop?.id) return;
     try {
+      await subscriptionClient.markPaymentSubmitted(shop.id);
       const status = await subscriptionClient.getStatus(shop.id);
       setPending(status.plan !== 'premium');
     } catch {
@@ -27,6 +28,9 @@ export const SubscriptionSuccess: React.FC = () => {
     (async () => {
       if (!user || !shop?.id) { if (mounted) setLoading(false); return; }
       try {
+        // The fixed NardoPay link redirects here after checkout. Record the submission
+        // on the authenticated shop, then keep the shop pending until admin approval.
+        await subscriptionClient.markPaymentSubmitted(shop.id);
         const status = await subscriptionClient.getStatus(shop.id);
         if (mounted) setPending(status.plan !== 'premium');
       } catch { /* keep pending */ }
