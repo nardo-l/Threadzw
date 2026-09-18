@@ -7,6 +7,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavig
 import { SplashScreen } from './screens/SplashScreen';
 import { SignUp } from './screens/SignUp';
 import { ThreadzwOnboarding } from './screens/ThreadzwOnboarding';
+import { OnboardingPaywall } from './screens/OnboardingPaywall';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
@@ -47,7 +48,7 @@ import { DesignSystemPart4 } from './components/design-system/DesignSystemPart4'
 import { DesignSystemPart5 } from './components/design-system/DesignSystemPart5';
 
 
-type AppStage = 'landing' | 'onboarding' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase' | 'design-system' | 'design-system-2' | 'design-system-3' | 'design-system-4' | 'design-system-5';
+type AppStage = 'landing' | 'onboarding' | 'onboarding-paywall' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase' | 'design-system' | 'design-system-2' | 'design-system-3' | 'design-system-4' | 'design-system-5';
 
 const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: string; id?: string } => {
   const path = pathname.toLowerCase().replace(/\/$/, '');
@@ -84,6 +85,9 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   }
   if (path === '/admin') {
     return { stage: 'admin' };
+  }
+  if (path === '/onboarding/paywall') {
+    return { stage: 'onboarding-paywall' };
   }
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
@@ -398,9 +402,10 @@ function AppContent() {
     if (
       path === '/login' ||
       path === '/signup' ||
-      path === '/onboarding'
+      path === '/onboarding' ||
+      path === '/onboarding/paywall'
     ) {
-      if (path === '/signup' || path === '/onboarding') {
+      if (path === '/signup' || path === '/onboarding' || path === '/onboarding/paywall') {
         // Allow user to remain on onboarding/signup flow without interruption
         console.log("[ROUTER] User is on onboarding/signup route. Allowing flow to continue.");
         return;
@@ -449,6 +454,7 @@ function AppContent() {
       if (
         appStageRef.current !== 'landing' && 
         appStageRef.current !== 'onboarding' &&
+        appStageRef.current !== 'onboarding-paywall' &&
         appStageRef.current !== 'building'
       ) {
         console.log("[ROUTER] navigation decisions. Changing stage to 'landing' due to unauthenticated state.");
@@ -472,6 +478,7 @@ function AppContent() {
       if (
         appStageRef.current !== 'dashboard' &&
         appStageRef.current !== 'onboarding' &&
+        appStageRef.current !== 'onboarding-paywall' &&
         appStageRef.current !== 'building' &&
         appStageRef.current !== 'setup' && appStageRef.current !== 'setup-success' && appStageRef.current !== 'pricing' && appStageRef.current !== 'subscription'
       ) {
@@ -508,6 +515,10 @@ function AppContent() {
 
   if (cleanPath === '/login') {
     return <Login />;
+  }
+
+  if (cleanPath === '/onboarding/paywall') {
+    return <OnboardingPaywall />;
   }
 
   if (cleanPath === '/signup' || cleanPath === '/onboarding') {
