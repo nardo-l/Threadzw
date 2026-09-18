@@ -261,17 +261,17 @@ export const Paywall: React.FC = () => {
         </div>
         <div className="pt-6">
           <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#C6FF00]"><Lock size={28} /></div>
-          <Eyebrow>Free plan limit</Eyebrow>
-          <h1 className="mt-2 text-[3rem] font-black leading-[0.96] tracking-tight">You've reached<br />your limit.</h1>
+          <Eyebrow>Start selling</Eyebrow>
+          <h1 className="mt-2 text-[3rem] font-black leading-[0.96] tracking-tight">Unlock your<br />ThreadZW store.</h1>
           <div className="mt-6 flex items-center gap-3 rounded-2xl bg-zinc-50 p-4">
             <Package size={22} />
-            <div><p className="text-sm font-black">{productCount} / 9 products</p><p className="text-xs text-zinc-500">Free includes up to 9 active products.</p></div>
+            <div><p className="text-sm font-black">Ready to add your first product</p><p className="text-xs text-zinc-500">Pay $9 once-off to unlock Pro.</p></div>
           </div>
-          <p className="mt-5 text-sm leading-6 text-zinc-500">Your store stays yours. Upgrade when you need more room to grow.</p>
+          <p className="mt-5 text-sm leading-6 text-zinc-500">There is no free tier or trial. Pay $9 once-off to add your first product and unlock Pro.</p>
         </div>
 
         <div className="mt-7 rounded-2xl border border-zinc-200 p-4">
-          <p className="text-xs font-black uppercase tracking-wider">Premium unlocks</p>
+          <p className="text-xs font-black uppercase tracking-wider">Pro includes</p>
           <div className="mt-4 grid grid-cols-2 gap-3">
             {['Unlimited products', 'Premium storefronts', 'Remove branding', 'Advanced analytics'].map(item => (
               <div key={item} className="flex items-start gap-2 text-xs font-semibold"><Check size={14} className="mt-0.5 text-[#79A900]" />{item}</div>
@@ -281,9 +281,9 @@ export const Paywall: React.FC = () => {
 
         <div className="mt-auto space-y-3 pt-8">
           <button onClick={() => setStep('plan')} className="flex w-full items-center justify-between rounded-2xl bg-[#C6FF00] px-5 py-4 text-sm font-black">
-            <span>UPGRADE TO PREMIUM</span><ArrowRight size={20} />
+            <span>UNLOCK PRO FOR $9</span><ArrowRight size={20} />
           </button>
-          <button onClick={close} className="w-full py-2 text-xs font-bold text-zinc-400">Maybe later</button>
+          <button onClick={close} className="w-full py-2 text-xs font-bold text-zinc-400">Back to dashboard</button>
         </div>
       </div>
     </Shell>
