@@ -2,7 +2,7 @@ import React from 'react';
 import { ArrowRight, CheckCircle2, Clock3, Package, Shield, Sparkles } from 'lucide-react';
 import { Shop } from '../../types';
 import { resolveSellerCategory } from '../../config/sellerCategories';
-import { getProductLimit, isPro } from '../../config/plans';
+import { getProductLimit, isPro, isTrialActive, getTrialDaysRemaining } from '../../config/plans';
 import { useNavigate } from 'react-router-dom';
 import { ThemePickerLauncher } from '../dashboard/ThemePickerLauncher';
 
@@ -22,7 +22,8 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
   const pro = isPro(shop);
   const pending = !pro && (String((shop as any)?.payment_verification_status || '').toLowerCase() === 'pending' || String((shop as any)?.account_status || '').toLowerCase() === 'pending_payment');
   const productLimit = getProductLimit(shop);
-  const trialActive = pro && String((shop as any)?.subscription_status || '').toLowerCase() === 'trial' && !!(shop as any)?.trial_ends_at && new Date((shop as any).trial_ends_at).getTime() > Date.now();
+  const trialActive = isTrialActive(shop);
+  const trialDays = getTrialDaysRemaining(shop);
 
   if (category !== 'clothing') return null;
 
@@ -43,29 +44,24 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
 
   if (pending) {
     return (
-      <div className="space-y-3">
-        <ThemePickerLauncher shop={shop} />
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-2xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3"><div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center"><Clock3 size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-amber-700">Payment pending</span><h3 className="text-sm font-black text-amber-950">You can add up to 9 products while we check your payment.</h3><p className="text-[11px] text-amber-800 mt-1">Once approved, your shop becomes live and products become unlimited.</p></div></div>
-            <button onClick={() => navigate('/subscription/success')} className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-zinc-950 text-white font-extrabold text-xs rounded-xl"><Clock3 size={13} /> Check payment</button>
-          </div>
-          <div className="mt-3 h-2 rounded-full bg-amber-100 overflow-hidden"><div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.min(100, ((shop as any).product_count || liveProductsCount) / 9 * 100)}%` }} /></div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
     <div className="space-y-3">
       <ThemePickerLauncher shop={shop} />
       <div className="bg-zinc-950 text-white rounded-2xl p-5 shadow-sm border border-zinc-800">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3"><div className="w-10 h-10 rounded-xl bg-[#CCFF00] text-black flex items-center justify-center"><Package size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-[#CCFF00]">Your shop is ready</span><h3 className="text-base font-black">Subscribe to start adding products.</h3><p className="text-xs text-zinc-400 mt-1">Pay $9 once-off. Your shop becomes live after we approve your NardoPay payment.</p></div></div>
-          <button onClick={() => navigate('/subscription')} className="inline-flex items-center justify-center gap-1.5 px-5 py-3 bg-[#CCFF00] text-black font-black text-xs uppercase rounded-xl whitespace-nowrap"><span>Subscribe — $9</span><ArrowRight size={14} /></button>
+          <div className="flex items-start gap-3"><div className="w-10 h-10 rounded-xl bg-[#CCFF00] text-black flex items-center justify-center"><Package size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-[#CCFF00]">{trialActive ? 'FREE TRIAL · 3 DAYS' : 'YOUR TRIAL HAS ENDED'}</span><h3 className="text-base font-black">{trialActive ? 'Start adding your products.' : 'Start Pro to keep selling.'}</h3><p className="text-xs text-zinc-400 mt-1">{trialActive ? 'Try ThreadZW Pro free for 3 days. Add up to 3 products and see your storefront in action.' : 'Your free trial has ended. Pay $9 once-off to unlock unlimited products.'}</p></div></div>
+          <button onClick={() => trialActive ? navigate('/dashboard') : navigate('/subscription')} className="inline-flex items-center justify-center gap-1.5 px-5 py-3 bg-[#CCFF00] text-black font-black text-xs uppercase rounded-xl whitespace-nowrap"><span>{trialActive ? 'START YOUR FREE TRIAL' : 'START PRO — $9'}</span><ArrowRight size={14} /></button>
         </div>
-        <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-zinc-500"><Shield size={13} /> No monthly renewal · NardoPay payment · Unlimited products after approval · Free to set up</div>
+        {trialActive ? (
+          <div className="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div className="flex items-center justify-between mb-3"><span className="text-[11px] font-black uppercase tracking-wider text-white">Product limit</span><span className="text-[11px] font-bold text-[#CCFF00]">{liveProductsCount}/3 products</span></div>
+            <div className="space-y-2.5">
+              {Array.from({ length: 3 }).map((_, index) => { const filled = index < liveProductsCount; return <div key={index} className="flex items-center gap-3 text-xs font-bold"><span className={filled ? 'flex h-6 w-6 items-center justify-center rounded-full bg-[#CCFF00] text-black' : 'flex h-6 w-6 items-center justify-center rounded-full border border-white/20 text-zinc-500'}>{filled ? '✓' : index + 1}</span><span className={filled ? 'text-white' : 'text-zinc-400'}>{filled ? 'Product ' + (index + 1) + ' added' : 'Product ' + (index + 1) + ' available'}</span></div>; })}
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] font-bold text-zinc-400"><span>{trialDays} {trialDays === 1 ? 'day' : 'days'} remaining</span><span>After trial: $9 once-off · unlimited products</span></div>
+          </div>
+        ) : (
+          <div className="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4 text-xs font-bold text-zinc-300"><div className="flex items-center gap-2 text-[#CCFF00]"><Shield size={14} /> Product access is locked until Pro is activated.</div><p className="mt-2 text-zinc-500">Your products remain in your account. Pay $9 once-off to reactivate product access and unlimited products.</p></div>
+        )}
       </div>
     </div>
-  );
-};
+  );};
