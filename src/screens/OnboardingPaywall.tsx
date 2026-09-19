@@ -87,12 +87,12 @@ export const OnboardingPaywall: React.FC = () => {
               <div className="mt-7 rounded-[2rem] border-2 border-[#F05A00] bg-zinc-950 p-5 text-white shadow-xl">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <span className="inline-flex rounded-full bg-[#F05A00] px-3 py-1 text-[9px] font-black uppercase tracking-wider">ONE-TIME</span>
+                    <span className="inline-flex rounded-full bg-[#F05A00] px-3 py-1 text-[9px] font-black uppercase tracking-wider">3-DAY FREE TRIAL</span>
                     <h2 className="mt-4 text-2xl font-black">ThreadZW Pro</h2>
                     <p className="mt-1 text-xs text-zinc-400">Everything you need to sell.</p>
                   </div>
                   <div className="text-right">
-                    <span className="text-4xl font-black">$9</span>
+                    <span className="text-4xl font-black">$0</span>
                     <span className="block text-[10px] font-bold text-zinc-500">for 3 days</span>
                   </div>
                 </div>
