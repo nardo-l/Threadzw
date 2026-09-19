@@ -41,6 +41,8 @@ export interface Shop {
   product_limit?: number | null;
   vehicle_limit?: number | null;
   subscription_status?: string;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
   premium_status?: string;
   payment_status?: string;
   payment_required?: boolean;
@@ -79,7 +81,7 @@ export interface VehicleImage { id: string; vehicle_id: string; image_url: strin
 export interface Vehicle { id: string; shop_id: string; title: string; make: string; model: string; year: number; price: number; currency: string; mileage?: number | null; mileage_unit?: 'km' | 'mi'; fuel_type?: VehicleFuelType | null; transmission?: VehicleTransmission | null; engine?: string | null; body_type?: VehicleBodyType | null; condition?: VehicleCondition | null; colour?: string | null; location?: string | null; description?: string | null; status: VehicleStatus; is_featured?: boolean; view_count?: number; created_at: string; updated_at?: string; images?: VehicleImage[]; primary_image?: string; }
 export interface VehicleFilters { search?: string; make?: string; minPrice?: number; maxPrice?: number; minYear?: number; maxYear?: number; status?: VehicleStatus | 'all'; fuel_type?: VehicleFuelType | 'all'; transmission?: VehicleTransmission | 'all'; condition?: VehicleCondition | 'all'; body_type?: VehicleBodyType | 'all'; sortBy?: 'newest' | 'price_asc' | 'price_desc' | 'year_desc' | 'mileage_asc'; }
 
-export type SubscriptionStatus = 'inactive' | 'pending' | 'active' | 'past_due' | 'grace_period' | 'cancelled' | 'expired';
+export type SubscriptionStatus = 'inactive' | 'trial' | 'pending' | 'active' | 'past_due' | 'grace_period' | 'cancelled' | 'expired';
 export type BillingCycle = 'none' | 'monthly' | 'yearly';
 export type PaymentEventType = 'payment.completed' | 'subscription.renewed' | 'subscription.trial_started' | 'subscription.renew_failed' | 'subscription.cancelled' | 'manual_admin_approval';
 export interface Subscription { id: string; shop_id: string; owner_id: string; category: SellerCategory; plan: SellerPlan; billing_cycle: BillingCycle; amount: number; currency: string; status: SubscriptionStatus; provider: 'nardopay' | string; nardopay_link_id?: string | null; nardopay_link_code?: string | null; nardopay_subscription_id?: string | null; current_period_start?: string | null; current_period_end?: string | null; grace_period_end?: string | null; cancelled_at?: string | null; created_at: string; updated_at: string; }
