@@ -10,7 +10,7 @@ export interface ShopEntitlements { category: SellerCategory; plan: SellerPlan; 
 
 export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>> = {
   clothing: {
-    free: { id:'free', name:'Clothing Free', category:'clothing', price:0, currency:'USD', billingCycle:'none', maxActiveListings:0, maxImagesPerListing:5, description:'Create your shop for free. Subscribe for $9 once-off to start adding products.', features:['Shop setup and dashboard','WhatsApp customer interests','Basic storefront tools'] },
+    free: { id:'free', name:'Clothing Free', category:'clothing', price:0, currency:'USD', billingCycle:'none', maxActiveListings:3, maxImagesPerListing:5, description:'Start with a free 3-day trial and add up to 3 products. Then pay $9 once-off for Pro.', features:['3-day free Pro trial','Up to 3 active products during trial','Shop setup and dashboard','WhatsApp customer interests','Basic storefront tools'] },
     premium: { id:'premium', name:'Clothing Premium', category:'clothing', price:9, currency:'USD', billingCycle:'none', maxActiveListings:null, maxImagesPerListing:10, badge:'Once-off', popular:true, description:'Unlimited products for a $9 once-off payment.', features:['Unlimited active products','$9 USD once-off','All clothing storefront templates','Custom storefront colours & branding','Remove ThreadZW branding','Featured products promotion','Advanced order & inventory tracking','Storefront visitor analytics'] }
   },
   vehicles: {
@@ -29,12 +29,26 @@ export function getPlanForCategory(category: SellerCategory, plan: SellerPlan='f
 export function getPlansForCategory(category: SellerCategory): PlanConfig[] { if(category==='general') return [PLANS_CONFIG.general.free]; return [PLANS_CONFIG[category].free,PLANS_CONFIG[category].premium]; }
 export function getPlanConfig(shop: Shop | null | undefined): PlanConfig { return getPlanForCategory(resolveSellerCategory(shop?.page_type),normalizePlan(shop?.plan)); }
 
+export function isTrialActive(shop: Shop | null | undefined): boolean {
+  if (!shop) return false;
+  const status = String((shop as any)?.subscription_status || '').toLowerCase();
+  const ends = (shop as any)?.trial_ends_at;
+  return status === 'trial' && !!ends && new Date(ends).getTime() > Date.now();
+}
+
+export function getTrialDaysRemaining(shop: Shop | null | undefined): number {
+  if (!isTrialActive(shop)) return 0;
+  const ends = new Date((shop as any).trial_ends_at).getTime();
+  return Math.max(0, Math.ceil((ends - Date.now()) / 86400000));
+}
+
 export function getProductLimit(shop: Shop | null | undefined): number | null {
-  if(isPro(shop)) return null;
+  if (isPro(shop) && !isTrialActive(shop)) return null;
   const category=resolveSellerCategory(shop?.page_type);
   if(category==='clothing') {
     const status=String((shop as any)?.account_status||'').toLowerCase();
     const verification=String((shop as any)?.payment_verification_status||'').toLowerCase();
+    if (isTrialActive(shop)) return 3;
     return status==='pending_payment'||verification==='pending' ? 9 : 0;
   }
   return 9;
@@ -46,7 +60,7 @@ export function isProductActive(product:{is_published?:boolean;status?:string;to
 export function isVehicleActive(vehicle:{status?:string}):boolean { const status=vehicle.status?.toLowerCase(); return status==='available'||status==='reserved'; }
 export function getActiveProductCount(products:Product[]):number { return products.filter(isProductActive).length; }
 export function getActiveVehicleCount(vehicles:Vehicle[]):number { return vehicles.filter(isVehicleActive).length; }
-export function canAddProduct(shop:Shop|null|undefined,currentActiveCount:number) { const limit=getProductLimit(shop); if(limit===null) return {allowed:true,limit:null,count:currentActiveCount}; const pending=String((shop as any)?.account_status||'').toLowerCase()==='pending_payment'||String((shop as any)?.payment_verification_status||'').toLowerCase()==='pending'; const allowed=currentActiveCount<limit; return {allowed,limit,count:currentActiveCount,reason:allowed?undefined:pending?'Your payment is being verified. You can add up to 9 products while we review it.':'Subscribe for $9 once-off to start adding products and make your shop live.'}; }
+export function canAddProduct(shop:Shop|null|undefined,currentActiveCount:number) { const limit=getProductLimit(shop); if(limit===null) return {allowed:true,limit:null,count:currentActiveCount}; const pending=String((shop as any)?.account_status||'').toLowerCase()==='pending_payment'||String((shop as any)?.payment_verification_status||'').toLowerCase()==='pending'; const trial=isTrialActive(shop); const allowed=currentActiveCount<limit; return {allowed,limit,count:currentActiveCount,reason:allowed?undefined:trial?'You have reached the 3-product limit for your free trial.':'Your free trial has ended. Start Pro for $9 once-off to keep adding products.'}; }
 export function canAddVehicle(shop:Shop|null|undefined,currentActiveCount:number) { const limit=getVehicleLimit(shop)??1; const allowed=currentActiveCount<limit; return {allowed,limit,count:currentActiveCount,reason:allowed?undefined:`You've reached the ${limit}-vehicle limit.`}; }
 export function canUseCustomBranding(shop:Shop|null|undefined):boolean { return isPro(shop); }
 export function canRemoveBranding(shop:Shop|null|undefined):boolean { return isPro(shop); }
