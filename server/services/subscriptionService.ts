@@ -11,6 +11,8 @@ export class SubscriptionService {
     if (!userId) throw new Error('UNAUTHORIZED: Authentication is required');
     if (!shopId) throw new Error('INVALID_SHOP: shopId is required');
 
+    await serverSupabase.rpc('expire_threadzw_promo_trials');
+
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
       .select('id, owner_id, name, page_type, plan, subscription_status, payment_verification_status')
