@@ -92,7 +92,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/edit-shop' || path === '/edit-profile') {
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/edit-shop' || path === '/edit-profile' || path === '/support') {
     return { stage: 'dashboard' };
   }
   if (path === '/pricing') {
@@ -644,6 +644,7 @@ function AppContent() {
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
         <Route path="/edit-profile" element={<ShopEdit initialSubView="edit-profile" />} />
