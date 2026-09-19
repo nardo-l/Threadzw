@@ -63,7 +63,7 @@ export const Subscription: React.FC = () => {
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-200 text-zinc-800 text-[10px] font-bold tracking-wider mb-2"><Shirt size={12} /> CLOTHING MERCHANT</div>
           <h1 className="text-3xl font-black uppercase tracking-tight">{trialActive ? 'Your Pro trial is live.' : 'Make your shop live.'}</h1>
-          <p className="text-sm text-zinc-500 mt-2">{trialActive ? 'You have Pro free for 30 days. After the trial, pay $9 once-off to keep Pro.' : 'One payment. No monthly renewal.'}</p>
+          <p className="text-sm text-zinc-500 mt-2">{trialActive ? 'You have Pro free during your trial. After it ends, pay $9 once-off to keep Pro.' : 'One payment. No monthly renewal.'}</p>
         </div>
 
         {trialActive && status?.trialEndsAt && <div className="bg-[#fff0e3] border border-orange-200 rounded-3xl p-5 mb-5"><div className="flex gap-3"><Clock className="text-[#F05A00] shrink-0" size={20} /><div><h2 className="text-sm font-black text-zinc-950">NARDO PROMO · PRO FREE FOR 30 DAYS</h2><p className="text-xs text-zinc-600 mt-1 leading-relaxed">Your Pro trial ends on <strong>{new Date(status.trialEndsAt).toLocaleDateString()}</strong>. No payment is required during the trial. After it expires, your shop returns to the unpaid state until you pay the normal $9 once-off price.</p></div></div></div>}
@@ -80,7 +80,7 @@ export const Subscription: React.FC = () => {
           {pending && !pro && <div className="mt-7 p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 text-center text-sm font-bold text-amber-200">Payment submitted — awaiting admin approval</div>}
           {pro && !trialActive && <div className="mt-7 p-4 rounded-2xl bg-[#C6FF00]/10 border border-[#C6FF00]/30 text-center text-sm font-black text-[#C6FF00]">PREMIUM ACTIVE</div>}
         </div>
-        <p className="text-center text-[11px] text-zinc-500 mt-5">Promo access is limited to 20 users. The NARDO promotion provides 30 days of Pro at $0, then the normal $9 once-off activation applies.</p>
+        <p className="text-center text-[11px] text-zinc-500 mt-5">NARDO promo access is limited to 20 users and provides 30 days of Pro at $0. The standard ThreadZW trial is 3 days with up to 3 products, then the normal $9 once-off activation applies.</p>
       </div>
     </div>
   );
