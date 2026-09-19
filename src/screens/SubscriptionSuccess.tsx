@@ -4,10 +4,11 @@ import {
   Check,
   CheckCircle2,
   Clock3,
+  Grid2X2,
   Loader2,
   RefreshCw,
   ShieldCheck,
-  Store,
+  X,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -30,8 +31,8 @@ export const SubscriptionSuccess: React.FC = () => {
     }
 
     try {
-      // Reaching this page means NardoPay sent the customer back after checkout.
-      // This records the submission but never grants Pro. Admin approval remains authoritative.
+      // NardoPay redirects here after checkout. The redirect never grants Pro.
+      // Admin approval remains authoritative.
       await subscriptionClient.markPaymentSubmitted(shop.id);
       const status = await subscriptionClient.getStatus(shop.id);
 
@@ -43,7 +44,6 @@ export const SubscriptionSuccess: React.FC = () => {
       setState(isPro ? 'active' : 'pending');
     } catch (error) {
       console.warn('[SUBSCRIPTION SUCCESS] status check:', error);
-      // Never show "approved" when the status check fails.
       setState('pending');
     }
   };
@@ -73,12 +73,12 @@ export const SubscriptionSuccess: React.FC = () => {
 
   if (state === 'checking') {
     return (
-      <main className="min-h-screen bg-[#f7f5ef] flex items-center justify-center px-5">
-        <div className="flex flex-col items-center text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-zinc-950 text-[#F05A00]">
+      <main className="min-h-screen bg-[#faf9f5] px-5 py-8 text-zinc-950">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md flex-col items-center justify-center text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#111214] text-[#F05A00]">
             <Loader2 size={28} className="animate-spin" />
           </div>
-          <p className="mt-5 text-sm font-black text-zinc-950">Confirming your payment…</p>
+          <p className="mt-5 text-sm font-black">Checking your payment status…</p>
           <p className="mt-1 text-xs text-zinc-500">Just a moment.</p>
         </div>
       </main>
@@ -88,96 +88,117 @@ export const SubscriptionSuccess: React.FC = () => {
   const active = state === 'active';
 
   return (
-    <main className="min-h-screen bg-[#f7f5ef] px-5 py-8 text-zinc-950">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-md flex-col">
-        <header className="flex items-center justify-center">
-          <div className="text-lg font-black tracking-tight">
+    <main className="min-h-screen bg-[#faf9f5] px-4 py-5 text-zinc-950 sm:px-6 sm:py-8">
+      <div className="mx-auto flex min-h-[calc(100vh-2.5rem)] w-full max-w-[430px] flex-col sm:min-h-[calc(100vh-4rem)]">
+        <header className="flex items-center justify-between px-1">
+          <div className="text-[25px] font-black tracking-[-0.07em] leading-none">
             THREAD<span className="text-[#F05A00]">ZW</span>
           </div>
+
+          <button
+            type="button"
+            aria-label="Go to dashboard"
+            onClick={() => navigate('/dashboard')}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-500 transition hover:bg-black/5 hover:text-zinc-950"
+          >
+            <X size={25} strokeWidth={2.2} />
+          </button>
         </header>
 
-        <section className="flex flex-1 flex-col justify-center py-8">
+        <section className="flex-1 pt-8 sm:pt-12">
           <div className="text-center">
             <div
               className={[
-                'mx-auto flex h-24 w-24 items-center justify-center rounded-full',
-                active ? 'bg-[#F05A00] text-white' : 'bg-amber-100 text-amber-700',
+                'relative mx-auto flex h-[116px] w-[116px] items-center justify-center rounded-full',
+                active ? 'bg-[#e7f8e9] text-[#179447]' : 'bg-[#fff0e3] text-[#F05A00]',
               ].join(' ')}
             >
-              {active ? <CheckCircle2 size={48} strokeWidth={2.2} /> : <Clock3 size={46} strokeWidth={2.2} />}
+              {active ? (
+                <CheckCircle2 size={58} strokeWidth={1.8} />
+              ) : (
+                <>
+                  <div className="absolute -right-1 top-3 h-2.5 w-8 rotate-[115deg] rounded-full bg-[#F05A00]" />
+                  <div className="absolute right-[-7px] top-12 h-2.5 w-7 rotate-[160deg] rounded-full bg-[#F05A00]" />
+                  <div className="absolute right-0 top-[70px] h-2.5 w-6 rounded-full bg-[#F05A00]" />
+                  <div className="flex h-[60px] w-[76px] items-center justify-center rounded-[14px] border-[6px] border-current">
+                    <div className="h-1.5 w-7 rounded-full bg-current" />
+                    <div className="absolute ml-[64px] mt-[40px] flex h-10 w-10 items-center justify-center rounded-full bg-[#F05A00] text-white ring-[6px] ring-[#fff0e3]">
+                      <Check size={22} strokeWidth={3} />
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
-            <p className="mt-7 text-[10px] font-black uppercase tracking-[0.24em] text-[#F05A00]">
-              {active ? 'PRO ACTIVATED' : 'PAYMENT RECEIVED'}
+            <p className="mt-7 text-[11px] font-black uppercase tracking-[0.22em] text-[#F05A00]">
+              {active ? 'Payment verified' : 'Payment submitted'}
             </p>
 
-            <h1 className="mt-3 text-[2.7rem] font-black leading-[0.94] tracking-tight">
+            <h1 className="mt-3 text-[38px] font-black leading-[0.98] tracking-[-0.045em] sm:text-[42px]">
               {active ? (
                 <>
-                  Your shop is <span className="text-[#F05A00]">ready to go.</span>
+                  Pro is <span className="text-[#F05A00]">unlocked.</span>
                 </>
               ) : (
                 <>
-                  You're <span className="text-[#F05A00]">all paid up.</span>
+                  Payment <span className="text-[#F05A00]">submitted!</span>
                 </>
               )}
             </h1>
 
-            <p className="mt-5 text-sm leading-6 text-zinc-600">
+            <p className="mx-auto mt-5 max-w-[370px] text-[15px] leading-6 text-[#697386]">
               {active
-                ? 'Your $9 once-off payment has been verified and ThreadZW Pro is now active on your shop.'
-                : 'Your $9 once-off payment has been submitted successfully. Your shop is now waiting for ThreadZW verification.'}
+                ? 'Your $9 once-off payment has been verified and your Pro shop is now active.'
+                : 'Your $9 once-off payment has been received and is now under review. You’ll be notified once your payment is verified and your Pro shop is activated.'}
             </p>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-[2rem] bg-zinc-950 text-white shadow-xl">
-            <div className="border-b border-white/10 p-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F05A00]">
-                  {active ? <Check size={21} /> : <ShieldCheck size={21} />}
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-                    THREADZW PRO · $9
-                  </p>
-                  <p className="mt-0.5 text-sm font-black">
-                    {active ? 'Payment verified' : 'Awaiting verification'}
-                  </p>
-                </div>
-              </div>
+          <div className="mt-8 overflow-hidden rounded-[22px] border border-[#e5e2db] bg-white">
+            <div className="border-b border-[#ebe8e1] px-5 py-4">
+              <span className="inline-flex rounded-full bg-[#fff0e3] px-3 py-1.5 text-[12px] font-black text-[#D84E00]">
+                Next steps
+              </span>
             </div>
 
-            <div className="space-y-4 p-5">
+            <div className="px-5 py-5">
               <StatusRow
                 done
-                number="01"
                 title="Payment submitted"
-                text="Your NardoPay checkout has been completed."
+                text="$9.00 (once-off) via NardoPay"
+                right={!active ? 'Submitted' : 'Complete'}
               />
+              <StatusConnector />
               <StatusRow
                 done={active}
                 current={!active}
-                number="02"
                 title="Payment verification"
-                text={active ? 'ThreadZW has approved the payment.' : 'The ThreadZW team will verify your payment.'}
+                text={active ? 'Your payment has been approved.' : 'Our team is checking your payment details.'}
+                right={active ? 'Approved' : 'In progress'}
               />
+              <StatusConnector />
               <StatusRow
                 done={active}
-                number="03"
-                title="Pro unlocked"
-                text={active ? 'Unlimited products and live-store access are unlocked.' : 'Pro will unlock after approval.'}
+                title="Pro unlocked after approval"
+                text={
+                  active
+                    ? 'Unlimited products and Pro features are now available.'
+                    : 'Once verified, your shop will be upgraded to Pro with unlimited products.'
+                }
+                right={active ? 'Active' : 'Pending'}
               />
             </div>
           </div>
 
           {!active && (
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <div className="flex items-start gap-3">
-                <Clock3 size={18} className="mt-0.5 shrink-0 text-amber-700" />
+            <div className="mt-4 rounded-[20px] bg-[#fff0e3] px-5 py-5">
+              <div className="flex items-start gap-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-[#ffe2c8] text-[#D84E00]">
+                  <ShieldCheck size={24} strokeWidth={2} />
+                </div>
                 <div>
-                  <p className="text-xs font-black text-amber-950">Nothing else is required from you</p>
-                  <p className="mt-1 text-xs leading-5 text-amber-800">
-                    Keep your shop as it is while we verify the payment. You can customise your storefront from the dashboard, but adding products is unlocked after approval.
+                  <p className="text-[16px] font-black tracking-[-0.02em]">Admin verification required</p>
+                  <p className="mt-1.5 text-[13px] leading-5 text-[#687386]">
+                    Your payment needs to be manually verified by the ThreadZW admin team. You’ll be notified once it’s complete.
                   </p>
                 </div>
               </div>
@@ -185,61 +206,87 @@ export const SubscriptionSuccess: React.FC = () => {
           )}
         </section>
 
-        <footer className="space-y-3">
+        <footer className="mt-8 space-y-3 pb-2">
+          <button
+            type="button"
+            onClick={() => navigate('/dashboard')}
+            className="flex w-full items-center justify-center gap-3 rounded-[17px] bg-[#111214] px-5 py-[17px] text-[15px] font-black text-white shadow-[0_10px_25px_rgba(17,18,20,0.14)] transition hover:bg-black active:scale-[.99]"
+          >
+            <Grid2X2 size={19} strokeWidth={2.5} />
+            <span>Go to Dashboard</span>
+            <ArrowRight size={21} strokeWidth={2.4} />
+          </button>
+
           {!active && (
             <button
               type="button"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white px-5 py-4 text-xs font-black uppercase tracking-wide text-zinc-900 transition active:scale-[.99] disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-3 rounded-[17px] border border-[#9da6b5] bg-transparent px-5 py-[16px] text-[15px] font-black text-zinc-950 transition hover:bg-white disabled:opacity-60"
             >
-              {refreshing ? <Loader2 size={17} className="animate-spin" /> : <RefreshCw size={17} />}
+              {refreshing ? <Loader2 size={19} className="animate-spin" /> : <RefreshCw size={19} />}
               Refresh verification status
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="flex w-full items-center justify-between rounded-2xl bg-[#F05A00] px-5 py-4 text-sm font-black text-white shadow-lg shadow-orange-900/20 transition active:scale-[.99]"
-          >
-            <span>{active ? 'GO TO MY SHOP' : 'GO TO DASHBOARD'}</span>
-            <ArrowRight size={20} />
-          </button>
-
-          <div className="flex items-center justify-center gap-2 pb-1 text-[10px] font-semibold text-zinc-500">
-            <Store size={13} />
-            <span>ThreadZW · $9 once-off · no monthly renewal</span>
-          </div>
+          <p className="pt-1 text-center text-[12px] font-medium text-[#7b8493]">
+            Need help?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/support')}
+              className="font-bold text-[#F05A00] hover:underline"
+            >
+              Contact support <span aria-hidden="true">→</span>
+            </button>
+          </p>
         </footer>
       </div>
     </main>
   );
 };
 
+const StatusConnector: React.FC = () => (
+  <div className="ml-[17px] h-5 w-px bg-[#e5e2db]" aria-hidden="true" />
+);
+
 const StatusRow: React.FC<{
   done: boolean;
   current?: boolean;
-  number: string;
   title: string;
   text: string;
-}> = ({ done, current, number, title, text }) => (
+  right: string;
+}> = ({ done, current, title, text, right }) => (
   <div className="flex items-start gap-3">
     <div
       className={[
-        'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-black',
+        'mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
         done
-          ? 'bg-[#F05A00] text-white'
+          ? 'bg-[#22a657] text-white'
           : current
-            ? 'border border-amber-400 bg-amber-400/10 text-amber-300'
-            : 'border border-white/10 bg-white/5 text-zinc-500',
+            ? 'bg-[#F05A00] text-white'
+            : 'bg-[#e9edf2] text-[#7d8796]',
       ].join(' ')}
     >
-      {done ? <Check size={16} /> : number}
+      {done ? <Check size={17} strokeWidth={3} /> : current ? <Clock3 size={17} strokeWidth={2.4} /> : <span className="h-2.5 w-2.5 rounded-full bg-current" />}
     </div>
-    <div className="min-w-0 pt-0.5">
-      <p className="text-sm font-black">{title}</p>
-      <p className="mt-1 text-xs leading-5 text-zinc-500">{text}</p>
+
+    <div className="min-w-0 flex-1">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[14px] font-black leading-5 text-zinc-950">{title}</p>
+        <span
+          className={[
+            'shrink-0 rounded-full px-3 py-1 text-[10px] font-black',
+            done
+              ? 'bg-[#e9f8ed] text-[#188d45]'
+              : current
+                ? 'bg-[#fff0e3] text-[#D84E00]'
+                : 'bg-[#eef0f3] text-[#758094]',
+          ].join(' ')}
+        >
+          {right}
+        </span>
+      </div>
+      <p className="mt-1 text-[12px] leading-5 text-[#697386]">{text}</p>
     </div>
   </div>
 );
