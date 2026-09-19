@@ -96,6 +96,33 @@ export class SubscriptionController {
   }
 
   /**
+   * POST /api/subscriptions/redeem-promo
+   * Redeems a server-authoritative promotional trial.
+   */
+  public async redeemPromo(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { shopId, code } = req.body;
+      if (!userId) return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required' });
+      if (!shopId || !code) return res.status(400).json({ success: false, error: 'INVALID_PROMO_CODE', message: 'shopId and code are required' });
+
+      const result = await subscriptionService.redeemPromoCode({ userId, shopId, code });
+      return res.status(200).json(result);
+    } catch (err: any) {
+      const message = String(err?.message || '');
+      if (message.includes('UNAUTHORIZED')) return res.status(403).json({ success: false, error: 'UNAUTHORIZED', message: 'You do not own this shop' });
+      if (message.includes('INVALID_SHOP')) return res.status(404).json({ success: false, error: 'INVALID_SHOP', message: 'Shop not found' });
+      if (message.includes('INVALID_PROMO_CODE')) return res.status(400).json({ success: false, error: 'INVALID_PROMO_CODE', message: 'That promo code is invalid.' });
+      if (message.includes('PROMO_LIMIT_REACHED')) return res.status(400).json({ success: false, error: 'PROMO_LIMIT_REACHED', message: 'This promo code has reached its 20-user limit.' });
+      if (message.includes('PROMO_ALREADY_REDEEMED')) return res.status(400).json({ success: false, error: 'PROMO_ALREADY_REDEEMED', message: 'You have already used a ThreadZW promo code.' });
+      if (message.includes('ALREADY_PRO')) return res.status(400).json({ success: false, error: 'ALREADY_PRO', message: 'This shop already has Pro access.' });
+      if (message.includes('UNSUPPORTED_CATEGORY')) return res.status(400).json({ success: false, error: 'UNSUPPORTED_CATEGORY', message: 'This promotion is currently available for clothing shops.' });
+      console.error('[SubscriptionController] redeemPromo error:', message);
+      return res.status(500).json({ success: false, error: 'PROMO_REDEMPTION_FAILED', message: 'Could not redeem the promo code. Please try again.' });
+    }
+  }
+
+  /**
    * GET /api/subscriptions/status?shopId=...
    * Fetches verified subscription status for a shop.
    */
