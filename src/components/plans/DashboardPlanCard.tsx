@@ -22,6 +22,7 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
   const pro = isPro(shop);
   const pending = !pro && (String((shop as any)?.payment_verification_status || '').toLowerCase() === 'pending' || String((shop as any)?.account_status || '').toLowerCase() === 'pending_payment');
   const productLimit = getProductLimit(shop);
+  const trialActive = pro && String((shop as any)?.subscription_status || '').toLowerCase() === 'trial' && !!(shop as any)?.trial_ends_at && new Date((shop as any).trial_ends_at).getTime() > Date.now();
 
   if (category !== 'clothing') return null;
 
@@ -31,10 +32,10 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
         <ThemePickerLauncher shop={shop} />
         <div className="bg-white border border-emerald-200/80 rounded-2xl p-5 shadow-2xs">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-zinc-950 text-[#CCFF00] flex items-center justify-center"><Sparkles size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Your plan</span><h3 className="text-sm font-bold text-zinc-900">ThreadZW Premium · Lifetime</h3></div></div>
+            <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-zinc-950 text-[#CCFF00] flex items-center justify-center"><Sparkles size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Your plan</span><h3 className="text-sm font-bold text-zinc-900">ThreadZW Premium · {trialActive ? 'NARDO Trial' : 'Lifetime'}</h3></div></div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold"><CheckCircle2 size={13} /> Active</span>
           </div>
-          <p className="text-[11px] text-zinc-500 mt-3">Unlimited products · $9 once-off · {liveProductsCount} active products</p>
+          <p className="text-[11px] text-zinc-500 mt-3">{trialActive ? `Unlimited products · Free for 30 days · ends ${new Date((shop as any).trial_ends_at).toLocaleDateString()}` : `Unlimited products · $9 once-off · ${liveProductsCount} active products`}</p>
         </div>
       </div>
     );
