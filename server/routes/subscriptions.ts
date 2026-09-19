@@ -8,6 +8,7 @@ const router = Router();
 
 router.post('/create-payment-link', requireAuth, (req, res) => subscriptionController.createPaymentLink(req, res));
 router.post('/mark-payment-submitted', requireAuth, (req, res) => subscriptionController.markPaymentSubmitted(req, res));
+router.post('/redeem-promo', requireAuth, (req, res) => subscriptionController.redeemPromo(req, res));
 router.get('/status', requireAuth, (req, res) => subscriptionController.getStatus(req, res));
 router.post('/verify-fallback', requireAuth, (req, res) => subscriptionController.verifyFallback(req, res));
 
