@@ -47,7 +47,7 @@ export const OnboardingPaywall: React.FC = () => {
                 Turn your brand into a <span className="text-[#F05A00]">real online store.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                You've done the setup. Start your free 3-day Pro trial and add up to 3 products before deciding to pay.
+                You've done the setup. Start free with up to 3 products, then pay $9 once-off when you want unlimited products.
               </p>
 
               <div className="relative mt-8 overflow-hidden rounded-[2rem] bg-zinc-950 p-5 text-white shadow-xl">
@@ -78,16 +78,16 @@ export const OnboardingPaywall: React.FC = () => {
             <div className="flex min-h-full flex-col">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#F05A00]">PRO PLAN</p>
               <h1 className="mt-4 text-[2.65rem] font-black leading-[0.94] tracking-tight">
-                Try Pro free. <span className="text-[#F05A00]">Then grow without limits.</span>
+                Start free. <span className="text-[#F05A00]">Then grow without limits.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Start with a free 3-day trial. Add up to 3 products and test your storefront. After the trial, Pro is $9 once-off with no monthly renewal.
+                Start free with up to 3 products and test your storefront. Pro is $9 once-off with no monthly renewal.
               </p>
 
               <div className="mt-7 rounded-[2rem] border-2 border-[#F05A00] bg-zinc-950 p-5 text-white shadow-xl">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <span className="inline-flex rounded-full bg-[#F05A00] px-3 py-1 text-[9px] font-black uppercase tracking-wider">3-DAY FREE TRIAL</span>
+                    <span className="inline-flex rounded-full bg-[#F05A00] px-3 py-1 text-[9px] font-black uppercase tracking-wider">FREE PLAN</span>
                     <h2 className="mt-4 text-2xl font-black">ThreadZW Pro</h2>
                     <p className="mt-1 text-xs text-zinc-400">Everything you need to sell.</p>
                   </div>
@@ -119,20 +119,20 @@ export const OnboardingPaywall: React.FC = () => {
                 Here's exactly <span className="text-[#F05A00]">what happens.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Your free trial starts immediately. After 3 days, pay $9 once-off through NardoPay to keep Pro and unlock unlimited products.
+                Your free plan includes up to 3 products. When you are ready, pay $9 once-off through NardoPay to unlock unlimited products.
               </p>
 
               <div className="mt-7 space-y-3">
-                <InfoRow number="01" icon={<CreditCard size={19} />} title="Pay $9 once-off after your trial" text="You'll use the secure NardoPay checkout when you're ready to activate Pro." />
+                <InfoRow number="01" icon={<CreditCard size={19} />} title="Pay $9 once-off when you're ready" text="You'll use the secure NardoPay checkout when you're ready to activate Pro." />
                 <InfoRow number="02" icon={<ShieldCheck size={19} />} title="Payment is verified" text="Your payment is sent for verification. Your shop is not activated just because you reach the payment page." />
-                <InfoRow number="03" icon={<Zap size={19} />} title="Pro is activated" text="During your trial, add up to 3 products. After paying $9 once-off and verification, your shop gets unlimited products." />
+                <InfoRow number="03" icon={<Zap size={19} />} title="Pro is activated" text="Start with up to 3 products for free. After paying $9 once-off and verification, your shop gets unlimited products." />
               </div>
 
               <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-[#F05A00]"><Lock size={19} /></div>
                 <div>
                   <p className="text-xs font-black">Powered by NardoPay</p>
-                  <p className="mt-0.5 text-[10px] text-zinc-500">3-day free trial · then $9 once-off</p>
+                  <p className="mt-0.5 text-[10px] text-zinc-500">Free plan · then $9 once-off</p>
                 </div>
               </div>
 
@@ -149,7 +149,7 @@ export const OnboardingPaywall: React.FC = () => {
                 Your store is <span className="text-[#F05A00]">ready to try.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Start your free 3-day trial, customise your shop, choose a storefront theme and add up to 3 products. After the trial, pay $9 once-off to keep Pro.
+                Start free with up to 3 products, customise your shop, choose a storefront theme and see your store in action. Pay $9 once-off when you want unlimited products.
               </p>
 
               <div className="mt-7 overflow-hidden rounded-[2rem] bg-zinc-950 text-white shadow-xl">
@@ -157,7 +157,7 @@ export const OnboardingPaywall: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">THREADZW PRO</p>
-                      <h2 className="mt-1 text-xl font-black">3-day free trial</h2>
+                      <h2 className="mt-1 text-xl font-black">Free plan</h2>
                     </div>
                     <Sparkles className="text-[#F05A00]" size={22} />
                   </div>
@@ -167,7 +167,7 @@ export const OnboardingPaywall: React.FC = () => {
                   </div>
                 </div>
                 <div className="space-y-3 p-5 text-sm">
-                  {['Customise your storefront', 'Choose from your ThreadZW themes', 'See your store before paying', 'Add up to 3 products during your trial'].map(item => (
+                  {['Customise your storefront', 'Choose from your ThreadZW themes', 'See your store before paying', 'Add up to 3 products for free'].map(item => (
                     <div key={item} className="flex items-center gap-3 font-semibold">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F05A00]"><Check size={13} /></div>
                       {item}
@@ -186,7 +186,7 @@ export const OnboardingPaywall: React.FC = () => {
                   <ArrowRight size={20} />
                 </button>
                 <p className="mt-3 text-center text-[10px] font-semibold text-zinc-500">
-                  Start free for 3 days. Then pay $9 once-off to keep Pro.
+                  Start free with up to 3 products. Then pay $9 once-off for unlimited products.
                 </p>
               </div>
             </div>
