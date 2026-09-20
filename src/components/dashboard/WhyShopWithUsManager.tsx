@@ -20,7 +20,8 @@ const getCards = (shop: any): WhyCard[] => {
       : 'Add your shop location',
     icon: '📍'
   };
-  const extras = configured.filter((c: WhyCard) => c?.id !== 'location').map((c: WhyCard) => ({
+  const maxExtras = isPro(shop) ? PRO_TOTAL - 1 : FREE_TOTAL - 1;
+  const extras = configured.filter((c: WhyCard) => c?.id !== 'location').slice(0, maxExtras).map((c: WhyCard) => ({
     id: c.id,
     title: c.title || 'Why shop with us',
     description: c.description || '',
