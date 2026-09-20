@@ -5,10 +5,10 @@ import { useNavigate } from 'react-router-dom';
 const TOTAL_STEPS = 4;
 
 const featureList = [
-  'Add your first product',
+  'Add up to 3 products for free',
   'Get your own custom storefront',
   'Share one link on WhatsApp, Instagram & TikTok',
-  'Unlimited products after the trial',
+  'Unlimited products after Pro activation',
   'Premium storefront tools & analytics',
 ];
 
@@ -88,12 +88,12 @@ export const OnboardingPaywall: React.FC = () => {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <span className="inline-flex rounded-full bg-[#F05A00] px-3 py-1 text-[9px] font-black uppercase tracking-wider">FREE PLAN</span>
-                    <h2 className="mt-4 text-2xl font-black">ThreadZW Pro</h2>
+                    <h2 className="mt-4 text-2xl font-black">ThreadZW Free</h2>
                     <p className="mt-1 text-xs text-zinc-400">Everything you need to sell.</p>
                   </div>
                   <div className="text-right">
                     <span className="text-4xl font-black">$0</span>
-                    <span className="block text-[10px] font-bold text-zinc-500">for 3 days</span>
+                    <span className="block text-[10px] font-bold text-zinc-500">up to 3 products</span>
                   </div>
                 </div>
 
@@ -146,7 +146,7 @@ export const OnboardingPaywall: React.FC = () => {
             <div className="flex min-h-full flex-col">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#F05A00]">YOUR NEXT STEP</p>
               <h1 className="mt-4 text-[2.7rem] font-black leading-[0.94] tracking-tight">
-                Your store is <span className="text-[#F05A00]">ready to try.</span>
+                Your store is <span className="text-[#F05A00]">ready to use.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
                 Start free with up to 3 products, customise your shop, choose a storefront theme and see your store in action. Pay $9 once-off when you want unlimited products.
@@ -163,7 +163,7 @@ export const OnboardingPaywall: React.FC = () => {
                   </div>
                   <div className="mt-5 flex items-end justify-between">
                     <span className="text-5xl font-black">$0</span>
-                    <span className="pb-1 text-xs font-bold text-zinc-400">USD · once-off</span>
+                    <span className="pb-1 text-xs font-bold text-zinc-400">FREE PLAN</span>
                   </div>
                 </div>
                 <div className="space-y-3 p-5 text-sm">
@@ -182,7 +182,7 @@ export const OnboardingPaywall: React.FC = () => {
                   onClick={() => navigate('/dashboard')}
                   className="flex w-full items-center justify-between rounded-2xl bg-[#F05A00] px-5 py-4 text-sm font-black text-white shadow-lg shadow-orange-900/20 transition active:scale-[.99]"
                 >
-                  <span>START YOUR FREE TRIAL</span>
+                  <span>GO TO DASHBOARD</span>
                   <ArrowRight size={20} />
                 </button>
                 <p className="mt-3 text-center text-[10px] font-semibold text-zinc-500">
