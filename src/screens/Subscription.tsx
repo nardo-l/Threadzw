@@ -80,7 +80,7 @@ export const Subscription: React.FC = () => {
           {pending && !pro && <div className="mt-7 p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 text-center text-sm font-bold text-amber-200">Payment submitted — awaiting admin approval</div>}
           {pro && !trialActive && <div className="mt-7 p-4 rounded-2xl bg-[#C6FF00]/10 border border-[#C6FF00]/30 text-center text-sm font-black text-[#C6FF00]">PREMIUM ACTIVE</div>}
         </div>
-        <p className="text-center text-[11px] text-zinc-500 mt-5">NARDO promo access is limited to 20 users and provides 30 days of Pro at $0. The standard ThreadZW trial is 3 days with up to 3 products, then the normal $9 once-off activation applies.</p>
+        <p className="text-center text-[11px] text-zinc-500 mt-5">NARDO promo access is limited to 20 users and provides 30 days of Pro at $0. The standard ThreadZW free plan includes up to 3 products. Pay $9 once-off to unlock unlimited products.</p>
       </div>
     </div>
   );
