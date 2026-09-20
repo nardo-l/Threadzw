@@ -67,73 +67,35 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
     return products.filter(p => p.is_published !== false);
   }, [products]);
 
-  // Highlights Carousel Info matching redesign specifications
+  // Merchant-created "Why Shop With Us" cards.
+  // Location is always the default card; additional cards are controlled from the dashboard.
   const highlightCards = useMemo(() => {
-    const cards: { icon: string; title: string; desc: string; bg: string; visible: boolean }[] = [];
+    const configured = Array.isArray(shop?.page_config?.why_shop_cards)
+      ? shop.page_config.why_shop_cards
+      : [];
 
-    // 1. Location Card
-    if (dynamicLocationText) {
-      cards.push({
+    const cards = [
+      {
+        id: 'location',
         icon: '📍',
         title: 'Store Location',
-        desc: dynamicLocationText,
+        desc: dynamicLocationText || 'Add your store location from the dashboard.',
         bg: 'bg-violet-50/70 text-violet-950 border-violet-100/40',
-        visible: true,
-      });
-    }
+      },
+      ...configured
+        .filter((card: any) => card?.id && card.id !== 'location')
+        .slice(0, 5)
+        .map((card: any) => ({
+          id: card.id,
+          icon: card.icon || '✨',
+          title: card.title || 'Why shop with us',
+          desc: card.description || '',
+          bg: 'bg-emerald-50/70 text-emerald-950 border-emerald-100/40',
+        })),
+    ];
 
-    // 2. Nationwide Delivery Card
-    const hasDelivery = shopConfig?.nationwide_courier || shopConfig?.delivery_info || shop?.delivery_info;
-    if (hasDelivery) {
-      const courierText = shopConfig?.nationwide_courier 
-        ? `Courier service: ${shopConfig.nationwide_courier}`
-        : (shopConfig?.delivery_info || shop?.delivery_info || '');
-      
-      cards.push({
-        icon: '🚚',
-        title: 'Nationwide Delivery',
-        desc: courierText,
-        bg: 'bg-indigo-50/70 text-indigo-950 border-indigo-100/40',
-        visible: true,
-      });
-    }
-
-    // 3. Business Highlights Card
-    if (shopConfig?.business_highlights) {
-      cards.push({
-        icon: '⭐',
-        title: 'Business Highlights',
-        desc: shopConfig.business_highlights,
-        bg: 'bg-amber-50/70 text-amber-950 border-amber-100/40',
-        visible: true,
-      });
-    }
-
-    // 4. Physical Store / Store Pickup Available Card
-    const isPickupAvailable = shopConfig?.pickup_available || shop?.pickup_available;
-    if (isPickupAvailable) {
-      cards.push({
-        icon: '🏪',
-        title: 'Store Pickup Available',
-        desc: shopConfig?.pickup_label || 'In-store pickup is fully supported.',
-        bg: 'bg-emerald-50/70 text-emerald-950 border-emerald-100/40',
-        visible: true,
-      });
-    }
-
-    // 5. Response Time Card
-    if (shopConfig?.response_time) {
-      cards.push({
-        icon: '💬',
-        title: 'Active Support',
-        desc: shopConfig.response_time,
-        bg: 'bg-teal-50/70 text-teal-950 border-teal-100/40',
-        visible: true,
-      });
-    }
-
-    return cards.filter(c => c.visible);
-  }, [shop, shopConfig, dynamicLocationText]);
+    return cards;
+  }, [shop?.page_config, dynamicLocationText]);
 
   return (
     <div className="space-y-10 pb-16 select-none bg-white">
@@ -215,7 +177,7 @@ export const StorefrontHome: React.FC<StorefrontHomeProps> = ({
         <div className="flex gap-4 overflow-x-auto pb-4 pt-1 scrollbar-none snap-x snap-mandatory px-5">
           {highlightCards.map((card, idx) => (
             <motion.div
-              key={`card-${idx}`}
+              key={card.id}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05, duration: 0.3 }}
