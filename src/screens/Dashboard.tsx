@@ -31,6 +31,7 @@ import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 import { DashboardPlanCard } from '../components/plans/DashboardPlanCard';
+import { WhyShopWithUsManager } from '../components/dashboard/WhyShopWithUsManager';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -237,6 +238,9 @@ export const Dashboard: React.FC = () => {
           productsCount={productsCount}
           isShopPaidAndActive={isShopPaidAndActive}
         />
+
+        {/* Why Shop With Us cards */}
+        <WhyShopWithUsManager />
 
         {/* Plan Status & Entitlement Usage */}
         <DashboardPlanCard
