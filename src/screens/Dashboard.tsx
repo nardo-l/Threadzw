@@ -19,7 +19,9 @@ import {
   MessageSquare,
   ArrowRight,
   Clock,
-  ExternalLink
+  ExternalLink,
+  TicketPercent,
+  X
 } from 'lucide-react';
 import { useShopContext } from '../context/ShopContext';
 import { useAuth } from '../context/AuthContext';
@@ -32,6 +34,7 @@ import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 import { DashboardPlanCard } from '../components/plans/DashboardPlanCard';
 import { WhyShopWithUsManager } from '../components/dashboard/WhyShopWithUsManager';
+import { subscriptionClient } from '../services/subscriptionClient';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +42,9 @@ export const Dashboard: React.FC = () => {
   const { shop, loading: shopLoading, refreshShop } = useShopContext();
   const [dateFilter, setDateFilter] = useState('May 20 – May 26');
   const [chartFilter, setChartFilter] = useState('Last 7 days');
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoRedeeming, setPromoRedeeming] = useState(false);
 
   // Force refresh shop record on mount to guarantee fresh Supabase state
   useEffect(() => {
@@ -71,6 +77,30 @@ export const Dashboard: React.FC = () => {
       navigate('/signup');
     }
   }, [session, shop, authLoading, shopLoading, navigate]);
+
+  useEffect(() => {
+    if (user?.id && shop?.id && !shop.plan?.toLowerCase().includes('premium') && !shop.plan?.toLowerCase().includes('pro')) {
+      const key = `threadzw_promo_prompt_seen_${user.id}`;
+      if (!localStorage.getItem(key)) setPromoOpen(true);
+    }
+  }, [user?.id, shop?.id, shop?.plan]);
+
+  const redeemDashboardPromo = async () => {
+    if (!shop?.id || !promoCode.trim()) return;
+    setPromoRedeeming(true);
+    try {
+      const result = await subscriptionClient.redeemPromoCode(shop.id, promoCode.trim().toUpperCase());
+      localStorage.setItem(`threadzw_promo_prompt_seen_${user?.id}`, 'true');
+      setPromoOpen(false);
+      setPromoCode('');
+      await refreshShop();
+      toast.success(`Promo applied — ${result.trialDays} days of Pro are active.`);
+    } catch (error: any) {
+      toast.error(error?.message || 'Could not redeem promo code.');
+    } finally {
+      setPromoRedeeming(false);
+    }
+  };
 
   useEffect(() => {
     if (localStorage.getItem('threadzw_just_subscribed') === 'true') {
@@ -179,6 +209,24 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#111] font-sans pb-28">
+      {promoOpen && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-5">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F05A00]/10 text-[#F05A00]"><TicketPercent size={21} /></div>
+              <button onClick={() => { localStorage.setItem(`threadzw_promo_prompt_seen_${user?.id}`, 'true'); setPromoOpen(false); }} className="rounded-xl p-2 text-zinc-400 hover:bg-zinc-100"><X size={18} /></button>
+            </div>
+            <h2 className="mt-5 text-2xl font-black tracking-tight">Got a ThreadZW promo code?</h2>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-500">Enter your promo code to unlock the special Pro promotion. This is separate from the normal Free plan.</p>
+            <input value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())} onKeyDown={e => { if (e.key === 'Enter') redeemDashboardPromo(); }} placeholder="ENTER PROMO CODE" maxLength={32} autoFocus className="mt-5 w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3.5 text-sm font-black tracking-wider outline-none focus:border-[#F05A00]" />
+            <button onClick={redeemDashboardPromo} disabled={promoRedeeming} className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-zinc-950 py-3.5 text-sm font-black text-white disabled:opacity-60">
+              {promoRedeeming ? <Loader2 size={17} className="animate-spin" /> : <TicketPercent size={17} />} Redeem Promo
+            </button>
+            <button onClick={() => { localStorage.setItem(`threadzw_promo_prompt_seen_${user?.id}`, 'true'); setPromoOpen(false); }} className="mt-3 w-full py-2 text-xs font-bold text-zinc-400">Maybe later</button>
+          </div>
+        </div>
+      )}
+
       {/* Top Navigation Bar */}
       <header className="max-w-4xl mx-auto px-5 pt-4 pb-3 flex items-center justify-between sticky top-0 z-30 bg-[#F8F9FA]/90 backdrop-blur-md">
         <button 
