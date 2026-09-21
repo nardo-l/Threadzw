@@ -14,6 +14,7 @@ SET
   END,
   payment_required = CASE
     WHEN lower(coalesce(plan, 'free')) IN ('pro', 'premium') THEN payment_required
+    WHEN payment_verification_status = 'pending' OR account_status = 'pending_payment' THEN true
     ELSE false
   END
 WHERE lower(coalesce(page_type, 'clothing')) IN ('clothing', 'fashion', 'apparel', 'boutique', 'storefront');
