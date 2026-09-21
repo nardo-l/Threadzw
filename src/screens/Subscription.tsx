@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Check, ExternalLink, Loader2, RefreshCw, Shirt } from 'lucide-react';
+import { ArrowLeft, Check, Clock, ExternalLink, Loader2, RefreshCw, Shirt } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useShop } from '../hooks/useShop';
