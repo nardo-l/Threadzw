@@ -37,10 +37,6 @@ export interface SubscriptionStatusResponse {
   paymentSubmittedAt?: string | null;
   paymentVerifiedAt?: string | null;
   paymentRequired?: boolean;
-  trialStartedAt?: string | null;
-  trialEndsAt?: string | null;
-  trialProvider?: string | null;
-  promoCode?: string | null;
   error?: string;
 }
 
@@ -74,19 +70,6 @@ class SubscriptionClientService {
     });
     const data = await response.json();
     if (!response.ok || !data.success) throw new Error(data.message || data.error || 'Could not update payment status');
-    return data;
-  }
-
-  public async redeemPromoCode(shopId: string, code: string): Promise<{ success: boolean; code: string; trialDays: number; trialStartedAt: string; trialEndsAt: string; redemptionsRemaining: number }> {
-    const token = await this.getAuthToken();
-    if (!token) throw new Error('Authentication required');
-    const response = await fetch('/api/subscriptions/redeem-promo', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ shopId, code })
-    });
-    const data = await response.json();
-    if (!response.ok || !data.success) throw new Error(data.message || data.error || 'Could not redeem promo code');
     return data;
   }
 
