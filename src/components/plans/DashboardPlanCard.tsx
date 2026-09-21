@@ -49,7 +49,7 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-[#CCFF00]">FREE PLAN</span>
               <h3 className="text-base font-black">Add up to 9 products for free.</h3>
-              <p className="mt-1 text-xs text-zinc-400">Use your free storefront to use your ThreadZW storefront. Pay $9 once-off whenever you want unlimited products.</p>
+              <p className="mt-1 text-xs text-zinc-400">Use your free ThreadZW storefront. Pay $9 once-off whenever you want unlimited products.</p>
             </div>
           </div>
           <button onClick={() => navigate('/subscription')} className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-[#CCFF00] px-5 py-3 text-xs font-black uppercase text-black">
