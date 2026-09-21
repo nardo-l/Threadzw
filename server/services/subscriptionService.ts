@@ -80,7 +80,7 @@ export class SubscriptionService {
       payment_reference: internalReference,
       payment_amount: PREMIUM_AMOUNT,
       payment_currency: 'USD',
-      product_limit: 9,
+      product_limit: 10,
       is_active: false,
       storefront_published: false,
       published_at: null,
@@ -145,7 +145,7 @@ export class SubscriptionService {
       account_status: 'pending_payment', subscription_status: 'pending', payment_required: true,
       payment_status: 'pending', payment_verification_status: 'pending', payment_submitted_at: now,
       payment_reference: internalReference, payment_amount: PREMIUM_AMOUNT, payment_currency: 'USD',
-      product_limit: 9, is_active: false, storefront_published: false, published_at: null, updated_at: now
+      product_limit: 10, is_active: false, storefront_published: false, published_at: null, updated_at: now
     }).eq('id', shop.id);
     if (shopUpdateError) throw new Error(`PAYMENT_STATE_UPDATE_FAILED: ${shopUpdateError.message}`);
 
@@ -157,8 +157,19 @@ export class SubscriptionService {
     return { success: true, ignored: true, reason: 'MANUAL_VERIFICATION_REQUIRED' };
   }
 
-  public async redeemPromoCode(_params: { userId: string; shopId: string; code: string }) {
-    throw new Error('PROMO_TRIAL_DISABLED: Free trials are no longer available. Use the permanent Free plan or activate Pro for $9 once-off.');
+  public async redeemPromoCode(params: { userId: string; shopId: string; code: string }) {
+    const { userId, shopId, code } = params;
+    if (!userId) throw new Error('UNAUTHORIZED: Authentication is required');
+    if (!shopId) throw new Error('INVALID_SHOP: shopId is required');
+    if (!code?.trim()) throw new Error('INVALID_PROMO_CODE: Promo code is required');
+
+    const { data, error } = await serverSupabase.rpc('redeem_threadzw_promo', {
+      p_shop_id: shopId,
+      p_code: code.trim().toUpperCase()
+    });
+    if (error) throw new Error(`PROMO_REDEMPTION_FAILED: ${error.message}`);
+    if (!data?.success) throw new Error('PROMO_REDEMPTION_FAILED: Promo code could not be redeemed');
+    return data;
   }
 
   public async getStatus(params: { userId: string; shopId: string }) {
