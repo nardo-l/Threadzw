@@ -166,14 +166,14 @@ export class SubscriptionService {
 
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
-      .select('id, owner_id, plan, subscription_status, page_type, payment_reference, paid_at, payment_verification_status, payment_submitted_at, payment_verified_at, trial_started_at, trial_ends_at, payment_required')
+      .select('id, owner_id, plan, subscription_status, page_type, payment_reference, paid_at, payment_verification_status, payment_submitted_at, payment_verified_at, payment_required')
       .eq('id', shopId).maybeSingle();
     if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
     if (shop.owner_id !== userId) throw new Error('UNAUTHORIZED: Shop access denied');
 
     const { data: subscription } = await serverSupabase
       .from('subscriptions')
-      .select('id, plan, status, amount, currency, billing_cycle, current_period_start, current_period_end, grace_period_end, cancelled_at, nardopay_link_code, trial_started_at, trial_ends_at, provider')
+      .select('id, plan, status, amount, currency, billing_cycle, current_period_start, current_period_end, grace_period_end, cancelled_at, nardopay_link_code, provider')
       .eq('shop_id', shopId).order('created_at', { ascending: false }).limit(1).maybeSingle();
 
     return {
@@ -194,10 +194,6 @@ export class SubscriptionService {
       paymentSubmittedAt: shop.payment_submitted_at || null,
       paymentVerifiedAt: shop.payment_verified_at || null,
       paymentRequired: shop.payment_required !== false,
-      trialStartedAt: subscription?.trial_started_at || shop.trial_started_at || null,
-      trialEndsAt: subscription?.trial_ends_at || shop.trial_ends_at || null,
-      trialProvider: subscription?.provider || null,
-      promoCode: subscription?.provider === 'promo:NARDO' ? 'NARDO' : null
     };
   }
 
