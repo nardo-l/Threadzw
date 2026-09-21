@@ -80,7 +80,7 @@ export class SubscriptionService {
       payment_reference: internalReference,
       payment_amount: PREMIUM_AMOUNT,
       payment_currency: 'USD',
-      product_limit: 3,
+      product_limit: 9,
       is_active: false,
       storefront_published: false,
       published_at: null,
@@ -145,7 +145,7 @@ export class SubscriptionService {
       account_status: 'pending_payment', subscription_status: 'pending', payment_required: true,
       payment_status: 'pending', payment_verification_status: 'pending', payment_submitted_at: now,
       payment_reference: internalReference, payment_amount: PREMIUM_AMOUNT, payment_currency: 'USD',
-      product_limit: 3, is_active: false, storefront_published: false, published_at: null, updated_at: now
+      product_limit: 9, is_active: false, storefront_published: false, published_at: null, updated_at: now
     }).eq('id', shop.id);
     if (shopUpdateError) throw new Error(`PAYMENT_STATE_UPDATE_FAILED: ${shopUpdateError.message}`);
 
