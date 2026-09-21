@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const TOTAL_STEPS = 4;
 
 const featureList = [
-  'Add up to 3 products for free',
+  'Add up to 9 products for free',
   'Get your own custom storefront',
   'Share one link on WhatsApp, Instagram & TikTok',
   'Unlimited products after Pro activation',
@@ -47,7 +47,7 @@ export const OnboardingPaywall: React.FC = () => {
                 Turn your brand into a <span className="text-[#F05A00]">real online store.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                You've done the setup. Start free with up to 3 products, then pay $9 once-off when you want unlimited products.
+                You've done the setup. Start free with up to 9 products, then pay $9 once-off when you want unlimited products.
               </p>
 
               <div className="relative mt-8 overflow-hidden rounded-[2rem] bg-zinc-950 p-5 text-white shadow-xl">
@@ -81,7 +81,7 @@ export const OnboardingPaywall: React.FC = () => {
                 Start free. <span className="text-[#F05A00]">Then grow without limits.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Start free with up to 3 products and test your storefront. Pro is $9 once-off with no monthly renewal.
+                Start free with up to 9 products and test your storefront. Pro is $9 once-off with no monthly renewal.
               </p>
 
               <div className="mt-7 rounded-[2rem] border-2 border-[#F05A00] bg-zinc-950 p-5 text-white shadow-xl">
@@ -93,7 +93,7 @@ export const OnboardingPaywall: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <span className="text-4xl font-black">$0</span>
-                    <span className="block text-[10px] font-bold text-zinc-500">up to 3 products</span>
+                    <span className="block text-[10px] font-bold text-zinc-500">up to 9 products</span>
                   </div>
                 </div>
 
@@ -119,13 +119,13 @@ export const OnboardingPaywall: React.FC = () => {
                 Here's exactly <span className="text-[#F05A00]">what happens.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Your free plan includes up to 3 products. When you are ready, pay $9 once-off through NardoPay to unlock unlimited products.
+                Your free plan includes up to 9 products. When you are ready, pay $9 once-off through NardoPay to unlock unlimited products.
               </p>
 
               <div className="mt-7 space-y-3">
                 <InfoRow number="01" icon={<CreditCard size={19} />} title="Pay $9 once-off when you're ready" text="You'll use the secure NardoPay checkout when you're ready to activate Pro." />
                 <InfoRow number="02" icon={<ShieldCheck size={19} />} title="Payment is verified" text="Your payment is sent for verification. Your shop is not activated just because you reach the payment page." />
-                <InfoRow number="03" icon={<Zap size={19} />} title="Pro is activated" text="Start with up to 3 products for free. After paying $9 once-off and verification, your shop gets unlimited products." />
+                <InfoRow number="03" icon={<Zap size={19} />} title="Pro is activated" text="Start with up to 9 products for free. After paying $9 once-off and verification, your shop gets unlimited products." />
               </div>
 
               <div className="mt-5 flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200">
@@ -149,7 +149,7 @@ export const OnboardingPaywall: React.FC = () => {
                 Your store is <span className="text-[#F05A00]">ready to use.</span>
               </h1>
               <p className="mt-5 text-base leading-7 text-zinc-600">
-                Start free with up to 3 products, customise your shop, choose a storefront theme and see your store in action. Pay $9 once-off when you want unlimited products.
+                Start free with up to 9 products, customise your shop, choose a storefront theme and see your store in action. Pay $9 once-off when you want unlimited products.
               </p>
 
               <div className="mt-7 overflow-hidden rounded-[2rem] bg-zinc-950 text-white shadow-xl">
@@ -167,7 +167,7 @@ export const OnboardingPaywall: React.FC = () => {
                   </div>
                 </div>
                 <div className="space-y-3 p-5 text-sm">
-                  {['Customise your storefront', 'Choose from your ThreadZW themes', 'See your store before paying', 'Add up to 3 products for free'].map(item => (
+                  {['Customise your storefront', 'Choose from your ThreadZW themes', 'See your store before paying', 'Add up to 9 products for free'].map(item => (
                     <div key={item} className="flex items-center gap-3 font-semibold">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#F05A00]"><Check size={13} /></div>
                       {item}
@@ -186,7 +186,7 @@ export const OnboardingPaywall: React.FC = () => {
                   <ArrowRight size={20} />
                 </button>
                 <p className="mt-3 text-center text-[10px] font-semibold text-zinc-500">
-                  Start free with up to 3 products. Then pay $9 once-off for unlimited products.
+                  Start free with up to 9 products. Then pay $9 once-off for unlimited products.
                 </p>
               </div>
             </div>
