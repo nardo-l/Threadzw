@@ -42,7 +42,7 @@ BEGIN
     IF v_plan IN ('pro', 'premium') THEN
       RETURN NULL;
     END IF;
-    RETURN 9;
+    RETURN 3;
   END IF;
 
   RETURN NULL;
@@ -78,7 +78,7 @@ BEGIN
     IF v_plan IN ('pro', 'premium') THEN
       RETURN NEW;
     END IF;
-    v_limit := CASE WHEN v_shop.payment_verification_status = 'pending' OR v_shop.account_status = 'pending_payment' THEN 10 ELSE 3 END;;
+    v_limit := CASE WHEN v_shop.payment_verification_status = 'pending' OR v_shop.account_status = 'pending_payment' THEN 10 ELSE 3 END;
   ELSE
     RETURN NEW;
   END IF;
