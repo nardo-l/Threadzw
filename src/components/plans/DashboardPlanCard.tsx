@@ -36,8 +36,10 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
     );
   }
 
-  const used = Math.min(liveProductsCount, 9);
-  const remaining = Math.max(0, 9 - used);
+  const pending = shop.payment_verification_status === 'pending' || shop.account_status === 'pending_payment';
+  const limit = productLimit ?? 0;
+  const used = Math.min(liveProductsCount, limit);
+  const remaining = Math.max(0, limit - used);
 
   return (
     <div className="space-y-3">
@@ -48,8 +50,8 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#CCFF00] text-black"><Package size={18} /></div>
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-[#CCFF00]">FREE PLAN</span>
-              <h3 className="text-base font-black">Add up to 9 products for free.</h3>
-              <p className="mt-1 text-xs text-zinc-400">Use your free ThreadZW storefront. Pay $9 once-off whenever you want unlimited products.</p>
+              <h3 className="text-base font-black">Add up to {limit} products on your current access.</h3>
+              <p className="mt-1 text-xs text-zinc-400">{pending ? 'Your payment is awaiting verification. You can add 10 products while we review it.' : 'Use your free ThreadZW storefront. Pay $9 once-off whenever you want unlimited products.'}</p>
             </div>
           </div>
           <button onClick={() => navigate('/subscription')} className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-[#CCFF00] px-5 py-3 text-xs font-black uppercase text-black">
@@ -59,11 +61,11 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
 
         <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-white">Free plan product limit</span>
-            <span className="text-[11px] font-bold text-[#CCFF00]">{used}/9 products</span>
+            <span className="text-[11px] font-black uppercase tracking-wider text-white">Current product limit</span>
+            <span className="text-[11px] font-bold text-[#CCFF00]">{used}/{limit} products</span>
           </div>
           <div className="space-y-2.5">
-            {Array.from({ length: 9 }).map((_, index) => {
+            {Array.from({ length: limit }).map((_, index) => {
               const filled = index < used;
               return (
                 <div key={index} className="flex items-center gap-3 text-xs font-bold">
@@ -77,7 +79,7 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] font-bold text-zinc-400">
             <span>{remaining} {remaining === 1 ? 'product' : 'products'} remaining</span>
-            <span>Pro: unlimited products · $9 once-off</span>
+            <span>{pending ? 'Payment verification pending · 10 products' : 'Pro: unlimited products · $9 once-off'}</span>
           </div>
         </div>
       </div>
