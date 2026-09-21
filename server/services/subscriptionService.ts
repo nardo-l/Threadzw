@@ -11,8 +11,6 @@ export class SubscriptionService {
     if (!userId) throw new Error('UNAUTHORIZED: Authentication is required');
     if (!shopId) throw new Error('INVALID_SHOP: shopId is required');
 
-    await serverSupabase.rpc('expire_threadzw_promo_trials');
-
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
       .select('id, owner_id, name, page_type, plan, subscription_status, payment_verification_status')
@@ -159,27 +157,13 @@ export class SubscriptionService {
     return { success: true, ignored: true, reason: 'MANUAL_VERIFICATION_REQUIRED' };
   }
 
-  public async redeemPromoCode(params: { userId: string; shopId: string; code: string }) {
-    const { userId, shopId, code } = params;
-    if (!userId) throw new Error('UNAUTHORIZED: Authentication is required');
-    if (!shopId) throw new Error('INVALID_SHOP: shopId is required');
-    if (!code?.trim()) throw new Error('INVALID_PROMO_CODE: Promo code is required');
-
-    const { data, error } = await serverSupabase.rpc('redeem_threadzw_promo', {
-      p_shop_id: shopId,
-      p_code: code.trim().toUpperCase()
-    });
-    if (error) throw new Error(`PROMO_REDEMPTION_FAILED: ${error.message}`);
-    if (!data?.success) throw new Error('PROMO_REDEMPTION_FAILED: Promo code could not be redeemed');
-    return data;
+  public async redeemPromoCode(_params: { userId: string; shopId: string; code: string }) {
+    throw new Error('PROMO_TRIAL_DISABLED: Free trials are no longer available. Use the permanent Free plan or activate Pro for $9 once-off.');
   }
 
   public async getStatus(params: { userId: string; shopId: string }) {
     const { userId, shopId } = params;
 
-    // Expiry is enforced by the database cron job and also lazily here so an expired
-    // trial cannot remain entitled if the scheduler has not run yet.
-    await serverSupabase.rpc('expire_threadzw_promo_trials');
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
       .select('id, owner_id, plan, subscription_status, page_type, payment_reference, paid_at, payment_verification_status, payment_submitted_at, payment_verified_at, trial_started_at, trial_ends_at, payment_required')
