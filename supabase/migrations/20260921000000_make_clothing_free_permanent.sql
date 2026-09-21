@@ -1,15 +1,16 @@
--- Permanent Clothing Free plan: remove trial/pending-payment gating and allow 9 active products.
+-- Permanent Clothing Free plan: remove trial/pending-payment gating and allow 3 active products.
 -- Free access is time-unlimited. Premium remains unlimited after payment verification.
 -- There is no visitor or interest-event quota on the Free plan.
 
 ALTER TABLE public.shops
-  ALTER COLUMN product_limit SET DEFAULT 9;
+  ALTER COLUMN product_limit SET DEFAULT 3;
 
 UPDATE public.shops
 SET
   product_limit = CASE
     WHEN lower(coalesce(plan, 'free')) IN ('pro', 'premium') THEN NULL
-    ELSE 9
+    WHEN payment_verification_status = 'pending' OR account_status = 'pending_payment' THEN 10
+    ELSE 3
   END,
   payment_required = CASE
     WHEN lower(coalesce(plan, 'free')) IN ('pro', 'premium') THEN payment_required
@@ -76,7 +77,7 @@ BEGIN
     IF v_plan IN ('pro', 'premium') THEN
       RETURN NEW;
     END IF;
-    v_limit := 9;
+    v_limit := CASE WHEN v_shop.payment_verification_status = 'pending' OR v_shop.account_status = 'pending_payment' THEN 10 ELSE 3 END;;
   ELSE
     RETURN NEW;
   END IF;
