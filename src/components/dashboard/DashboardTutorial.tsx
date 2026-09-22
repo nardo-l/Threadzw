@@ -87,7 +87,7 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
       >
         <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#111111] px-4 py-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#39FF88]">ThreadZW</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#CCFF00]">ThreadZW</p>
             <p className="mt-0.5 text-xs font-semibold text-white/60">Quick setup guide</p>
           </div>
           <button
@@ -128,7 +128,7 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
                 type="button"
                 aria-label={`Go to tutorial slide ${index + 1}`}
                 onClick={() => setSlide(index)}
-                className={`h-1.5 rounded-full transition-all ${index === slide ? 'w-6 bg-[#39FF88]' : 'w-1.5 bg-white/40 hover:bg-white/70'}`}
+                className={`h-1.5 rounded-full transition-all ${index === slide ? 'w-6 bg-[#CCFF00]' : 'w-1.5 bg-white/40 hover:bg-white/70'}`}
               />
             ))}
           </div>
@@ -137,7 +137,7 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
         <div className="shrink-0 border-t border-white/10 bg-[#111111] px-5 pb-5 pt-4 sm:px-6">
           <div className="mb-4">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#39FF88]">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#CCFF00]">
                 {slide + 1} / {slides.length}
               </p>
               <button type="button" onClick={close} className="text-xs font-bold text-white/40 hover:text-white/70">
@@ -163,7 +163,7 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
             <button
               type="button"
               onClick={next}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#39FF88] px-5 text-sm font-black text-[#07130c] shadow-lg shadow-emerald-950/30 transition hover:bg-[#55ff9a] active:scale-[0.99]"
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#CCFF00] px-5 text-sm font-black text-[#07130c] shadow-lg shadow-lime-950/30 transition hover:bg-[#D6FF33] active:scale-[0.99]"
             >
               {isLast ? 'Get started' : 'Next'}
               {!isLast && <ArrowRight size={18} />}
