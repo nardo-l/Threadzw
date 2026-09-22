@@ -35,6 +35,7 @@ import { Paywall } from './Paywall';
 import { DashboardPlanCard } from '../components/plans/DashboardPlanCard';
 import { WhyShopWithUsManager } from '../components/dashboard/WhyShopWithUsManager';
 import { subscriptionClient } from '../services/subscriptionClient';
+import { DashboardTutorial } from '../components/dashboard/DashboardTutorial';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -209,6 +210,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] text-[#111] font-sans pb-28">
+      <DashboardTutorial userId={user?.id} />
       {promoOpen && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-5">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
