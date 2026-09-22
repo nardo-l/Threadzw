@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 
-const TUTORIAL_KEY = 'threadzw_dashboard_tutorial_seen_v2';
+const TUTORIAL_KEY = 'threadzw_dashboard_tutorial_seen_v3';
 
 const slides = [
   {
-    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/tutorial/01-your-threadzw-link.png',
+    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/file_0000000018cc81f484c84af953e86338.png',
     title: 'YOUR SHOP. ONE LINK.',
     description: 'Share your ThreadZW link on WhatsApp, Instagram, TikTok or anywhere your customers find you.'
   },
   {
-    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/tutorial/02-add-your-products.png',
+    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/file_00000000e54c8246b0ef327984326b75.png',
     title: 'ADD YOUR PRODUCTS',
     description: 'Add your products with photos, prices and details so customers can browse your collection.'
   },
   {
-    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/tutorial/03-add-shop-directions.png',
+    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/file_00000000ad7c81f4a9ca283392e8bd37.png',
     title: 'ADD SHOP DIRECTIONS',
     description: 'Add your shop location so customers can easily find you in person.'
   },
   {
-    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/tutorial/04-logo-and-banner.png',
+    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/file_00000000b04081f4bf35206b09da3e46.png',
     title: 'MAKE IT YOUR BRAND',
     description: 'Add your logo and banner to make your ThreadZW storefront feel like your brand.'
   },
   {
-    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/tutorial/05-your-analytics.png',
+    image: 'https://zuashdquiorcwvyvqucm.supabase.co/storage/v1/object/public/landing%20page%20background/file_000000007a7881f4a37067f6e6393557.png',
     title: 'KNOW YOUR NUMBERS',
     description: 'Use your analytics to see visitors, customer interest and how your shop is performing.'
   }
