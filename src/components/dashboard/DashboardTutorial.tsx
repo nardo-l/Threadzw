@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 
-const TUTORIAL_KEY = 'threadzw_dashboard_tutorial_seen_v1';
+const TUTORIAL_KEY = 'threadzw_dashboard_tutorial_seen_v2';
 
 const slides = [
   {
@@ -38,23 +38,25 @@ interface DashboardTutorialProps {
 export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) => {
   const [open, setOpen] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
-    const seen = localStorage.getItem(TUTORIAL_KEY);
-    if (!seen) setOpen(true);
+    // v2 intentionally resets the tutorial after the visual redesign.
+    if (!localStorage.getItem(TUTORIAL_KEY)) setOpen(true);
   }, [userId]);
 
   useEffect(() => {
     if (!open) return;
-
-    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.body.style.overflow = '';
     };
   }, [open]);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [slide]);
 
   const close = () => {
     localStorage.setItem(TUTORIAL_KEY, 'true');
@@ -62,16 +64,14 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
   };
 
   const next = () => {
-    if (slide === slides.length - 1) {
+    if (slide < slides.length - 1) {
+      setSlide((current) => current + 1);
+    } else {
       close();
-      return;
     }
-    setSlide((current) => current + 1);
   };
 
-  const previous = () => {
-    setSlide((current) => Math.max(0, current - 1));
-  };
+  const previous = () => setSlide((current) => Math.max(0, current - 1));
 
   if (!open) return null;
 
@@ -79,71 +79,83 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
   const isLast = slide === slides.length - 1;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/85 p-3 sm:p-5">
       <div
         role="dialog"
         aria-modal="true"
         aria-label="ThreadZW dashboard tutorial"
-        className="relative flex max-h-[94vh] w-full max-w-md flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl"
+        className="relative flex h-[min(90vh,760px)] w-full max-w-[420px] flex-col overflow-hidden rounded-[26px] border border-white/10 bg-[#111111] text-white shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
       >
-        <button
-          type="button"
-          onClick={close}
-          aria-label="Close tutorial"
-          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-sm transition hover:bg-black"
-        >
-          <X size={18} />
-        </button>
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#111111] px-4 py-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#FF6A00]">ThreadZW</p>
+            <p className="mt-0.5 text-xs font-semibold text-white/60">Quick setup guide</p>
+          </div>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close tutorial"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition hover:bg-white/20"
+          >
+            <X size={17} />
+          </button>
+        </div>
 
-        <div className="relative bg-[#F7F7F5]">
-          <img
-            src={current.image}
-            alt={current.title}
-            className="block aspect-[4/5] w-full object-cover"
-            loading={slide === 0 ? 'eager' : 'lazy'}
-            draggable={false}
-          />
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
+        <div className="relative min-h-0 flex-1 bg-[#181818]">
+          {!imageFailed ? (
+            <img
+              key={current.image}
+              src={current.image}
+              alt={current.title}
+              onError={() => setImageFailed(true)}
+              className="h-full w-full object-contain"
+              referrerPolicy="no-referrer"
+              draggable={false}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center p-8 text-center">
+              <div>
+                <div className="mx-auto mb-3 h-10 w-10 rounded-full bg-white/10" />
+                <p className="text-sm font-bold text-white">Tutorial image unavailable</p>
+                <p className="mt-1 text-xs leading-5 text-white/50">Check that the tutorial files are public in Supabase Storage.</p>
+              </div>
+            </div>
+          )}
+
+          <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/10 bg-black/75 px-3 py-2">
             {slides.map((_, index) => (
               <button
                 key={index}
                 type="button"
                 aria-label={`Go to tutorial slide ${index + 1}`}
                 onClick={() => setSlide(index)}
-                className={`h-1.5 rounded-full transition-all ${index === slide ? 'w-6 bg-white' : 'w-1.5 bg-white/50'}`}
+                className={`h-1.5 rounded-full transition-all ${index === slide ? 'w-6 bg-[#FF6A00]' : 'w-1.5 bg-white/40 hover:bg-white/70'}`}
               />
             ))}
           </div>
         </div>
 
-        <div className="flex flex-1 flex-col px-5 pb-5 pt-5 sm:px-6 sm:pb-6">
+        <div className="shrink-0 border-t border-white/10 bg-[#111111] px-5 pb-5 pt-4 sm:px-6">
           <div className="mb-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#F05A00]">
-              {slide + 1} / {slides.length}
-            </p>
-            <h2 className="mt-1.5 text-2xl font-black tracking-tight text-zinc-950">
-              {current.title}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-zinc-500">
-              {current.description}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#FF6A00]">
+                {slide + 1} / {slides.length}
+              </p>
+              <button type="button" onClick={close} className="text-xs font-bold text-white/40 hover:text-white/70">
+                Skip tutorial
+              </button>
+            </div>
+            <h2 className="mt-1.5 text-xl font-black tracking-tight text-white sm:text-2xl">{current.title}</h2>
+            <p className="mt-1.5 text-xs leading-5 text-white/55 sm:text-sm">{current.description}</p>
           </div>
 
-          <div className="mt-auto flex items-center gap-2">
-            <button
-              type="button"
-              onClick={close}
-              className="flex-1 rounded-2xl border border-zinc-200 bg-white px-4 py-3.5 text-sm font-bold text-zinc-600 transition hover:bg-zinc-50"
-            >
-              Skip
-            </button>
-
+          <div className="flex gap-2">
             {slide > 0 && (
               <button
                 type="button"
                 onClick={previous}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-white transition hover:bg-white/15"
                 aria-label="Previous tutorial slide"
-                className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-2xl border border-zinc-200 bg-white text-zinc-900 transition hover:bg-zinc-50"
               >
                 <ArrowLeft size={18} />
               </button>
@@ -152,10 +164,10 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
             <button
               type="button"
               onClick={next}
-              className="flex flex-[1.5] items-center justify-center gap-2 rounded-2xl bg-zinc-950 px-4 py-3.5 text-sm font-black text-white transition hover:bg-zinc-800 active:scale-[0.99]"
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#FF6A00] px-5 text-sm font-black text-white shadow-lg shadow-orange-950/30 transition hover:bg-[#ff791f] active:scale-[0.99]"
             >
               {isLast ? 'Get started' : 'Next'}
-              {isLast ? null : <ArrowRight size={17} />}
+              {!isLast && <ArrowRight size={18} />}
             </button>
           </div>
         </div>
