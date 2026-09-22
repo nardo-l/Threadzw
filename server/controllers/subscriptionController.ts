@@ -105,7 +105,11 @@ export class SubscriptionController {
       const { shopId, code } = req.body;
       if (!userId) return res.status(401).json({ success: false, error: 'UNAUTHORIZED', message: 'Authentication required' });
       if (!shopId || !code) return res.status(400).json({ success: false, error: 'INVALID_PROMO_CODE', message: 'shopId and code are required' });
-      const result = await subscriptionService.redeemPromoCode({ userId, shopId, code });
+
+      const authHeader = req.headers.authorization;
+      const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : undefined;
+
+      const result = await subscriptionService.redeemPromoCode({ userId, shopId, code, accessToken });
       return res.status(200).json(result);
     } catch (err: any) {
       const message = String(err?.message || '');
