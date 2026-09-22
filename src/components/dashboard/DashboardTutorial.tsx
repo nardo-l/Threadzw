@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 
-const TUTORIAL_KEY = 'threadzw_dashboard_tutorial_seen_v3';
+const TUTORIAL_KEY_PREFIX = 'threadzw_dashboard_tutorial_seen_v4_';
 
 const slides = [
   {
@@ -42,7 +42,8 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
 
   useEffect(() => {
     if (!userId) return;
-    if (!localStorage.getItem(TUTORIAL_KEY)) setOpen(true);
+    const tutorialKey = `${TUTORIAL_KEY_PREFIX}${userId}`;
+    if (!localStorage.getItem(tutorialKey)) setOpen(true);
   }, [userId]);
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export const DashboardTutorial: React.FC<DashboardTutorialProps> = ({ userId }) 
   }, [slide]);
 
   const close = () => {
-    localStorage.setItem(TUTORIAL_KEY, 'true');
+    if (userId) localStorage.setItem(`${TUTORIAL_KEY_PREFIX}${userId}`, 'true');
     setOpen(false);
   };
 
