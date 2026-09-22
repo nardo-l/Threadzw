@@ -1,4 +1,4 @@
-import { serverSupabase } from '../middleware/auth.js';
+import { getUserSupabaseClient, serverSupabase } from '../middleware/auth.js';
 import { resolveServerSellerCategory } from './planResolver.js';
 
 const FIXED_NARDOPAY_LINK = 'https://threadzw.nardopay.com/pay/threadzwmonthlysubscriptions';
@@ -157,16 +157,38 @@ export class SubscriptionService {
     return { success: true, ignored: true, reason: 'MANUAL_VERIFICATION_REQUIRED' };
   }
 
-  public async redeemPromoCode(params: { userId: string; shopId: string; code: string }) {
-    const { userId, shopId, code } = params;
+  public async redeemPromoCode(params: { userId: string; shopId: string; code: string; accessToken?: string }) {
+    const { userId, shopId, code, accessToken } = params;
     if (!userId) throw new Error('UNAUTHORIZED: Authentication is required');
     if (!shopId) throw new Error('INVALID_SHOP: shopId is required');
     if (!code?.trim()) throw new Error('INVALID_PROMO_CODE: Promo code is required');
 
-    const { data, error } = await serverSupabase.rpc('redeem_threadzw_promo', {
+    // Verify ownership before calling the promo RPC. The RPC also relies on auth.uid(),
+    // so it must receive the authenticated user's Supabase JWT rather than the service-role context.
+    const { data: shop, error: shopError } = await serverSupabase
+      .from('shops')
+      .select('id, owner_id, page_type, plan')
+      .eq('id', shopId)
+      .maybeSingle();
+
+    if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
+    if (shop.owner_id !== userId) throw new Error('UNAUTHORIZED: You do not own this shop');
+
+    const category = resolveServerSellerCategory(shop.page_type);
+    if (category !== 'clothing') {
+      throw new Error('UNSUPPORTED_CATEGORY: Clothing promo codes are currently supported here');
+    }
+
+    if (shop.plan === 'premium' || shop.plan === 'pro') {
+      throw new Error('ALREADY_PRO: This shop already has Pro access.');
+    }
+
+    const userSupabase = getUserSupabaseClient(accessToken);
+    const { data, error } = await userSupabase.rpc('redeem_threadzw_promo', {
       p_shop_id: shopId,
       p_code: code.trim().toUpperCase()
     });
+
     if (error) throw new Error(`PROMO_REDEMPTION_FAILED: ${error.message}`);
     if (!data?.success) throw new Error('PROMO_REDEMPTION_FAILED: Promo code could not be redeemed');
     return data;
