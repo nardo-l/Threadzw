@@ -190,7 +190,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                         data-theme-index={index}
                         onClick={() => scrollToIndex(index)}
                         aria-label={`Select ${theme.name}`}
-                        className="relative min-w-[calc(100%-32px)] snap-center overflow-hidden rounded-[25px] bg-white text-left"
+                        className="relative min-w-[calc(100%-32px)] snap-center overflow-hidden rounded-[25px] bg-[#181818] text-left"
                         style={{
                           border: `2px solid ${isSelected ? '#C6FF00' : '#e4e4df'}`,
                           boxShadow: isSelected ? '0 14px 34px rgba(0,0,0,.14)' : '0 8px 24px rgba(0,0,0,.07)',
@@ -200,9 +200,10 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                           <img
                             src={THEME_IMAGE_URLS[theme.id]}
                             alt={`${theme.name} storefront theme preview`}
-                            className="block h-[305px] w-full object-contain bg-white"
+                            className="block h-[305px] w-full object-contain bg-[#181818]"
                             draggable={false}
                             loading={Math.abs(index - selectedIndex) <= 1 ? 'eager' : 'lazy'}
+                            referrerPolicy="no-referrer"
                             onError={() => setFailedImages(current => ({ ...current, [theme.id]: true }))}
                           />
                         ) : (
@@ -291,7 +292,7 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                         aria-label={`Select ${theme.name}`}
                       >
                         <div
-                          className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white transition-transform group-active:scale-95"
+                          className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#181818] transition-transform group-active:scale-95"
                           style={{
                             border: `2px solid ${isSelected ? '#C6FF00' : '#e5e5e0'}`,
                             boxShadow: isSelected ? '0 5px 16px rgba(198,255,0,.24)' : 'none',
@@ -301,9 +302,10 @@ export const ThemePickerLauncher: React.FC<Props> = ({ shop }) => {
                             <img
                               src={THEME_IMAGE_URLS[theme.id]}
                               alt=""
-                              className="h-full w-full object-cover object-top"
+                              className="h-full w-full object-contain object-top bg-[#181818]"
                               draggable={false}
                               loading="lazy"
+                              referrerPolicy="no-referrer"
                             />
                           ) : (
                             <div className="flex h-full items-center justify-center" style={{ background: theme.background }}>
