@@ -21,7 +21,8 @@ const DEFAULT_PREFERENCES = {
   timezone: 'Africa/Harare',
   setup_reminders_enabled: true,
   daily_summary_enabled: true,
-  push_enabled: true
+  push_enabled: true,
+  weekly_report_enabled: true
 };
 
 function isMissingTableError(error: any): boolean {
@@ -111,7 +112,7 @@ router.get('/preferences', async (req: AuthenticatedRequest, res) => {
   try {
     const { data, error } = await getSupabase()
       .from('notification_preferences')
-      .select('profile_id, timezone, setup_reminders_enabled, daily_summary_enabled, push_enabled')
+      .select('profile_id, timezone, setup_reminders_enabled, daily_summary_enabled, push_enabled, weekly_report_enabled')
       .eq('profile_id', profileId)
       .maybeSingle();
 
