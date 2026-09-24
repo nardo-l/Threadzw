@@ -150,11 +150,27 @@ export async function trackEvent(params: TrackEventParams) {
 
 // Explicit Wrapper Helpers
 export async function trackStoreView(shopId: string, referrerParam?: string) {
-  return await trackEvent({
+  const result = await trackEvent({
     shopId,
     eventType: AnalyticsEventType.SHOP_VISIT,
     source: referrerParam
   });
+
+  // The analytics insert is the source event. Once it succeeds, ask the
+  // server to notify the shop owner if they have opted into Web Push.
+  if (!result?.error && result?.data?.[0]) {
+    const visitorId = result.data[0].visitor_id || await getVisitorId();
+    fetch('/api/push/shop-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shopId, visitorId })
+    }).catch(error => {
+      // A notification failure must never break the public storefront.
+      console.warn('[Analytics] Shop visit push failed:', error);
+    });
+  }
+
+  return result;
 }
 
 export async function trackProductView(shopId: string, productId: string, productName?: string) {
