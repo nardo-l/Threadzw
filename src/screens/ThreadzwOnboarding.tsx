@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Instagram, Loader2, MapPin, MessageCircle, Sparkles, Store, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Instagram, Loader2, MapPin, MessageCircle, Sparkles, Store, Users, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
@@ -27,10 +27,7 @@ const Field = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
 const SocialProof = () => (
   <div className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-[#101211] px-4 py-3">
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C6FF00] text-black"><Users size={17} /></div>
-    <div>
-      <p className="text-xs font-black text-white">{WEEKLY_SHOPS_JOINED} shops joined this week</p>
-      <p className="mt-0.5 text-[10px] text-zinc-500">Zimbabwean brands are building their storefronts.</p>
-    </div>
+    <div><p className="text-xs font-black text-white">{WEEKLY_SHOPS_JOINED} shops joined this week</p><p className="mt-0.5 text-[10px] text-zinc-500">Zimbabwean brands are building their storefronts.</p></div>
     <Sparkles size={14} className="ml-auto shrink-0 text-[#C6FF00]" />
   </div>
 );
@@ -62,25 +59,34 @@ export const ThreadzwOnboarding: React.FC = () => {
     if (!city) return setError('Choose your shop location.');
     if (phone.replace(/\D/g, '').length < 9) return setError('Enter your WhatsApp number.');
 
-    setLoading(true); setError('');
+    setLoading(true);
+    setError('');
+
     try {
+      const normalizedEmail = email.trim().toLowerCase();
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         password,
         options: { data: { full_name: ownerName.trim(), phone_number: phone.trim() } }
       });
 
+      const alreadyRegistered =
+        signUpError?.message?.toLowerCase().includes('already registered') ||
+        signUpError?.message?.toLowerCase().includes('already exists') ||
+        (data?.user && !data.session && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+
+      if (alreadyRegistered) {
+        setError('EMAIL_ALREADY_EXISTS');
+        return;
+      }
+
+      if (signUpError) throw signUpError;
+
       let user = data.user;
-      if (signUpError?.message.toLowerCase().includes('already registered')) {
-        const signedIn = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-        if (signedIn.error) throw signedIn.error;
-        user = signedIn.data.user;
-      } else if (signUpError) {
-        throw signUpError;
-      } else if (!data.session) {
-        const signedIn = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-        if (signedIn.error) throw signedIn.error;
-        user = signedIn.data.user;
+
+      if (!data.session) {
+        if (!user) throw new Error('Your account could not be created.');
+        throw new Error('ACCOUNT_CONFIRMATION_REQUIRED');
       }
 
       if (!user) throw new Error('Your account could not be created.');
@@ -104,14 +110,18 @@ export const ThreadzwOnboarding: React.FC = () => {
       localStorage.setItem('supabase_logged_in_user_id', user.id);
       localStorage.setItem('threadzw_shop_id', shopId);
 
-      // Refresh the shared shop state before navigating. This prevents App.tsx from
-      // seeing a momentary hasShop=false and sending the new user back to onboarding.
       await refreshShop();
-
       toast.success('Your shop is ready. Let’s get you started.');
       navigate('/onboarding/paywall', { replace: true });
     } catch (e: any) {
-      setError(e?.message || 'Could not finish your ThreadZW setup.');
+      const raw = String(e?.message || '').toLowerCase();
+      if (raw.includes('already registered') || raw.includes('already exists')) {
+        setError('EMAIL_ALREADY_EXISTS');
+      } else if (raw === 'account_confirmation_required') {
+        setError('Your account was created, but email confirmation is required before we can finish your shop setup. Check your inbox and then sign in.');
+      } else {
+        setError(e?.message || 'Could not finish your ThreadZW setup.');
+      }
     } finally {
       setLoading(false);
     }
@@ -129,7 +139,7 @@ export const ThreadzwOnboarding: React.FC = () => {
     if (step === 6) return <div className="space-y-7"><p className="text-[10px] font-black uppercase tracking-[.2em] text-zinc-500">PHASE 3: SHOP CREATION</p><h1 className="text-4xl font-black leading-[.98]">Where is your shop based?</h1><p className="text-sm text-zinc-400">Choose the city customers should see when they want to visit you.</p><div className="grid grid-cols-2 gap-2">{CITIES.map(item => <button key={item} type="button" onClick={() => setCity(item)} className={`rounded-2xl border px-4 py-4 text-left text-sm font-black ${city === item ? 'border-[#C6FF00] bg-[#151a10] text-white' : 'border-zinc-800 bg-[#141414] text-zinc-300'}`}>{item}</button>)}</div><Button disabled={!city} onClick={() => go(7)}>Continue <ArrowRight size={16} /></Button></div>;
     if (step === 7) return <div className="space-y-7"><p className="text-[10px] font-black uppercase tracking-[.2em] text-zinc-500">PHASE 3: SHOP CREATION</p><h1 className="text-4xl font-black leading-[.98]">What number should customers use to order?</h1><p className="text-sm text-zinc-400">We'll use this WhatsApp number for customer orders and questions.</p><Field value={phone} onChange={e => setPhone(e.target.value)} placeholder="+263 77 123 4567" inputMode="tel" /><Button disabled={phone.replace(/\D/g, '').length < 9} onClick={() => go(8)}>Continue <ArrowRight size={16} /></Button></div>;
     if (step === 8) return <div className="space-y-7"><p className="text-[10px] font-black uppercase tracking-[.2em] text-zinc-500">PHASE 3: SHOP CREATION</p><h1 className="text-4xl font-black leading-[.98]">Tell customers a little about your shop.</h1><textarea value={bio} onChange={e => setBio(e.target.value)} placeholder="What do you sell? What makes your shop different?" maxLength={240} className="min-h-36 w-full rounded-2xl border border-zinc-700 bg-[#141414] px-4 py-4 text-base font-semibold text-white outline-none placeholder:text-zinc-500 focus:border-[#C6FF00]" /><p className="text-xs text-zinc-600">Optional · {bio.length}/240</p><Button onClick={() => go(9)}>Continue to sign up <ArrowRight size={16} /></Button></div>;
-    return <div className="space-y-6"><p className="text-[10px] font-black uppercase tracking-[.2em] text-zinc-500">PHASE 4: YOUR ACCOUNT</p><h1 className="text-4xl font-black leading-[.98]">Almost there. Let's create your account.</h1><p className="text-sm text-zinc-400">Your shop details are ready. Create your owner account and we'll take you straight to your dashboard.</p><div className="space-y-3"><Field autoFocus value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="What should we call you?" autoComplete="name" /><Field value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" type="email" autoComplete="email" /><div className="relative"><Field value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" className="pr-12" /><button type="button" onClick={() => setShowPassword(value => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-zinc-500 hover:text-white" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div></div>{error && <div className="rounded-xl border border-red-900/50 bg-red-950/30 px-4 py-3 text-xs font-semibold text-red-300">{error}</div>}<SocialProof /><Button disabled={loading} onClick={createAccountAndShop}>{loading ? <><Loader2 size={17} className="animate-spin" /> Creating your shop...</> : <>Create my ThreadZW shop <ArrowRight size={16} /></>}</Button><p className="text-center text-[10px] text-zinc-600">By continuing, you agree to ThreadZW's terms and privacy policy.</p></div>;
+    return <div className="space-y-6"><p className="text-[10px] font-black uppercase tracking-[.2em] text-zinc-500">PHASE 4: YOUR ACCOUNT</p><h1 className="text-4xl font-black leading-[.98]">Almost there. Let's create your account.</h1><p className="text-sm text-zinc-400">Your shop details are ready. Create your owner account and we'll take you straight to your dashboard.</p><div className="space-y-3"><Field autoFocus value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="What should we call you?" autoComplete="name" /><Field value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" type="email" autoComplete="email" /><div className="relative"><Field value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" className="pr-12" /><button type="button" onClick={() => setShowPassword(value => !value)} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-zinc-500 hover:text-white" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button></div></div>{error && <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-red-500/35 bg-red-500/10 p-4"><div className="flex gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-400"><AlertCircle size={18} /></div><div><p className="text-sm font-black text-red-300">{error === 'EMAIL_ALREADY_EXISTS' ? 'Email already in use' : 'We couldn’t finish your signup'}</p><p className="mt-1 text-xs leading-5 text-red-200/70">{error === 'EMAIL_ALREADY_EXISTS' ? 'An account with this email already exists on ThreadZW. Try logging in instead.' : error}</p></div></div>{error === 'EMAIL_ALREADY_EXISTS' && <button type="button" onClick={() => navigate('/login')} className="mt-4 w-full rounded-xl bg-[#C6FF00] py-2.5 text-xs font-black text-black">Go to Log In</button>}</motion.div>}<SocialProof /><Button disabled={loading} onClick={createAccountAndShop}>{loading ? <><Loader2 size={17} className="animate-spin" /> Creating your shop...</> : <>Create my ThreadZW shop <ArrowRight size={16} /></>}</Button><p className="text-center text-[10px] text-zinc-600">By continuing, you agree to ThreadZW's terms and privacy policy.</p></div>;
   };
 
   return <div className="fixed inset-0 z-[45] overflow-hidden bg-[#070707] font-sans text-white"><div className="mx-auto flex h-full max-w-md flex-col"><header className="shrink-0 px-5 pb-4 pt-5"><div className="mb-5 flex items-center justify-between"><button type="button" onClick={() => step > 1 ? go(step - 1) : navigate('/')} className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800 bg-[#111]"><ArrowLeft size={18} /></button><span className="text-lg font-black tracking-tight text-[#C6FF00]">ThreadZW</span><span className="w-10 text-right text-[10px] font-bold text-zinc-500">{step}/{TOTAL_STEPS}</span></div>{renderProgress()}</header><main className="flex-1 overflow-y-auto px-5 py-5"><AnimatePresence mode="wait"><motion.div key={step} initial={{ opacity: 0, x: 18 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -18 }} transition={{ duration: .18 }} className="pb-10">{renderStep()}</motion.div></AnimatePresence></main></div></div>;
