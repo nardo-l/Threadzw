@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { sendPushToProfile } from '../services/pushService.js';
+import { sendPushToProfile, sendPushAfterShopVisit } from '../services/pushService.js';
 import { sendDailyDigestToAll } from '../services/pushDigestService.js';
 import { serverSupabase, requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 import { isValidCronSecret } from '../lib/cronAuth.js';
@@ -30,6 +30,23 @@ router.post('/send', requireAuth, async (req: AuthenticatedRequest, res) => {
   } catch (err: any) {
     console.error('Error sending push notification:', err);
     return res.status(500).json({ error: err.message || 'Failed to send push notification' });
+  }
+});
+
+router.post('/shop-visit', async (req, res) => {
+  try {
+    const shopId = String(req.body?.shopId || '').trim();
+    const visitorId = String(req.body?.visitorId || '').trim();
+
+    if (!shopId || !visitorId || visitorId.length > 200) {
+      return res.status(400).json({ error: 'shopId and visitorId are required' });
+    }
+
+    const result = await sendPushAfterShopVisit(serverSupabase, shopId, visitorId);
+    return res.json({ success: true, ...result });
+  } catch (err: any) {
+    console.error('Error sending shop visit push:', err);
+    return res.status(500).json({ error: err.message || 'Failed to send shop visit notification' });
   }
 });
 
