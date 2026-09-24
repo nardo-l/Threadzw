@@ -212,7 +212,7 @@ export function buildSetupMessage(shop: ShopRecord, productCount: number, now = 
     };
   }
 
-  if (!isShopProfileComplete(shop) {
+  if (!isShopProfileComplete(shop)) {
     return {
       type: 'setup_reminder',
       title: 'Finish setting up your shop',
