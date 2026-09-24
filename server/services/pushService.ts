@@ -80,3 +80,93 @@ export async function sendPushToProfile(
 
   return { attempted: subscriptions.length, sentCount, expiredCount };
 }
+
+
+/**
+ * Notify a shop owner after a storefront visit.
+ * To avoid notification spam, only the first visit from the same visitor to the
+ * same shop on a calendar day creates a push/inbox notification.
+ */
+export async function sendPushAfterShopVisit(
+  supabase: any,
+  shopId: string,
+  visitorId: string | null | undefined
+): Promise<PushDeliveryResult & { skipped: boolean }> {
+  if (!shopId || !visitorId) {
+    return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+  }
+
+  const { data: shop, error: shopError } = await supabase
+    .from('shops')
+    .select('id, owner_id, name')
+    .eq('id', shopId)
+    .maybeSingle();
+
+  if (shopError || !shop?.owner_id) {
+    if (shopError) console.error('[PushService] Failed to resolve shop owner:', shopError.message);
+    return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+  }
+
+  const { data: preferences } = await supabase
+    .from('notification_preferences')
+    .select('push_enabled')
+    .eq('profile_id', shop.owner_id)
+    .maybeSingle();
+
+  if (preferences?.push_enabled === false) {
+    return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+  }
+
+  const localDay = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Harare',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
+
+  const deliveryKey = `visit:${shopId}:${visitorId}:${localDay}`;
+
+  const { data: existing } = await supabase
+    .from('notifications')
+    .select('id')
+    .eq('dedupe_key', deliveryKey)
+    .maybeSingle();
+
+  if (existing) {
+    return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+  }
+
+  const title = 'Someone visited your shop 👀';
+  const body = `${shop.name || 'Your ThreadZW shop'} just got a new visitor. Check your analytics to see what customers are doing.`;
+
+  const { error: notificationError } = await supabase
+    .from('notifications')
+    .insert({
+      profile_id: shop.owner_id,
+      shop_id: shop.id,
+      type: 'shop_visit',
+      title,
+      body,
+      read: false,
+      target_url: '/analytics',
+      dedupe_key: deliveryKey,
+      created_at: new Date().toISOString()
+    });
+
+  if (notificationError) {
+    if (notificationError.code === '23505') {
+      return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+    }
+    console.error('[PushService] Failed to create visit notification:', notificationError.message);
+    return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+  }
+
+  const pushResult = await sendPushToProfile(supabase, shop.owner_id, {
+    title,
+    body,
+    tag: `shop-visit-${shopId}`,
+    data: { url: '/analytics' }
+  });
+
+  return { ...pushResult, skipped: false };
+}
