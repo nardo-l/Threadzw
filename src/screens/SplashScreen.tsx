@@ -1,39 +1,20 @@
 import React from 'react';
 
-export const SplashScreen: React.FC = () => {
-  return (
-    <div className="fixed inset-0 z-[9999] bg-[#000000] flex flex-col items-center justify-center select-none font-sans">
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes customSpin {
-          to { transform: rotate(360deg); }
-        }
-      ` }} />
+export const SplashScreen: React.FC = () => (
+  <div className="fixed inset-0 z-[9999] overflow-hidden bg-[#000] text-white select-none">
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(198,255,0,0.10),transparent_32%),linear-gradient(180deg,#030303_0%,#080808_100%)]" />
+    <div className="absolute left-1/2 top-[17%] h-52 w-52 -translate-x-1/2 rounded-full border border-[#C6FF00]/10" />
+    <div className="absolute left-1/2 top-[19%] h-44 w-44 -translate-x-1/2 rounded-full border border-[#C6FF00]/20" />
 
-      <div className="flex flex-col items-center justify-center text-center px-6">
-        {/* Animated Custom Green Hanger SVG */}
-        <div className="mb-6 animate-pulse">
-          <svg className="w-16 h-16 text-[#25D366]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
-            {/* Elegant Hanger hook */}
-            <path d="M12 9 C 12 6, 15 5, 14 3.5 C 13.5 2.8, 12.5 2.5, 12 2.5 C 11.2 2.5, 10.5 3, 10.5 4.5" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Elegant Hanger body triangle */}
-            <path d="M12 9 L2.5 17.5 C 1.8 18.2, 2.3 19, 3.2 19 L20.8 19 C 21.7 19, 22.2 18.2, 21.5 17.5 Z" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-
-        {/* Brand Display Title */}
-        <h1 className="text-3xl font-black tracking-[0.2em] text-white uppercase font-sans mb-2">
-          THREADZW
-        </h1>
-        <p className="text-[#A0A0A0] text-xs uppercase tracking-[0.15em] font-medium max-w-xs leading-relaxed">
-          Shopfronts for Zimbabwean Fashion
-        </p>
-
-        {/* Circular Indicator spinner */}
-        <div 
-          className="mt-12 w-6 h-6 rounded-full border-2 border-[#1A1A1A] border-t-[#25D366]" 
-          style={{ animation: 'customSpin 0.8s linear infinite' }}
-        />
+    <div className="relative flex h-full flex-col items-center justify-center px-7 text-center">
+      <div className="mb-8 flex h-20 w-20 -rotate-6 items-center justify-center rounded-[26px] border border-[#C6FF00]/30 bg-[#C6FF00] text-3xl font-black text-black shadow-[8px_8px_0_rgba(255,255,255,0.9)]">TZ</div>
+      <h1 className="text-4xl font-black tracking-[-.04em] sm:text-5xl">THREAD<span className="text-[#C6FF00]">ZW</span></h1>
+      <p className="mt-3 max-w-xs text-[11px] font-bold uppercase tracking-[.18em] text-zinc-500">Zimbabwe's Fashion Marketplace</p>
+      <div className="mt-16 h-1.5 w-32 overflow-hidden rounded-full bg-zinc-800">
+        <div className="h-full w-1/2 animate-[splashProgress_1.1s_ease-in-out_infinite] rounded-full bg-[#C6FF00]" />
       </div>
+      <p className="mt-4 text-[10px] font-black uppercase tracking-[.2em] text-zinc-700">Loading your style</p>
     </div>
-  );
-};
+    <style>{`@keyframes splashProgress { 0% { transform: translateX(-100%); } 50% { transform: translateX(100%); } 100% { transform: translateX(240%); } }`}</style>
+  </div>
+);
