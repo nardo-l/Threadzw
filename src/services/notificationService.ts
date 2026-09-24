@@ -7,13 +7,15 @@ export interface NotificationPreferences {
   setup_reminders_enabled: boolean;
   daily_summary_enabled: boolean;
   push_enabled: boolean;
+  weekly_report_enabled: boolean;
 }
 
 const defaultPreferences: NotificationPreferences = {
   timezone: 'Africa/Harare',
   setup_reminders_enabled: true,
   daily_summary_enabled: true,
-  push_enabled: true
+  push_enabled: true,
+  weekly_report_enabled: true
 };
 
 async function getAuthHeaders(includeJson = false): Promise<Record<string, string> | null> {
