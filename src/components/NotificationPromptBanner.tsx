@@ -112,7 +112,7 @@ export const NotificationPromptBanner: React.FC<NotificationPromptBannerProps> =
               </span>
             </div>
             <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed max-w-xl">
-              Get setup reminders at 12:00 and a daily shop-performance summary at 19:00, in your ThreadZW inbox and on your phone.
+              Get a notification when someone visits your shop, a first-product reminder after a day if you still have none, and a weekly shop report — in your ThreadZW inbox and on your phone.
             </p>
           </div>
         </div>
