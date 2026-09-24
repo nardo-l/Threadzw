@@ -8,7 +8,8 @@ import { ServicePageView } from './ServicePageView';
 import { CreatorPageView } from './CreatorPageView';
 import { ProfessionalPageView } from './ProfessionalPageView';
 import { CommunityPageView } from './CommunityPageView';
-import { AlertCircle, ArrowLeft, Store } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { NotFound } from '../../screens/NotFound';
 
 export const BioPageView: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -82,28 +83,7 @@ export const BioPageView: React.FC = () => {
 
   // 3. Not Found / Error State
   if (errorType === 'not_found' || errorType === 'error' || !page) {
-    return (
-      <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col items-center justify-center p-4 font-sans">
-        <div className="w-full max-w-sm bg-[#141414] border border-zinc-800 rounded-2xl p-6 text-center space-y-4 shadow-2xl">
-          <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto text-red-400 border border-red-500/20">
-            <Store className="w-6 h-6" />
-          </div>
-          <div className="space-y-1">
-            <h1 className="text-xl font-bold">Page Not Found</h1>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              The requested ThreadZW bio page or storefront does not exist or may have been updated.
-            </p>
-          </div>
-          <button
-            onClick={() => navigate('/shops')}
-            className="w-full py-2.5 px-4 bg-lime-400 hover:bg-lime-300 text-black rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Browse ThreadZW Directory
-          </button>
-        </div>
-      </div>
-    );
+    return <NotFound storefront />;
   }
 
   // 4. Switch on normalized page_type
