@@ -46,6 +46,7 @@ import { DesignSystemPart2 } from './components/design-system/DesignSystemPart2'
 import { DesignSystemPart3 } from './components/design-system/DesignSystemPart3';
 import { DesignSystemPart4 } from './components/design-system/DesignSystemPart4';
 import { DesignSystemPart5 } from './components/design-system/DesignSystemPart5';
+import { NotFound } from './screens/NotFound';
 
 
 type AppStage = 'landing' | 'onboarding' | 'onboarding-paywall' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase' | 'design-system' | 'design-system-2' | 'design-system-3' | 'design-system-4' | 'design-system-5';
@@ -130,7 +131,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -207,7 +208,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -571,7 +572,7 @@ function AppContent() {
         <Route path="/:slug/category/:categoryId" element={<BioPageView />} />
         <Route path="/:slug/about" element={<BioPageView />} />
 
-        <Route path="*" element={<BioPageView />} />
+        <Route path="*" element={<NotFound storefront />} />
       </Routes>
     );
   }
@@ -661,7 +662,7 @@ function AppContent() {
     );
   }
 
-  return session ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />;
+  return <NotFound />;
 }
 
 function App() {
