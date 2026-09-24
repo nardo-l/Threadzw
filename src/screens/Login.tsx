@@ -1,12 +1,9 @@
-// src/screens/Login.tsx
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { withTimeout } from '../lib/withTimeout';
-import { toast } from 'sonner';
 
 const LOGIN_REQUEST_TIMEOUT_MS = 15000;
 
@@ -21,182 +18,88 @@ export const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[LOGIN] handleLogin button clicked. Email:", email);
-    if (!email || !password) {
-      console.warn("[LOGIN] handleLogin cancelled: missing email/password");
-      toast.error('Please fill in all fields');
+    if (!email.trim() || !password) {
+      setLoginError('Enter your email and password to continue.');
       return;
     }
 
-    console.log("[LOGIN] Setting loading state to true");
     setLoading(true);
     setLoginError(null);
     setShake(false);
 
     try {
-      console.log("[LOGIN] Calling supabase.auth.signInWithPassword...");
-      const t0 = performance.now();
-      const { data, error } = await withTimeout(supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password
-      }), LOGIN_REQUEST_TIMEOUT_MS, 'SIGNIN');
-      const t1 = performance.now();
-      console.log(`[LOGIN] supabase.auth.signInWithPassword returned after ${(t1 - t0).toFixed(2)}ms`);
-
-      if (error) {
-        console.error("[LOGIN] supabase.auth.signInWithPassword returned error:", error);
-        throw error;
-      }
-
-      console.log("[LOGIN] signInWithPassword response details:", {
-        hasSession: !!data?.session,
-        hasUser: !!data?.user,
-        userId: data?.user?.id,
-        userEmail: data?.user?.email
-      });
-
-      if (!data?.session || !data?.user) {
-        throw new Error('No authenticated user session was returned.');
-      }
-
-      toast.success('Signed in successfully');
-      console.log("[LOGIN] Triggering route navigation to /dashboard via navigate()...");
+      const { data, error } = await withTimeout(
+        supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password }),
+        LOGIN_REQUEST_TIMEOUT_MS,
+        'SIGNIN'
+      );
+      if (error) throw error;
+      if (!data?.session || !data?.user) throw new Error('SIGNIN_FAILED');
       navigate('/dashboard');
-      console.log("[LOGIN] navigate('/dashboard') called.");
     } catch (err: any) {
-      console.error("[LOGIN] Exception caught in handleLogin:", err);
+      console.error('[LOGIN] sign in failed:', err);
       setPassword('');
       setShake(true);
-      setLoginError(err?.message || 'Incorrect email or password. Please try again.');
+      const raw = String(err?.message || '').toLowerCase();
+      setLoginError(raw.includes('timeout')
+        ? 'We could not reach ThreadZW right now. Check your connection and try again.'
+        : 'The email or password is incorrect. Check your details and try again.');
     } finally {
-      console.log("[LOGIN] handleLogin finally block reached. Setting loading state to false");
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black text-white flex flex-col font-sans select-none overflow-hidden z-[45] selection:bg-[#bef715] selection:text-black">
-      
-      {/* Header with back button */}
-      <header className="h-20 px-6 flex items-center justify-between shrink-0 bg-black">
-        <button 
-          onClick={() => navigate('/')}
-          className="w-12 h-12 rounded-full flex items-center justify-center bg-zinc-950 hover:bg-zinc-900 border border-zinc-900 text-white active:scale-95 transition-all cursor-pointer"
-        >
-          <ArrowLeft className="w-5 h-5 stroke-[2]" />
-        </button>
-        
-        <span className="text-xl font-black tracking-tighter text-[#bef715]">
-          ThreadZW<span className="text-white">.</span>
-        </span>
-      </header>
-
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto flex items-center justify-center px-6 py-8">
-        <div className="w-full max-w-md space-y-10">
-          
-          <div className="space-y-2">
-            <h1 className="text-4xl font-black text-white tracking-tight uppercase leading-none">Owner Login</h1>
-            <p className="text-zinc-500 text-sm font-medium">Sign in to manage your premium storefront.</p>
-          </div>
-
-          {loginError && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-red-950/20 border border-red-900/40 rounded-2xl p-5 text-center space-y-3"
-            >
-              <div className="text-red-500 font-extrabold text-sm">
-                Login Failed
-              </div>
-              <p className="text-zinc-400 text-xs leading-relaxed">
-                {loginError === 'Invalid login credentials' 
-                  ? 'The email or password you entered is incorrect. Please check your credentials or create a new account.' 
-                  : loginError}
-              </p>
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLoginError(null);
-                    setShake(false);
-                  }}
-                  className="flex-1 py-2.5 px-4 bg-zinc-900 hover:bg-zinc-800 text-white font-extrabold text-xs rounded-xl cursor-pointer transition-all border border-zinc-800"
-                >
-                  Try Again
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/signup')}
-                  className="flex-1 py-2.5 px-4 bg-[#bef715] hover:opacity-90 text-black font-extrabold text-xs rounded-xl cursor-pointer transition-all"
-                >
-                  Create Account
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-1.5 text-left">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Email address</label>
-              <input 
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="tawanda@gmail.com"
-                className="w-full h-12 bg-zinc-950 border border-zinc-900 rounded-xl px-4 text-white text-sm focus:outline-none focus:border-[#bef715] transition-all placeholder-zinc-850 font-medium"
-              />
+    <div className="fixed inset-0 z-[45] overflow-hidden bg-[#050505] text-white selection:bg-[#C6FF00] selection:text-black">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col">
+        <header className="flex h-20 shrink-0 items-center justify-between px-5">
+          <button onClick={() => navigate('/')} aria-label="Back to home" className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5"><ArrowLeft size={18} /></button>
+          <span className="text-lg font-black tracking-tight">THREAD<span className="text-[#C6FF00]">ZW</span></span>
+          <span className="w-10" />
+        </header>
+        <main className="flex-1 overflow-y-auto px-5 py-7">
+          <div className="space-y-8">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[.22em] text-[#C6FF00]">WELCOME BACK</p>
+              <h1 className="mt-3 text-4xl font-black leading-none tracking-tight">Sign in.</h1>
+              <p className="mt-3 text-sm leading-6 text-zinc-500">Sign in to manage your ThreadZW storefront.</p>
             </div>
 
-            <div className="space-y-1.5 text-left relative">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider block">Password</label>
-              <div className="relative">
-                <motion.div
-                  animate={shake ? { x: [-10, 10, -8, 8, -5, 5, 0] } : {}}
-                  transition={{ duration: 0.4 }}
-                >
-                  <input 
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full h-12 bg-zinc-950 border border-zinc-900 rounded-xl pl-4 pr-11 text-white text-sm focus:outline-none focus:border-[#bef715] transition-all placeholder-zinc-850 font-mono"
-                  />
+            {loginError && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-red-500/40 bg-red-500/10 p-4">
+                <div className="flex gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-400"><AlertCircle size={18} /></div>
+                  <div><p className="text-sm font-black text-red-300">Couldn't sign you in</p><p className="mt-1 text-xs leading-5 text-red-200/70">{loginError}</p></div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <button type="button" onClick={() => { setLoginError(null); setShake(false); }} className="flex-1 rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-black">Try again</button>
+                  <button type="button" onClick={() => navigate('/signup')} className="flex-1 rounded-xl bg-[#C6FF00] py-2.5 text-xs font-black text-black">Create account</button>
+                </div>
+              </motion.div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-400">Email address</label>
+                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" className="h-14 w-full rounded-2xl border border-white/10 bg-[#101010] px-4 text-sm font-semibold outline-none placeholder:text-zinc-700 focus:border-[#C6FF00]" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-400">Password</label>
+                <motion.div animate={shake ? { x: [-8, 8, -6, 6, 0] } : {}}>
+                  <div className="relative">
+                    <input type={showPassword ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} placeholder="Enter your password" autoComplete="current-password" className="h-14 w-full rounded-2xl border border-white/10 bg-[#101010] px-4 pr-12 text-sm font-semibold outline-none placeholder:text-zinc-700 focus:border-[#C6FF00]" />
+                    <button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white">{showPassword ? <EyeOff size={19} /> : <Eye size={19} />}</button>
+                  </div>
                 </motion.div>
-                <button 
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white cursor-pointer"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
               </div>
-            </div>
-
-            <button 
-              type="submit"
-              disabled={loading}
-              className="w-full h-14 bg-[#bef715] hover:opacity-95 text-black font-extrabold text-base rounded-2xl flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-[0.98] mt-8 shadow-lg shadow-[#bef715]/10"
-            >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-zinc-500 font-medium">
-            Don't have an account?{' '}
-            <Link 
-              to="/signup" 
-              className="font-extrabold text-[#bef715] hover:underline"
-            >
-              Get Started
-            </Link>
-          </p>
-
-        </div>
-      </main>
-
+              <button type="submit" disabled={loading} className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#C6FF00] text-sm font-black text-black shadow-[0_12px_35px_rgba(198,255,0,0.12)] transition hover:bg-[#D6FF33] disabled:opacity-50">
+                {loading ? <Loader2 size={19} className="animate-spin" /> : 'Log In'}
+              </button>
+            </form>
+            <p className="text-center text-sm text-zinc-500">Don't have an account? <Link to="/signup" className="font-black text-[#C6FF00]">Sign up</Link></p>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
