@@ -1,7 +1,7 @@
 import { createNotification } from './notificationService.js';
 import { sendPushToProfile } from './pushService.js';
 
-export type NotificationSlot = 'midday' | 'evening';
+export type NotificationSlot = 'midday' | 'evening' | 'weekly';
 
 const DEFAULT_TIMEZONE = 'Africa/Harare';
 const CLAIM_RETRY_AFTER_MS = 10 * 60 * 1000;
@@ -12,6 +12,7 @@ interface NotificationPreferences {
   setup_reminders_enabled?: boolean | null;
   daily_summary_enabled?: boolean | null;
   push_enabled?: boolean | null;
+  weekly_report_enabled?: boolean | null;
 }
 
 interface ShopRecord {
@@ -27,6 +28,7 @@ interface ShopRecord {
   whatsapp?: string | null;
   instagram?: string | null;
   page_type?: string | null;
+  created_at?: string | null;
 }
 
 interface ProductRecord {
@@ -194,8 +196,23 @@ export function aggregateMetrics(events: AnalyticsRecord[], products: ProductRec
   };
 }
 
-export function buildSetupMessage(shop: ShopRecord, productCount: number) {
-  if (!isShopProfileComplete(shop)) {
+export function buildSetupMessage(shop: ShopRecord, productCount: number, now = new Date()) {
+  const shopAgeMs = shop.created_at ? now.getTime() - new Date(shop.created_at).getTime() : 0;
+  const hasBeenLiveForADay = shopAgeMs >= 24 * 60 * 60 * 1000;
+
+  // The first-product reminder is specifically a one-day onboarding nudge.
+  // It takes priority once the shop has existed for at least 24 hours.
+  if (productCount === 0 && hasBeenLiveForADay) {
+    return {
+      type: 'first_product_reminder',
+      title: 'Your shop is waiting for its first product',
+      body: 'Add your first product today so customers have something to discover. A clear photo, price and sizes are a great start.',
+      target_url: '/add-product',
+      shopId: shop.id
+    };
+  }
+
+  if (!isShopProfileComplete(shop) {
     return {
       type: 'setup_reminder',
       title: 'Finish setting up your shop',
@@ -205,17 +222,23 @@ export function buildSetupMessage(shop: ShopRecord, productCount: number) {
     };
   }
 
-  if (productCount === 0) {
-    return {
-      type: 'first_product_reminder',
-      title: 'Add your first product',
-      body: 'Your storefront is ready. Add one product with a clear photo, price and available sizes to start sharing your shop.',
-      target_url: '/add-product',
-      shopId: shop.id
-    };
-  }
-
   return null;
+}
+
+export function buildWeeklySummaryMessage(metrics: SummaryMetrics) {
+  const visitorLabel = metrics.uniqueVisitors === 1 ? 'unique visitor' : 'unique visitors';
+  const interestCount = metrics.whatsappClicks + metrics.directionsClicks;
+  const interestLabel = interestCount === 1 ? 'customer action' : 'customer actions';
+  const topProduct = metrics.topProductName && metrics.topProductClicks > 0
+    ? ` ${metrics.topProductName} led with ${metrics.topProductClicks} WhatsApp ${metrics.topProductClicks === 1 ? 'enquiry' : 'enquiries'}.`
+    : '';
+
+  return {
+    type: 'weekly_shop_report',
+    title: 'Your weekly ThreadZW report is ready',
+    body: `This week: ${metrics.uniqueVisitors} ${visitorLabel}, ${metrics.shopVisits} shop visits, ${interestCount} ${interestLabel}, ${metrics.whatsappClicks} WhatsApp enquiries, ${metrics.directionsClicks} directions opens and ${metrics.productViews} product views.${topProduct}`,
+    target_url: '/analytics'
+  };
 }
 
 export function buildSummaryMessage(metrics: SummaryMetrics) {
@@ -374,7 +397,7 @@ export async function sendScheduledMerchantNotifications(
 ) {
   const { data: shops, error: shopsError } = await supabase
     .from('shops')
-    .select('id, owner_id, name, description, logo_url, banner_url, location, whatsapp_number, page_type')
+    .select('id, owner_id, name, description, logo_url, banner_url, location, whatsapp_number, page_type, created_at')
     .not('owner_id', 'is', null);
 
   if (shopsError) throw shopsError;
@@ -426,11 +449,11 @@ export async function sendScheduledMerchantNotifications(
     if (slot === 'midday' && profilePreferences?.setup_reminders_enabled !== false) {
       const setupShop = shopsByProfile.get(profileId)?.find(shop => {
         const shopProducts = productsByShop.get(shop.id) || [];
-        return Boolean(buildSetupMessage(shop, shopProducts.length));
+        return Boolean(buildSetupMessage(shop, shopProducts.length, now));
       });
 
       if (setupShop) {
-        const message = buildSetupMessage(setupShop, (productsByShop.get(setupShop.id) || []).length);
+        const message = buildSetupMessage(setupShop, (productsByShop.get(setupShop.id) || []).length, now);
         if (message) {
           const result = await deliverNotification(supabase, {
             profileId,
@@ -471,6 +494,33 @@ export async function sendScheduledMerchantNotifications(
       pushSent += result.pushSentCount;
     }
   }
+
+    if (slot === 'weekly' && profilePreferences?.weekly_report_enabled !== false) {
+      const profileShops = shopsByProfile.get(profileId) || [];
+      const profileShopIds = profileShops.map(shop => shop.id);
+      const weekStart = new Date(range.start.getTime() - 6 * 24 * 60 * 60 * 1000);
+
+      const { data: events, error: eventsError } = await supabase
+        .from('shop_analytics')
+        .select('shop_id, event_type, visitor_id, product_id, metadata, created_at')
+        .in('shop_id', profileShopIds)
+        .gte('created_at', weekStart.toISOString())
+        .lt('created_at', range.end.toISOString());
+
+      if (eventsError) throw eventsError;
+      const profileProducts = profileShops.flatMap(shop => productsByShop.get(shop.id) || []);
+      const metrics = aggregateMetrics((events || []) as AnalyticsRecord[], profileProducts);
+      const result = await deliverNotification(supabase, {
+        profileId,
+        shopId: profileShops.length === 1 ? profileShops[0].id : null,
+        slot,
+        localDate: range.localDate,
+        pushEnabled: profilePreferences?.push_enabled !== false,
+        message: buildWeeklySummaryMessage(metrics)
+      });
+      if (result.created) notificationsCreated += 1;
+      pushSent += result.pushSentCount;
+    }
 
   return {
     success: true,
