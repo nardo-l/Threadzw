@@ -20,18 +20,7 @@ function isIOS() {
 }
 
 function isDashboardRoute() {
-  const path = window.location.pathname.toLowerCase();
-  return path === '/dashboard' ||
-    path === '/inventory' ||
-    path === '/analytics' ||
-    path === '/notifications' ||
-    path === '/settings' ||
-    path === '/edit-shop' ||
-    path === '/edit-profile' ||
-    path === '/add-product' ||
-    path.startsWith('/edit-product') ||
-    path === '/add-vehicle' ||
-    path.startsWith('/edit-vehicle');
+  return window.location.pathname.toLowerCase().replace(/\\/$/, '') === '/dashboard';
 }
 
 export const PWAInstallPrompt: React.FC = () => {
@@ -73,9 +62,9 @@ export const PWAInstallPrompt: React.FC = () => {
         return;
       }
 
-      // Show on the seller dashboard even when Chromium has not exposed
-      // beforeinstallprompt yet. The button then gives browser-specific
-      // installation guidance instead of silently doing nothing.
+      // The install experience belongs to the main seller dashboard only.
+      // Keep it out of inventory/settings/etc. so it doesn't interrupt normal
+      // dashboard workflows.
       setShow(true);
     };
 
