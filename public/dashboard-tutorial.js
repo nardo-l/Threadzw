@@ -1,13 +1,15 @@
 (() => {
-  const STORAGE_KEY = 'threadzw_dashboard_tutorial_v1_seen';
+  const STORAGE_KEY = 'threadzw_dashboard_tutorial_v2_seen';
   const BUCKET = 'landing page background';
   const SUPABASE_URL = 'https://zuashdquiorcwvyvqucm.supabase.co';
+  // Keep the tutorial image order aligned with the intended dashboard setup flow:
+  // 1. Store link, 2. Products, 3. Directions, 4. Branding, 5. Analytics.
   const IMAGE_NAMES = [
     'file_0000000018cc81f484c84af953e86338.png',
-    'file_000000007a7881f4a37067f6e6393557.png',
+    'file_00000000e54c8246b0ef327984326b75.png',
     'file_00000000ad7c81f4a9ca283392e8bd37.png',
     'file_00000000b04081f4bf35206b09da3e46.png',
-    'file_00000000e54c8246b0ef327984326b75.png'
+    'file_000000007a7881f4a37067f6e6393557.png'
   ];
 
   const imageUrl = (name) => `${SUPABASE_URL}/storage/v1/object/public/${encodeURIComponent(BUCKET)}/${encodeURIComponent(name)}`;
