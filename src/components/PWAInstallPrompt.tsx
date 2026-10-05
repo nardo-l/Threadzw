@@ -1,44 +1,41 @@
 import React, { useEffect, useState } from 'react';
-import { Download, X, Share, PlusSquare } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 };
 
-// Version the key so a previous dismissal during testing does not permanently hide the new prompt.
-const DISMISS_KEY = 'threadzw_pwa_install_dismissed_at_v2';
+const DISMISS_KEY = 'threadzw_pwa_install_dismissed_at_v3';
 const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const TUTORIAL_SEEN_KEY = 'threadzw_dashboard_tutorial_v2_seen';
 
 function isStandalone() {
   return window.matchMedia('(display-mode: standalone)').matches ||
     Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone);
 }
 
-function isIOS() {
-  return /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-}
-
 function isDashboardRoute() {
   return window.location.pathname.toLowerCase().replace(/\\/$/, '') === '/dashboard';
+}
+
+function tutorialHasFinished() {
+  return localStorage.getItem(TUTORIAL_SEEN_KEY) === 'true';
 }
 
 export const PWAInstallPrompt: React.FC = () => {
   const [installEvent, setInstallEvent] = useState<InstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
-  const [ios, setIos] = useState(false);
-  const [installable, setInstallable] = useState(false);
+  const [tutorialFinished, setTutorialFinished] = useState(tutorialHasFinished);
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as InstallPromptEvent);
-      setInstallable(true);
     };
 
     const onAppInstalled = () => {
       setInstallEvent(null);
-      setInstallable(false);
       setShow(false);
       localStorage.removeItem(DISMISS_KEY);
     };
@@ -47,38 +44,50 @@ export const PWAInstallPrompt: React.FC = () => {
     window.addEventListener('appinstalled', onAppInstalled);
 
     const checkVisibility = () => {
-      const standalone = isStandalone();
-      const onIOS = isIOS();
-      setIos(onIOS);
-
-      if (standalone || !isDashboardRoute()) {
-        setShow(false);
-        return;
-      }
+      const finished = tutorialHasFinished();
+      setTutorialFinished(finished);
 
       const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || '0');
-      if (dismissedAt && Date.now() - dismissedAt < DISMISS_COOLDOWN_MS) {
-        setShow(false);
-        return;
-      }
+      const dismissedRecently = dismissedAt && Date.now() - dismissedAt < DISMISS_COOLDOWN_MS;
 
-      // The install experience belongs to the main seller dashboard only.
-      // Keep it out of inventory/settings/etc. so it doesn't interrupt normal
-      // dashboard workflows.
-      setShow(true);
+      // The install overlay is only for the main dashboard, after the setup
+      // tutorial, and only when the browser supplied a real install prompt.
+      setShow(
+        isDashboardRoute() &&
+        !isStandalone() &&
+        finished &&
+        Boolean(installEvent) &&
+        !dismissedRecently
+      );
     };
 
     checkVisibility();
-    const interval = window.setInterval(checkVisibility, 500);
+    const interval = window.setInterval(checkVisibility, 250);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstallPrompt);
       window.removeEventListener('appinstalled', onAppInstalled);
       window.clearInterval(interval);
     };
-  }, []);
+  }, [installEvent]);
 
-  if (!show) return null;
+  useEffect(() => {
+    if (!tutorialFinished) return;
+    // Re-check immediately when the tutorial is closed/skipped.
+    const timer = window.setTimeout(() => {
+      const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || '0');
+      const dismissedRecently = dismissedAt && Date.now() - dismissedAt < DISMISS_COOLDOWN_MS;
+      setShow(
+        isDashboardRoute() &&
+        !isStandalone() &&
+        Boolean(installEvent) &&
+        !dismissedRecently
+      );
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [tutorialFinished, installEvent]);
+
+  if (!show || !installEvent) return null;
 
   const dismiss = () => {
     localStorage.setItem(DISMISS_KEY, String(Date.now()));
@@ -86,21 +95,29 @@ export const PWAInstallPrompt: React.FC = () => {
   };
 
   const install = async () => {
-    if (!installEvent) return;
-    await installEvent.prompt();
-    const choice = await installEvent.userChoice;
-    setInstallEvent(null);
-    setInstallable(false);
-    setShow(false);
-    if (choice.outcome === 'dismissed') {
-      localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    const event = installEvent;
+    try {
+      await event.prompt();
+      const choice = await event.userChoice;
+      if (choice.outcome === 'dismissed') {
+        localStorage.setItem(DISMISS_KEY, String(Date.now()));
+      }
+    } finally {
+      setInstallEvent(null);
+      setShow(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/35 px-4 pb-5 sm:items-center sm:pb-0">
-      <div className="relative w-full max-w-sm overflow-hidden rounded-[28px] border border-zinc-200 bg-white p-5 text-zinc-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/45 px-4 pb-5 sm:items-center sm:pb-0">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Install ThreadZW"
+        className="relative w-full max-w-sm overflow-hidden rounded-[28px] border border-zinc-200 bg-white p-5 text-zinc-950 shadow-2xl animate-in slide-in-from-bottom-4 duration-300"
+      >
         <button
+          type="button"
           onClick={dismiss}
           aria-label="Close install prompt"
           className="absolute right-4 top-4 rounded-full bg-zinc-100 p-2 text-zinc-500 transition hover:bg-zinc-200"
@@ -118,27 +135,17 @@ export const PWAInstallPrompt: React.FC = () => {
           Add ThreadZW to your device for a faster, app-like experience. Your account and shop stay connected to the same ThreadZW web app.
         </p>
 
-        {ios ? (
-          <div className="mt-4 rounded-2xl bg-zinc-50 p-4 text-xs leading-5 text-zinc-600">
-            <p className="font-semibold text-zinc-900">On iPhone or iPad</p>
-            <p className="mt-1 flex items-center gap-1.5">Tap <Share size={14} /> <strong>Share</strong>, then choose <strong>Add to Home Screen</strong> <PlusSquare size={14} />.</p>
-          </div>
-        ) : installable && installEvent ? (
-          <button
-            onClick={install}
-            className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#CCFF00] text-sm font-bold text-black transition hover:opacity-90 active:scale-[0.99]"
-          >
-            <Download size={17} />
-            Install ThreadZW
-          </button>
-        ) : (
-          <div className="mt-4 rounded-2xl bg-zinc-50 p-4 text-xs leading-5 text-zinc-600">
-            <p className="font-semibold text-zinc-900">Install from your browser</p>
-            <p className="mt-1">Open your browser menu (⋮) and choose <strong>Install ThreadZW</strong> or <strong>Add to Home screen</strong>. If you see an install icon in the address bar, you can use that instead.</p>
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={install}
+          className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#CCFF00] text-sm font-black text-black transition hover:opacity-90 active:scale-[0.99]"
+        >
+          <Download size={17} />
+          Install ThreadZW
+        </button>
 
         <button
+          type="button"
           onClick={dismiss}
           className="mt-3 h-10 w-full text-xs font-semibold text-zinc-400 transition hover:text-zinc-700"
         >
