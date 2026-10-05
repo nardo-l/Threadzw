@@ -47,6 +47,7 @@ import { DesignSystemPart3 } from './components/design-system/DesignSystemPart3'
 import { DesignSystemPart4 } from './components/design-system/DesignSystemPart4';
 import { DesignSystemPart5 } from './components/design-system/DesignSystemPart5';
 import { NotFound } from './screens/NotFound';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 
 
 type AppStage = 'landing' | 'onboarding' | 'onboarding-paywall' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase' | 'design-system' | 'design-system-2' | 'design-system-3' | 'design-system-4' | 'design-system-5';
@@ -672,6 +673,7 @@ function App() {
         <ToastProvider>
           <ShopProvider>
             <AppContent />
+            <PWAInstallPrompt />
             <ToastContainer />
             <Toaster position="top-center" theme="dark" expand={false} richColors />
           </ShopProvider>
