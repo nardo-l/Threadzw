@@ -16,7 +16,7 @@ function isStandalone() {
 }
 
 function isDashboardRoute() {
-  return window.location.pathname.toLowerCase().replace(/\\/$/, '') === '/dashboard';
+  return window.location.pathname.toLowerCase().replace(/\/$/, '') === '/dashboard';
 }
 
 function tutorialHasFinished() {
