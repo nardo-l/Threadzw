@@ -165,7 +165,7 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
                 </div>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Opening Hours if available */}
           {hasDirections && hours && (
