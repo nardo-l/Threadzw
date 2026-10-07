@@ -1120,10 +1120,11 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
                   </div>
                   <button
                     onClick={() => setShowLocationSheet(false)}
-                    className="p-1.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-full text-zinc-400 hover:text-zinc-600 transition-colors cursor-pointer flex items-center justify-center"
+                    className="w-10 h-10 bg-zinc-50 hover:bg-zinc-100 border border-zinc-300 rounded-full text-zinc-900 hover:text-zinc-700 transition-colors cursor-pointer flex items-center justify-center shadow-sm"
                     title="Close Details"
+                    aria-label="Close details"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5 text-zinc-900" strokeWidth={3} />
                   </button>
                 </div>
 
@@ -1210,9 +1211,10 @@ export const StorefrontPage: React.FC<StorefrontPageProps> = ({ preloadedShop })
                   <span className="font-bold text-base tracking-tight text-zinc-900">{shop.name}</span>
                   <button 
                     onClick={() => setShowMenu(false)}
-                    className="p-1.5 bg-zinc-50 border border-zinc-150 rounded-full hover:bg-zinc-100 text-zinc-500 cursor-pointer"
+                    className="w-10 h-10 bg-zinc-50 border border-zinc-300 rounded-full hover:bg-zinc-100 text-zinc-900 cursor-pointer flex items-center justify-center shadow-sm"
+                    aria-label="Close menu"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5 text-zinc-900" strokeWidth={3} />
                   </button>
                 </div>
 
