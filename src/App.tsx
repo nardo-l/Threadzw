@@ -1,9 +1,9 @@
 // src/App.tsx
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 
 const appStartTime = performance.now();
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
 import { SignUp } from './screens/SignUp';
 import { ThreadzwOnboarding } from './screens/ThreadzwOnboarding';
@@ -182,7 +182,16 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
 function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
+  const navigationType = useNavigationType();
   const cleanPath = location.pathname.toLowerCase().replace(/\/$/, '');
+
+  // New storefront/product pages should always open at the top.
+  // Preserve the browser's previous scroll position when using Back/Forward.
+  useLayoutEffect(() => {
+    if (navigationType === 'PUSH' || navigationType === 'REPLACE') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [location.pathname, navigationType]);
   
   const initialData = getInitialStageAndParams(location.pathname);
   const [appStage, setAppStageState] = useState<AppStage>(initialData.stage);
