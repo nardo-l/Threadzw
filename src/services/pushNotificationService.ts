@@ -59,6 +59,17 @@ async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration
   return registration;
 }
 
+/**
+ * Chrome 155+ on Android uses a non-blocking notification prompt. If the
+ * user does not decide before it expires, requestPermission() can resolve
+ * with "default" even though the user can still grant permission later from
+ * Chrome's Site Controls. The caller should listen for the permission change.
+ */
+async function requestNotificationPermission(): Promise<NotificationPermission> {
+  const permission = await Notification.requestPermission();
+  return permission;
+}
+
 export async function subscribeUser(
   registration: ServiceWorkerRegistration,
   vapidPublicKey?: string
@@ -66,12 +77,15 @@ export async function subscribeUser(
   const publicKey = await getVapidPublicKey(vapidPublicKey);
 
   if (!('Notification' in window)) {
-    throw new Error('This browser does not support desktop notifications.');
+    throw new Error('This browser does not support notifications.');
   }
 
   if (Notification.permission !== 'granted') {
-    const permission = await Notification.requestPermission();
+    const permission = await requestNotificationPermission();
     if (permission !== 'granted') {
+      if (permission === 'default') {
+        throw new Error('NOTIFICATION_PERMISSION_PENDING');
+      }
       throw new Error('Notification permission was not granted.');
     }
   }
@@ -114,6 +128,47 @@ export async function subscribeToPushNotifications(vapidPublicKey?: string): Pro
   }
 
   return subscription;
+}
+
+/**
+ * Watches the browser notification permission so Android Chrome can finish
+ * push setup if the user grants permission later from Site Controls.
+ */
+export async function watchNotificationPermission(
+  onGranted: () => void | Promise<void>
+): Promise<() => void> {
+  if (typeof navigator === 'undefined' || !navigator.permissions?.query) {
+    return () => undefined;
+  }
+
+  try {
+    const permissionStatus = await navigator.permissions.query({
+      name: 'notifications' as PermissionName
+    });
+
+    let active = true;
+    const handleChange = () => {
+      if (active && permissionStatus.state === 'granted') {
+        void onGranted();
+      }
+    };
+
+    permissionStatus.addEventListener('change', handleChange);
+
+    // Also repair an already-granted-but-not-subscribed browser when the
+    // dashboard mounts on a device that previously completed permission.
+    if (permissionStatus.state === 'granted') {
+      void onGranted();
+    }
+
+    return () => {
+      active = false;
+      permissionStatus.removeEventListener('change', handleChange);
+    };
+  } catch (error) {
+    console.debug('Notification permission monitoring is unavailable:', error);
+    return () => undefined;
+  }
 }
 
 /**
