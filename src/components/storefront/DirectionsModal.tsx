@@ -206,6 +206,8 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
           )}
           </>
           )}
+          </>
+          )}
         </motion.div>
       </div>
     </AnimatePresence>
