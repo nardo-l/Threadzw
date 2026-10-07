@@ -24,6 +24,7 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
   const shopNumber = shop?.shop_number;
   const landmark = shop?.landmark;
   const rawDirections = shop?.directions || shop?.shop_config?.directions;
+  const hasDirections = typeof rawDirections === 'string' && rawDirections.trim().length > 0;
   const hours = shop?.opening_hours || shop?.hours || 'Mon - Sat: 8:00 AM - 5:30 PM';
 
   // Get exact directions provided by the shop owner
@@ -46,6 +47,13 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
   };
 
   const directionSteps = getDirectionSteps();
+
+  const handleWhatsApp = () => {
+    const phone = (shop?.whatsapp_number || shop?.whatsapp || '').replace(/\D/g, '');
+    if (!phone) return;
+    const message = `Hi, I'm interested in shopping from ${shopName} on ThreadZW. Could I place an order on WhatsApp?`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   const handleOpenGoogleMaps = () => {
     if (shop?.id) {
@@ -86,10 +94,11 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 transition-colors cursor-pointer"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-zinc-100 hover:bg-zinc-200 border border-zinc-300 text-zinc-900 transition-colors cursor-pointer flex items-center justify-center shadow-sm"
             title="Close"
+            aria-label="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-zinc-900" strokeWidth={3} />
           </button>
 
           {/* Icon + Title */}
@@ -101,6 +110,30 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
             <p className="text-xs font-medium text-zinc-500 mt-0.5">Find us easily.</p>
           </div>
 
+          {/* Online-only shop state */}
+          {!hasDirections ? (
+            <div className="space-y-4 mb-6">
+              <div className="bg-[#f7fee7] border store-accent-soft-border rounded-2xl p-5 text-center">
+                <div className="w-12 h-12 rounded-full bg-white border store-accent-soft-border flex items-center justify-center mx-auto mb-3">
+                  <MessageCircle className="w-6 h-6 store-accent-text" />
+                </div>
+                <h3 className="text-base font-black text-zinc-900">Currently an online shop</h3>
+                <p className="text-xs text-zinc-600 font-medium mt-1.5 leading-relaxed">
+                  This shop is currently online only. Order directly on WhatsApp.
+                </p>
+              </div>
+              {(shop?.whatsapp_number || shop?.whatsapp) && (
+                <button
+                  onClick={handleWhatsApp}
+                  className="w-full py-4 store-accent-bg text-black font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Order on WhatsApp</span>
+                </button>
+              )}
+            </div>
+          ) : (
+          <>
           {/* Green Showroom Card */}
           <div className="bg-[#f7fee7] border store-accent-soft-border rounded-2xl p-4 flex items-center gap-3.5 mb-6">
             <div className="w-12 h-12 rounded-xl bg-white border store-accent-soft-border flex items-center justify-center text-zinc-800 shrink-0 shadow-2xs">
@@ -116,7 +149,7 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
           </div>
 
           {/* Directions Steps */}
-          <div className="space-y-3 mb-6 text-left">
+          {hasDirections && <div className="space-y-3 mb-6 text-left">
             <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900">Directions</h3>
 
             <div className="space-y-2.5 pl-1">
@@ -135,7 +168,7 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
           </div>
 
           {/* Opening Hours if available */}
-          {hours && (
+          {hasDirections && hours && (
             <div className="mb-4 text-left px-1">
               <p className="text-[10px] font-bold uppercase text-zinc-400 tracking-wider">Opening Hours</p>
               <p className="text-xs font-semibold text-zinc-800">{hours}</p>
@@ -143,22 +176,24 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
           )}
 
           {/* Tip Callout */}
-          <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-3.5 mb-6 text-left flex items-center gap-2.5">
+          {hasDirections && <div className="bg-zinc-50 border border-zinc-150 rounded-2xl p-3.5 mb-6 text-left flex items-center gap-2.5">
             <span className="text-base shrink-0">💡</span>
             <p className="text-xs text-zinc-600 font-medium leading-relaxed">
               Tip: You can call or WhatsApp us if you need help finding the shop.
             </p>
-          </div>
+          </div>}
 
           {/* Open in Maps Button */}
-          <button
+          {hasDirections && <button
             onClick={handleOpenGoogleMaps}
             className="w-full py-4 store-accent-bg  text-black font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer font-sans"
           >
             <Map className="w-5 h-5 stroke-[2.5]" />
             <span>Open in Maps</span>
-          </button>
+          </button>}
 
+          {hasDirections && (
+          <>
           {/* Optional Call shop fallback */}
           {(shop?.whatsapp_number || shop?.whatsapp || shop?.phone) && (
             <button
@@ -168,6 +203,8 @@ export const DirectionsModal: React.FC<DirectionsModalProps> = ({
               <Phone className="w-3.5 h-3.5" />
               <span>Call Shop Directly</span>
             </button>
+          )}
+          </>
           )}
         </motion.div>
       </div>
