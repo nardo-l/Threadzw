@@ -583,9 +583,10 @@ export const StorefrontProductDetail: React.FC<StorefrontProductDetailProps> = (
                   setZoomScale(1);
                   setZoomMode(false);
                 }}
-                className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white cursor-pointer border border-white/10 transition-colors"
+                className="w-11 h-11 bg-black/70 hover:bg-black/85 rounded-full text-white cursor-pointer border border-white/30 transition-colors flex items-center justify-center shadow-lg"
+                aria-label="Close image viewer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6 text-white" strokeWidth={3} />
               </button>
             </div>
 
