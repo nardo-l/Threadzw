@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { sendPushToProfile, sendPushAfterShopVisit } from '../services/pushService.js';
+import { sendPushToProfile, sendPushAfterShopVisit, sendPushAfterCustomerAction } from '../services/pushService.js';
 import { sendDailyDigestToAll } from '../services/pushDigestService.js';
 import { serverSupabase, requireAuth, AuthenticatedRequest } from '../middleware/auth.js';
 import { isValidCronSecret } from '../lib/cronAuth.js';
@@ -47,6 +47,22 @@ router.post('/shop-visit', async (req, res) => {
   } catch (err: any) {
     console.error('Error sending shop visit push:', err);
     return res.status(500).json({ error: err.message || 'Failed to send shop visit notification' });
+  }
+});
+
+
+router.post('/customer-action', async (req, res) => {
+  try {
+    const shopId = String(req.body?.shopId || '').trim();
+    const visitorId = String(req.body?.visitorId || '').trim();
+    const action = String(req.body?.action || '').trim();
+    const productName = req.body?.productName ? String(req.body.productName).trim() : null;
+    if (!shopId || !visitorId || visitorId.length > 200) return res.status(400).json({ error: 'shopId and visitorId are required' });
+    if (action !== 'whatsapp_click' && action !== 'map_open') return res.status(400).json({ error: 'Invalid customer action' });
+    const result = await sendPushAfterCustomerAction(serverSupabase, shopId, visitorId, action, productName);
+    return res.json({ success: true, ...result });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Failed to send customer action notification' });
   }
 });
 
