@@ -170,3 +170,42 @@ export async function sendPushAfterShopVisit(
 
   return { ...pushResult, skipped: false };
 }
+
+
+export async function sendPushAfterCustomerAction(
+  supabase: any,
+  shopId: string,
+  visitorId: string | null | undefined,
+  action: 'whatsapp_click' | 'map_open',
+  productName?: string | null
+): Promise<PushDeliveryResult & { skipped: boolean }> {
+  if (!shopId || !visitorId) return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+
+  const { data: shop } = await supabase.from('shops').select('id, owner_id, name').eq('id', shopId).maybeSingle();
+  if (!shop?.owner_id) return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+
+  const { data: preferences } = await supabase.from('notification_preferences').select('push_enabled').eq('profile_id', shop.owner_id).maybeSingle();
+  if (preferences?.push_enabled === false) return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+
+  const localDay = new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Harare', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const deliveryKey = action === 'whatsapp_click'
+    ? `whatsapp:${shopId}:${visitorId}:${localDay}`
+    : `directions:${shopId}:${visitorId}:${localDay}`;
+
+  const { data: existing } = await supabase.from('notifications').select('id').eq('dedupe_key', deliveryKey).maybeSingle();
+  if (existing) return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+
+  const title = action === 'whatsapp_click' ? '💬 Someone contacted you on WhatsApp' : '📍 Someone checked your shop location';
+  const body = action === 'whatsapp_click'
+    ? (productName ? `A customer opened WhatsApp from your ${productName} listing.` : 'A customer just opened WhatsApp from your shop.')
+    : 'A potential customer just opened directions to your shop.';
+
+  const { error } = await supabase.from('notifications').insert({
+    profile_id: shop.owner_id, shop_id: shop.id, type: 'customer_action',
+    title, body, read: false, target_url: '/analytics', dedupe_key: deliveryKey, created_at: new Date().toISOString()
+  });
+  if (error) return { attempted: 0, sentCount: 0, expiredCount: 0, skipped: true };
+
+  const result = await sendPushToProfile(supabase, shop.owner_id, { title, body, tag: deliveryKey, data: { url: '/analytics' } });
+  return { ...result, skipped: false };
+}
