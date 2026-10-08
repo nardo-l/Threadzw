@@ -173,6 +173,20 @@ export async function trackStoreView(shopId: string, referrerParam?: string) {
   return result;
 }
 
+
+async function notifyCustomerAction(shopId: string, action: 'whatsapp_click' | 'map_open', productName?: string | null) {
+  try {
+    const visitorId = await getVisitorId();
+    fetch('/api/push/customer-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shopId, visitorId, action, productName })
+    }).catch(error => console.warn('[Analytics] Customer action push failed:', error));
+  } catch (error) {
+    console.warn('[Analytics] Could not prepare customer action push:', error);
+  }
+}
+
 export async function trackProductView(shopId: string, productId: string, productName?: string) {
   return await trackEvent({
     shopId,
@@ -186,7 +200,7 @@ export async function trackProductView(shopId: string, productId: string, produc
 }
 
 export async function trackWhatsAppClick(shopId: string, productId?: string | null, productName?: string) {
-  return await trackEvent({
+  const result = await trackEvent({
     shopId,
     productId: productId || null,
     eventType: AnalyticsEventType.WHATSAPP_CLICK,
@@ -195,13 +209,17 @@ export async function trackWhatsAppClick(shopId: string, productId?: string | nu
       ...(productName ? { product_name: productName } : {})
     }
   });
+  if (!result?.error) void notifyCustomerAction(shopId, 'whatsapp_click', productName);
+  return result;
 }
 
 export async function trackMapOpen(shopId: string) {
-  return await trackEvent({
+  const result = await trackEvent({
     shopId,
     eventType: AnalyticsEventType.MAP_OPEN
   });
+  if (!result?.error) void notifyCustomerAction(shopId, 'map_open');
+  return result;
 }
 
 export async function trackWishlistAdd(shopId: string, productId: string, productName?: string) {
