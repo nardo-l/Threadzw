@@ -225,6 +225,13 @@ export function buildSetupMessage(shop: ShopRecord, productCount: number, now = 
   return null;
 }
 
+export function buildLowProductMessage(shop: ShopRecord, productCount: number) {
+  if (productCount >= 5) return null;
+  if (productCount === 0) return { type: 'low_product_reminder', title: '🛍️ Your shop needs its first drop', body: 'Add your first product tonight and give customers something to discover.', target_url: '/add-product', shopId: shop.id };
+  if (productCount === 4) return { type: 'low_product_reminder', title: '🔥 You are one product away', body: 'Add one more product to reach 5 and give customers a fuller storefront.', target_url: '/add-product', shopId: shop.id };
+  return { type: 'low_product_reminder', title: '👀 Your shop could use a few more pieces', body: `You currently have ${productCount} products. Add a few more so customers have more to browse.`, target_url: '/add-product', shopId: shop.id };
+}
+
 export function buildWeeklySummaryMessage(metrics: SummaryMetrics) {
   const visitorLabel = metrics.uniqueVisitors === 1 ? 'unique visitor' : 'unique visitors';
   const interestCount = metrics.whatsappClicks + metrics.directionsClicks;
@@ -492,6 +499,23 @@ export async function sendScheduledMerchantNotifications(
       });
       if (result.created) notificationsCreated += 1;
       pushSent += result.pushSentCount;
+
+      const lowProductShop = profileShops.find(shop => (productsByShop.get(shop.id) || []).length < 5);
+      if (lowProductShop && profilePreferences?.setup_reminders_enabled !== false) {
+        const message = buildLowProductMessage(lowProductShop, (productsByShop.get(lowProductShop.id) || []).length);
+        if (message) {
+          const reminderResult = await deliverNotification(supabase, {
+            profileId,
+            shopId: lowProductShop.id,
+            slot,
+            localDate: range.localDate,
+            pushEnabled: profilePreferences?.push_enabled !== false,
+            message
+          });
+          if (reminderResult.created) notificationsCreated += 1;
+          pushSent += reminderResult.pushSentCount;
+        }
+      }
     }
   }
 
