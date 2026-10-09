@@ -20,7 +20,7 @@ WHERE lower(coalesce(page_type, 'clothing')) IN ('clothing','fashion','apparel',
   AND lower(coalesce(account_status, '')) <> 'pending_payment';
 
 UPDATE public.shops
-SET account_status = 'expired',
+SET account_status = 'free',
     subscription_status = 'expired',
     payment_required = true,
     payment_status = COALESCE(NULLIF(payment_status, ''), 'unpaid'),
@@ -45,7 +45,7 @@ BEGIN
     NEW.trial_started_at := now();
     NEW.trial_ends_at := now() + interval '3 days';
     NEW.plan := 'free';
-    NEW.account_status := 'trial';
+    NEW.account_status := 'free';
     NEW.subscription_status := 'trial';
     NEW.payment_required := true;
     NEW.payment_status := 'unpaid';
@@ -155,7 +155,7 @@ BEGIN
       WHEN NEW.paid_at IS DISTINCT FROM OLD.paid_at THEN NEW.paid_at
       ELSE now()
     END, now());
-    NEW.plan := 'pro';
+    NEW.plan := 'premium';
     NEW.account_status := 'active';
     NEW.subscription_status := 'active';
     NEW.payment_required := false;
