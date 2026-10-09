@@ -24,8 +24,11 @@ export const SubscriptionSuccess: React.FC = () => {
   const [state, setState] = useState<PaymentState>('checking');
   const [refreshing, setRefreshing] = useState(false);
 
+  const returnedShopId = new URLSearchParams(window.location.search).get('shopId');
+  const effectiveShopId = shop?.id || returnedShopId;
+
   const checkPaymentStatus = async () => {
-    if (!user || !shop?.id) {
+    if (!user || !effectiveShopId) {
       setState('pending');
       return;
     }
@@ -33,8 +36,8 @@ export const SubscriptionSuccess: React.FC = () => {
     try {
       // NardoPay redirects here after checkout. The redirect never grants Pro.
       // Admin approval remains authoritative.
-      await subscriptionClient.markPaymentSubmitted(shop.id);
-      const status = await subscriptionClient.getStatus(shop.id);
+      await subscriptionClient.markPaymentSubmitted(effectiveShopId);
+      const status = await subscriptionClient.getStatus(effectiveShopId);
 
       const isPro =
         status.plan === 'premium' ||
@@ -59,7 +62,7 @@ export const SubscriptionSuccess: React.FC = () => {
     return () => {
       mounted = false;
     };
-  }, [user?.id, shop?.id]);
+  }, [user?.id, effectiveShopId]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
