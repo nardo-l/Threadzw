@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useShop } from '../hooks/useShop';
 import { toast } from 'sonner';
-import { subscriptionClient, THREADZW_PREMIUM_PRICE, SubscriptionStatusResponse } from '../services/subscriptionClient';
+import { subscriptionClient, THREADZW_NARDOPAY_MONTHLY_LINK, THREADZW_PREMIUM_PRICE, SubscriptionStatusResponse } from '../services/subscriptionClient';
 
 export const Subscription: React.FC = () => {
   const navigate = useNavigate();
@@ -27,19 +27,12 @@ export const Subscription: React.FC = () => {
   const pro = status ? status.plan === 'premium' : shop?.plan === 'premium' || shop?.plan === 'pro';
   const pending = status?.paymentVerificationStatus === 'pending' || status?.status === 'pending' || shop?.account_status === 'pending_payment';
 
-  const startPayment = async () => {
+  const startPayment = () => {
     if (!shop?.id) return toast.error('Shop details could not be loaded.');
     setPaying(true);
-    try {
-      const checkout = await subscriptionClient.createPaymentLink(shop.id);
-      if (!checkout.url) throw new Error('NardoPay did not return a payment link.');
-      window.location.assign(checkout.url);
-    } catch (error: any) {
-      toast.error(error?.message || 'Could not create your payment link. Please try again.');
-      setPaying(false);
-    }
+    // NardoPay handles checkout and returns to the success URL configured for this payment link.
+    window.location.assign(THREADZW_NARDOPAY_MONTHLY_LINK);
   };
-
 
   const refresh = async () => { await refreshShop(); await loadStatus(); };
 
@@ -54,7 +47,6 @@ export const Subscription: React.FC = () => {
           <h1 className="text-3xl font-black uppercase tracking-tight">Make your shop live.</h1>
           <p className="text-sm text-zinc-500 mt-2">3-day unlimited trial, then $1.59 per month.</p>
         </div>
-
 
         {pending && !pro && <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 mb-5"><div className="flex gap-3"><Clock className="text-amber-600 shrink-0" size={20} /><div><h2 className="text-sm font-black text-amber-950">PAYMENT AWAITING APPROVAL</h2><p className="text-xs text-amber-800 mt-1 leading-relaxed">Your shop is pending payment verification. The ThreadZW team will activate Pro after approval.</p><button onClick={refresh} className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-600 text-white text-[11px] font-bold"><RefreshCw size={13} /> Refresh status</button></div></div></div>}
 
