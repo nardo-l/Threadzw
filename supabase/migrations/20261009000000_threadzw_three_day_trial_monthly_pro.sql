@@ -150,7 +150,11 @@ BEGIN
        OR lower(coalesce(NEW.payment_status, '')) = 'paid'
        OR lower(coalesce(OLD.account_status, '')) <> 'active'
      ) THEN
-    v_start := COALESCE(NEW.payment_verified_at, NEW.paid_at, now());
+    v_start := CASE
+      WHEN NEW.payment_verified_at IS DISTINCT FROM OLD.payment_verified_at THEN NEW.payment_verified_at
+      WHEN NEW.paid_at IS DISTINCT FROM OLD.paid_at THEN NEW.paid_at
+      ELSE now()
+    END;
     NEW.plan := 'pro';
     NEW.account_status := 'active';
     NEW.subscription_status := 'active';
@@ -189,7 +193,11 @@ BEGIN
        OR lower(coalesce(OLD.payment_verification_status, '')) NOT IN ('verified','approved')
        OR lower(coalesce(OLD.payment_status, '')) <> 'paid'
      ) THEN
-    v_start := COALESCE(NEW.payment_verified_at, NEW.paid_at, now());
+    v_start := CASE
+      WHEN NEW.payment_verified_at IS DISTINCT FROM OLD.payment_verified_at THEN NEW.payment_verified_at
+      WHEN NEW.paid_at IS DISTINCT FROM OLD.paid_at THEN NEW.paid_at
+      ELSE now()
+    END;
 
     UPDATE public.subscriptions
     SET plan = 'premium',
