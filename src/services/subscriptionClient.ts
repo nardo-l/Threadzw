@@ -1,9 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { SubscriptionStatus, BillingCycle, SellerCategory, SellerPlan } from '../types';
 
-export const THREADZW_NARDOPAY_MONTHLY_LINK = 'https://threadzw.nardopay.com/pay/threadzwmonthlysubscriptions';
 export const THREADZW_NARDOPAY_SUCCESS_REDIRECT = 'https://threadzw.vercel.app/subscription/success';
-export const THREADZW_PREMIUM_PRICE = 9;
+export const THREADZW_PREMIUM_PRICE = 1.59;
 
 export interface CreatePaymentLinkResponse {
   success: boolean;
