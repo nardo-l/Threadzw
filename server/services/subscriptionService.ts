@@ -3,7 +3,7 @@ import { resolveServerSellerCategory } from './planResolver.js';
 
 const FIXED_NARDOPAY_LINK = 'https://threadzw.nardopay.com/pay/threadzwmonthlysubscriptions';
 const SUCCESS_REDIRECT = 'https://threadzw.vercel.app/subscription/success';
-const PREMIUM_AMOUNT = 9;
+const PREMIUM_AMOUNT = 1.59;
 
 export class SubscriptionService {
   public async createPaymentLink(params: { userId: string; shopId: string; origin?: string }) {
@@ -13,7 +13,7 @@ export class SubscriptionService {
 
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
-      .select('id, owner_id, name, page_type, plan, subscription_status, payment_verification_status')
+      .select('id, owner_id, name, page_type, plan, account_status, trial_ends_at, subscription_status, payment_verification_status')
       .eq('id', shopId)
       .maybeSingle();
     if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
@@ -21,7 +21,18 @@ export class SubscriptionService {
 
     const category = resolveServerSellerCategory(shop.page_type);
     if (category !== 'clothing') throw new Error('UNSUPPORTED_CATEGORY: Clothing subscriptions are currently supported here');
-    if (shop.plan === 'premium') throw new Error('ALREADY_SUBSCRIBED: This shop already has Pro');
+    const { data: currentSub } = await serverSupabase
+      .from('subscriptions')
+      .select('status, current_period_end')
+      .eq('shop_id', shop.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const periodEnd = currentSub?.current_period_end ? new Date(currentSub.current_period_end).getTime() : 0;
+    const hasUnexpiredPro = ['premium', 'pro'].includes(String(shop.plan || '').toLowerCase())
+      && shop.account_status === 'active'
+      && periodEnd > Date.now();
+    if (hasUnexpiredPro) throw new Error('ALREADY_SUBSCRIBED: This shop already has an active Pro month');
 
     const now = new Date().toISOString();
     const internalReference = `NP-${shop.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
@@ -39,14 +50,12 @@ export class SubscriptionService {
       shop_id: shop.id,
       category: 'clothing',
       plan: 'premium',
-      billing_cycle: 'none',
+      billing_cycle: 'monthly',
       amount: PREMIUM_AMOUNT,
       currency: 'USD',
       status: 'pending',
       provider: 'nardopay',
       nardopay_link_code: null,
-      current_period_start: null,
-      current_period_end: null,
       updated_at: now
     };
 
@@ -70,24 +79,8 @@ export class SubscriptionService {
       subscriptionId = data.id;
     }
 
-    const { error: shopUpdateError } = await serverSupabase.from('shops').update({
-      account_status: 'pending_payment',
-      subscription_status: 'pending',
-      payment_required: true,
-      payment_status: 'pending',
-      payment_verification_status: 'pending',
-      payment_submitted_at: now,
-      payment_reference: internalReference,
-      payment_amount: PREMIUM_AMOUNT,
-      payment_currency: 'USD',
-      product_limit: 10,
-      is_active: false,
-      storefront_published: false,
-      published_at: null,
-      updated_at: now
-    }).eq('id', shop.id);
-    if (shopUpdateError) throw new Error(`PAYMENT_STATE_UPDATE_FAILED: ${shopUpdateError.message}`);
-
+    // Do not move the shop into pending verification until the customer returns
+    // from NardoPay. The success page calls markPaymentSubmitted().
     return {
       success: true,
       url: FIXED_NARDOPAY_LINK,
@@ -95,10 +88,10 @@ export class SubscriptionService {
       subscriptionId,
       amount: PREMIUM_AMOUNT,
       currency: 'USD',
-      billingCycle: 'none' as const,
+      billingCycle: 'monthly' as const,
       category: 'clothing' as const,
       redirectUrl: SUCCESS_REDIRECT,
-      message: 'Payment started. Your shop is pending payment verification.'
+      message: 'Checkout is ready. Your shop changes to pending verification after you return from payment.'
     };
   }
 
@@ -129,7 +122,7 @@ export class SubscriptionService {
 
     const subscriptionData = {
       profile_id: userId, owner_id: userId, shop_id: shop.id, category: 'clothing', plan: 'premium',
-      billing_cycle: 'none', amount: PREMIUM_AMOUNT, currency: 'USD', status: 'pending', provider: 'nardopay',
+      billing_cycle: 'monthly', amount: PREMIUM_AMOUNT, currency: 'USD', status: 'pending', provider: 'nardopay',
       nardopay_link_code: null, current_period_start: null, current_period_end: null, updated_at: now
     };
 
@@ -145,7 +138,7 @@ export class SubscriptionService {
       account_status: 'pending_payment', subscription_status: 'pending', payment_required: true,
       payment_status: 'pending', payment_verification_status: 'pending', payment_submitted_at: now,
       payment_reference: internalReference, payment_amount: PREMIUM_AMOUNT, payment_currency: 'USD',
-      product_limit: 10, is_active: false, storefront_published: false, published_at: null, updated_at: now
+      product_limit: 0, updated_at: now
     }).eq('id', shop.id);
     if (shopUpdateError) throw new Error(`PAYMENT_STATE_UPDATE_FAILED: ${shopUpdateError.message}`);
 
@@ -199,7 +192,7 @@ export class SubscriptionService {
 
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
-      .select('id, owner_id, plan, subscription_status, page_type, payment_reference, paid_at, payment_verification_status, payment_submitted_at, payment_verified_at, payment_required')
+      .select('id, owner_id, plan, account_status, trial_started_at, trial_ends_at, subscription_status, page_type, payment_reference, paid_at, payment_verification_status, payment_submitted_at, payment_verified_at, payment_required')
       .eq('id', shopId).maybeSingle();
     if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
     if (shop.owner_id !== userId) throw new Error('UNAUTHORIZED: Shop access denied');
@@ -209,15 +202,31 @@ export class SubscriptionService {
       .select('id, plan, status, amount, currency, billing_cycle, current_period_start, current_period_end, grace_period_end, cancelled_at, nardopay_link_code, provider')
       .eq('shop_id', shopId).order('created_at', { ascending: false }).limit(1).maybeSingle();
 
+    const nowMs = Date.now();
+    const trialEndMs = shop.trial_ends_at ? new Date(shop.trial_ends_at).getTime() : 0;
+    const periodEndMs = subscription?.current_period_end ? new Date(subscription.current_period_end).getTime() : 0;
+    const isProPlan = ['premium', 'pro'].includes(String(shop.plan || '').toLowerCase());
+    const isPaidPeriodActive = isProPlan && shop.account_status === 'active' && periodEndMs > nowMs;
+    const isTrialActive = !isProPlan && shop.trial_ends_at && trialEndMs > nowMs
+      && shop.payment_verification_status !== 'pending'
+      && shop.account_status !== 'pending_payment';
+    const computedStatus = shop.payment_verification_status === 'pending'
+      ? 'pending'
+      : isPaidPeriodActive
+        ? 'active'
+        : isTrialActive
+          ? 'trial'
+          : 'expired';
+
     return {
       success: true,
       shopId,
       category: resolveServerSellerCategory(shop.page_type),
-      plan: shop.plan === 'premium' || shop.plan === 'pro' ? 'premium' : 'free',
-      status: subscription?.status || (shop.plan === 'premium' || shop.plan === 'pro' ? 'active' : shop.payment_verification_status === 'pending' ? 'pending' : 'inactive'),
-      amount: subscription?.amount || PREMIUM_AMOUNT,
+      plan: isPaidPeriodActive ? 'premium' : isTrialActive ? 'trial' : 'inactive',
+      status: computedStatus,
+      amount: subscription?.amount ?? PREMIUM_AMOUNT,
       currency: subscription?.currency || 'USD',
-      billingCycle: subscription?.billing_cycle || 'none',
+      billingCycle: subscription?.billing_cycle || 'monthly',
       currentPeriodStart: subscription?.current_period_start || null,
       currentPeriodEnd: subscription?.current_period_end || null,
       gracePeriodEnd: subscription?.grace_period_end || null,
@@ -226,7 +235,11 @@ export class SubscriptionService {
       paymentVerificationStatus: shop.payment_verification_status || null,
       paymentSubmittedAt: shop.payment_submitted_at || null,
       paymentVerifiedAt: shop.payment_verified_at || null,
-      paymentRequired: shop.payment_required !== false,
+      paymentRequired: !isPaidPeriodActive,
+      trialStartedAt: shop.trial_started_at || null,
+      trialEndsAt: shop.trial_ends_at || null,
+      trialDays: 3,
+      viewOnly: computedStatus === 'expired' || computedStatus === 'pending',
     };
   }
 
