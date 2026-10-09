@@ -102,7 +102,7 @@ export class SubscriptionService {
 
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
-      .select('id, owner_id, name, page_type, plan')
+      .select('id, owner_id, name, page_type, plan, account_status, payment_verification_status')
       .eq('id', shopId)
       .maybeSingle();
     if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
@@ -110,8 +110,19 @@ export class SubscriptionService {
 
     const category = resolveServerSellerCategory(shop.page_type);
     if (category !== 'clothing') throw new Error('UNSUPPORTED_CATEGORY: Clothing payments are currently supported here');
-    if (shop.plan === 'premium' || shop.plan === 'pro') {
-      return { success: true, message: 'Your shop is already on Pro.' };
+    const { data: activeSub } = await serverSupabase
+      .from('subscriptions')
+      .select('current_period_end, status')
+      .eq('shop_id', shop.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const paidUntil = activeSub?.current_period_end ? new Date(activeSub.current_period_end).getTime() : 0;
+    if (['premium', 'pro'].includes(String(shop.plan || '').toLowerCase())
+      && shop.account_status === 'active'
+      && activeSub?.status === 'active'
+      && (!paidUntil || paidUntil > Date.now())) {
+      return { success: true, message: 'Your shop already has an active Pro period.' };
     }
 
     const now = new Date().toISOString();
