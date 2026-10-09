@@ -117,6 +117,11 @@ export class SubscriptionService {
       .update({ nardopay_link_code: paymentLink.link_code, updated_at: new Date().toISOString() })
       .eq('id', subscriptionId);
     if (linkSaveError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: Could not save payment link reference: ${linkSaveError.message}`);
+    const { error: referenceSaveError } = await serverSupabase
+      .from('shops')
+      .update({ payment_reference: paymentLink.link_code, payment_amount: PREMIUM_AMOUNT, payment_currency: 'USD', updated_at: new Date().toISOString() })
+      .eq('id', shop.id);
+    if (referenceSaveError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: Could not save shop payment reference: ${referenceSaveError.message}`);
 
     return {
       success: true,
@@ -139,7 +144,7 @@ export class SubscriptionService {
 
     const { data: shop, error: shopError } = await serverSupabase
       .from('shops')
-      .select('id, owner_id, name, page_type, plan, account_status, payment_verification_status')
+      .select('id, owner_id, name, page_type, plan, account_status, payment_verification_status, payment_reference')
       .eq('id', shopId)
       .maybeSingle();
     if (shopError || !shop) throw new Error('INVALID_SHOP: Shop not found');
@@ -191,7 +196,7 @@ export class SubscriptionService {
     const { error: shopUpdateError } = await serverSupabase.from('shops').update({
       account_status: 'pending_payment', subscription_status: 'pending', payment_required: true,
       payment_status: 'pending', payment_verification_status: 'pending', payment_submitted_at: now,
-      payment_reference: internalReference, payment_amount: PREMIUM_AMOUNT, payment_currency: 'USD',
+      payment_reference: shop.payment_reference || internalReference, payment_amount: PREMIUM_AMOUNT, payment_currency: 'USD',
       product_limit: 0, updated_at: now
     }).eq('id', shop.id);
     if (shopUpdateError) throw new Error(`PAYMENT_STATE_UPDATE_FAILED: ${shopUpdateError.message}`);
