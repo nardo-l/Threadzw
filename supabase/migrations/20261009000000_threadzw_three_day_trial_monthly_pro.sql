@@ -150,11 +150,11 @@ BEGIN
        OR lower(coalesce(NEW.payment_status, '')) = 'paid'
        OR lower(coalesce(OLD.account_status, '')) <> 'active'
      ) THEN
-    v_start := CASE
+    v_start := COALESCE(CASE
       WHEN NEW.payment_verified_at IS DISTINCT FROM OLD.payment_verified_at THEN NEW.payment_verified_at
       WHEN NEW.paid_at IS DISTINCT FROM OLD.paid_at THEN NEW.paid_at
       ELSE now()
-    END;
+    END, now());
     NEW.plan := 'pro';
     NEW.account_status := 'active';
     NEW.subscription_status := 'active';
