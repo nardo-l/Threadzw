@@ -31,7 +31,7 @@ export class SubscriptionService {
     const periodEnd = currentSub?.current_period_end ? new Date(currentSub.current_period_end).getTime() : 0;
     const hasUnexpiredPro = ['premium', 'pro'].includes(String(shop.plan || '').toLowerCase())
       && shop.account_status === 'active'
-      && periodEnd > Date.now();
+      && (!currentSub?.current_period_end || periodEnd > Date.now());
     if (hasUnexpiredPro) throw new Error('ALREADY_SUBSCRIBED: This shop already has an active Pro month');
 
     const now = new Date().toISOString();
@@ -120,8 +120,8 @@ export class SubscriptionService {
     const paidUntil = activeSub?.current_period_end ? new Date(activeSub.current_period_end).getTime() : 0;
     if (['premium', 'pro'].includes(String(shop.plan || '').toLowerCase())
       && shop.account_status === 'active'
-      && activeSub?.status === 'active'
-      && (!paidUntil || paidUntil > Date.now())) {
+      && activeSub?.status !== 'pending'
+      && (!activeSub?.current_period_end || paidUntil > Date.now())) {
       return { success: true, message: 'Your shop already has an active Pro period.' };
     }
 
@@ -217,7 +217,8 @@ export class SubscriptionService {
     const trialEndMs = shop.trial_ends_at ? new Date(shop.trial_ends_at).getTime() : 0;
     const periodEndMs = subscription?.current_period_end ? new Date(subscription.current_period_end).getTime() : 0;
     const isProPlan = ['premium', 'pro'].includes(String(shop.plan || '').toLowerCase());
-    const isPaidPeriodActive = isProPlan && shop.account_status === 'active' && periodEndMs > nowMs;
+    const isPaidPeriodActive = isProPlan && shop.account_status === 'active'
+      && (!subscription?.current_period_end || periodEndMs > nowMs);
     const isTrialActive = !isProPlan && Boolean(shop.trial_ends_at) && trialEndMs > nowMs
       && ['trial', 'free'].includes(String(shop.account_status || '').toLowerCase())
       && !['pending', 'rejected'].includes(String(shop.payment_verification_status || '').toLowerCase());
