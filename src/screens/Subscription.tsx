@@ -30,7 +30,7 @@ export const Subscription: React.FC = () => {
   const startPayment = () => {
     if (!shop?.id) return toast.error('Shop details could not be loaded.');
     setPaying(true);
-    // NardoPay handles checkout and returns to the success URL configured for this payment link.
+    // Use the merchant's current fixed NardoPay subscription link. Configure its post-payment redirect to /subscription/success.
     window.location.assign(THREADZW_NARDOPAY_MONTHLY_LINK);
   };
 
