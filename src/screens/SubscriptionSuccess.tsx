@@ -148,8 +148,8 @@ export const SubscriptionSuccess: React.FC = () => {
 
             <p className="mx-auto mt-5 max-w-[370px] text-[15px] leading-6 text-[#697386]">
               {active
-                ? 'Your $9 once-off payment has been verified and your Pro shop is now active.'
-                : 'Your $9 once-off payment has been received and is now under review. You’ll be notified once your payment is verified and your Pro shop is activated.'}
+                ? 'Your $1.59 monthly payment has been verified and your Pro shop is now active.'
+                : 'Your $1.59 monthly payment has been submitted and is awaiting admin verification. Your shop remains view-only until approval.'}
             </p>
           </div>
 
@@ -164,7 +164,7 @@ export const SubscriptionSuccess: React.FC = () => {
               <StatusRow
                 done
                 title="Payment submitted"
-                text="$9.00 (once-off) via NardoPay"
+                text="$1.59/month via NardoPay"
                 right={!active ? 'Submitted' : 'Complete'}
               />
               <StatusConnector />
