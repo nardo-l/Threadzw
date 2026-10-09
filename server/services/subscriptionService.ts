@@ -1,7 +1,7 @@
 import { getUserSupabaseClient, serverSupabase } from '../middleware/auth.js';
 import { resolveServerSellerCategory } from './planResolver.js';
+import { nardopayClient } from '../lib/nardopayClient.js';
 
-const FIXED_NARDOPAY_LINK = 'https://threadzw.nardopay.com/pay/threadzwmonthlysubscriptions';
 const SUCCESS_REDIRECT = 'https://threadzw.vercel.app/subscription/success';
 const PREMIUM_AMOUNT = 1.59;
 
@@ -88,19 +88,47 @@ export class SubscriptionService {
       subscriptionId = data.id;
     }
 
-    // Do not move the shop into pending verification until the customer returns
-    // from NardoPay. The success page calls markPaymentSubmitted().
+    const appOrigin = (params.origin || process.env.APP_URL || SUCCESS_REDIRECT.replace('/subscription/success', '')).replace(/\/$/, '');
+    const redirectUrl = `${appOrigin}/subscription/success?shopId=${encodeURIComponent(shop.id)}`;
+    const webhookUrl = `${appOrigin}/api/subscriptions/webhook`;
+    const paymentLink = await nardopayClient.createPaymentLink({
+      link_type: 'subscription',
+      product_name: 'ThreadZW Pro',
+      amount: PREMIUM_AMOUNT,
+      currency: 'USD',
+      description: 'ThreadZW Pro — one month of unlimited clothing products and premium storefront tools',
+      webhook_url: webhookUrl,
+      redirect_url: redirectUrl,
+      metadata: {
+        profile_id: userId,
+        shop_id: shop.id,
+        subscription_id: subscriptionId,
+        category: 'clothing',
+        billing_cycle: 'monthly',
+        amount: String(PREMIUM_AMOUNT),
+        currency: 'USD'
+      },
+      plan_name: 'ThreadZW Pro',
+      billing_cycle: 'monthly'
+    });
+
+    const { error: linkSaveError } = await serverSupabase
+      .from('subscriptions')
+      .update({ nardopay_link_code: paymentLink.link_code, updated_at: new Date().toISOString() })
+      .eq('id', subscriptionId);
+    if (linkSaveError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: Could not save payment link reference: ${linkSaveError.message}`);
+
     return {
       success: true,
-      url: FIXED_NARDOPAY_LINK,
-      linkCode: '',
+      url: paymentLink.url,
+      linkCode: paymentLink.link_code,
       subscriptionId,
       amount: PREMIUM_AMOUNT,
       currency: 'USD',
       billingCycle: 'monthly' as const,
       category: 'clothing' as const,
-      redirectUrl: SUCCESS_REDIRECT,
-      message: 'Checkout is ready. Your shop changes to pending verification after you return from payment.'
+      redirectUrl,
+      message: 'Payment link created. After payment, your shop will enter pending verification until an admin approves it.'
     };
   }
 
