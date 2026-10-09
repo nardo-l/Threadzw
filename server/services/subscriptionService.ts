@@ -218,9 +218,9 @@ export class SubscriptionService {
     const periodEndMs = subscription?.current_period_end ? new Date(subscription.current_period_end).getTime() : 0;
     const isProPlan = ['premium', 'pro'].includes(String(shop.plan || '').toLowerCase());
     const isPaidPeriodActive = isProPlan && shop.account_status === 'active' && periodEndMs > nowMs;
-    const isTrialActive = !isProPlan && shop.trial_ends_at && trialEndMs > nowMs
-      && shop.payment_verification_status !== 'pending'
-      && shop.account_status !== 'pending_payment';
+    const isTrialActive = !isProPlan && Boolean(shop.trial_ends_at) && trialEndMs > nowMs
+      && ['trial', 'free'].includes(String(shop.account_status || '').toLowerCase())
+      && !['pending', 'rejected'].includes(String(shop.payment_verification_status || '').toLowerCase());
     const computedStatus = shop.payment_verification_status === 'pending'
       ? 'pending'
       : isPaidPeriodActive
