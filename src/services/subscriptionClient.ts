@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { SubscriptionStatus, BillingCycle, SellerCategory, SellerPlan } from '../types';
 
+export const THREADZW_NARDOPAY_MONTHLY_LINK = 'https://threadzw.nardopay.com/pay/threadwsubscription';
 export const THREADZW_NARDOPAY_SUCCESS_REDIRECT = 'https://threadzw.vercel.app/subscription/success';
 export const THREADZW_PREMIUM_PRICE = 1.59;
 
@@ -49,7 +50,7 @@ class SubscriptionClientService {
     return session?.access_token || null;
   }
 
-  /** Legacy checkout-session API. The current app uses the fixed NardoPay URL directly. */
+  /** Legacy API retained for compatibility; checkout uses THREADZW_NARDOPAY_MONTHLY_LINK. */
   public async createPaymentLink(shopId: string): Promise<CreatePaymentLinkResponse> {
     const token = await this.getAuthToken();
     if (!token) throw new Error('Please sign in to upgrade your shop.');
