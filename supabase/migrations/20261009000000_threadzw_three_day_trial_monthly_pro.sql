@@ -182,7 +182,13 @@ BEGIN
   IF lower(coalesce(NEW.page_type, 'clothing')) IN ('clothing','fashion','apparel','boutique')
      AND lower(coalesce(NEW.plan, '')) IN ('pro','premium')
      AND lower(coalesce(NEW.account_status, '')) = 'active'
-     AND lower(coalesce(NEW.payment_verification_status, '')) IN ('verified','approved') THEN
+     AND lower(coalesce(NEW.payment_verification_status, '')) IN ('verified','approved')
+     AND (
+       lower(coalesce(OLD.plan, '')) NOT IN ('pro','premium')
+       OR lower(coalesce(OLD.account_status, '')) <> 'active'
+       OR lower(coalesce(OLD.payment_verification_status, '')) NOT IN ('verified','approved')
+       OR lower(coalesce(OLD.payment_status, '')) <> 'paid'
+     ) THEN
     v_start := COALESCE(NEW.payment_verified_at, NEW.paid_at, now());
 
     UPDATE public.subscriptions
