@@ -37,12 +37,21 @@ export class SubscriptionService {
     const now = new Date().toISOString();
     const internalReference = `NP-${shop.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
 
-    const { data: existingSubscription, error: existingError } = await serverSupabase
+    let { data: existingSubscription, error: existingError } = await serverSupabase
       .from('subscriptions')
       .select('id')
       .eq('shop_id', shop.id)
       .maybeSingle();
     if (existingError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${existingError.message}`);
+    if (!existingSubscription) {
+      const { data: profileSubscription, error: profileSubscriptionError } = await serverSupabase
+        .from('subscriptions')
+        .select('id')
+        .eq('profile_id', userId)
+        .maybeSingle();
+      if (profileSubscriptionError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${profileSubscriptionError.message}`);
+      existingSubscription = profileSubscription;
+    }
 
     const subscriptionData = {
       profile_id: userId,
@@ -127,9 +136,15 @@ export class SubscriptionService {
 
     const now = new Date().toISOString();
     const internalReference = `NP-${shop.id.slice(0, 8).toUpperCase()}-${Date.now()}`;
-    const { data: existingSubscription, error: existingError } = await serverSupabase
+    let { data: existingSubscription, error: existingError } = await serverSupabase
       .from('subscriptions').select('id').eq('shop_id', shop.id).maybeSingle();
     if (existingError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${existingError.message}`);
+    if (!existingSubscription) {
+      const { data: profileSubscription, error: profileSubscriptionError } = await serverSupabase
+        .from('subscriptions').select('id').eq('profile_id', userId).maybeSingle();
+      if (profileSubscriptionError) throw new Error(`SUBSCRIPTION_ATTEMPT_FAILED: ${profileSubscriptionError.message}`);
+      existingSubscription = profileSubscription;
+    }
 
     const subscriptionData = {
       profile_id: userId, owner_id: userId, shop_id: shop.id, category: 'clothing', plan: 'premium',
