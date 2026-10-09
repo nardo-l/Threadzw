@@ -64,11 +64,11 @@ export function resolveProPlanForShop(shop: {
     return {
       category: 'clothing',
       plan: 'premium' as SellerPlan,
-      amount: envNumber('THREADZW_CLOTHING_PRO_PRICE_USD', 9),
+      amount: envNumber('THREADZW_CLOTHING_PRO_PRICE_USD', 1.59),
       currency: envCurrency(),
-      billing_cycle: 'none',
-      planName: 'Threadzw Premium',
-      description: 'Unlimited clothing products and advanced storefront tools with lifetime access'
+      billing_cycle: 'monthly',
+      planName: 'ThreadZW Pro',
+      description: 'Unlimited clothing products and advanced storefront tools for $1.59 USD per month'
     };
   }
 
