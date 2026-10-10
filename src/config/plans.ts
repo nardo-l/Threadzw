@@ -36,12 +36,12 @@ export function isTrialActive(shop: Shop | null | undefined): boolean {
 }
 
 export function isShopViewOnly(shop: Shop | null | undefined): boolean {
-  if (!shop || isTrialActive(shop)) return false;
+  if (!shop) return false;
   if (shop.payment_verification_status === 'pending' || shop.account_status === 'pending_payment') return true;
-  if (shop.trial_ends_at && new Date(shop.trial_ends_at).getTime() <= Date.now()) return true;
   if (['expired', 'view_only', 'suspended'].includes(String(shop.account_status || '').toLowerCase())
     || String(shop.subscription_status || '').toLowerCase() === 'expired') return true;
-  if (isPro(shop)) return false;
+  if (isTrialActive(shop) || isPro(shop)) return false;
+  if (shop.trial_ends_at && new Date(shop.trial_ends_at).getTime() <= Date.now()) return true;
   return resolveSellerCategory(shop.page_type) === 'clothing';
 }
 
