@@ -56,7 +56,7 @@ $function$;
 DROP TRIGGER IF EXISTS trg_threadzw_shop_view_only_guard ON public.shops;
 CREATE TRIGGER trg_threadzw_shop_view_only_guard
 BEFORE UPDATE OF name, slug, description, bio, whatsapp_number, city, location,
-  logo_url, banner_url, page_config, template_id, is_active, storefront_published, page_type
+  logo_url, banner_url, page_config, template_id
 ON public.shops
 FOR EACH ROW
 EXECUTE FUNCTION public.fn_enforce_threadzw_shop_view_only();
