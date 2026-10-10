@@ -97,19 +97,19 @@ export function ProPlanShowcase() {
 
                   <h3 className="text-xl font-bold text-slate-900 tracking-tight">You’ve reached your free limit</h3>
                   <p className="text-xs text-slate-600 mt-1 mb-4 leading-relaxed">
-                    Free shops can have up to 9 products. Upgrade to Pro to add <span className="font-semibold text-slate-900">unlimited products</span> and grow your shop.
+                    Try unlimited products for 3 days. After the trial, your storefront stays online in view-only mode until your $1.59 monthly payment is verified.
                   </p>
 
                   {/* Comparison Cards */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="bg-slate-50 rounded-2xl p-3 border border-slate-200 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] font-bold tracking-wider uppercase text-slate-500">Free Plan</span>
+                        <span className="text-[10px] font-bold tracking-wider uppercase text-slate-500">View-only</span>
                         <div className="text-2xl font-black text-slate-900 mt-1">9</div>
                         <div className="text-[11px] text-slate-600">products</div>
                       </div>
                       <div className="mt-3 space-y-1 pt-2 border-t border-slate-200 text-[11px] text-slate-600">
-                        <div className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> Up to 9 products</div>
+                        <div className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> Unlimited during trial</div>
                         <div className="flex items-center gap-1"><Check className="w-3 h-3 text-emerald-600" /> Basic storefront</div>
                       </div>
                     </div>
@@ -259,7 +259,7 @@ export function ProPlanShowcase() {
               <div className="bg-white border-t border-slate-200 p-4 space-y-3">
                 <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-medium">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Secure payment • Pro activates instantly</span>
+                  <span>Secure payment • Admin verifies payment</span>
                 </div>
                 <button className="w-full py-3.5 bg-black hover:bg-slate-900 text-white font-bold rounded-xl text-sm transition-all shadow-md active:scale-98">
                   Pay $1.59 with NardoPay
@@ -410,7 +410,7 @@ export function ProPlanShowcase() {
                     <div>
                       <h3 className="font-bold text-rose-900 text-sm">Your Pro Plan has expired</h3>
                       <p className="text-[11px] text-rose-700 mt-0.5 leading-relaxed">
-                        Your shop is back on the Free Plan.
+                        Your shop is now in view-only mode.
                       </p>
                     </div>
                   </div>
@@ -422,11 +422,11 @@ export function ProPlanShowcase() {
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-600 font-medium">Product usage</span>
-                      <span className="font-extrabold text-rose-600">9 / 9 products</span>
+                      <span className="font-extrabold text-rose-600">Products preserved</span>
                     </div>
                     <div className="bg-rose-50 p-2 rounded-lg text-[10px] text-rose-800 font-medium flex items-center gap-1.5 mt-1">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span>Free trial allows up to 9 products. Upgrade to Pro to add unlimited products.</span>
+                      <span>Your 3-day trial includes unlimited products. After expiry, the shop is view-only until monthly payment is verified.</span>
                     </div>
                   </div>
                 </div>
