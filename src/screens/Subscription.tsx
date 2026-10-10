@@ -26,6 +26,9 @@ export const Subscription: React.FC = () => {
 
   const pro = status ? status.plan === 'premium' : shop?.plan === 'premium' || shop?.plan === 'pro';
   const pending = status?.paymentVerificationStatus === 'pending' || status?.status === 'pending' || shop?.account_status === 'pending_payment';
+  const trialActive = status?.status === 'trial';
+  const trialEnd = status?.trialEndsAt ? new Date(status.trialEndsAt) : shop?.trial_ends_at ? new Date(shop.trial_ends_at) : null;
+  const trialHoursLeft = trialEnd ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 3600000)) : 0;
 
   const startPayment = () => {
     if (!shop?.id) return toast.error('Shop details could not be loaded.');
@@ -45,19 +48,20 @@ export const Subscription: React.FC = () => {
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-200 text-zinc-800 text-[10px] font-bold tracking-wider mb-2"><Shirt size={12} /> CLOTHING MERCHANT</div>
           <h1 className="text-3xl font-black uppercase tracking-tight">Make your shop live.</h1>
-          <p className="text-sm text-zinc-500 mt-2">3-day unlimited trial, then $1.59 per month.</p>
+          <p className="text-sm text-zinc-500 mt-2">3 days of unlimited Pro access, then $1.59/month.</p>
         </div>
 
+        {trialActive && !pending && !pro && <div className="bg-lime-50 border border-lime-200 rounded-3xl p-5 mb-5"><div className="flex gap-3"><Clock className="text-lime-700 shrink-0" size={20} /><div><h2 className="text-sm font-black text-lime-950">YOUR UNLIMITED TRIAL IS ACTIVE</h2><p className="text-xs text-lime-900 mt-1 leading-relaxed">{trialHoursLeft > 24 ? `${Math.ceil(trialHoursLeft / 24)} days` : `${trialHoursLeft} hours`} left. You can use all Pro features now. When the trial ends, your shop stays online in view-only mode until your $1.59 monthly payment is verified.</p></div></div></div>}
         {pending && !pro && <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 mb-5"><div className="flex gap-3"><Clock className="text-amber-600 shrink-0" size={20} /><div><h2 className="text-sm font-black text-amber-950">PAYMENT AWAITING APPROVAL</h2><p className="text-xs text-amber-800 mt-1 leading-relaxed">Your shop is pending payment verification. The ThreadZW team will activate Pro after approval.</p><button onClick={refresh} className="mt-3 inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-600 text-white text-[11px] font-bold"><RefreshCw size={13} /> Refresh status</button></div></div></div>}
 
         <div className="bg-zinc-950 text-white p-7 rounded-3xl border border-zinc-800 shadow-sm">
           <div className="flex items-start justify-between gap-4"><div><span className="text-[10px] font-black uppercase bg-[#C6FF00] text-zinc-900 px-3 py-1 rounded-full">Monthly Pro</span><h2 className="text-2xl font-black uppercase mt-3">ThreadZW Pro</h2></div><div className="text-right"><span className="text-3xl font-black text-[#C6FF00]">${THREADZW_PREMIUM_PRICE}</span><span className="block text-xs text-zinc-400">/ month</span></div></div>
           <div className="mt-6 pt-5 border-t border-zinc-800 space-y-3 text-sm font-semibold text-zinc-200">{['Unlimited products while Pro is active','Published customer-facing storefront','Premium storefront tools','Storefront analytics','Admin-verified monthly access'].map(feature => <div key={feature} className="flex gap-2"><Check size={16} className="text-[#C6FF00] shrink-0" /> {feature}</div>)}</div>
-          {!pro && !pending && <button onClick={startPayment} disabled={paying} className="w-full mt-7 py-4 rounded-2xl bg-[#C6FF00] text-zinc-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">{paying ? <Loader2 size={18} className="animate-spin" /> : <ExternalLink size={18} />} Pay $1.59/month</button>}
+          {!pro && !pending && !trialActive && <button onClick={startPayment} disabled={paying} className="w-full mt-7 py-4 rounded-2xl bg-[#C6FF00] text-zinc-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2">{paying ? <Loader2 size={18} className="animate-spin" /> : <ExternalLink size={18} />} Pay $1.59/month</button>}
           {pending && !pro && <div className="mt-7 p-4 rounded-2xl bg-amber-400/10 border border-amber-400/30 text-center text-sm font-bold text-amber-200">Payment submitted — awaiting admin approval</div>}
           {pro && <div className="mt-7 p-4 rounded-2xl bg-[#C6FF00]/10 border border-[#C6FF00]/30 text-center text-sm font-black text-[#C6FF00]">PREMIUM ACTIVE</div>}
         </div>
-        <p className="text-center text-[11px] text-zinc-500 mt-5">Your 3-day trial includes unlimited access. After it expires, the shop is view-only until your $1.59 monthly payment is verified.</p>
+        <p className="text-center text-[11px] text-zinc-500 mt-5">The first 3 days include unlimited Pro access. After the trial, your storefront stays online in view-only mode until you pay $1.59 and the ThreadZW team verifies your payment. Payments do not activate Pro automatically.</p>
       </div>
     </div>
   );
