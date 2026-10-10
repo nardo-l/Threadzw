@@ -197,8 +197,33 @@ export async function disablePushNotifications(): Promise<void> {
 }
 
 export async function hasActivePushSubscription(): Promise<boolean> {
-  if (!('serviceWorker' in navigator)) return false;
-  const registration = await navigator.serviceWorker.getRegistration('/');
-  const subscription = await registration?.pushManager.getSubscription();
-  return Boolean(subscription);
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return false;
+
+  try {
+    const registration = await navigator.serviceWorker.getRegistration('/');
+    const subscription = await registration?.pushManager.getSubscription();
+    if (!subscription) return false;
+
+    // A browser-side subscription alone is not enough: the server needs the
+    // matching endpoint in Supabase to deliver pushes. If this row was deleted
+    // or the device subscription was never synced, report it as inactive so
+    // the dashboard can repair registration through subscribeToPushNotifications().
+    const profileId = await getProfileId();
+    const { data, error } = await supabase
+      .from('push_subscriptions')
+      .select('endpoint')
+      .eq('profile_id', profileId)
+      .eq('endpoint', subscription.endpoint)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[PushNotifications] Could not verify server subscription; prompting repair:', error.message);
+      return false;
+    }
+
+    return Boolean(data?.endpoint);
+  } catch (error) {
+    console.warn('[PushNotifications] Subscription verification failed; prompting repair:', error);
+    return false;
+  }
 }
