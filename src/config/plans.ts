@@ -10,8 +10,8 @@ export interface ShopEntitlements { category: SellerCategory; plan: SellerPlan; 
 
 export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>> = {
   clothing: {
-    free: { id:'free', name:'Clothing Free', category:'clothing', price:0, currency:'USD', billingCycle:'none', maxActiveListings:3, maxImagesPerListing:5, description:'Start free with up to 3 active products. Pay $9 once-off when you want unlimited products.', features:['Up to 3 active products','Shop setup and dashboard','WhatsApp customer interests','Basic storefront tools'] },
-    premium: { id:'premium', name:'Clothing Premium', category:'clothing', price:9, currency:'USD', billingCycle:'none', maxActiveListings:null, maxImagesPerListing:10, badge:'Once-off', popular:true, description:'Unlimited products for a $9 once-off payment.', features:['Unlimited active products','$9 USD once-off','All clothing storefront templates','Custom storefront colours & branding','Remove ThreadZW branding','Featured products promotion','Advanced order & inventory tracking','Storefront visitor analytics'] }
+    free: { id:'free', name:'Trial / View-only', category:'clothing', price:0, currency:'USD', billingCycle:'none', maxActiveListings:3, maxImagesPerListing:5, description:'Enjoy 3 days of unlimited Pro access. After the trial, your storefront stays online in view-only mode until your $1.59 monthly payment is verified.', features:['3-day unlimited trial','Storefront remains online after trial','View-only access while payment is pending','Admin-verified monthly Pro'] },
+    premium: { id:'premium', name:'ThreadZW Pro', category:'clothing', price:1.59, currency:'USD', billingCycle:'monthly', maxActiveListings:null, maxImagesPerListing:10, badge:'Monthly', popular:true, description:'Unlimited products and Pro tools for $1.59 per month, activated after admin payment verification.', features:['Unlimited active products','$1.59 USD per month','All clothing storefront templates','Custom storefront colours & branding','Remove ThreadZW branding','Featured products promotion','Advanced order & inventory tracking','Storefront visitor analytics'] }
   },
   vehicles: {
     free: { id:'free', name:'Vehicle Free', category:'vehicles', price:0, currency:'USD', billingCycle:'none', maxActiveListings:1, maxImagesPerListing:8, description:'Test drive ThreadZW for your car dealership', features:['1 active vehicle in showroom'] },
@@ -19,7 +19,7 @@ export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>
   },
   general: {
     free: { id:'free', name:'General Free', category:'general', price:0, currency:'USD', billingCycle:'none', maxActiveListings:3, maxImagesPerListing:8, description:'Essential tools to sell products of any kind', features:['Up to 3 active products'] },
-    premium: { id:'premium', name:'General Pro', category:'general', price:9, currency:'USD', billingCycle:'none', maxActiveListings:null, maxImagesPerListing:10, description:'Unlimited catalog and custom seller branding', features:['Unlimited active products'] }
+    premium: { id:'premium', name:'General Pro', category:'general', price:9, currency:'USD', billingCycle:'none', maxActiveListings:null, maxImagesPerListing:10, description:'Unlimited catalog and custom seller branding for $1.59/month', features:['Unlimited active products','$1.59 USD per month'] }
   }
 };
 
@@ -29,15 +29,29 @@ export function getPlanForCategory(category: SellerCategory, plan: SellerPlan='f
 export function getPlansForCategory(category: SellerCategory): PlanConfig[] { if(category==='general') return [PLANS_CONFIG.general.free]; return [PLANS_CONFIG[category].free,PLANS_CONFIG[category].premium]; }
 export function getPlanConfig(shop: Shop | null | undefined): PlanConfig { return getPlanForCategory(resolveSellerCategory(shop?.page_type),normalizePlan(shop?.plan)); }
 
+export function isTrialActive(shop: Shop | null | undefined): boolean {
+  if (!shop || shop.account_status !== 'trial' || !shop.trial_ends_at) return false;
+  const end = new Date(shop.trial_ends_at).getTime();
+  return Number.isFinite(end) && end > Date.now();
+}
+
+export function isShopViewOnly(shop: Shop | null | undefined): boolean {
+  if (!shop || isPro(shop) || isTrialActive(shop)) return false;
+  if (shop.payment_verification_status === 'pending' || shop.account_status === 'pending_payment') return true;
+  if (shop.trial_ends_at && new Date(shop.trial_ends_at).getTime() <= Date.now()) return true;
+  return ['expired', 'view_only', 'suspended'].includes(String(shop.account_status || '').toLowerCase())
+    || String(shop.subscription_status || '').toLowerCase() === 'expired';
+}
+
 export function getProductLimit(shop: Shop | null | undefined): number | null {
-  if (isPro(shop)) return null;
+  if (isPro(shop) || isTrialActive(shop)) return null;
   const category=resolveSellerCategory(shop?.page_type);
-  if(category==='clothing') { if (shop?.payment_verification_status === 'pending' || shop?.account_status === 'pending_payment') return 10; return 3; }
+  if(category==='clothing') return 0;
   return 9;
 }
 export function getVehicleLimit(shop: Shop | null | undefined): number | null { if(resolveSellerCategory(shop?.page_type)!=='vehicles') return null; return isPro(shop)?20:1; }
 export function getVehicleImageLimit(shop: Shop | null | undefined): number { return isPro(shop)?20:8; }
-export function getProductImageLimit(shop: Shop | null | undefined): number { return isPro(shop)?10:5; }
+export function getProductImageLimit(shop: Shop | null | undefined): number { return isPro(shop) || isTrialActive(shop) ? 10 : 5; }
 export function isProductActive(product:{is_published?:boolean;status?:string;total_stock?:number}):boolean { if(product.is_published===false) return false; return !['draft','paused','archived'].includes(product.status||''); }
 export function isVehicleActive(vehicle:{status?:string}):boolean { const status=vehicle.status?.toLowerCase(); return status==='available'||status==='reserved'; }
 export function getActiveProductCount(products:Product[]):number { return products.filter(isProductActive).length; }
