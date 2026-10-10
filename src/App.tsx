@@ -630,7 +630,10 @@ function AppContent() {
   if (appStage === 'pricing' || cleanPath === '/pricing') {
     return <Navigate to="/onboarding" replace />;
   }
-  if (appStage === 'setup-success' || cleanPath === '/setup-success' || appStage === 'setup' || cleanPath === '/setup') {
+  if (appStage === 'setup-success' || cleanPath === '/setup-success') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  if (appStage === 'setup' || cleanPath === '/setup') {
     return <Navigate to="/onboarding" replace />;
   }
 
