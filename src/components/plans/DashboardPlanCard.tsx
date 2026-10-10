@@ -1,8 +1,8 @@
 import React from 'react';
-import { ArrowRight, CheckCircle2, Package, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Clock3, Eye, Package, Sparkles } from 'lucide-react';
 import { Shop } from '../../types';
 import { resolveSellerCategory } from '../../config/sellerCategories';
-import { getProductLimit, isPro } from '../../config/plans';
+import { getProductLimit, isPro, isShopViewOnly, isTrialActive } from '../../config/plans';
 import { useNavigate } from 'react-router-dom';
 import { ThemePickerLauncher } from '../dashboard/ThemePickerLauncher';
 
@@ -19,6 +19,8 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
   if (!shop || resolveSellerCategory(shop.page_type) !== 'clothing') return null;
 
   const pro = isPro(shop);
+  const trial = isTrialActive(shop);
+  const viewOnly = isShopViewOnly(shop);
   const productLimit = getProductLimit(shop);
 
   if (pro) {
@@ -27,10 +29,11 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
         <ThemePickerLauncher shop={shop} />
         <div className="rounded-2xl border border-emerald-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-[#CCFF00]"><Sparkles size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Your plan</span><h3 className="text-sm font-bold text-zinc-900">ThreadZW Pro · Lifetime</h3></div></div>
+            <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-[#CCFF00]"><Sparkles size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Your plan</span><h3 className="text-sm font-bold text-zinc-900">ThreadZW Pro · Monthly</h3></div></div>
             <span className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700"><CheckCircle2 size={13} /> Active</span>
           </div>
-          <p className="mt-3 text-[11px] text-zinc-500">Unlimited products · $9 once-off · {liveProductsCount} active products</p>
+          <p className="mt-3 text-[11px] text-zinc-500">Unlimited products · $1.59/month · {liveProductsCount} active products</p>
+          <button onClick={() => navigate('/subscription')} className="mt-3 text-xs font-black text-zinc-900 underline underline-offset-4">View subscription details</button>
         </div>
       </div>
     );
@@ -40,48 +43,42 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
   const limit = productLimit ?? 0;
   const used = Math.min(liveProductsCount, limit);
   const remaining = Math.max(0, limit - used);
+  const trialEnd = shop.trial_ends_at ? new Date(shop.trial_ends_at) : null;
+  const trialHours = trialEnd ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / 3600000)) : 0;
 
   return (
     <div className="space-y-3">
-      <ThemePickerLauncher shop={shop} />
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 text-white shadow-sm">
+      {!viewOnly && <ThemePickerLauncher shop={shop} />}
+      <div className={`rounded-2xl border p-5 shadow-sm ${viewOnly ? 'border-amber-200 bg-amber-50 text-zinc-950' : 'border-zinc-800 bg-zinc-950 text-white'}`}>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#CCFF00] text-black"><Package size={18} /></div>
+            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${viewOnly ? 'bg-amber-200 text-amber-950' : 'bg-[#CCFF00] text-black'}`}>
+              {viewOnly ? <Eye size={18} /> : trial ? <Clock3 size={18} /> : <Package size={18} />}
+            </div>
             <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#CCFF00]">FREE PLAN</span>
-              <h3 className="text-base font-black">Add up to {limit} products on your current access.</h3>
-              <p className="mt-1 text-xs text-zinc-400">{pending ? 'Your payment is awaiting verification. You can add 10 products while we review it.' : 'Use your free ThreadZW storefront. Pay $9 once-off whenever you want unlimited products.'}</p>
+              <span className={`text-[10px] font-black uppercase tracking-wider ${viewOnly ? 'text-amber-800' : 'text-[#CCFF00]'}`}>
+                {pending ? 'PAYMENT PENDING' : viewOnly ? 'VIEW-ONLY ACCESS' : trial ? '3-DAY FREE TRIAL' : 'TRIAL ACCESS'}
+              </span>
+              <h3 className="text-base font-black">
+                {pending ? 'Your shop is waiting for payment verification.' : viewOnly ? 'Your storefront is online, but editing is paused.' : trial ? 'Unlimited Pro access is active.' : 'Start your unlimited trial.'}
+              </h3>
+              <p className={`mt-1 text-xs leading-relaxed ${viewOnly ? 'text-amber-900' : 'text-zinc-400'}`}>
+                {pending
+                  ? 'Your shop remains view-only while the ThreadZW team verifies your payment.'
+                  : viewOnly
+                    ? 'Customers can still browse your shop. Pay $1.59/month and wait for admin verification to restore editing and unlimited Pro access.'
+                    : trial
+                      ? `${trialHours > 24 ? Math.ceil(trialHours / 24) + ' days' : trialHours + ' hours'} left. After the trial, your shop becomes view-only until your monthly payment is verified.`
+                      : 'Your 3-day unlimited trial begins when you finish onboarding.'}
+              </p>
             </div>
           </div>
-          <button onClick={() => navigate('/subscription')} className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-[#CCFF00] px-5 py-3 text-xs font-black uppercase text-black">
-            <span>START PRO — $9</span><ArrowRight size={14} />
+          <button onClick={() => navigate('/subscription')} className={`inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl px-5 py-3 text-xs font-black uppercase ${viewOnly ? 'bg-amber-900 text-white' : 'bg-[#CCFF00] text-black'}`}>
+            <span>{pending ? 'VIEW PAYMENT STATUS' : viewOnly ? 'RESTORE PRO — $1.59/MO' : trial ? 'VIEW PLAN' : 'VIEW PRICING'}</span><ArrowRight size={14} />
           </button>
         </div>
-
-        <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-[11px] font-black uppercase tracking-wider text-white">Current product limit</span>
-            <span className="text-[11px] font-bold text-[#CCFF00]">{used}/{limit} products</span>
-          </div>
-          <div className="space-y-2.5">
-            {Array.from({ length: limit }).map((_, index) => {
-              const filled = index < used;
-              return (
-                <div key={index} className="flex items-center gap-3 text-xs font-bold">
-                  <span className={filled ? 'flex h-6 w-6 items-center justify-center rounded-full bg-[#CCFF00] text-black' : 'flex h-6 w-6 items-center justify-center rounded-full border border-white/20 text-zinc-500'}>
-                    {filled ? '✓' : index + 1}
-                  </span>
-                  <span className={filled ? 'text-white' : 'text-zinc-400'}>{filled ? 'Product ' + (index + 1) + ' added' : 'Product ' + (index + 1) + ' available'}</span>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] font-bold text-zinc-400">
-            <span>{remaining} {remaining === 1 ? 'product' : 'products'} remaining</span>
-            <span>{pending ? 'Payment verification pending · 10 products' : 'Pro: unlimited products · $9 once-off'}</span>
-          </div>
-        </div>
+        {!trial && viewOnly && <div className="mt-5 flex items-center gap-2 rounded-xl border border-amber-200 bg-white/70 px-3 py-2.5 text-xs font-bold text-amber-950"><Eye size={15} /> View-only mode is active. Existing products are preserved.</div>}
+        {trial && <div className="mt-5 flex items-center justify-between border-t border-white/10 pt-3 text-[10px] font-bold text-zinc-400"><span>Unlimited products during trial</span><span>$1.59/month after trial</span></div>}
       </div>
     </div>
   );
