@@ -517,7 +517,6 @@ export async function sendScheduledMerchantNotifications(
         }
       }
     }
-  }
 
     if (slot === 'weekly' && profilePreferences?.weekly_report_enabled !== false) {
       const profileShops = shopsByProfile.get(profileId) || [];
@@ -545,6 +544,7 @@ export async function sendScheduledMerchantNotifications(
       if (result.created) notificationsCreated += 1;
       pushSent += result.pushSentCount;
     }
+  }
 
   return {
     success: true,
