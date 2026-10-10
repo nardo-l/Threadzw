@@ -4,6 +4,7 @@
 CREATE OR REPLACE FUNCTION public.fn_enforce_threadzw_shop_view_only()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
 SET search_path TO 'public'
 AS $function$
 DECLARE
