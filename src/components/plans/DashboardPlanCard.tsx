@@ -18,9 +18,9 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
   const navigate = useNavigate();
   if (!shop || resolveSellerCategory(shop.page_type) !== 'clothing') return null;
 
-  const pro = isPro(shop);
   const trial = isTrialActive(shop);
   const viewOnly = isShopViewOnly(shop);
+  const pro = isPro(shop) && !viewOnly;
   const productLimit = getProductLimit(shop);
 
   if (pro) {
