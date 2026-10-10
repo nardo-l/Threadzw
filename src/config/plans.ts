@@ -10,7 +10,7 @@ export interface ShopEntitlements { category: SellerCategory; plan: SellerPlan; 
 
 export const PLANS_CONFIG: Record<SellerCategory, Record<SellerPlan, PlanConfig>> = {
   clothing: {
-    free: { id:'free', name:'Trial / View-only', category:'clothing', price:0, currency:'USD', billingCycle:'none', maxActiveListings:3, maxImagesPerListing:5, description:'Enjoy 3 days of unlimited Pro access. After the trial, your storefront stays online in view-only mode until your $1.59 monthly payment is verified.', features:['3-day unlimited trial','Storefront remains online after trial','View-only access while payment is pending','Admin-verified monthly Pro'] },
+    free: { id:'free', name:'Trial / View-only', category:'clothing', price:0, currency:'USD', billingCycle:'none', maxActiveListings:0, maxImagesPerListing:5, description:'Enjoy 3 days of unlimited Pro access. After the trial, your storefront stays online in view-only mode until your $1.59 monthly payment is verified.', features:['3-day unlimited trial','Storefront remains online after trial','View-only access while payment is pending','Admin-verified monthly Pro'] },
     premium: { id:'premium', name:'ThreadZW Pro', category:'clothing', price:1.59, currency:'USD', billingCycle:'monthly', maxActiveListings:null, maxImagesPerListing:10, badge:'Monthly', popular:true, description:'Unlimited products and Pro tools for $1.59 per month, activated after admin payment verification.', features:['Unlimited active products','$1.59 USD per month','All clothing storefront templates','Custom storefront colours & branding','Remove ThreadZW branding','Featured products promotion','Advanced order & inventory tracking','Storefront visitor analytics'] }
   },
   vehicles: {
