@@ -418,7 +418,7 @@ export function ProPlanShowcase() {
                   <div className="bg-white rounded-xl p-3 border border-rose-200 space-y-2">
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-600 font-medium">Current plan</span>
-                      <span className="font-bold text-slate-900">Free Plan</span>
+                      <span className="font-bold text-slate-900">View-only</span>
                     </div>
                     <div className="flex justify-between items-center text-xs">
                       <span className="text-slate-600 font-medium">Product usage</span>
