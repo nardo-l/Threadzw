@@ -269,8 +269,8 @@ export const ThreadzwOnboarding: React.FC = () => {
       localStorage.setItem('threadzw_shop_id', shopId);
 
       await refreshShop();
-      toast.success('Your shop is ready. Let’s get you started.');
-      navigate('/onboarding/paywall', { replace: true });
+      toast.success('Your 3-day unlimited trial has started. Let’s build your storefront.');
+      navigate('/dashboard', { replace: true });
     } catch (e: any) {
       const raw = String(e?.message || '').toLowerCase();
       if (raw.includes('already registered') || raw.includes('already exists')) {
@@ -688,7 +688,7 @@ export const ThreadzwOnboarding: React.FC = () => {
     if (step === 6) return { label: 'CONTINUE', onClick: () => go(7), disabled: !city };
     if (step === 7) return { label: 'CONTINUE', onClick: () => go(8), disabled: !validPhone };
     if (step === 8) return { label: 'CONTINUE TO SIGN UP', onClick: () => go(9), disabled: false };
-    return { label: loading ? 'CREATING YOUR SHOP…' : 'CREATE MY THREADZW SHOP', onClick: createAccountAndShop, disabled: loading };
+    return { label: loading ? 'STARTING YOUR TRIAL…' : 'START MY 3-DAY FREE TRIAL', onClick: createAccountAndShop, disabled: loading };
   };
 
   const primary = getPrimaryAction();
