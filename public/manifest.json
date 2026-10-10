@@ -1,7 +1,7 @@
 {
   "name": "ThreadZW",
   "short_name": "ThreadZW",
-  "description": "Zimbabwe's fashion marketplace — discover and manage local fashion shops.",
+  "description": "Build your clothing storefront in Zimbabwe. Start with 3 days of unlimited Pro access, then $1.59/month.",
   "id": "/",
   "start_url": "/login",
   "scope": "/",
