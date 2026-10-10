@@ -47,6 +47,7 @@ import { DesignSystemPart4 } from './components/design-system/DesignSystemPart4'
 import { DesignSystemPart5 } from './components/design-system/DesignSystemPart5';
 import { NotFound } from './screens/NotFound';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { isShopViewOnly } from './config/plans';
 
 
 type AppStage = 'landing' | 'onboarding' | 'onboarding-paywall' | 'paywall' | 'building' | 'dashboard' | 'admin' | 'shop' | 'product' | 'setup' | 'shop-directory' | 'checkout' | 'pricing' | 'setup-success' | 'subscription' | 'pro-showcase' | 'design-system' | 'design-system-2' | 'design-system-3' | 'design-system-4' | 'design-system-5';
@@ -644,6 +645,11 @@ function AppContent() {
 
   if (cleanPath === '/subscription/success') {
     return <SubscriptionSuccess />;
+  }
+
+  const isShopEditingPath = cleanPath === '/inventory' || cleanPath === '/edit-shop' || cleanPath === '/edit-profile' || cleanPath === '/account' || cleanPath === '/add-product' || cleanPath.startsWith('/edit-product') || cleanPath === '/add-vehicle' || cleanPath.startsWith('/edit-vehicle');
+  if (isDashboardSubPath && isShopEditingPath && isShopViewOnly(shop)) {
+    return <Navigate to="/subscription" replace />;
   }
 
   if (isDashboardSubPath) {
