@@ -7,7 +7,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavig
 import { SplashScreen } from './screens/SplashScreen';
 import { SignUp } from './screens/SignUp';
 import { ThreadzwOnboarding } from './screens/ThreadzwOnboarding';
-import { OnboardingPaywall } from './screens/OnboardingPaywall';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
@@ -529,7 +528,7 @@ function AppContent() {
   }
 
   if (cleanPath === '/onboarding/paywall') {
-    return <OnboardingPaywall />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (cleanPath === '/signup' || cleanPath === '/onboarding') {
