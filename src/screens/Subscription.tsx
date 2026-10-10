@@ -47,7 +47,7 @@ export const Subscription: React.FC = () => {
         <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-xs font-bold text-zinc-600 mb-6"><ArrowLeft size={16} /> Back to Dashboard</button>
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-200 text-zinc-800 text-[10px] font-bold tracking-wider mb-2"><Shirt size={12} /> CLOTHING MERCHANT</div>
-          <h1 className="text-3xl font-black uppercase tracking-tight">Make your shop live.</h1>
+          <h1 className="text-3xl font-black uppercase tracking-tight">Manage your ThreadZW Pro access.</h1>
           <p className="text-sm text-zinc-500 mt-2">3 days of unlimited Pro access, then $1.59/month.</p>
         </div>
 
