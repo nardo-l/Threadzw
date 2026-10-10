@@ -131,6 +131,7 @@ router.put('/preferences', async (req: AuthenticatedRequest, res) => {
     timezone: validTimezone(body.timezone),
     setup_reminders_enabled: body.setup_reminders_enabled !== false,
     daily_summary_enabled: body.daily_summary_enabled !== false,
+    weekly_report_enabled: body.weekly_report_enabled !== false,
     push_enabled: body.push_enabled !== false,
     updated_at: new Date().toISOString()
   };
@@ -139,7 +140,7 @@ router.put('/preferences', async (req: AuthenticatedRequest, res) => {
     const { data, error } = await getSupabase()
       .from('notification_preferences')
       .upsert(preferences, { onConflict: 'profile_id' })
-      .select('profile_id, timezone, setup_reminders_enabled, daily_summary_enabled, push_enabled')
+      .select('profile_id, timezone, setup_reminders_enabled, daily_summary_enabled, weekly_report_enabled, push_enabled')
       .single();
 
     if (error) return res.status(500).json({ error: error.message });
