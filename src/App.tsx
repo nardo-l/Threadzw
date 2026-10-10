@@ -5,7 +5,6 @@ import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 const appStartTime = performance.now();
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { SplashScreen } from './screens/SplashScreen';
-import { SignUp } from './screens/SignUp';
 import { ThreadzwOnboarding } from './screens/ThreadzwOnboarding';
 import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
@@ -36,7 +35,6 @@ import { Paywall } from './screens/Paywall';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 import { Analytics } from './screens/Analytics';
 import { Notifications } from './screens/Notifications';
-import { SuccessScreen } from './components/onboarding/SuccessScreen';
 import { ProPlanShowcase } from './screens/ProPlanShowcase';
 import { AddVehicle } from './screens/AddVehicle';
 import { EditVehicle } from './screens/EditVehicle';
@@ -629,14 +627,11 @@ function AppContent() {
     return <ProPlanShowcase />;
   }
 
-  if (appStage === 'pricing') {
-    return <SignUp initialStep={3} />;
+  if (appStage === 'pricing' || cleanPath === '/pricing') {
+    return <Navigate to="/onboarding" replace />;
   }
-  if (appStage === 'setup-success' || cleanPath === '/setup-success') {
-    return <SuccessScreen onContinue={() => { setAppStage('setup'); navigate('/signup?step=6'); }} />;
-  }
-  if (appStage === 'setup') {
-    return <SignUp initialStep={6} />;
+  if (appStage === 'setup-success' || cleanPath === '/setup-success' || appStage === 'setup' || cleanPath === '/setup') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   if (appStage === 'subscription' || cleanPath === '/subscription') {
