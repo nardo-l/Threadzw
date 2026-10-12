@@ -29,9 +29,9 @@ export default async function handler(req: any, res: any) {
   }
 
   const rawSlot = typeof req.query.slot === 'string' ? req.query.slot : req.body?.slot;
-  const slot = rawSlot === 'midday' || rawSlot === 'evening' ? rawSlot : null;
+  const slot = rawSlot === 'midday' || rawSlot === 'evening' || rawSlot === 'weekly' ? rawSlot : null;
   if (!slot) {
-    return json(res, 400, { success: false, error: 'slot must be midday or evening' });
+    return json(res, 400, { success: false, error: 'slot must be midday, evening, or weekly' });
   }
 
   try {
