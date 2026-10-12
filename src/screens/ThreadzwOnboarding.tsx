@@ -21,7 +21,6 @@ import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
 
 const TOTAL_STEPS = 9;
-const WEEKLY_SHOPS_JOINED = 167;
 
 const CITIES = ['Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 'Masvingo', 'Other'];
 
@@ -63,8 +62,8 @@ const Button = ({
       'flex h-14 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-black uppercase tracking-[0.06em]',
       'transition-all active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-40',
       secondary
-        ? 'border border-zinc-700 bg-[#111413] text-white hover:border-zinc-500'
-        : 'bg-[#C6FF00] text-black shadow-[0_8px_30px_rgba(198,255,0,0.08)] hover:bg-[#d4ff3b]',
+        ? 'border border-zinc-300 bg-white text-zinc-950 hover:border-zinc-500'
+        : 'bg-[#C6FF00] text-zinc-950 shadow-[0_8px_30px_rgba(198,255,0,0.08)] hover:bg-[#d4ff3b]',
     ].join(' ')}
   >
     {children}
@@ -83,7 +82,7 @@ const Field = (
   return (
     <div className="space-y-2">
       {label && (
-        <label className="px-1 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">
+        <label className="px-1 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500">
           {label}
         </label>
       )}
@@ -91,38 +90,38 @@ const Field = (
         <input
           {...inputProps}
           className={[
-            'h-14 w-full rounded-2xl border bg-[#111413] px-4 text-base font-semibold text-white outline-none',
-            'placeholder:text-zinc-600 transition-colors',
+            'h-14 w-full rounded-2xl border bg-white px-4 text-base font-semibold text-zinc-950 outline-none',
+            'placeholder:text-zinc-500 transition-colors',
             error
               ? 'border-red-500/70 focus:border-red-400'
               : valid
                 ? 'border-[#C6FF00]'
-                : 'border-zinc-700 focus:border-[#C6FF00]',
+                : 'border-zinc-300 focus:border-[#91C900]',
             valid || error ? 'pr-12' : '',
             className || '',
           ].join(' ')}
         />
         {valid && !error && (
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#C6FF00]">
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#557500]">
             <Check size={18} strokeWidth={3} />
           </span>
         )}
       </div>
-      {error && <p className="px-1 text-xs font-semibold text-red-400">{error}</p>}
+      {error && <p className="px-1 text-xs font-semibold text-red-600">{error}</p>}
     </div>
   );
 };
 
 const SocialProof = () => (
-  <div className="flex items-center gap-3 rounded-2xl border border-zinc-800 bg-[#101211] px-4 py-3">
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C6FF00] text-black">
+  <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-[#F5F7F2] px-4 py-3">
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C6FF00] text-zinc-950">
       <Users size={17} />
     </div>
     <div className="min-w-0">
-      <p className="text-xs font-black text-white">Trusted by clothing sellers in Zimbabwe</p>
-      <p className="mt-0.5 text-[10px] text-zinc-500">{WEEKLY_SHOPS_JOINED} shops joined this week • Free to start • No coding required</p>
+      <p className="text-xs font-black text-zinc-950">Built for clothing sellers in Zimbabwe</p>
+      <p className="mt-0.5 text-[10px] text-zinc-500">Create a storefront, share one link, and receive orders on WhatsApp.</p>
     </div>
-    <Sparkles size={14} className="ml-auto shrink-0 text-[#C6FF00]" />
+    <Sparkles size={14} className="ml-auto shrink-0 text-[#557500]" />
   </div>
 );
 
@@ -146,19 +145,19 @@ const SelectionCard = ({
     className={[
       'w-full rounded-2xl border p-4 text-left transition-all',
       selected
-        ? 'border-[#C6FF00] bg-[#151b0d] shadow-[0_0_0_1px_rgba(198,255,0,.18)]'
-        : 'border-zinc-800 bg-[#111413] hover:border-zinc-700',
+        ? 'border-[#C6FF00] bg-[#F4FFD2] shadow-[0_0_0_1px_rgba(198,255,0,.18)]'
+        : 'border-zinc-200 bg-white hover:border-zinc-300',
     ].join(' ')}
   >
     <div className="flex items-center gap-3">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-[#C6FF00] text-black' : 'bg-[#1b1e1c] text-zinc-300'}`}>
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-[#C6FF00] text-zinc-950' : 'bg-zinc-100 text-zinc-700'}`}>
         <Icon size={19} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-black text-white">{title}</div>
+        <div className="text-sm font-black text-zinc-950">{title}</div>
         <div className="mt-0.5 text-[11px] leading-4 text-zinc-500">{note}</div>
       </div>
-      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-[#C6FF00] bg-[#C6FF00] text-black' : 'border-zinc-600 text-transparent'}`}>
+      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-[#C6FF00] bg-[#C6FF00] text-zinc-950' : 'border-zinc-300 text-transparent'}`}>
         <Check size={14} strokeWidth={3} />
       </div>
     </div>
@@ -300,10 +299,10 @@ export const ThreadzwOnboarding: React.FC = () => {
   const renderProgress = () => (
     <div className="space-y-2.5" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>
       <div className="flex items-end justify-between">
-        <span className="text-[11px] font-black tracking-wide text-white">
+        <span className="text-[11px] font-black tracking-wide text-zinc-950">
           Step {step} of {TOTAL_STEPS}
         </span>
-        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-600">
+        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-500">
           {Math.round((step / TOTAL_STEPS) * 100)}%
         </span>
       </div>
@@ -313,7 +312,7 @@ export const ThreadzwOnboarding: React.FC = () => {
             key={index}
             className={[
               'h-1.5 flex-1 rounded-full transition-all duration-300',
-              index < step - 1 ? 'bg-[#7d9900]' : index === step - 1 ? 'bg-[#C6FF00]' : 'bg-[#303330]',
+              index < step - 1 ? 'bg-[#9ACD00]' : index === step - 1 ? 'bg-[#C6FF00]' : 'bg-zinc-200',
             ].join(' ')}
           />
         ))}
@@ -326,17 +325,17 @@ export const ThreadzwOnboarding: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-red-500/35 bg-red-500/10 p-4"
+        className="rounded-2xl border border-red-200 bg-red-50 p-4"
       >
         <div className="flex gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-500/15 text-red-400">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
             <AlertCircle size={18} />
           </div>
           <div>
-            <p className="text-sm font-black text-red-300">
+            <p className="text-sm font-black text-red-700">
               {error === 'EMAIL_ALREADY_EXISTS' ? 'Email already in use' : 'We couldn’t finish your signup'}
             </p>
-            <p className="mt-1 text-xs leading-5 text-red-200/70">
+            <p className="mt-1 text-xs leading-5 text-red-600">
               {error === 'EMAIL_ALREADY_EXISTS'
                 ? 'An account with this email already exists on ThreadZW. Try logging in instead.'
                 : error}
@@ -347,7 +346,7 @@ export const ThreadzwOnboarding: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/login')}
-            className="mt-4 w-full rounded-xl bg-[#C6FF00] py-2.5 text-xs font-black text-black"
+            className="mt-4 w-full rounded-xl bg-[#C6FF00] py-2.5 text-xs font-black text-zinc-950"
           >
             Go to Log In
           </button>
@@ -359,25 +358,25 @@ export const ThreadzwOnboarding: React.FC = () => {
     if (step === 1) {
       return (
         <>
-          <div className="flex h-20 w-20 -rotate-3 items-center justify-center rounded-[26px] bg-[#C6FF00] text-4xl font-black text-black shadow-[7px_7px_0_#252824]">
+          <div className="flex h-20 w-20 -rotate-3 items-center justify-center rounded-[26px] bg-[#C6FF00] text-4xl font-black text-zinc-950 shadow-[4px_4px_0_#DDE5D0]">
             TZ
           </div>
-          <p className="mt-7 text-[10px] font-black uppercase tracking-[0.22em] text-[#C6FF00]">WELCOME TO THREADZW</p>
+          <p className="mt-7 text-[10px] font-black uppercase tracking-[0.22em] text-[#557500]">WELCOME TO THREADZW</p>
           <h1 className="mt-3 text-[2.75rem] font-black leading-[0.93] tracking-tight">
-            Turn your clothing business into a real online shop.
+            Create your ThreadZW shop
           </h1>
-          <p className="mt-5 max-w-sm text-base leading-7 text-zinc-400">
-            Answer a few quick questions and we’ll help get your ThreadZW storefront ready.
+          <p className="mt-5 max-w-sm text-base leading-7 text-zinc-500">
+            One link for your products and WhatsApp orders.
           </p>
 
           <div className="mt-7 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
             {[
-              ['Free to start', 'Get online in minutes'],
+              ['3-day unlimited trial', 'Then $1.59/month after trial'],
               ['No coding required', 'Just answer a few questions'],
               ['Orders on WhatsApp', 'Simple and familiar'],
             ].map(([title, note]) => (
-              <div key={title} className="rounded-2xl border border-zinc-800 bg-[#101211] px-4 py-3.5">
-                <p className="text-xs font-black text-white">{title}</p>
+              <div key={title} className="rounded-2xl border border-zinc-200 bg-[#F5F7F2] px-4 py-3.5">
+                <p className="text-xs font-black text-zinc-950">{title}</p>
                 <p className="mt-1 text-[10px] leading-4 text-zinc-500">{note}</p>
               </div>
             ))}
@@ -394,21 +393,21 @@ export const ThreadzwOnboarding: React.FC = () => {
       return (
         <>
           <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">
-            Stop sending product photos one by one.
+            Getting started
           </h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-400">
+          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
             Give customers one place to browse your products, prices and shop details.
           </p>
 
-          <div className="mt-7 space-y-2 rounded-[1.5rem] border border-zinc-800 bg-[#101211] p-3">
+          <div className="mt-7 space-y-2 rounded-[1.5rem] border border-zinc-200 bg-[#F5F7F2] p-3">
             {['How much is this dress?', 'Do you have it in black?', 'Can I see more pictures?', 'Where are you located?'].map((text, i) => (
-              <div key={text} className="flex items-center gap-3 rounded-2xl bg-[#1a1d1b] px-4 py-3">
+              <div key={text} className="flex items-center gap-3 rounded-2xl bg-zinc-100 px-4 py-3">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-[9px] font-black">C</div>
-                <span className="flex-1 text-xs font-semibold text-zinc-200">{text}</span>
-                <span className="text-[9px] text-zinc-600">10:{24 + i}</span>
+                <span className="flex-1 text-xs font-semibold text-zinc-800">{text}</span>
+                <span className="text-[9px] text-zinc-500">10:{24 + i}</span>
               </div>
             ))}
-            <div className="rounded-2xl bg-[#C6FF00] px-4 py-3 text-xs font-black text-black">
+            <div className="rounded-2xl bg-[#C6FF00] px-4 py-3 text-xs font-black text-zinc-950">
               It’s available! How do I order?
             </div>
           </div>
@@ -424,9 +423,9 @@ export const ThreadzwOnboarding: React.FC = () => {
       return (
         <>
           <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">
-            One link for your whole business.
+            Create your shop
           </h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-400">
+          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
             Share one storefront across WhatsApp, Instagram and TikTok.
           </p>
 
@@ -440,24 +439,24 @@ export const ThreadzwOnboarding: React.FC = () => {
                 key={title}
                 className={[
                   'flex items-center gap-3 rounded-2xl border p-4',
-                  index === 1 ? 'border-[#C6FF00] bg-[#151b0d]' : 'border-zinc-800 bg-[#111413]',
+                  index === 1 ? 'border-[#C6FF00] bg-[#F4FFD2]' : 'border-zinc-200 bg-white',
                 ].join(' ')}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#20231f] text-sm font-black">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 text-sm font-black">
                   {title[0]}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-black text-white">{title}</p>
+                  <p className="text-sm font-black text-zinc-950">{title}</p>
                   <p className="text-[10px] text-zinc-500">{note}</p>
                 </div>
-                {index === 1 && <Check size={18} className="text-[#C6FF00]" />}
+                {index === 1 && <Check size={18} className="text-[#557500]" />}
               </div>
             ))}
           </div>
 
-          <div className="mt-4 rounded-2xl border border-zinc-800 bg-[#101211] px-4 py-3">
+          <div className="mt-4 rounded-2xl border border-zinc-200 bg-[#F5F7F2] px-4 py-3">
             <p className="text-[9px] font-black uppercase tracking-[0.16em] text-zinc-500">YOUR THREADZW LINK</p>
-            <p className="mt-1 text-sm font-black text-white">threadzw.shop/yourshop</p>
+            <p className="mt-1 text-sm font-black text-zinc-950">Your unique shop link appears here after setup</p>
           </div>
         </>
       );
@@ -467,7 +466,7 @@ export const ThreadzwOnboarding: React.FC = () => {
       return (
         <>
           <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">What’s your shop called?</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-400">
+          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
             This is the name customers will see on your ThreadZW storefront.
           </p>
 
@@ -486,13 +485,13 @@ export const ThreadzwOnboarding: React.FC = () => {
           </div>
 
           {validShopName && (
-            <div className="mt-4 rounded-2xl border border-zinc-800 bg-[#101211] p-4">
-              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-zinc-600">PREVIEW</p>
+            <div className="mt-4 rounded-2xl border border-zinc-200 bg-[#F5F7F2] p-4">
+              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-zinc-500">PREVIEW</p>
               <div className="mt-2 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C6FF00] text-xs font-black text-black">TZ</div>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C6FF00] text-xs font-black text-zinc-950">TZ</div>
                 <div>
-                  <p className="text-sm font-black text-white">{shopName.trim()}</p>
-                  <p className="text-[10px] text-zinc-500">threadzw.shop/{slug || 'yourshop'}</p>
+                  <p className="text-sm font-black text-zinc-950">{shopName.trim()}</p>
+                  <p className="text-[10px] text-zinc-500">Your shop link preview</p>
                 </div>
               </div>
             </div>
@@ -505,7 +504,7 @@ export const ThreadzwOnboarding: React.FC = () => {
       return (
         <>
           <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">How do customers find your products right now?</h1>
-          <p className="mt-5 text-sm leading-6 text-zinc-400">Select all that apply. You can change this later.</p>
+          <p className="mt-5 text-sm leading-6 text-zinc-500">Select all that apply. You can change this later.</p>
 
           <div className="mt-6 space-y-2.5">
             {DISCOVERY_OPTIONS.map(option => {
@@ -531,7 +530,7 @@ export const ThreadzwOnboarding: React.FC = () => {
       return (
         <>
           <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Where is your shop based?</h1>
-          <p className="mt-5 text-sm leading-6 text-zinc-400">
+          <p className="mt-5 text-sm leading-6 text-zinc-500">
             Choose the city customers should see when they want to visit you.
           </p>
 
@@ -546,12 +545,12 @@ export const ThreadzwOnboarding: React.FC = () => {
                   aria-pressed={selected}
                   className={[
                     'min-h-14 rounded-2xl border px-4 text-left text-sm font-black transition-all',
-                    selected ? 'border-[#C6FF00] bg-[#151b0d] text-white' : 'border-zinc-800 bg-[#111413] text-zinc-300',
+                    selected ? 'border-[#C6FF00] bg-[#F4FFD2] text-zinc-950' : 'border-zinc-200 bg-white text-zinc-700',
                   ].join(' ')}
                 >
                   <span className="flex items-center justify-between gap-2">
                     {item}
-                    <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-[#C6FF00] bg-[#C6FF00] text-black' : 'border-zinc-700 text-transparent'}`}>
+                    <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-[#C6FF00] bg-[#C6FF00] text-zinc-950' : 'border-zinc-300 text-transparent'}`}>
                       <Check size={12} strokeWidth={3} />
                     </span>
                   </span>
@@ -567,7 +566,7 @@ export const ThreadzwOnboarding: React.FC = () => {
       return (
         <>
           <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Where should customer orders go?</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-400">
+          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
             We’ll open WhatsApp with a ready-to-send order message.
           </p>
 
@@ -585,9 +584,9 @@ export const ThreadzwOnboarding: React.FC = () => {
             />
           </div>
 
-          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-zinc-800 bg-[#101211] p-4">
-            <MessageCircle size={18} className="mt-0.5 shrink-0 text-[#C6FF00]" />
-            <p className="text-xs leading-5 text-zinc-400">Your number is used for customer orders and questions.</p>
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-zinc-200 bg-[#F5F7F2] p-4">
+            <MessageCircle size={18} className="mt-0.5 shrink-0 text-[#557500]" />
+            <p className="text-xs leading-5 text-zinc-500">Your number is used for customer orders and questions.</p>
           </div>
         </>
       );
@@ -597,22 +596,22 @@ export const ThreadzwOnboarding: React.FC = () => {
       return (
         <>
           <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Tell customers a little about your shop.</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-400">
+          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
             Add a short description customers will remember.
           </p>
 
           <div className="mt-7 space-y-2">
-            <label className="px-1 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-400">Shop description</label>
+            <label className="px-1 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500">Shop description</label>
             <textarea
               value={bio}
               onChange={e => setBio(e.target.value)}
               placeholder="We make clean everyday streetwear in Bulawayo..."
               maxLength={240}
-              className="min-h-40 w-full resize-none rounded-2xl border border-zinc-700 bg-[#111413] px-4 py-4 text-base font-semibold text-white outline-none placeholder:text-zinc-600 transition-colors focus:border-[#C6FF00]"
+              className="min-h-40 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-4 text-base font-semibold text-zinc-950 outline-none placeholder:text-zinc-500 transition-colors focus:border-[#91C900]"
             />
             <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] text-zinc-600">Optional</span>
-              <span className="text-[10px] text-zinc-600">{bio.length}/240</span>
+              <span className="text-[10px] text-zinc-500">Optional</span>
+              <span className="text-[10px] text-zinc-500">{bio.length}/240</span>
             </div>
           </div>
         </>
@@ -622,7 +621,7 @@ export const ThreadzwOnboarding: React.FC = () => {
     return (
       <>
         <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Almost there. Create your account.</h1>
-        <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-400">
+        <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
           Your shop details are ready. Create your owner account and we’ll take you straight to your ThreadZW setup.
         </p>
 
@@ -662,7 +661,7 @@ export const ThreadzwOnboarding: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowPassword(value => !value)}
-              className="absolute right-2 top-[31px] rounded-xl p-2.5 text-zinc-500 hover:text-white"
+              className="absolute right-2 top-[31px] rounded-xl p-2.5 text-zinc-500 hover:text-zinc-950"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
@@ -680,7 +679,7 @@ export const ThreadzwOnboarding: React.FC = () => {
   };
 
   const getPrimaryAction = () => {
-    if (step === 1) return { label: 'LET’S BUILD YOUR SHOP', onClick: () => go(2), disabled: false };
+    if (step === 1) return { label: 'CONTINUE', onClick: () => go(2), disabled: false };
     if (step === 2) return { label: 'CONTINUE', onClick: () => go(3), disabled: false };
     if (step === 3) return { label: 'CONTINUE', onClick: () => go(4), disabled: false };
     if (step === 4) return { label: 'CONTINUE', onClick: () => go(5), disabled: !validShopName };
@@ -694,22 +693,22 @@ export const ThreadzwOnboarding: React.FC = () => {
   const primary = getPrimaryAction();
 
   return (
-    <div className="fixed inset-0 z-[45] overflow-hidden bg-[#070807] font-sans text-white">
+    <div className="fixed inset-0 z-[45] overflow-hidden bg-[#F8FAF7] font-sans text-zinc-950">
       <div className="mx-auto flex h-full w-full max-w-md flex-col">
-        <header className="shrink-0 border-b border-zinc-900/80 bg-[#070807]/95 px-5 pb-4 pt-5 backdrop-blur-md">
+        <header className="shrink-0 border-b border-zinc-900/80 bg-[#F8FAF7]/95 px-5 pb-4 pt-5 backdrop-blur-md">
           <div className="mb-5 flex items-center justify-between">
             <button
               type="button"
               onClick={() => (step > 1 ? go(step - 1) : navigate('/'))}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-800 bg-[#111413] text-white transition hover:border-zinc-600"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-950 transition hover:border-zinc-300"
               aria-label="Go back"
             >
               <ArrowLeft size={18} />
             </button>
 
-            <span className="text-lg font-black tracking-tight text-[#C6FF00]">ThreadZW</span>
+            <span className="text-lg font-black tracking-tight text-[#557500]">ThreadZW</span>
 
-            <span className="w-16 text-right text-[10px] font-black text-zinc-400">
+            <span className="w-16 text-right text-[10px] font-black text-zinc-500">
               Step {step} of {TOTAL_STEPS}
             </span>
           </div>
@@ -738,13 +737,13 @@ export const ThreadzwOnboarding: React.FC = () => {
                 </Button>
 
                 {step === 5 && (
-                  <button type="button" onClick={() => go(6)} className="mt-2 h-10 w-full text-xs font-bold text-zinc-500 hover:text-white">
+                  <button type="button" onClick={() => go(6)} className="mt-2 h-10 w-full text-xs font-bold text-zinc-500 hover:text-zinc-950">
                     Skip for now
                   </button>
                 )}
 
                 {step === 8 && (
-                  <p className="mt-3 text-center text-[10px] font-semibold text-zinc-600">
+                  <p className="mt-3 text-center text-[10px] font-semibold text-zinc-500">
                     You can edit your shop description later.
                   </p>
                 )}
