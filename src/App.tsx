@@ -415,8 +415,20 @@ function AppContent() {
       path === '/onboarding/paywall'
     ) {
       if (path === '/signup' || path === '/onboarding' || path === '/onboarding/paywall') {
-        // Allow user to remain on onboarding/signup flow without interruption
-        console.log("[ROUTER] User is on onboarding/signup route. Allowing flow to continue.");
+        // A PWA refresh restores the current URL. If the session and shop already
+        // exist, never send that merchant back through account creation.
+        if (loggedIn) {
+          if (shopLoading) {
+            console.log("[ROUTER] Waiting for shop restoration before resolving onboarding route.");
+            return;
+          }
+          if (hasShop) {
+            console.log("[ROUTER] Existing merchant refreshed onboarding URL. Redirecting to dashboard.");
+            setAppStage('dashboard');
+            return;
+          }
+        }
+        console.log("[ROUTER] Onboarding route is valid for a new account or a merchant who has not created a shop yet.");
         return;
       }
       if (!loggedIn) {
