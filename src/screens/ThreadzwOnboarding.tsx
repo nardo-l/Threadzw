@@ -1,757 +1,206 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Eye,
-  EyeOff,
-  Instagram,
-  Loader2,
-  MapPin,
-  MessageCircle,
-  Sparkles,
-  Store,
-  Users,
-  AlertCircle,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Loader2, MessageCircle, Store, Shirt, ShoppingBag, Copy, ExternalLink, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
 
-const TOTAL_STEPS = 9;
-
+const TOTAL_STEPS = 6;
 const CITIES = ['Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 'Masvingo', 'Other'];
+const CATEGORIES = ['Clothing', 'Shoes', 'Accessories', 'Other'];
 
-const DISCOVERY_OPTIONS = [
-  { id: 'whatsapp', title: 'WhatsApp messages', note: 'Customers DM me for prices and photos', icon: MessageCircle },
-  { id: 'social', title: 'Instagram / TikTok', note: 'Customers find me on social media', icon: Instagram },
-  { id: 'walkin', title: 'Walk-in / word of mouth', note: 'People know my physical location', icon: Store },
-  { id: 'none', title: "I don't have an online presence", note: 'There is no easy way to find me online yet', icon: MapPin },
-];
+const Button = ({ children, onClick, disabled = false, secondary = false }: {
+  children: React.ReactNode; onClick?: () => void; disabled?: boolean; secondary?: boolean;
+}) => <button type="button" onClick={onClick} disabled={disabled} className={`flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50 ${secondary ? 'border border-zinc-200 bg-white text-zinc-900' : 'bg-[#C6FF00] text-zinc-950 hover:bg-[#d5ff45]'}`}>{children}</button>;
 
-const PHASES: Record<number, string> = {
-  1: 'PHASE 1 • THE PROBLEM',
-  2: 'PHASE 1 • THE PROBLEM',
-  3: 'PHASE 2 • YOUR BRAND',
-  4: 'PHASE 3 • SHOP CREATION',
-  5: 'PHASE 3 • SHOP CREATION',
-  6: 'PHASE 3 • SHOP CREATION',
-  7: 'PHASE 3 • SHOP CREATION',
-  8: 'PHASE 3 • SHOP CREATION',
-  9: 'PHASE 4 • YOUR ACCOUNT',
+const Field = (props: React.InputHTMLAttributes<HTMLInputElement> & { label: string }) => {
+  const { label, className, ...rest } = props;
+  return <label className="block space-y-1.5"><span className="text-xs font-semibold text-zinc-800">{label}</span><input {...rest} className={`h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-lime-500 ${className || ''}`} /></label>;
 };
-
-const Button = ({
-  children,
-  onClick,
-  disabled = false,
-  secondary = false,
-}: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  secondary?: boolean;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    className={[
-      'flex h-14 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-black uppercase tracking-[0.06em]',
-      'transition-all active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-40',
-      secondary
-        ? 'border border-zinc-300 bg-white text-zinc-950 hover:border-zinc-500'
-        : 'bg-[#C6FF00] text-zinc-950 shadow-[0_8px_30px_rgba(198,255,0,0.08)] hover:bg-[#d4ff3b]',
-    ].join(' ')}
-  >
-    {children}
-  </button>
-);
-
-const Field = (
-  props: React.InputHTMLAttributes<HTMLInputElement> & {
-    label?: string;
-    valid?: boolean;
-    error?: string;
-  },
-) => {
-  const { label, valid, error, className, ...inputProps } = props;
-
-  return (
-    <div className="space-y-2">
-      {label && (
-        <label className="px-1 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500">
-          {label}
-        </label>
-      )}
-      <div className="relative">
-        <input
-          {...inputProps}
-          className={[
-            'h-14 w-full rounded-2xl border bg-white px-4 text-base font-semibold text-zinc-950 outline-none',
-            'placeholder:text-zinc-500 transition-colors',
-            error
-              ? 'border-red-500/70 focus:border-red-400'
-              : valid
-                ? 'border-[#C6FF00]'
-                : 'border-zinc-300 focus:border-[#91C900]',
-            valid || error ? 'pr-12' : '',
-            className || '',
-          ].join(' ')}
-        />
-        {valid && !error && (
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#557500]">
-            <Check size={18} strokeWidth={3} />
-          </span>
-        )}
-      </div>
-      {error && <p className="px-1 text-xs font-semibold text-red-600">{error}</p>}
-    </div>
-  );
-};
-
-const SocialProof = () => (
-  <div className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-[#F5F7F2] px-4 py-3">
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#C6FF00] text-zinc-950">
-      <Users size={17} />
-    </div>
-    <div className="min-w-0">
-      <p className="text-xs font-black text-zinc-950">Built for clothing sellers in Zimbabwe</p>
-      <p className="mt-0.5 text-[10px] text-zinc-500">Create a storefront, share one link, and receive orders on WhatsApp.</p>
-    </div>
-    <Sparkles size={14} className="ml-auto shrink-0 text-[#557500]" />
-  </div>
-);
-
-const SelectionCard = ({
-  selected,
-  onClick,
-  icon: Icon,
-  title,
-  note,
-}: {
-  selected: boolean;
-  onClick: () => void;
-  icon: React.ElementType;
-  title: string;
-  note: string;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-pressed={selected}
-    className={[
-      'w-full rounded-2xl border p-4 text-left transition-all',
-      selected
-        ? 'border-[#C6FF00] bg-[#F4FFD2] shadow-[0_0_0_1px_rgba(198,255,0,.18)]'
-        : 'border-zinc-200 bg-white hover:border-zinc-300',
-    ].join(' ')}
-  >
-    <div className="flex items-center gap-3">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${selected ? 'bg-[#C6FF00] text-zinc-950' : 'bg-zinc-100 text-zinc-700'}`}>
-        <Icon size={19} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="text-sm font-black text-zinc-950">{title}</div>
-        <div className="mt-0.5 text-[11px] leading-4 text-zinc-500">{note}</div>
-      </div>
-      <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${selected ? 'border-[#C6FF00] bg-[#C6FF00] text-zinc-950' : 'border-zinc-300 text-transparent'}`}>
-        <Check size={14} strokeWidth={3} />
-      </div>
-    </div>
-  </button>
-);
 
 export const ThreadzwOnboarding: React.FC = () => {
   const navigate = useNavigate();
-  const { refreshShop } = useShopContext();
-
-  const [step, setStep] = useState(1);
-  const [shopName, setShopName] = useState('');
-  const [discovery, setDiscovery] = useState<string[]>([]);
-  const [city, setCity] = useState('');
-  const [phone, setPhone] = useState('+263 ');
-  const [bio, setBio] = useState('');
+  const { refreshShop, shop } = useShopContext();
+  const [step, setStep] = useState(() => {
+    const saved = Number(localStorage.getItem('threadzw_onboarding_step') || 1);
+    return Number.isFinite(saved) && saved >= 1 && saved <= TOTAL_STEPS ? saved : 1;
+  });
+  const [category, setCategory] = useState(localStorage.getItem('threadzw_onboarding_category') || 'Clothing');
+  const [city, setCity] = useState(localStorage.getItem('threadzw_onboarding_city') || '');
+  const [otherCity, setOtherCity] = useState('');
+  const [shopName, setShopName] = useState(localStorage.getItem('threadzw_onboarding_shop_name') || '');
+  const [phone, setPhone] = useState(localStorage.getItem('threadzw_onboarding_phone') || '+263 ');
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [createdShopId, setCreatedShopId] = useState(localStorage.getItem('threadzw_onboarding_shop_id') || '');
+  const [shopSlug, setShopSlug] = useState(localStorage.getItem('threadzw_onboarding_shop_slug') || '');
+  const [copied, setCopied] = useState(false);
 
-  const slug = useMemo(
-    () => shopName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    [shopName],
-  );
-
-  const go = (next: number) => {
-    setError('');
-    setStep(Math.max(1, Math.min(TOTAL_STEPS, next)));
-  };
-
-  const phoneDigits = phone.replace(/\D/g, '');
-  const validShopName = shopName.trim().length >= 2;
-  const validPhone = phoneDigits.length >= 9;
-  const validEmail = email.trim().includes('@') && email.trim().includes('.');
+  const slug = useMemo(() => shopName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), [shopName]);
+  const selectedCity = city === 'Other' ? otherCity.trim() : city;
+  const phoneDigits = phone.replace(/\D/g, '').replace(/^263/, '');
+  const validPhone = phoneDigits.length >= 8 && phoneDigits.length <= 9;
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const validPassword = password.length >= 6;
+  const shopUrl = shopSlug ? `${window.location.origin}/${shopSlug}` : '';
 
+  useEffect(() => { localStorage.setItem('threadzw_onboarding_step', String(step)); }, [step]);
+  useEffect(() => {
+    localStorage.setItem('threadzw_onboarding_category', category);
+    localStorage.setItem('threadzw_onboarding_city', city);
+    localStorage.setItem('threadzw_onboarding_shop_name', shopName);
+    localStorage.setItem('threadzw_onboarding_phone', phone);
+  }, [category, city, shopName, phone]);
+
+  const go = (next: number) => { setError(''); setStep(Math.max(1, Math.min(TOTAL_STEPS, next))); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const formatPhone = (value: string) => {
-    const digits = value.replace(/\D/g, '').replace(/^263/, '');
-    const limited = digits.slice(0, 9);
-    const groups = [limited.slice(0, 2), limited.slice(2, 5), limited.slice(5, 9)].filter(Boolean);
-    setPhone(`+263 ${groups.join(' ')}`);
+    const digits = value.replace(/\D/g, '').replace(/^263/, '').slice(0, 9);
+    setPhone('+263 ' + [digits.slice(0, 2), digits.slice(2, 5), digits.slice(5, 9)].filter(Boolean).join(' '));
   };
 
   const createAccountAndShop = async () => {
-    if (!ownerName.trim()) return setError('Tell us your name.');
+    if (!ownerName.trim()) return setError('Enter your name to continue.');
     if (!validEmail) return setError('Enter a valid email address.');
-    if (!validPassword) return setError('Use at least 6 characters for your password.');
-    if (!validShopName) return setError('Enter your shop name.');
-    if (!city) return setError('Choose your shop location.');
-    if (!validPhone) return setError('Enter your WhatsApp number.');
-
-    setLoading(true);
-    setError('');
-
+    if (!validPassword) return setError('Use a password with at least 6 characters.');
+    if (shopName.trim().length < 2) return setError('Enter a shop name with at least 2 characters.');
+    if (!selectedCity) return setError('Choose your city or enter it under Other.');
+    if (!validPhone) return setError('Enter a valid Zimbabwe WhatsApp number.');
+    setLoading(true); setError('');
     try {
-      const normalizedEmail = email.trim().toLowerCase();
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
+        email: email.trim().toLowerCase(), password,
         options: { data: { full_name: ownerName.trim(), phone_number: phone.trim() } },
       });
-
-      const alreadyRegistered =
-        signUpError?.message?.toLowerCase().includes('already registered') ||
+      const alreadyRegistered = signUpError?.message?.toLowerCase().includes('already registered') ||
         signUpError?.message?.toLowerCase().includes('already exists') ||
-        (data?.user &&
-          !data.session &&
-          Array.isArray(data.user.identities) &&
-          data.user.identities.length === 0);
-
-      if (alreadyRegistered) {
-        setError('EMAIL_ALREADY_EXISTS');
-        return;
-      }
-
+        (!!data.user && !data.session && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+      if (alreadyRegistered) throw new Error('An account with this email already exists. Sign in instead.');
       if (signUpError) throw signUpError;
-
-      const user = data.user;
-
-      if (!data.session) {
-        if (!user) throw new Error('Your account could not be created.');
-        throw new Error('ACCOUNT_CONFIRMATION_REQUIRED');
-      }
-
-      if (!user) throw new Error('Your account could not be created.');
-
-      const { data: shopId, error: shopError } = await supabase.rpc('create_shop_from_onboarding', {
+      if (!data.session || !data.user) throw new Error('Your account was created, but email confirmation is required. Confirm your email, then sign in to finish creating your shop.');
+      const shopCategory = category === 'Clothing' ? 'clothing' : 'general';
+      const { data: newShopId, error: shopError } = await supabase.rpc('create_shop_from_onboarding', {
         p_shop: {
-          name: shopName.trim(),
-          slug: slug || `shop-${Date.now().toString(36)}`,
-          description: bio.trim() || `${shopName.trim()} official storefront on ThreadZW.`,
-          bio: bio.trim() || null,
-          whatsapp_number: phone.trim(),
-          city,
+          name: shopName.trim(), slug: slug || `shop-${Date.now().toString(36)}`,
+          description: `${shopName.trim()} storefront on ThreadZW.`, bio: null,
+          whatsapp_number: phone.trim(), city: selectedCity, page_type: shopCategory,
         },
       });
-
       if (shopError) throw shopError;
-      if (!shopId) throw new Error('Your shop could not be created.');
-
-      localStorage.removeItem('threadzw_onboarding_step');
+      if (!newShopId) throw new Error('Your account was created, but the shop was not returned by the server. Please sign in and try again.');
+      setCreatedShopId(String(newShopId));
+      const { data: savedShop } = await supabase.from('shops').select('slug').eq('id', newShopId).maybeSingle();
+      const savedSlug = savedShop?.slug || slug;
+      setShopSlug(savedSlug);
+      localStorage.setItem('threadzw_onboarding_shop_id', String(newShopId));
+      localStorage.setItem('threadzw_onboarding_shop_slug', savedSlug);
       localStorage.setItem('threadzw_onboarding_completed', 'true');
       localStorage.setItem('threadzw_logged_in', 'true');
-      localStorage.setItem('supabase_logged_in_user_id', user.id);
-      localStorage.setItem('threadzw_shop_id', shopId);
-
+      localStorage.setItem('supabase_logged_in_user_id', data.user.id);
       await refreshShop();
-      toast.success('Your 3-day unlimited trial has started. Let’s build your storefront.');
-      navigate('/dashboard', { replace: true });
+      toast.success('Your shop has been created and your 3-day unlimited trial has started.');
+      go(4);
     } catch (e: any) {
-      const raw = String(e?.message || '').toLowerCase();
-      if (raw.includes('already registered') || raw.includes('already exists')) {
-        setError('EMAIL_ALREADY_EXISTS');
-      } else if (raw === 'account_confirmation_required') {
-        setError(
-          'Your account was created, but email confirmation is required before we can finish your shop setup. Check your inbox and then sign in.',
-        );
-      } else {
-        setError(e?.message || 'Could not finish your ThreadZW setup.');
-      }
-    } finally {
-      setLoading(false);
-    }
+      setError(e?.message || 'We could not create your account and shop. Please try again.');
+    } finally { setLoading(false); }
   };
 
-  const toggleDiscovery = (id: string) => {
-    setDiscovery(current =>
-      id === 'none'
-        ? current.includes('none')
-          ? []
-          : ['none']
-        : [...current.filter(item => item !== 'none'), ...(current.includes(id) ? [] : [id])],
-    );
+  const signInWithGoogle = async () => {
+    setLoading(true); setError('');
+    try {
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (authError) throw authError;
+    } catch (e: any) { setError(e?.message || 'Google sign-in is unavailable right now.'); setLoading(false); }
   };
 
-  const renderProgress = () => (
-    <div className="space-y-2.5" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>
-      <div className="flex items-end justify-between">
-        <span className="text-[11px] font-black tracking-wide text-zinc-950">
-          Step {step} of {TOTAL_STEPS}
-        </span>
-        <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-zinc-500">
-          {Math.round((step / TOTAL_STEPS) * 100)}%
-        </span>
-      </div>
-      <div className="flex gap-1.5">
-        {Array.from({ length: TOTAL_STEPS }).map((_, index) => (
-          <div
-            key={index}
-            className={[
-              'h-1.5 flex-1 rounded-full transition-all duration-300',
-              index < step - 1 ? 'bg-[#9ACD00]' : index === step - 1 ? 'bg-[#C6FF00]' : 'bg-zinc-200',
-            ].join(' ')}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  const copyLink = async () => {
+    if (!shopUrl) return;
+    try { await navigator.clipboard.writeText(shopUrl); setCopied(true); toast.success('Shop link copied.'); }
+    catch { toast.error('Could not copy the link. You can select and copy it manually.'); }
+  };
 
-  const renderError = () =>
-    error ? (
-      <motion.div
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl border border-red-200 bg-red-50 p-4"
-      >
-        <div className="flex gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
-            <AlertCircle size={18} />
-          </div>
-          <div>
-            <p className="text-sm font-black text-red-700">
-              {error === 'EMAIL_ALREADY_EXISTS' ? 'Email already in use' : 'We couldn’t finish your signup'}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-red-600">
-              {error === 'EMAIL_ALREADY_EXISTS'
-                ? 'An account with this email already exists on ThreadZW. Try logging in instead.'
-                : error}
-            </p>
-          </div>
-        </div>
-        {error === 'EMAIL_ALREADY_EXISTS' && (
-          <button
-            type="button"
-            onClick={() => navigate('/login')}
-            className="mt-4 w-full rounded-xl bg-[#C6FF00] py-2.5 text-xs font-black text-zinc-950"
-          >
-            Go to Log In
-          </button>
-        )}
-      </motion.div>
-    ) : null;
+  const renderError = error ? <div role="alert" className="flex gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700"><AlertCircle size={18} className="shrink-0" /><span>{error}</span></div> : null;
 
   const renderStep = () => {
-    if (step === 1) {
-      return (
-        <>
-          <div className="flex h-20 w-20 -rotate-3 items-center justify-center rounded-[26px] bg-[#C6FF00] text-4xl font-black text-zinc-950 shadow-[4px_4px_0_#DDE5D0]">
-            TZ
-          </div>
-          <p className="mt-7 text-[10px] font-black uppercase tracking-[0.22em] text-[#557500]">WELCOME TO THREADZW</p>
-          <h1 className="mt-3 text-[2.75rem] font-black leading-[0.93] tracking-tight">
-            Create your ThreadZW shop
-          </h1>
-          <p className="mt-5 max-w-sm text-base leading-7 text-zinc-500">
-            One link for your products and WhatsApp orders.
-          </p>
-
-          <div className="mt-7 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-            {[
-              ['3-day unlimited trial', 'Then $1.59/month after trial'],
-              ['No coding required', 'Just answer a few questions'],
-              ['Orders on WhatsApp', 'Simple and familiar'],
-            ].map(([title, note]) => (
-              <div key={title} className="rounded-2xl border border-zinc-200 bg-[#F5F7F2] px-4 py-3.5">
-                <p className="text-xs font-black text-zinc-950">{title}</p>
-                <p className="mt-1 text-[10px] leading-4 text-zinc-500">{note}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-5">
-            <SocialProof />
-          </div>
-        </>
-      );
-    }
-
-    if (step === 2) {
-      return (
-        <>
-          <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">
-            Getting started
-          </h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
-            Give customers one place to browse your products, prices and shop details.
-          </p>
-
-          <div className="mt-7 space-y-2 rounded-[1.5rem] border border-zinc-200 bg-[#F5F7F2] p-3">
-            {['How much is this dress?', 'Do you have it in black?', 'Can I see more pictures?', 'Where are you located?'].map((text, i) => (
-              <div key={text} className="flex items-center gap-3 rounded-2xl bg-zinc-100 px-4 py-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-700 text-[9px] font-black">C</div>
-                <span className="flex-1 text-xs font-semibold text-zinc-800">{text}</span>
-                <span className="text-[9px] text-zinc-500">10:{24 + i}</span>
-              </div>
-            ))}
-            <div className="rounded-2xl bg-[#C6FF00] px-4 py-3 text-xs font-black text-zinc-950">
-              It’s available! How do I order?
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <SocialProof />
-          </div>
-        </>
-      );
-    }
-
-    if (step === 3) {
-      return (
-        <>
-          <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">
-            Create your shop
-          </h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
-            Share one storefront across WhatsApp, Instagram and TikTok.
-          </p>
-
-          <div className="mt-7 space-y-2">
-            {[
-              ['TikTok', 'Drive traffic from TikTok'],
-              ['Instagram', 'Share with your followers'],
-              ['Facebook', 'Reach more customers'],
-            ].map(([title, note], index) => (
-              <div
-                key={title}
-                className={[
-                  'flex items-center gap-3 rounded-2xl border p-4',
-                  index === 1 ? 'border-[#C6FF00] bg-[#F4FFD2]' : 'border-zinc-200 bg-white',
-                ].join(' ')}
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 text-sm font-black">
-                  {title[0]}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-black text-zinc-950">{title}</p>
-                  <p className="text-[10px] text-zinc-500">{note}</p>
-                </div>
-                {index === 1 && <Check size={18} className="text-[#557500]" />}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-zinc-200 bg-[#F5F7F2] px-4 py-3">
-            <p className="text-[9px] font-black uppercase tracking-[0.16em] text-zinc-500">YOUR THREADZW LINK</p>
-            <p className="mt-1 text-sm font-black text-zinc-950">Your unique shop link appears here after setup</p>
-          </div>
-        </>
-      );
-    }
-
-    if (step === 4) {
-      return (
-        <>
-          <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">What’s your shop called?</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
-            This is the name customers will see on your ThreadZW storefront.
-          </p>
-
-          <div className="mt-7">
-            <Field
-              label="Shop name"
-              autoFocus
-              value={shopName}
-              onChange={e => setShopName(e.target.value)}
-              placeholder="Nulla Streetwear"
-              maxLength={60}
-              valid={validShopName}
-              error={shopName.length > 0 && !validShopName ? 'Use at least 2 characters.' : undefined}
-              autoComplete="organization"
-            />
-          </div>
-
-          {validShopName && (
-            <div className="mt-4 rounded-2xl border border-zinc-200 bg-[#F5F7F2] p-4">
-              <p className="text-[9px] font-black uppercase tracking-[0.16em] text-zinc-500">PREVIEW</p>
-              <div className="mt-2 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#C6FF00] text-xs font-black text-zinc-950">TZ</div>
-                <div>
-                  <p className="text-sm font-black text-zinc-950">{shopName.trim()}</p>
-                  <p className="text-[10px] text-zinc-500">Your shop link preview</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (step === 5) {
-      return (
-        <>
-          <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">How do customers find your products right now?</h1>
-          <p className="mt-5 text-sm leading-6 text-zinc-500">Select all that apply. You can change this later.</p>
-
-          <div className="mt-6 space-y-2.5">
-            {DISCOVERY_OPTIONS.map(option => {
-              const Icon = option.icon;
-              const selected = discovery.includes(option.id);
-              return (
-                <SelectionCard
-                  key={option.id}
-                  selected={selected}
-                  onClick={() => toggleDiscovery(option.id)}
-                  icon={Icon}
-                  title={option.title}
-                  note={option.note}
-                />
-              );
-            })}
-          </div>
-        </>
-      );
-    }
-
-    if (step === 6) {
-      return (
-        <>
-          <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Where is your shop based?</h1>
-          <p className="mt-5 text-sm leading-6 text-zinc-500">
-            Choose the city customers should see when they want to visit you.
-          </p>
-
-          <div className="mt-6 grid grid-cols-2 gap-2.5">
-            {CITIES.map(item => {
-              const selected = city === item;
-              return (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => setCity(item)}
-                  aria-pressed={selected}
-                  className={[
-                    'min-h-14 rounded-2xl border px-4 text-left text-sm font-black transition-all',
-                    selected ? 'border-[#C6FF00] bg-[#F4FFD2] text-zinc-950' : 'border-zinc-200 bg-white text-zinc-700',
-                  ].join(' ')}
-                >
-                  <span className="flex items-center justify-between gap-2">
-                    {item}
-                    <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-[#C6FF00] bg-[#C6FF00] text-zinc-950' : 'border-zinc-300 text-transparent'}`}>
-                      <Check size={12} strokeWidth={3} />
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      );
-    }
-
-    if (step === 7) {
-      return (
-        <>
-          <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Where should customer orders go?</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
-            We’ll open WhatsApp with a ready-to-send order message.
-          </p>
-
-          <div className="mt-7">
-            <Field
-              label="WhatsApp number"
-              value={phone}
-              onChange={e => formatPhone(e.target.value)}
-              placeholder="+263 77 123 4567"
-              inputMode="tel"
-              type="tel"
-              autoComplete="tel"
-              valid={validPhone}
-              error={phone.trim() !== '+263' && !validPhone ? 'Enter a valid Zimbabwe WhatsApp number.' : undefined}
-            />
-          </div>
-
-          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-zinc-200 bg-[#F5F7F2] p-4">
-            <MessageCircle size={18} className="mt-0.5 shrink-0 text-[#557500]" />
-            <p className="text-xs leading-5 text-zinc-500">Your number is used for customer orders and questions.</p>
-          </div>
-        </>
-      );
-    }
-
-    if (step === 8) {
-      return (
-        <>
-          <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Tell customers a little about your shop.</h1>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
-            Add a short description customers will remember.
-          </p>
-
-          <div className="mt-7 space-y-2">
-            <label className="px-1 text-[11px] font-black uppercase tracking-[0.14em] text-zinc-500">Shop description</label>
-            <textarea
-              value={bio}
-              onChange={e => setBio(e.target.value)}
-              placeholder="We make clean everyday streetwear in Bulawayo..."
-              maxLength={240}
-              className="min-h-40 w-full resize-none rounded-2xl border border-zinc-300 bg-white px-4 py-4 text-base font-semibold text-zinc-950 outline-none placeholder:text-zinc-500 transition-colors focus:border-[#91C900]"
-            />
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] text-zinc-500">Optional</span>
-              <span className="text-[10px] text-zinc-500">{bio.length}/240</span>
-            </div>
-          </div>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <h1 className="text-[2.65rem] font-black leading-[0.94] tracking-tight">Almost there. Create your account.</h1>
-        <p className="mt-5 max-w-sm text-sm leading-6 text-zinc-500">
-          Your shop details are ready. Create your owner account and we’ll take you straight to your ThreadZW setup.
-        </p>
-
-        <div className="mt-7 space-y-4">
-          <Field
-            label="Your name"
-            autoFocus
-            value={ownerName}
-            onChange={e => setOwnerName(e.target.value)}
-            placeholder="What should we call you?"
-            autoComplete="name"
-            valid={ownerName.trim().length >= 2}
-          />
-          <Field
-            label="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            valid={validEmail}
-            error={email.length > 0 && !validEmail ? 'Enter a valid email address.' : undefined}
-          />
-          <div className="relative">
-            <Field
-              label="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="At least 6 characters"
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              valid={validPassword}
-              error={password.length > 0 && !validPassword ? 'Use at least 6 characters.' : undefined}
-              className="pr-12"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(value => !value)}
-              className="absolute right-2 top-[31px] rounded-xl p-2.5 text-zinc-500 hover:text-zinc-950"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-            </button>
-          </div>
-        </div>
-
-        {renderError()}
-
-        <div className="mt-5">
-          <SocialProof />
-        </div>
-      </>
-    );
-  };
-
-  const getPrimaryAction = () => {
-    if (step === 1) return { label: 'CONTINUE', onClick: () => go(2), disabled: false };
-    if (step === 2) return { label: 'CONTINUE', onClick: () => go(3), disabled: false };
-    if (step === 3) return { label: 'CONTINUE', onClick: () => go(4), disabled: false };
-    if (step === 4) return { label: 'CONTINUE', onClick: () => go(5), disabled: !validShopName };
-    if (step === 5) return { label: 'CONTINUE', onClick: () => go(6), disabled: discovery.length === 0 };
-    if (step === 6) return { label: 'CONTINUE', onClick: () => go(7), disabled: !city };
-    if (step === 7) return { label: 'CONTINUE', onClick: () => go(8), disabled: !validPhone };
-    if (step === 8) return { label: 'CONTINUE TO SIGN UP', onClick: () => go(9), disabled: false };
-    return { label: loading ? 'STARTING YOUR TRIAL…' : 'START MY 3-DAY FREE TRIAL', onClick: createAccountAndShop, disabled: loading };
-  };
-
-  const primary = getPrimaryAction();
-
-  return (
-    <div className="fixed inset-0 z-[45] overflow-hidden bg-[#F8FAF7] font-sans text-zinc-950">
-      <div className="mx-auto flex h-full w-full max-w-md flex-col">
-        <header className="shrink-0 border-b border-zinc-900/80 bg-[#F8FAF7]/95 px-5 pb-4 pt-5 backdrop-blur-md">
-          <div className="mb-5 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => (step > 1 ? go(step - 1) : navigate('/'))}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-950 transition hover:border-zinc-300"
-              aria-label="Go back"
-            >
-              <ArrowLeft size={18} />
-            </button>
-
-            <span className="text-lg font-black tracking-tight text-[#557500]">ThreadZW</span>
-
-            <span className="w-16 text-right text-[10px] font-black text-zinc-500">
-              Step {step} of {TOTAL_STEPS}
-            </span>
-          </div>
-
-          {renderProgress()}
-          <p className="mt-3 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-500">{PHASES[step]}</p>
-        </header>
-
-        <main className="min-h-0 flex-1 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, x: 18 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -18 }}
-              transition={{ duration: 0.18 }}
-              className="flex min-h-full flex-col px-5 py-7"
-            >
-              <div className="pb-8">{renderStep()}</div>
-
-              <div className="mt-auto border-t border-zinc-900 pt-5">
-                <Button disabled={primary.disabled} onClick={primary.onClick}>
-                  {loading ? <Loader2 size={17} className="animate-spin" /> : null}
-                  {primary.label}
-                  {!loading && <ArrowRight size={17} />}
-                </Button>
-
-                {step === 5 && (
-                  <button type="button" onClick={() => go(6)} className="mt-2 h-10 w-full text-xs font-bold text-zinc-500 hover:text-zinc-950">
-                    Skip for now
-                  </button>
-                )}
-
-                {step === 8 && (
-                  <p className="mt-3 text-center text-[10px] font-semibold text-zinc-500">
-                    You can edit your shop description later.
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </main>
+    if (step === 1) return <>
+      <div className="flex h-14 w-14 -rotate-3 items-center justify-center rounded-2xl bg-[#C6FF00] text-xl font-black">TZ</div>
+      <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight">Create your ThreadZW shop</h1>
+      <p className="mt-2 text-sm leading-5 text-zinc-500">One link for your products and WhatsApp orders.</p>
+      <div className="mt-6 space-y-4">
+        <Field label="Your name" value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your name" autoComplete="name" />
+        <Field label="Email address" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
+        <label className="block space-y-1.5"><span className="text-xs font-semibold text-zinc-800">Password</span><div className="relative"><input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" placeholder="At least 6 characters" className="h-12 w-full rounded-xl border border-zinc-200 px-3 pr-12 text-sm outline-none focus:border-lime-500" /><button type="button" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? 'Hide password' : 'Show password'} className="absolute right-2 top-2 rounded-lg p-2 text-zinc-500">{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div></label>
+        {renderError}
+        <Button onClick={() => { setError(''); if (!ownerName.trim() || !validEmail || !validPassword) { setError('Enter your name, a valid email, and a password of at least 6 characters.'); return; } go(2); }}>Continue with email <ArrowRight size={16} /></Button>
+        <div className="flex items-center gap-3 text-xs text-zinc-400"><span className="h-px flex-1 bg-zinc-200" />or<span className="h-px flex-1 bg-zinc-200" /></div>
+        <Button secondary onClick={signInWithGoogle} disabled={loading}><span className="font-bold text-blue-600">G</span> Continue with Google</Button>
+        <p className="text-center text-xs text-zinc-500">Already have an account? <button onClick={() => navigate('/login')} className="font-bold text-zinc-900 underline">Sign in</button></p>
       </div>
+    </>;
+    if (step === 2) return <>
+      <h1 className="text-3xl font-extrabold tracking-tight">Getting started</h1>
+      <p className="mt-2 text-sm text-zinc-500">What do you sell? Choose the category that best describes your shop.</p>
+      <div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map(item => <button key={item} type="button" onClick={() => setCategory(item)} aria-pressed={category === item} className={`flex min-h-20 items-center gap-2 rounded-xl border p-3 text-left text-sm font-semibold ${category === item ? 'border-lime-400 bg-lime-50' : 'border-zinc-200 bg-white'}`}><span className={`flex h-8 w-8 items-center justify-center rounded-lg ${category === item ? 'bg-[#C6FF00]' : 'bg-zinc-100'}`}>{item === 'Clothing' ? <Shirt size={17}/> : <ShoppingBag size={17}/>}</span>{item}{category === item && <Check size={16} className="ml-auto" />}</button>)}</div>
+      <div className="mt-6"><label className="block space-y-2"><span className="text-xs font-semibold">City</span><select value={city} onChange={e => setCity(e.target.value)} className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm"><option value="">Choose your city</option>{CITIES.map(c => <option key={c}>{c}</option>)}</select></label>{city === 'Other' && <div className="mt-3"><Field label="Your city or town" value={otherCity} onChange={e => setOtherCity(e.target.value)} placeholder="Enter city or town" /></div>}</div>
+      <p className="mt-4 text-xs text-zinc-500">You can update your shop details later in your dashboard.</p>
+    </>;
+    if (step === 3) return <>
+      <h1 className="text-3xl font-extrabold tracking-tight">Create your shop</h1><p className="mt-2 text-sm text-zinc-500">Add the details customers will use to recognise your shop and contact you.</p>
+      <div className="mt-5 space-y-4"><Field label="Shop name" value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Your shop name" autoComplete="organization" maxLength={60}/><Field label="WhatsApp order number" value={phone} onChange={e => formatPhone(e.target.value)} placeholder="+263 77 123 4567" inputMode="tel" type="tel" autoComplete="tel"/>
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"><p className="text-[11px] font-semibold text-zinc-500">SHOP LINK PREVIEW</p><p className="mt-1 break-all text-sm font-semibold">{slug ? `${window.location.origin}/${slug}` : 'Your link will be based on your shop name'}</p><p className="mt-1 text-xs text-zinc-500">The final link is confirmed after your shop is saved.</p></div></div>
+      {renderError}
+    </>;
+    if (step === 4) return <>
+      <h1 className="text-3xl font-extrabold tracking-tight">Start your free trial</h1><p className="mt-2 text-sm text-zinc-500">Get your shop online and add products. You can decide about payment after your trial.</p>
+      <div className="mt-5 rounded-2xl border border-zinc-200 p-5"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-lime-100"><Store size={22}/></div><div><p className="font-bold">3-day unlimited trial</p><p className="text-sm text-zinc-500">No payment required to start</p></div></div><ul className="mt-5 space-y-3 text-sm">{['Create and share your storefront','Add unlimited products during the trial','Receive customer enquiries and orders through WhatsApp'].map(t => <li key={t} className="flex gap-2"><Check size={17} className="shrink-0 text-lime-600"/>{t}</li>)}</ul><div className="mt-5 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-600">After the trial, ThreadZW Pro is $1.59/month. Your shop stays online in view-only mode until payment is verified.</div></div>
+      {renderError}
+    </>;
+    if (step === 5) return <>
+      <h1 className="text-3xl font-extrabold tracking-tight">Add your products</h1><p className="mt-2 text-sm text-zinc-500">Your shop is created. Add products with photos, prices, and stock using ThreadZW’s product editor.</p>
+      <div className="mt-5 rounded-2xl border border-zinc-200 bg-white p-4"><div className="flex items-center gap-3"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-lime-100"><ShoppingBag size={20}/></div><div className="flex-1"><p className="font-bold">Product details and photos</p><p className="mt-1 text-xs text-zinc-500">Use the existing product editor to save and publish products.</p></div></div><div className="mt-4"><Button onClick={() => { localStorage.setItem('threadzw_onboarding_return_to_ready', 'true'); navigate('/add-product'); }}>Open product editor <ArrowRight size={16}/></Button></div></div>
+      <p className="mt-4 text-xs leading-5 text-zinc-500">You can also add products later from your dashboard. Product setup is optional for now.</p>
+    </>;
+    const realUrl = shopUrl || (shop?.slug ? `${window.location.origin}/${shop.slug}` : '');
+    return <>
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lime-100 text-lime-700"><Check size={28}/></div>
+      <h1 className="mt-4 text-center text-3xl font-extrabold tracking-tight">Your shop is ready!</h1>
+      <p className="mt-2 text-center text-sm text-zinc-500">Share your storefront and invite customers to browse products and contact you on WhatsApp.</p>
+      {realUrl ? <div className="mt-5 rounded-xl border border-zinc-200 p-3"><p className="break-all text-sm font-semibold">{realUrl}</p><div className="mt-3 grid grid-cols-2 gap-2"><Button secondary onClick={copyLink}><Copy size={15}/>{copied ? 'Copied' : 'Copy link'}</Button><Button secondary onClick={() => window.open(realUrl, '_blank', 'noopener,noreferrer')}><ExternalLink size={15}/>Visit shop</Button></div><Button onClick={() => { const message = encodeURIComponent(`Check out my ThreadZW shop: ${realUrl}`); window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer'); }}><MessageCircle size={16}/>Share on WhatsApp</Button></div> : <div role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Your shop link is not available yet. Please open your dashboard to confirm your shop was saved.</div>}
+      <div className="mt-4"><Button onClick={() => { localStorage.removeItem('threadzw_onboarding_step'); localStorage.removeItem('threadzw_onboarding_return_to_ready'); navigate('/dashboard', { replace: true }); }}>Go to dashboard <ArrowRight size={16}/></Button></div>
+    </>;
+  };
+
+  const next = async () => {
+    setError('');
+    if (step === 2 && (!selectedCity || (city === 'Other' && !otherCity.trim()))) { setError('Choose or enter your city to continue.'); return; }
+    if (step === 3) { await createAccountAndShop(); return; }
+    if (step === 4) { go(5); return; }
+    if (step === 5) { go(6); return; }
+    if (step < TOTAL_STEPS) go(step + 1);
+  };
+
+  return <div className="fixed inset-0 z-[45] overflow-y-auto bg-[#FAFBF8] font-sans text-zinc-950">
+    <div className="mx-auto flex min-h-full w-full max-w-md flex-col bg-white shadow-sm">
+      <header className="sticky top-0 z-10 border-b border-zinc-100 bg-white/95 px-5 pb-4 pt-4 backdrop-blur">
+        <div className="mb-4 flex items-center justify-between"><button type="button" onClick={() => step > 1 ? go(step - 1) : navigate('/')} aria-label="Go back" className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white"><ArrowLeft size={17}/></button><span className="text-lg font-black tracking-tight">Thread<span className="text-lime-600">ZW</span></span><span className="text-xs font-medium text-zinc-500">{step} / {TOTAL_STEPS}</span></div>
+        <div className="flex gap-1.5" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>{Array.from({length: TOTAL_STEPS}, (_,i) => <div key={i} className={`h-1.5 flex-1 rounded-full ${i < step ? 'bg-[#C6FF00]' : 'bg-zinc-200'}`}/>)}</div>
+      </header>
+      <main className="flex flex-1 flex-col px-5 py-6">
+        <AnimatePresence mode="wait"><motion.div key={step} initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.16}} className="flex flex-1 flex-col">
+          <div className="flex-1">{renderStep()}</div>
+          {step !== 1 && step !== 6 && <div className="mt-5">{renderError}</div>}
+          {step !== 1 && step !== 6 && <div className="mt-5"><Button onClick={next} disabled={loading}>{loading ? <Loader2 size={17} className="animate-spin"/> : null}{step === 3 ? 'Create shop' : step === 4 ? 'Continue with trial' : 'Continue'} <ArrowRight size={16}/></Button></div>}
+          {step === 5 && <button type="button" onClick={() => go(6)} className="mt-3 min-h-10 text-sm font-medium text-zinc-500 underline">I’ll do this later</button>}
+          {step === 6 && <div className="mt-auto pt-5"><Button onClick={() => { localStorage.removeItem('threadzw_onboarding_step'); navigate('/dashboard', {replace:true}); }}>Go to dashboard <ArrowRight size={16}/></Button></div>}
+        </motion.div></AnimatePresence>
+      </main>
     </div>
-  );
+  </div>;
 };
