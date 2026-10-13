@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import {
   aggregateMetrics,
   buildSetupMessage,
+  buildTrialReminderMessage,
   buildSummaryMessage,
   formatLocalDate,
   getLocalDayRange,
@@ -36,6 +37,17 @@ assert.equal(isShopProfileComplete({ ...completeShop, banner_url: null }), false
 assert.equal(buildSetupMessage({ ...completeShop, location: null }, 0)?.type, 'setup_reminder');
 assert.equal(buildSetupMessage(completeShop, 0)?.type, 'first_product_reminder');
 assert.equal(buildSetupMessage(completeShop, 1), null);
+
+const trialShop = {
+  ...completeShop,
+  account_status: 'trial',
+  plan: 'free',
+  trial_ends_at: '2026-08-28T12:00:00.000Z'
+};
+assert.match(buildTrialReminderMessage(trialShop, new Date('2026-08-26T12:00:00.000Z'))?.title || '', /2 days left/);
+assert.match(buildTrialReminderMessage(trialShop, new Date('2026-08-27T12:30:00.000Z'))?.title || '', /less than 24 hours/);
+assert.equal(buildTrialReminderMessage({ ...trialShop, trial_ends_at: '2026-08-25T12:00:00.000Z' }, new Date('2026-08-26T12:00:00.000Z')), null);
+assert.equal(buildTrialReminderMessage({ ...trialShop, plan: 'premium' }, new Date('2026-08-26T12:00:00.000Z')), null);
 
 const metrics = aggregateMetrics(
   [
