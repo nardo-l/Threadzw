@@ -128,7 +128,9 @@ export async function trackEvent(params: TrackEventParams) {
     // Forensic Log: INSERT PAYLOAD
     console.log("INSERT PAYLOAD", eventPayload);
 
-    const { data, error } = await supabase.from('shop_analytics').insert([eventPayload]).select();
+    const { error } = await supabase.from('shop_analytics').insert([eventPayload]);
+    // Do not chain .select() here: anonymous storefront visitors may insert analytics,
+    // but the SELECT policy is owner-only. RETURNING rows would make the public insert fail.
 
     // Forensic Log: SUPABASE RESULT
     console.log("SUPABASE RESULT", {
@@ -142,7 +144,9 @@ export async function trackEvent(params: TrackEventParams) {
       console.log("Insert Successful:", data);
     }
 
-    return { data, error };
+    // Return the visitor ID locally so shop-visit notification dispatch does not depend
+    // on selecting the newly inserted row (which anonymous visitors are not allowed to do).
+    return { data: error ? null : [{ visitor_id: visitorId }], error };
   } catch (err: any) {
     console.error("ANALYTICS INSERT FAILED", err);
   }
