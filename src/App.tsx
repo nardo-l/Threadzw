@@ -659,7 +659,7 @@ function AppContent() {
     return <SubscriptionSuccess />;
   }
 
-  const isShopEditingPath = cleanPath === '/customise-shop' || cleanPath === '/inventory' || cleanPath === '/edit-shop' || cleanPath === '/edit-profile' || cleanPath === '/account' || cleanPath === '/add-product' || cleanPath.startsWith('/edit-product') || cleanPath === '/add-vehicle' || cleanPath.startsWith('/edit-vehicle');
+  const isShopEditingPath = cleanPath === '/inventory' || cleanPath === '/edit-shop' || cleanPath === '/edit-profile' || cleanPath === '/account' || cleanPath === '/add-product' || cleanPath.startsWith('/edit-product') || cleanPath === '/add-vehicle' || cleanPath.startsWith('/edit-vehicle');
   if (isDashboardSubPath && isShopEditingPath && isShopViewOnly(shop)) {
     return <Navigate to="/subscription" replace />;
   }
