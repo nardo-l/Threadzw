@@ -306,6 +306,7 @@ async function claimDelivery(supabase: any, input: {
       profile_id: input.profileId,
       shop_id: input.shopId || null,
       notification_type: input.notificationType,
+      notification_date: input.localDate,
       slot: input.slot,
       local_date: input.localDate,
       status: 'processing',
