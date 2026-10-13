@@ -375,6 +375,13 @@ async function deliverNotification(supabase: any, input: {
       throw new Error(inboxResult.error);
     }
 
+    // If the inbox item already exists for this delivery key, don't send a
+    // duplicate push. Mark the claim complete so the scheduler won't retry it.
+    if (!inboxResult.created) {
+      await finishDelivery(supabase, claim, { status: 'sent', pushSentCount: 0 });
+      return { created: false, skipped: true, pushSentCount: 0 };
+    }
+
     let pushSentCount = 0;
     if (input.pushEnabled) {
       const pushResult = await sendPushToProfile(supabase, input.profileId, {
