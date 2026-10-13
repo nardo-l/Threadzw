@@ -33,7 +33,6 @@ import { ShopSetupChecklist } from '../components/dashboard/ShopSetupChecklist';
 import { toast } from 'sonner';
 import { Paywall } from './Paywall';
 import { DashboardPlanCard } from '../components/plans/DashboardPlanCard';
-import { WhyShopWithUsManager } from '../components/dashboard/WhyShopWithUsManager';
 import { subscriptionClient } from '../services/subscriptionClient';
 
 export const Dashboard: React.FC = () => {
@@ -42,6 +41,7 @@ export const Dashboard: React.FC = () => {
   const { shop, loading: shopLoading, refreshShop } = useShopContext();
   const [dateFilter, setDateFilter] = useState('May 20 – May 26');
   const [chartFilter, setChartFilter] = useState('Last 7 days');
+  const [menuOpen, setMenuOpen] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoRedeeming, setPromoRedeeming] = useState(false);
@@ -230,7 +230,8 @@ export const Dashboard: React.FC = () => {
       {/* Top Navigation Bar */}
       <header className="max-w-4xl mx-auto px-5 pt-4 pb-3 flex items-center justify-between sticky top-0 z-30 bg-[#F8F9FA]/90 backdrop-blur-md">
         <button 
-          onClick={() => navigate('/settings')}
+          onClick={() => setMenuOpen(true)}
+          aria-label="Open navigation menu"
           className="p-1.5 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
         >
           <Menu size={22} className="text-zinc-900" />
@@ -254,6 +255,27 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       </header>
+
+      {menuOpen && (
+        <div className="fixed inset-0 z-[90]">
+          <button type="button" aria-label="Close navigation menu" onClick={() => setMenuOpen(false)} className="absolute inset-0 h-full w-full bg-black/45 backdrop-blur-[2px]" />
+          <aside className="absolute left-0 top-0 flex h-full w-[min(82vw,320px)] flex-col bg-white p-5 shadow-2xl animate-in slide-in-from-left duration-200">
+            <div className="flex items-center justify-between border-b border-zinc-100 pb-5">
+              <div className="text-xl font-black tracking-tight">Thread<span className="text-[#96D100]">ZW</span><p className="mt-1 text-[10px] font-bold uppercase tracking-[.18em] text-zinc-400">Merchant menu</p></div>
+              <button type="button" aria-label="Close menu" onClick={() => setMenuOpen(false)} className="rounded-xl bg-zinc-100 p-2 text-zinc-700 hover:bg-zinc-200"><X size={19} /></button>
+            </div>
+            <nav className="mt-6 space-y-2">
+              <button type="button" onClick={() => { setMenuOpen(false); navigate('/customise-shop'); }} className="flex w-full items-center gap-3 rounded-2xl bg-[#CCFF00] px-4 py-4 text-left text-sm font-black text-black shadow-sm">
+                <Store size={19} /><span className="flex-1">Customise Shop</span><ArrowRight size={16} />
+              </button>
+              <button type="button" onClick={() => { setMenuOpen(false); navigate('/settings'); }} className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-bold text-zinc-800 transition hover:bg-zinc-100">
+                <Edit3 size={19} /><span className="flex-1">Settings</span><ArrowRight size={16} />
+              </button>
+            </nav>
+            <div className="mt-auto rounded-2xl bg-zinc-50 p-4"><p className="text-xs font-bold text-zinc-800">Make your shop yours.</p><p className="mt-1 text-[11px] leading-relaxed text-zinc-500">Update your storefront cards and choose a design from Customise Shop.</p></div>
+          </aside>
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto px-4 py-3 space-y-5">
         {/* Greeting Section & Date Range Picker */}
@@ -286,9 +308,6 @@ export const Dashboard: React.FC = () => {
           productsCount={productsCount}
           isShopPaidAndActive={isShopPaidAndActive}
         />
-
-        {/* Why Shop With Us cards */}
-        <WhyShopWithUsManager />
 
         {/* Plan Status & Entitlement Usage */}
         <DashboardPlanCard
