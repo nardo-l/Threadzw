@@ -4,7 +4,6 @@ import { Shop } from '../../types';
 import { resolveSellerCategory } from '../../config/sellerCategories';
 import { getProductLimit, isPro, isShopViewOnly, isTrialActive } from '../../config/plans';
 import { useNavigate } from 'react-router-dom';
-import { ThemePickerLauncher } from '../dashboard/ThemePickerLauncher';
 
 interface DashboardPlanCardProps {
   shop: Shop | null;
@@ -26,7 +25,6 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
   if (pro) {
     return (
       <div className="space-y-3">
-        <ThemePickerLauncher shop={shop} />
         <div className="rounded-2xl border border-emerald-200/80 bg-white p-5 shadow-2xs">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-950 text-[#CCFF00]"><Sparkles size={18} /></div><div><span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Your plan</span><h3 className="text-sm font-bold text-zinc-900">ThreadZW Pro · Monthly</h3></div></div>
@@ -48,7 +46,6 @@ export const DashboardPlanCard: React.FC<DashboardPlanCardProps> = ({ shop, live
 
   return (
     <div className="space-y-3">
-      {!viewOnly && <ThemePickerLauncher shop={shop} />}
       <div className={`rounded-2xl border p-5 shadow-sm ${viewOnly ? 'border-amber-200 bg-amber-50 text-zinc-950' : 'border-zinc-800 bg-zinc-950 text-white'}`}>
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-start gap-3">
