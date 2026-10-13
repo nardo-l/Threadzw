@@ -10,6 +10,7 @@ import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
 import { Dashboard } from './screens/Dashboard';
+import { CustomiseShop } from './screens/CustomiseShop';
 import { AddProduct } from './screens/AddProduct';
 import { EditProduct } from './screens/EditProduct';
 import { Inventory } from './screens/Inventory';
@@ -92,7 +93,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/edit-shop' || path === '/edit-profile' || path === '/support') {
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/customise-shop' || path === '/edit-shop' || path === '/edit-profile' || path === '/support') {
     return { stage: 'dashboard' };
   }
   if (path === '/pricing') {
@@ -367,6 +368,7 @@ function AppContent() {
       cleanPath === '/inventory' ||
       cleanPath === '/analytics' ||
       cleanPath === '/settings' ||
+      cleanPath === '/customise-shop' ||
       cleanPath === '/notifications' ||
       cleanPath === '/edit-shop' ||
       cleanPath === '/edit-profile' ||
@@ -657,7 +659,7 @@ function AppContent() {
     return <SubscriptionSuccess />;
   }
 
-  const isShopEditingPath = cleanPath === '/inventory' || cleanPath === '/edit-shop' || cleanPath === '/edit-profile' || cleanPath === '/account' || cleanPath === '/add-product' || cleanPath.startsWith('/edit-product') || cleanPath === '/add-vehicle' || cleanPath.startsWith('/edit-vehicle');
+  const isShopEditingPath = cleanPath === '/customise-shop' || cleanPath === '/inventory' || cleanPath === '/edit-shop' || cleanPath === '/edit-profile' || cleanPath === '/account' || cleanPath === '/add-product' || cleanPath.startsWith('/edit-product') || cleanPath === '/add-vehicle' || cleanPath.startsWith('/edit-vehicle');
   if (isDashboardSubPath && isShopEditingPath && isShopViewOnly(shop)) {
     return <Navigate to="/subscription" replace />;
   }
@@ -672,6 +674,7 @@ function AppContent() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/support" element={<Support />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/customise-shop" element={<CustomiseShop />} />
         <Route path="/edit-shop" element={<ShopEdit />} />
         <Route path="/edit-profile" element={<ShopEdit initialSubView="edit-profile" />} />
         <Route path="/account" element={<ShopEdit />} />
