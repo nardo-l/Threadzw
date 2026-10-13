@@ -47,25 +47,26 @@ export async function createNotification(
       created_at: new Date().toISOString()
     };
 
-    const query = data.dedupe_key
-      ? supabase
-          .from('notifications')
-          .upsert(row, { onConflict: 'dedupe_key', ignoreDuplicates: true })
-          .select('id')
-          .maybeSingle()
-      : supabase
-          .from('notifications')
-          .insert(row)
-          .select('id')
-          .maybeSingle();
+    // Use INSERT rather than ON CONFLICT (dedupe_key): the database's
+    // dedupe index is partial (WHERE dedupe_key IS NOT NULL), so Postgres
+    // cannot infer it from a plain ON CONFLICT (dedupe_key) target.
+    const { data: inserted, error } = await supabase
+      .from('notifications')
+      .insert(row)
+      .select('id')
+      .maybeSingle();
 
-    const { data: inserted, error } = await query;
     if (error) {
+      // A prior successful delivery may already own this dedupe key.
+      // Treat that as an idempotent duplicate, not a delivery failure.
+      if (data.dedupe_key && error.code === '23505') {
+        return { created: false };
+      }
       console.error('[NotificationService] Failed to persist notification:', error.message);
       return { created: false, error: error.message };
     }
 
-    return { created: Boolean(inserted) || Boolean(data.dedupe_key), error: undefined };
+    return { created: Boolean(inserted), error: undefined };
   } catch (err: any) {
     console.error('[NotificationService] Exception inserting notification:', err);
     return { created: false, error: err?.message || 'NOTIFICATION_CREATE_FAILED' };
