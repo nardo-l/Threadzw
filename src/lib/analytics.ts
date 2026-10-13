@@ -132,16 +132,12 @@ export async function trackEvent(params: TrackEventParams) {
     // Do not chain .select() here: anonymous storefront visitors may insert analytics,
     // but the SELECT policy is owner-only. RETURNING rows would make the public insert fail.
 
-    // Forensic Log: SUPABASE RESULT
-    console.log("SUPABASE RESULT", {
-      data,
-      error
-    });
-
+    // Log only the insert result. Anonymous visitors are not allowed to SELECT
+    // analytics rows, so there is intentionally no returned row data here.
     if (error) {
       console.error("ANALYTICS INSERT FAILED", error);
     } else {
-      console.log("Insert Successful:", data);
+      console.log("Insert Successful");
     }
 
     // Return the visitor ID locally so shop-visit notification dispatch does not depend
