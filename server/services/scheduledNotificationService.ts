@@ -29,6 +29,12 @@ interface ShopRecord {
   instagram?: string | null;
   page_type?: string | null;
   created_at?: string | null;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
+  subscription_status?: string | null;
+  account_status?: string | null;
+  plan?: string | null;
+  payment_verification_status?: string | null;
 }
 
 interface ProductRecord {
@@ -193,6 +199,38 @@ export function aggregateMetrics(events: AnalyticsRecord[], products: ProductRec
     productViews,
     topProductName: topProductEntry ? productNames.get(topProductEntry[0]) || 'your top product' : undefined,
     topProductClicks: topProductEntry?.[1] || 0
+  };
+}
+
+export function buildTrialReminderMessage(shop: ShopRecord, now = new Date()) {
+  const trialEndMs = shop.trial_ends_at ? new Date(shop.trial_ends_at).getTime() : 0;
+  const isProPlan = ['premium', 'pro'].includes(String(shop.plan || '').toLowerCase());
+  const isActiveTrial = !isProPlan
+    && trialEndMs > now.getTime()
+    && ['trial', 'free'].includes(String(shop.account_status || '').toLowerCase())
+    && !['pending', 'rejected'].includes(String(shop.payment_verification_status || '').toLowerCase());
+
+  if (!isActiveTrial) return null;
+
+  const daysRemaining = Math.ceil((trialEndMs - now.getTime()) / (24 * 60 * 60 * 1000));
+  const shopName = hasText(shop.name) ? shop.name!.trim() : 'your shop';
+
+  if (daysRemaining <= 1) {
+    return {
+      type: 'trial_expiring_reminder',
+      title: 'Your free trial ends in less than 24 hours',
+      body: `Your ThreadZW free trial for ${shopName} is almost over. Subscribe today to keep your shop active and your products visible.`,
+      target_url: '/subscription',
+      shopId: shop.id
+    };
+  }
+
+  return {
+    type: 'trial_time_remaining',
+    title: `${daysRemaining} days left on your free trial`,
+    body: `You have ${daysRemaining} days left on your ThreadZW free trial for ${shopName}. Subscribe before it ends to keep your shop active and your products visible.`,
+    target_url: '/subscription',
+    shopId: shop.id
   };
 }
 
@@ -412,7 +450,7 @@ export async function sendScheduledMerchantNotifications(
 ) {
   const { data: shops, error: shopsError } = await supabase
     .from('shops')
-    .select('id, owner_id, name, description, logo_url, banner_url, location, whatsapp_number, page_type, created_at')
+    .select('id, owner_id, name, description, logo_url, banner_url, location, whatsapp_number, page_type, created_at, trial_started_at, trial_ends_at, subscription_status, account_status, plan, payment_verification_status')
     .not('owner_id', 'is', null);
 
   if (shopsError) throw shopsError;
@@ -461,18 +499,18 @@ export async function sendScheduledMerchantNotifications(
     const range = getLocalDayRange(now, timezone);
     localDates.add(range.localDate);
 
-    if (slot === 'midday' && profilePreferences?.setup_reminders_enabled !== false) {
-      const setupShop = shopsByProfile.get(profileId)?.find(shop => {
-        const shopProducts = productsByShop.get(shop.id) || [];
-        return Boolean(buildSetupMessage(shop, shopProducts.length, now));
-      });
+    if (slot === 'midday') {
+      const profileShops = shopsByProfile.get(profileId) || [];
+      // Trial countdowns take priority over setup nudges so merchants receive
+      // one focused midday reminder rather than multiple competing messages.
+      const trialShop = profileShops.find(shop => Boolean(buildTrialReminderMessage(shop, now)));
 
-      if (setupShop) {
-        const message = buildSetupMessage(setupShop, (productsByShop.get(setupShop.id) || []).length, now);
+      if (trialShop) {
+        const message = buildTrialReminderMessage(trialShop, now);
         if (message) {
           const result = await deliverNotification(supabase, {
             profileId,
-            shopId: setupShop.id,
+            shopId: trialShop.id,
             slot,
             localDate: range.localDate,
             pushEnabled: profilePreferences?.push_enabled !== false,
@@ -480,6 +518,27 @@ export async function sendScheduledMerchantNotifications(
           });
           if (result.created) notificationsCreated += 1;
           pushSent += result.pushSentCount;
+        }
+      } else if (profilePreferences?.setup_reminders_enabled !== false) {
+        const setupShop = profileShops.find(shop => {
+          const shopProducts = productsByShop.get(shop.id) || [];
+          return Boolean(buildSetupMessage(shop, shopProducts.length, now));
+        });
+
+        if (setupShop) {
+          const message = buildSetupMessage(setupShop, (productsByShop.get(setupShop.id) || []).length, now);
+          if (message) {
+            const result = await deliverNotification(supabase, {
+              profileId,
+              shopId: setupShop.id,
+              slot,
+              localDate: range.localDate,
+              pushEnabled: profilePreferences?.push_enabled !== false,
+              message
+            });
+            if (result.created) notificationsCreated += 1;
+            pushSent += result.pushSentCount;
+          }
         }
       }
     }
