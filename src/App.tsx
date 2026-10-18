@@ -218,7 +218,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'studio', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
