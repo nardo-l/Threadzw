@@ -25,6 +25,7 @@ import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/ToastContainer';
 import { Toaster } from 'sonner';
 import { LandingPage } from './screens/LandingPage';
+import { CarouselStudio } from './screens/CarouselStudio';
 import { AdminLeads } from './screens/AdminLeads';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
@@ -615,16 +616,7 @@ function AppContent() {
   }
 
   if (appStage === 'landing') {
-    return (
-      <LandingPage 
-        onStartFree={() => {
-          setAppStage('onboarding');
-        }} 
-        onLoginSuccess={() => {
-          setAppStage('dashboard');
-        }} 
-      />
-    );
+    return <CarouselStudio />;
   }
 
   if (appStage === 'onboarding') {
