@@ -130,9 +130,16 @@ export const ThreadzwOnboarding: React.FC = () => {
 
   const renderStep = () => {
     if (step === 1) return <>
-      <div className="flex h-14 w-14 -rotate-3 items-center justify-center rounded-2xl bg-[#C6FF00] text-xl font-black">TZ</div>
-      <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight">Create your ThreadZW shop</h1>
-      <p className="mt-2 text-sm leading-5 text-zinc-500">One link for your products and WhatsApp orders.</p>
+      <section className="relative -mx-5 -mt-6 mb-6 min-h-[390px] overflow-hidden rounded-b-[2rem] bg-zinc-950 text-white">
+        <img src="https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=1200&q=85" alt="Contemporary streetwear fashion" className="absolute inset-0 h-full w-full object-cover object-center opacity-70" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/10" />
+        <div className="relative flex min-h-[390px] flex-col justify-between p-6">
+          <div className="flex items-center justify-between"><span className="text-xl font-black tracking-tight">Thread<span className="text-[#C6FF00]">ZW</span></span><button type="button" onClick={() => { setError(''); go(2); }} className="rounded-full bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur">Skip intro</button></div>
+          <div className="pb-2"><p className="mb-3 text-xs font-bold uppercase tracking-[.22em] text-[#C6FF00]">Sell · Grow · Zimbabwe</p><h1 className="max-w-xs text-4xl font-black leading-[1.03] tracking-tight">Turn your style into <span className="text-[#C6FF00]">sales.</span></h1><p className="mt-4 max-w-sm text-sm leading-6 text-white/85">Create a beautiful online shop, showcase your products and help more customers discover your brand.</p><div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold"><span className="rounded-full border border-white/25 bg-white/10 px-3 py-2">Your own storefront</span><span className="rounded-full border border-white/25 bg-white/10 px-3 py-2">WhatsApp orders</span></div></div>
+        </div>
+      </section>
+      <h2 className="text-2xl font-extrabold leading-tight tracking-tight">Create your ThreadZW account</h2>
+      <p className="mt-2 text-sm leading-5 text-zinc-500">Start building your shop in a few simple steps.</p>
       <div className="mt-6 space-y-4">
         <Field label="Your name" value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="Your name" autoComplete="name" />
         <Field label="Email address" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" />
@@ -186,9 +193,9 @@ export const ThreadzwOnboarding: React.FC = () => {
     if (step < TOTAL_STEPS) go(step + 1);
   };
 
-  return <div className="fixed inset-0 z-[45] overflow-y-auto bg-[#FAFBF8] font-sans text-zinc-950">
-    <div className="mx-auto flex min-h-full w-full max-w-md flex-col bg-white shadow-sm">
-      <header className="sticky top-0 z-10 border-b border-zinc-100 bg-white/95 px-5 pb-4 pt-4 backdrop-blur">
+  return <div className="fixed inset-0 z-[45] overflow-y-auto bg-[#F8F7F1] font-sans text-zinc-950">
+    <div className="mx-auto flex min-h-full w-full max-w-md flex-col bg-[#F8F7F1] shadow-sm">
+      <header className="sticky top-0 z-10 border-b border-zinc-200/70 bg-[#F8F7F1]/95 px-5 pb-4 pt-4 backdrop-blur">
         <div className="mb-4 flex items-center justify-between"><button type="button" onClick={() => step > 1 ? go(step - 1) : navigate('/')} aria-label="Go back" className="flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200 bg-white"><ArrowLeft size={17}/></button><span className="text-lg font-black tracking-tight">Thread<span className="text-lime-600">ZW</span></span><span className="text-xs font-medium text-zinc-500">{step} / {TOTAL_STEPS}</span></div>
         <div className="flex gap-1.5" aria-label={`Step ${step} of ${TOTAL_STEPS}`}>{Array.from({length: TOTAL_STEPS}, (_,i) => <div key={i} className={`h-1.5 flex-1 rounded-full ${i < step ? 'bg-[#C6FF00]' : 'bg-zinc-200'}`}/>)}</div>
       </header>
