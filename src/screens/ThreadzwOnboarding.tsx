@@ -87,7 +87,7 @@ export const ThreadzwOnboarding: React.FC = () => {
     localStorage.setItem('threadzw_onboarding_shop_name', shopName);
     localStorage.setItem('threadzw_onboarding_handle', shopHandle);
     localStorage.setItem('threadzw_onboarding_phone', phone);
-  }, [category, city, shopName, phone]);
+  }, [category, city, shopName, shopHandle, phone]);
 
   const go = (next: number) => { setError(''); setStep(Math.max(1, Math.min(TOTAL_STEPS, next))); window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const formatPhone = (value: string) => {
@@ -202,8 +202,14 @@ export const ThreadzwOnboarding: React.FC = () => {
       {renderError}
     </>;
     if (step === 4) return <>
-      <h1 className="text-3xl font-extrabold tracking-tight">Start your free trial</h1><p className="mt-2 text-sm text-zinc-500">Get your shop online and add products. You can decide about payment after your trial.</p>
-      <div className="mt-5 rounded-2xl border border-zinc-200 p-5"><div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-full bg-lime-100"><Store size={22}/></div><div><p className="font-bold">3-day unlimited trial</p><p className="text-sm text-zinc-500">No payment required to start</p></div></div><ul className="mt-5 space-y-3 text-sm">{['Create and share your storefront','Add unlimited products during the trial','Receive customer enquiries and orders through WhatsApp'].map(t => <li key={t} className="flex gap-2"><Check size={17} className="shrink-0 text-lime-600"/>{t}</li>)}</ul><div className="mt-5 rounded-xl bg-zinc-50 p-3 text-sm text-zinc-600">After the trial, ThreadZW Pro is $1.59/month. Your shop stays online in view-only mode until payment is verified.</div></div>
+      <section className="relative -mx-5 -mt-6 mb-5 min-h-[250px] overflow-hidden bg-zinc-950 text-white">
+        <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=85" alt="Fashion boutique shopping" className="absolute inset-0 h-full w-full object-cover opacity-65"/>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/5"/>
+        <div className="relative flex min-h-[250px] flex-col justify-end p-5"><span className="mb-3 w-fit rounded-full bg-[#C6FF00] px-3 py-1 text-[11px] font-extrabold uppercase tracking-wider text-zinc-950">3 days on us</span><h1 className="max-w-xs text-3xl font-black leading-tight">Your shop. Your style. Your next sale.</h1><p className="mt-2 max-w-sm text-sm leading-5 text-white/85">Explore everything ThreadZW can do for your business.</p></div>
+      </section>
+      <h2 className="text-xl font-extrabold tracking-tight">Your free trial starts now</h2><p className="mt-1 text-sm text-zinc-500">No payment required to get started.</p>
+      <div className="mt-4 space-y-3">{[{title:'Your own storefront',desc:'A shareable shop link for your brand',icon:<Store size={19}/>},{title:'Unlimited products',desc:'Add photos, prices, sizes and stock during your trial',icon:<ShoppingBag size={19}/>},{title:'WhatsApp enquiries',desc:'Let customers contact you directly',icon:<MessageCircle size={19}/>}].map(item => <div key={item.title} className="flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0FBD0] text-zinc-900">{item.icon}</span><span><span className="block text-sm font-bold">{item.title}</span><span className="mt-0.5 block text-xs leading-4 text-zinc-500">{item.desc}</span></span><Check size={17} className="ml-auto shrink-0 text-lime-700"/></div>)}</div>
+      <div className="mt-4 rounded-2xl bg-zinc-100 p-4"><p className="text-sm font-bold">After your 3-day trial</p><p className="mt-1 text-sm leading-5 text-zinc-600">ThreadZW Pro is $1.59/month. Your storefront remains viewable, while editing is paused until payment is verified.</p></div>
       {renderError}
     </>;
     if (step === 5) return <>
@@ -213,8 +219,14 @@ export const ThreadzwOnboarding: React.FC = () => {
     </>;
     const realUrl = shopUrl || (shop?.slug ? `${window.location.origin}/${shop.slug}` : '');
     return <>
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lime-100 text-lime-700"><Check size={28}/></div>
-      <h1 className="mt-4 text-center text-3xl font-extrabold tracking-tight">Your shop is ready!</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight">Preview your storefront</h1>
+      <p className="mt-1 text-sm text-zinc-500">This is how customers can recognise and contact your shop.</p>
+      <div className="mt-4 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm">
+        <div className="relative h-28 bg-zinc-900"><img src="https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=900&q=80" alt="" className="h-full w-full object-cover opacity-65"/><div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"/></div>
+        <div className="px-4 pb-4"><div className="-mt-8 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border-4 border-white bg-zinc-100 text-zinc-600">{avatarPreview ? <img src={avatarPreview} alt="" className="h-full w-full object-cover"/> : <Store size={25}/>}</div><h2 className="mt-2 text-lg font-extrabold">{shopName || shop?.name || 'Your shop name'}</h2><p className="text-xs text-zinc-500">@{shopSlug || slug || 'your-shop'} · {selectedCity || shop?.city || 'Zimbabwe'}</p><span className="mt-3 inline-flex items-center gap-2 rounded-full bg-[#F0FBD0] px-3 py-2 text-xs font-bold"><MessageCircle size={14}/> WhatsApp enquiries</span><div className="mt-4 grid grid-cols-2 gap-2"><div className="h-20 rounded-xl bg-zinc-100 p-3"><Shirt size={17} className="text-zinc-400"/><p className="mt-2 text-[10px] text-zinc-500">Your products appear here</p></div><div className="h-20 rounded-xl bg-zinc-100 p-3"><ShoppingBag size={17} className="text-zinc-400"/><p className="mt-2 text-[10px] text-zinc-500">Add products to get started</p></div></div></div>
+      </div>
+      <div className="mx-auto mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-lime-100 text-lime-700"><Check size={28}/></div>
+      <h1 className="mt-3 text-center text-2xl font-extrabold tracking-tight">Your shop is ready!</h1>
       <p className="mt-2 text-center text-sm text-zinc-500">Share your storefront and invite customers to browse products and contact you on WhatsApp.</p>
       {realUrl ? <div className="mt-5 rounded-xl border border-zinc-200 p-3"><p className="break-all text-sm font-semibold">{realUrl}</p><div className="mt-3 grid grid-cols-2 gap-2"><Button secondary onClick={copyLink}><Copy size={15}/>{copied ? 'Copied' : 'Copy link'}</Button><Button secondary onClick={() => window.open(realUrl, '_blank', 'noopener,noreferrer')}><ExternalLink size={15}/>Visit shop</Button></div><Button onClick={() => { const message = encodeURIComponent(`Check out my ThreadZW shop: ${realUrl}`); window.open(`https://wa.me/?text=${message}`, '_blank', 'noopener,noreferrer'); }}><MessageCircle size={16}/>Share on WhatsApp</Button></div> : <div role="alert" className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Your shop link is not available yet. Please open your dashboard to confirm your shop was saved.</div>}
       <div className="mt-4"><Button onClick={() => { localStorage.removeItem('threadzw_onboarding_step'); localStorage.removeItem('threadzw_onboarding_return_to_ready'); navigate('/dashboard', { replace: true }); }}>Go to dashboard <ArrowRight size={16}/></Button></div>
