@@ -9,7 +9,12 @@ import { uploadImage } from '../utils/uploadImage';
 
 const TOTAL_STEPS = 6;
 const CITIES = ['Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 'Masvingo', 'Other'];
-const CATEGORIES = ['Clothing', 'Shoes', 'Accessories', 'Other'];
+const CATEGORIES = [
+  { name: 'Clothing', image: 'https://images.unsplash.com/photo-1523398002811-999ca8dec234?auto=format&fit=crop&w=600&q=80', hint: 'Everyday style & streetwear' },
+  { name: 'Shoes', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80', hint: 'Sneakers & footwear' },
+  { name: 'Accessories', image: 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?auto=format&fit=crop&w=600&q=80', hint: 'Bags, jewellery & more' },
+  { name: 'Other', image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=600&q=80', hint: 'Something different' },
+];
 
 const Button = ({ children, onClick, disabled = false, secondary = false }: {
   children: React.ReactNode; onClick?: () => void; disabled?: boolean; secondary?: boolean;
@@ -31,6 +36,9 @@ export const ThreadzwOnboarding: React.FC = () => {
   const [city, setCity] = useState(localStorage.getItem('threadzw_onboarding_city') || '');
   const [otherCity, setOtherCity] = useState('');
   const [shopName, setShopName] = useState(localStorage.getItem('threadzw_onboarding_shop_name') || '');
+  const [shopHandle, setShopHandle] = useState(localStorage.getItem('threadzw_onboarding_handle') || '');
+  const [handleTouched, setHandleTouched] = useState(Boolean(localStorage.getItem('threadzw_onboarding_handle')));
+  const [handleStatus, setHandleStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'error'>('idle');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [phone, setPhone] = useState(localStorage.getItem('threadzw_onboarding_phone') || '+263 ');
@@ -44,7 +52,27 @@ export const ThreadzwOnboarding: React.FC = () => {
   const [shopSlug, setShopSlug] = useState(localStorage.getItem('threadzw_onboarding_shop_slug') || '');
   const [copied, setCopied] = useState(false);
 
-  const slug = useMemo(() => shopName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), [shopName]);
+  const slug = useMemo(() => (shopHandle || shopName).trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), [shopName, shopHandle]);
+
+  useEffect(() => {
+    if (!handleTouched) setShopHandle(shopName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+  }, [shopName, handleTouched]);
+
+  useEffect(() => {
+    const candidate = slug;
+    if (candidate.length < 3) { setHandleStatus('idle'); return; }
+    setHandleStatus('checking');
+    const timer = window.setTimeout(async () => {
+      try {
+        const { data, error: rpcError } = await supabase.rpc('is_shop_slug_available', { p_slug: candidate });
+        if (rpcError) throw rpcError;
+        setHandleStatus(data ? 'available' : 'taken');
+      } catch {
+        setHandleStatus('error');
+      }
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [slug]);
   const selectedCity = city === 'Other' ? otherCity.trim() : city;
   const phoneDigits = phone.replace(/\D/g, '').replace(/^263/, '');
   const validPhone = phoneDigits.length >= 8 && phoneDigits.length <= 9;
@@ -57,6 +85,7 @@ export const ThreadzwOnboarding: React.FC = () => {
     localStorage.setItem('threadzw_onboarding_category', category);
     localStorage.setItem('threadzw_onboarding_city', city);
     localStorage.setItem('threadzw_onboarding_shop_name', shopName);
+    localStorage.setItem('threadzw_onboarding_handle', shopHandle);
     localStorage.setItem('threadzw_onboarding_phone', phone);
   }, [category, city, shopName, phone]);
 
@@ -162,14 +191,14 @@ export const ThreadzwOnboarding: React.FC = () => {
     if (step === 2) return <>
       <h1 className="text-3xl font-extrabold tracking-tight">Getting started</h1>
       <p className="mt-2 text-sm text-zinc-500">What do you sell? Choose the category that best describes your shop.</p>
-      <div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map(item => <button key={item} type="button" onClick={() => setCategory(item)} aria-pressed={category === item} className={`flex min-h-20 items-center gap-2 rounded-xl border p-3 text-left text-sm font-semibold ${category === item ? 'border-lime-400 bg-lime-50' : 'border-zinc-200 bg-white'}`}><span className={`flex h-8 w-8 items-center justify-center rounded-lg ${category === item ? 'bg-[#C6FF00]' : 'bg-zinc-100'}`}>{item === 'Clothing' ? <Shirt size={17}/> : <ShoppingBag size={17}/>}</span>{item}{category === item && <Check size={16} className="ml-auto" />}</button>)}</div>
+      <div className="mt-5 grid grid-cols-2 gap-3">{CATEGORIES.map(item => <button key={item.name} type="button" onClick={() => setCategory(item.name)} aria-pressed={category === item.name} className={`group relative min-h-44 overflow-hidden rounded-2xl border text-left transition ${category === item.name ? 'border-[#C6FF00] ring-2 ring-[#C6FF00]' : 'border-zinc-200'}`}><img src={item.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/5"/><span className={`absolute right-3 top-3 flex h-6 w-6 items-center justify-center rounded-full ${category === item.name ? 'bg-[#C6FF00] text-zinc-950' : 'border border-white/70 bg-black/20 text-transparent'}`}><Check size={14}/></span><span className="absolute inset-x-3 bottom-3 text-white"><span className="block text-base font-extrabold">{item.name}</span><span className="mt-0.5 block text-[11px] leading-4 text-white/80">{item.hint}</span></span></button>)}</div>
       <div className="mt-6"><label className="block space-y-2"><span className="text-xs font-semibold">City</span><select value={city} onChange={e => setCity(e.target.value)} className="h-12 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm"><option value="">Choose your city</option>{CITIES.map(c => <option key={c}>{c}</option>)}</select></label>{city === 'Other' && <div className="mt-3"><Field label="Your city or town" value={otherCity} onChange={e => setOtherCity(e.target.value)} placeholder="Enter city or town" /></div>}</div>
       <p className="mt-4 text-xs text-zinc-500">You can update your shop details later in your dashboard.</p>
     </>;
     if (step === 3) return <>
       <h1 className="text-3xl font-extrabold tracking-tight">Create your shop</h1><p className="mt-2 text-sm text-zinc-500">Add the details customers will use to recognise your shop and contact you.</p>
       <div className="mt-5 space-y-4"><div className="flex flex-col items-center rounded-2xl border border-dashed border-zinc-300 bg-white p-5"><input id="threadzw-shop-avatar" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (!file) return; if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { setError('Choose a JPG, PNG or WebP image.'); return; } if (file.size > 12 * 1024 * 1024) { setError('Choose an image smaller than 12MB.'); return; } setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)); setError(''); }} /><label htmlFor="threadzw-shop-avatar" className="group flex cursor-pointer flex-col items-center gap-2"><span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-100 text-zinc-500">{avatarPreview ? <img src={avatarPreview} alt="Shop logo preview" className="h-full w-full object-cover"/> : <Camera size={25}/>}</span><span className="text-sm font-bold">{avatarFile ? 'Change shop photo' : 'Add shop photo'}</span><span className="text-xs text-zinc-500">Optional · JPG, PNG or WebP</span></label></div><Field label="Shop name" value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Your shop name" autoComplete="organization" maxLength={60}/><Field label="WhatsApp order number" value={phone} onChange={e => formatPhone(e.target.value)} placeholder="+263 77 123 4567" inputMode="tel" type="tel" autoComplete="tel"/>
-      <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"><p className="text-[11px] font-semibold text-zinc-500">SHOP LINK PREVIEW</p><p className="mt-1 break-all text-sm font-semibold">{slug ? `${window.location.origin}/${slug}` : 'Your link will be based on your shop name'}</p><p className="mt-1 text-xs text-zinc-500">The final link is confirmed after your shop is saved.</p></div></div>
+      <div className="space-y-3"><Field label="Shop username / handle" value={shopHandle} onChange={e => { setHandleTouched(true); setShopHandle(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-')); }} placeholder="your-shop-name" autoComplete="off" maxLength={40}/><div className="flex items-center gap-2 text-xs">{handleStatus === 'checking' && <><Loader2 size={13} className="animate-spin"/><span className="text-zinc-500">Checking availability…</span></>}{handleStatus === 'available' && <><Check size={13} className="text-emerald-600"/><span className="text-emerald-700">This username is available</span></>}{handleStatus === 'taken' && <><AlertCircle size={13} className="text-red-600"/><span className="text-red-700">This username is already taken</span></>}{handleStatus === 'error' && <span className="text-zinc-500">Availability check unavailable; we’ll confirm when saving.</span>}{handleStatus === 'idle' && <span className="text-zinc-500">Use at least 3 letters or numbers.</span>}</div><div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"><p className="text-[11px] font-semibold text-zinc-500">YOUR STOREFRONT LINK</p><p className="mt-1 break-all text-sm font-semibold">{slug ? `${window.location.origin}/${slug}` : 'Your link will be based on your username'}</p><p className="mt-1 text-xs text-zinc-500">Your final link is confirmed after your shop is saved.</p></div></div></div>
       {renderError}
     </>;
     if (step === 4) return <>
@@ -195,7 +224,11 @@ export const ThreadzwOnboarding: React.FC = () => {
   const next = async () => {
     setError('');
     if (step === 2 && (!selectedCity || (city === 'Other' && !otherCity.trim()))) { setError('Choose or enter your city to continue.'); return; }
-    if (step === 3) { await createAccountAndShop(); return; }
+    if (step === 3) {
+      if (shopHandle.trim().length < 3) { setError('Choose a username with at least 3 characters.'); return; }
+      if (handleStatus === 'taken') { setError('That shop username is already taken. Try another one.'); return; }
+      await createAccountAndShop(); return;
+    }
     if (step === 4) { go(5); return; }
     if (step === 5) { go(6); return; }
     if (step < TOTAL_STEPS) go(step + 1);
