@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Loader2, MessageCircle, Store, Shirt, ShoppingBag, Copy, ExternalLink, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Loader2, MessageCircle, Store, Shirt, ShoppingBag, Copy, ExternalLink, AlertCircle, Camera } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabase';
 import { useShopContext } from '../context/ShopContext';
+import { uploadImage } from '../utils/uploadImage';
 
 const TOTAL_STEPS = 6;
 const CITIES = ['Harare', 'Bulawayo', 'Chitungwiza', 'Mutare', 'Gweru', 'Masvingo', 'Other'];
@@ -30,6 +31,8 @@ export const ThreadzwOnboarding: React.FC = () => {
   const [city, setCity] = useState(localStorage.getItem('threadzw_onboarding_city') || '');
   const [otherCity, setOtherCity] = useState('');
   const [shopName, setShopName] = useState(localStorage.getItem('threadzw_onboarding_shop_name') || '');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
   const [phone, setPhone] = useState(localStorage.getItem('threadzw_onboarding_phone') || '+263 ');
   const [ownerName, setOwnerName] = useState('');
   const [email, setEmail] = useState('');
@@ -82,12 +85,17 @@ export const ThreadzwOnboarding: React.FC = () => {
       if (alreadyRegistered) throw new Error('An account with this email already exists. Sign in instead.');
       if (signUpError) throw signUpError;
       if (!data.session || !data.user) throw new Error('Your account was created, but email confirmation is required. Confirm your email, then sign in to finish creating your shop.');
+      let logoUrl: string | null = null;
+      if (avatarFile) {
+        logoUrl = await uploadImage({ supabase, file: avatarFile, bucket: 'shop-avatars', folder: 'shop-avatar', userId: data.user.id });
+      }
       const shopCategory = category === 'Clothing' ? 'clothing' : 'general';
       const { data: newShopId, error: shopError } = await supabase.rpc('create_shop_from_onboarding', {
         p_shop: {
           name: shopName.trim(), slug: slug || `shop-${Date.now().toString(36)}`,
           description: `${shopName.trim()} storefront on ThreadZW.`, bio: null,
           whatsapp_number: phone.trim(), city: selectedCity, page_type: shopCategory,
+          categories: [category], logo_url: logoUrl,
         },
       });
       if (shopError) throw shopError;
@@ -160,7 +168,7 @@ export const ThreadzwOnboarding: React.FC = () => {
     </>;
     if (step === 3) return <>
       <h1 className="text-3xl font-extrabold tracking-tight">Create your shop</h1><p className="mt-2 text-sm text-zinc-500">Add the details customers will use to recognise your shop and contact you.</p>
-      <div className="mt-5 space-y-4"><Field label="Shop name" value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Your shop name" autoComplete="organization" maxLength={60}/><Field label="WhatsApp order number" value={phone} onChange={e => formatPhone(e.target.value)} placeholder="+263 77 123 4567" inputMode="tel" type="tel" autoComplete="tel"/>
+      <div className="mt-5 space-y-4"><div className="flex flex-col items-center rounded-2xl border border-dashed border-zinc-300 bg-white p-5"><input id="threadzw-shop-avatar" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={e => { const file = e.target.files?.[0]; if (!file) return; if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { setError('Choose a JPG, PNG or WebP image.'); return; } if (file.size > 12 * 1024 * 1024) { setError('Choose an image smaller than 12MB.'); return; } setAvatarFile(file); setAvatarPreview(URL.createObjectURL(file)); setError(''); }} /><label htmlFor="threadzw-shop-avatar" className="group flex cursor-pointer flex-col items-center gap-2"><span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-100 text-zinc-500">{avatarPreview ? <img src={avatarPreview} alt="Shop logo preview" className="h-full w-full object-cover"/> : <Camera size={25}/>}</span><span className="text-sm font-bold">{avatarFile ? 'Change shop photo' : 'Add shop photo'}</span><span className="text-xs text-zinc-500">Optional · JPG, PNG or WebP</span></label></div><Field label="Shop name" value={shopName} onChange={e => setShopName(e.target.value)} placeholder="Your shop name" autoComplete="organization" maxLength={60}/><Field label="WhatsApp order number" value={phone} onChange={e => formatPhone(e.target.value)} placeholder="+263 77 123 4567" inputMode="tel" type="tel" autoComplete="tel"/>
       <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"><p className="text-[11px] font-semibold text-zinc-500">SHOP LINK PREVIEW</p><p className="mt-1 break-all text-sm font-semibold">{slug ? `${window.location.origin}/${slug}` : 'Your link will be based on your shop name'}</p><p className="mt-1 text-xs text-zinc-500">The final link is confirmed after your shop is saved.</p></div></div>
       {renderError}
     </>;
