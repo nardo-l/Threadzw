@@ -25,6 +25,7 @@ import { ToastProvider } from './context/ToastContext';
 import { ToastContainer } from './components/ToastContainer';
 import { Toaster } from 'sonner';
 import { LandingPage } from './screens/LandingPage';
+import { CarouselStudio } from './screens/CarouselStudio';
 import { AdminLeads } from './screens/AdminLeads';
 import { ShopProvider, useShopContext } from './context/ShopContext';
 import { StorefrontPage } from './pages/StorefrontPage';
@@ -35,6 +36,7 @@ import { Subscription } from './screens/Subscription';
 import { Paywall } from './screens/Paywall';
 import { SubscriptionSuccess } from './screens/SubscriptionSuccess';
 import { Analytics } from './screens/Analytics';
+import { GrowthWorkspace } from './screens/GrowthWorkspace';
 import { Notifications } from './screens/Notifications';
 import { ProPlanShowcase } from './screens/ProPlanShowcase';
 import { AddVehicle } from './screens/AddVehicle';
@@ -93,7 +95,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/customise-shop' || path === '/edit-shop' || path === '/edit-profile' || path === '/support') {
+  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/customise-shop' || path === '/edit-shop' || path === '/edit-profile' || path === '/support' || path === '/growth') {
     return { stage: 'dashboard' };
   }
   if (path === '/pricing') {
@@ -131,7 +133,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building', 'growth'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -217,7 +219,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building', 'growth'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -369,6 +371,7 @@ function AppContent() {
       cleanPath === '/analytics' ||
       cleanPath === '/settings' ||
       cleanPath === '/customise-shop' ||
+      cleanPath === '/growth' ||
       cleanPath === '/notifications' ||
       cleanPath === '/edit-shop' ||
       cleanPath === '/edit-profile' ||
@@ -613,16 +616,7 @@ function AppContent() {
   }
 
   if (appStage === 'landing') {
-    return (
-      <LandingPage 
-        onStartFree={() => {
-          setAppStage('onboarding');
-        }} 
-        onLoginSuccess={() => {
-          setAppStage('dashboard');
-        }} 
-      />
-    );
+    return <CarouselStudio />;
   }
 
   if (appStage === 'onboarding') {
@@ -671,6 +665,7 @@ function AppContent() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/growth" element={<GrowthWorkspace />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/support" element={<Support />} />
         <Route path="/settings" element={<Settings />} />

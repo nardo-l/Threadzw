@@ -268,11 +268,14 @@ export const Dashboard: React.FC = () => {
               <button type="button" onClick={() => { setMenuOpen(false); navigate('/customise-shop'); }} className="flex w-full items-center gap-3 rounded-2xl bg-[#CCFF00] px-4 py-4 text-left text-sm font-black text-black shadow-sm">
                 <Store size={19} /><span className="flex-1">Customise Shop</span><ArrowRight size={16} />
               </button>
+              <button type="button" onClick={() => { setMenuOpen(false); navigate('/growth'); }} className="flex w-full items-center gap-3 rounded-2xl bg-[#F0ECFF] px-4 py-4 text-left text-sm font-black text-[#6545F5] shadow-sm">
+                <TrendingUp size={19} /><span className="flex-1">Growth Workspace</span><ArrowRight size={16} />
+              </button>
               <button type="button" onClick={() => { setMenuOpen(false); navigate('/settings'); }} className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-bold text-zinc-800 transition hover:bg-zinc-100">
                 <Edit3 size={19} /><span className="flex-1">Settings</span><ArrowRight size={16} />
               </button>
             </nav>
-            <div className="mt-auto rounded-2xl bg-zinc-50 p-4"><p className="text-xs font-bold text-zinc-800">Make your shop yours.</p><p className="mt-1 text-[11px] leading-relaxed text-zinc-500">Update your storefront cards and choose a design from Customise Shop.</p></div>
+            <div className="mt-auto rounded-2xl bg-zinc-50 p-4"><p className="text-xs font-bold text-zinc-800">Make your shop yours.</p><p className="mt-1 text-[11px] leading-relaxed text-zinc-500">Discover content ideas, plan posts and track your results in Growth Workspace.</p></div>
           </aside>
         </div>
       )}
