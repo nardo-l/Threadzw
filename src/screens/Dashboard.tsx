@@ -268,6 +268,9 @@ export const Dashboard: React.FC = () => {
               <button type="button" onClick={() => { setMenuOpen(false); navigate('/customise-shop'); }} className="flex w-full items-center gap-3 rounded-2xl bg-[#CCFF00] px-4 py-4 text-left text-sm font-black text-black shadow-sm">
                 <Store size={19} /><span className="flex-1">Customise Shop</span><ArrowRight size={16} />
               </button>
+              <button type="button" onClick={() => { setMenuOpen(false); navigate('/studio'); }} className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-bold text-zinc-800 transition hover:bg-zinc-100">
+                <Edit3 size={19} /><span className="flex-1">Content Studio</span><ArrowRight size={16} />
+              </button>
               <button type="button" onClick={() => { setMenuOpen(false); navigate('/settings'); }} className="flex w-full items-center gap-3 rounded-2xl px-4 py-4 text-left text-sm font-bold text-zinc-800 transition hover:bg-zinc-100">
                 <Edit3 size={19} /><span className="flex-1">Settings</span><ArrowRight size={16} />
               </button>

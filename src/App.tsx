@@ -10,6 +10,7 @@ import { BuildingScreen } from './screens/BuildingScreen';
 import { AuthCallback } from './screens/AuthCallback';
 import { ResetPassword } from './screens/ResetPassword';
 import { Dashboard } from './screens/Dashboard';
+import { SellerStudio } from './screens/SellerStudio';
 import { CustomiseShop } from './screens/CustomiseShop';
 import { AddProduct } from './screens/AddProduct';
 import { EditProduct } from './screens/EditProduct';
@@ -93,7 +94,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   if (path === '/onboarding' || path === '/signup') {
     return { stage: 'onboarding' };
   }
-  if (path.startsWith('/dashboard') || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/customise-shop' || path === '/edit-shop' || path === '/edit-profile' || path === '/support') {
+  if (path.startsWith('/dashboard') || path === '/studio' || path === '/inventory' || path === '/analytics' || path === '/notifications' || path === '/add-product' || path.startsWith('/edit-product') || path === '/add-vehicle' || path.startsWith('/edit-vehicle') || path === '/settings' || path === '/customise-shop' || path === '/edit-shop' || path === '/edit-profile' || path === '/support') {
     return { stage: 'dashboard' };
   }
   if (path === '/pricing') {
@@ -131,7 +132,7 @@ const getInitialStageAndParams = (pathname: string): { stage: AppStage; slug?: s
   const segments = pathname.split('/').filter(Boolean);
   if (segments.length > 0) {
     const firstSegment = segments[0];
-    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
+    const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'studio', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 's', 'shop', 'store', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
     
     if (firstSegment === 's') {
       const shopId = segments[1];
@@ -217,7 +218,7 @@ function AppContent() {
         // Since it has '--', it's always a persistent storefront URL
         return true;
       }
-      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
+      const reserved = ['login', 'signup', 'admin', 'onboarding', 'dashboard', 'studio', 'inventory', 'analytics', 'add-product', 'edit-product', 'add-vehicle', 'edit-vehicle', 'settings', 'notifications', 'edit-shop', 'edit-profile', 'support', 'account', 'setup', 'pricing', 'setup-success', 'demo', 'product', 'api', 'checkout', 'auth', 'reset-password', 'subscription', 'paywall', 'pro-showcase', 'building'];
       if (!reserved.includes(firstSegment.toLowerCase())) {
         return true;
       }
@@ -365,6 +366,7 @@ function AppContent() {
       appStage === 'dashboard' ||
       cleanPath === '/dashboard' ||
       cleanPath.startsWith('/dashboard/') ||
+      cleanPath === '/studio' ||
       cleanPath === '/inventory' ||
       cleanPath === '/analytics' ||
       cleanPath === '/settings' ||
@@ -669,6 +671,7 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/studio" element={<SellerStudio />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/notifications" element={<Notifications />} />
